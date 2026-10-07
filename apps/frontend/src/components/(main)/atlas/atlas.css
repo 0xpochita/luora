@@ -242,6 +242,7 @@
   opacity: 0.25;
 }
 /* triaged as false positive / duplicate */
+.atlas .cfind.dismissed,
 .atlas .cmark.vulns.dismissed {
   opacity: 0.18;
   filter: grayscale(1);
@@ -535,4 +536,237 @@
 .atlas .covkey .covered::before {
   border-color: var(--ok);
   background: var(--ok);
+}
+
+/* City: label declutter — lower-priority labels hidden where they would overlap */
+.atlas .cmark.occl,
+.atlas .cdist.occl,
+.atlas .cproc.occl,
+.atlas .cfind.occl {
+  visibility: hidden;
+}
+
+/* City: one finding marker per building, ▲n + highest severity; list opens on hover / select */
+.atlas .cfind {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  font-family: var(--font-geist-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  pointer-events: auto;
+  transition: opacity 0.2s;
+}
+.atlas .cfind.dim {
+  opacity: 0.25;
+}
+.atlas .cfind .head {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--bad);
+  background: rgba(10, 11, 12, 0.9);
+  color: var(--bad);
+}
+.atlas .cfind .head i {
+  padding: 1px 5px;
+  font-style: normal;
+  background: var(--bad);
+  color: var(--shell);
+}
+.atlas .cfind .head b {
+  padding: 1px 6px;
+  font-weight: 500;
+}
+.atlas .cfind.sev-med .head i {
+  background: none;
+  border-right: 1px solid var(--bad);
+  color: var(--bad);
+}
+.atlas .cfind.sev-low .head,
+.atlas .cfind.sev-info .head {
+  border-color: var(--edge);
+  color: var(--muted);
+}
+.atlas .cfind.sev-low .head i,
+.atlas .cfind.sev-info .head i {
+  background: none;
+  border-right: 1px solid var(--edge);
+  color: var(--muted);
+}
+.atlas .cfind ul {
+  display: none;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  background: rgba(10, 11, 12, 0.94);
+}
+.atlas .cfind.open ul,
+.atlas .cfind:hover ul {
+  display: block;
+}
+.atlas .cfind li button {
+  display: block;
+  width: 100%;
+  padding: 2px 8px;
+  text-align: left;
+  color: var(--muted);
+}
+.atlas .cfind li button:hover {
+  background: var(--soft);
+  color: var(--ink);
+}
+.atlas .cfind li .sev-high,
+.atlas .cfind li .sev-med {
+  color: var(--bad);
+}
+
+/* City legend: collapsible key in the corner of the stage */
+.atlas .clegend {
+  max-width: 360px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--shell) 92%, transparent);
+  font-family: var(--font-geist-mono);
+  font-size: 10.5px;
+}
+.atlas .clegend summary {
+  padding: 6px 10px;
+  color: var(--muted);
+  cursor: pointer;
+  list-style: none;
+}
+.atlas .clegend summary::before {
+  content: "+ ";
+}
+.atlas .clegend[open] summary::before {
+  content: "− ";
+}
+.atlas .clegend ul {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.atlas .clegend li {
+  display: grid;
+  grid-template-columns: 14px 92px 1fr;
+  gap: 8px;
+  align-items: center;
+  color: var(--dim);
+}
+.atlas .clegend li b {
+  font-weight: 500;
+  color: var(--ink);
+}
+.atlas .clegend svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: var(--tick);
+  stroke-width: 2;
+}
+.atlas .clegend li i {
+  justify-self: center;
+  width: 12px;
+  height: 4px;
+  background: var(--ink);
+}
+.atlas .clegend i.ok {
+  background: var(--ok);
+}
+.atlas .clegend i.bad {
+  background: var(--bad);
+}
+.atlas .clegend i.belt {
+  height: 5px;
+  background: #1f2124;
+  border: 1px solid #3a3e44;
+}
+.atlas .clegend i.power {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.6);
+}
+.atlas .clegend i.mark {
+  width: 10px;
+  height: 10px;
+  background: var(--bad);
+}
+.atlas .clegend i.token {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #2775ca;
+}
+.atlas .clegend i.token.bad {
+  background: var(--bad);
+}
+
+/* quick search (/ or ⌘K) */
+.atlas .qsearch {
+  width: min(560px, calc(100vw - 32px));
+  margin: 12vh auto auto;
+  padding: 0;
+  border: 1px solid var(--edge);
+  background: var(--panel);
+  color: var(--ink);
+  font-family: var(--font-geist-mono);
+}
+.atlas .qsearch::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+.atlas .qsearch input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--tray);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+.atlas .qsearch ul {
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  max-height: 50vh;
+  overflow: auto;
+}
+.atlas .qsearch button {
+  display: grid;
+  grid-template-columns: 18px 64px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 5px 12px;
+  text-align: left;
+  font-size: 12px;
+  color: var(--muted);
+}
+.atlas .qsearch button[aria-current="true"] {
+  background: var(--sel);
+  color: var(--ink);
+  box-shadow: inset 2px 0 var(--accent);
+}
+.atlas .qsearch button.bad {
+  color: var(--bad);
+}
+.atlas .qsearch .code {
+  color: var(--ink);
+}
+.atlas .qsearch .sys,
+.atlas .qsearch .none {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.atlas .qsearch .none {
+  padding: 6px 12px;
+}
+.atlas .cfind.compact:not(.open):not(:hover) .head b,
+.atlas .cproc.compact code {
+  display: none;
 }

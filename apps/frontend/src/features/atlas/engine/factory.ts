@@ -51,6 +51,7 @@ export function addBeacon(mesh: THREE.Mesh, w: number, h: number, d: number) {
   });
   const beacon = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.14), mat);
   beacon.position.set(w / 2 - 0.35, h / 2 + 0.07, -d / 2 + 0.35);
+  beacon.userData.deco = true; // hidden in audit mode
   const phase = mesh.position.x + mesh.position.z;
   beacon.onBeforeRender = () => {
     mat.opacity =

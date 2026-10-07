@@ -15,6 +15,7 @@ import { ContractSource } from "./ContractSource";
 import { CoverageSummary } from "./CoverageSummary";
 import { ExplorerView } from "./ExplorerView";
 import { PieceInspector } from "./PieceInspector";
+import { QuickSearch } from "./QuickSearch";
 import "./atlas.css";
 
 /** Smart-contract visual: 3D city + radial explorer, sharing one selection. */
@@ -45,6 +46,7 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
           ]}
         />
         <div className="ml-auto flex items-center gap-2 self-center">
+          <span className="text-dim hud-label">/ or ⌘K search</span>
           <Chip>{model.file.split("/").pop()}</Chip>
           <Chip>solc {model.compiler}</Chip>
           {source.origin === "sample" && <Chip>Sample</Chip>}
@@ -72,7 +74,12 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
           />
         )}
         <aside>
-          <ContractSource model={model} selected={selected} sim={sim} />
+          <ContractSource
+            model={model}
+            selected={selected}
+            sim={sim}
+            onSelect={setSelected}
+          />
           {selected ? (
             <PieceInspector
               key={selected}
@@ -89,6 +96,7 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
           )}
         </aside>
       </div>
+      <QuickSearch model={model} onSelect={setSelected} />
     </div>
   );
 }

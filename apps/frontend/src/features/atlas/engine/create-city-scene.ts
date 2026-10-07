@@ -9,11 +9,14 @@ import { ICON_PATH, type IconKey, iconOf } from "../utils/icons";
 import type { AtlasModel } from "../utils/model";
 import { protocolOf } from "../utils/protocols";
 import { STEP_VERB, unitCode } from "../utils/units";
+import { addFindingMarkers, declutter, type Label } from "./city-labels";
 import { addBase, addStatusLamp, BASE, machineGeometry } from "./endfield";
 import { addBeacon } from "./factory";
 import { type CityOverlay, createCoverageOverlay } from "./overlays/coverage";
+import { createPlanView } from "./plan-view";
 
-export type CityZoom = "city" | "district" | "street";
+/** `plan` = 2D top-down orthographic map */
+export type CityZoom = "city" | "district" | "street" | "plan";
 /** Simulation frame: steps 0..step of `entry`'s sequence are drawn, `step` is current. */
 export type CitySimFrame = {
   entry: string;
@@ -28,6 +31,8 @@ export type CityScene = {
   /** triaged-away findings (false positive / duplicate): markers fade, hosts lose the red edge */
   setDismissed: (ids: Set<string>) => void;
   setOverlay: (o: CityOverlay | null) => void;
+  /** audit mode: filler city flattened to faint tiles, decoration off, only contract pieces + links */
+  setAudit: (on: boolean) => void;
   dispose: () => void;
 };
 
@@ -116,6 +121,10 @@ export function createCityScene(
   controls.maxPolarAngle = 1.25;
   controls.minDistance = 8;
   controls.maxDistance = 110;
+  const plan = createPlanView(renderer.domElement, HOME.target);
+  /** active camera + controls: perspective city, or the 2D plan */
+  let cam: THREE.PerspectiveCamera | THREE.OrthographicCamera = camera;
+  let ctl = controls;
   scene.add(new THREE.HemisphereLight("#c7ccd4", "#050607", 0.9));
   const sun = new THREE.DirectionalLight("#ffffff", 1.3);
   sun.position.set(-20, 40, 18);
@@ -188,9 +197,11 @@ export function createCityScene(
     g.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
     return new THREE.LineSegments(g, m);
   };
-  scene.add(lines(segs, street), lines(avs, avenue));
+  const streetGrid = lines(segs, street);
+  scene.add(streetGrid, lines(avs, avenue));
 
   // district name plates
+  const distEls: HTMLDivElement[] = [];
   for (const [k, d] of Object.entries(DISTRICTS)) {
     const el = document.createElement("div");
     el.className = "cdist";
@@ -204,6 +215,7 @@ export function createCityScene(
     o.center.set(0, 0);
     o.userData.k = k;
     scene.add(o);
+    distEls.push(el);
   }
 
   // ---- buildings ----
@@ -344,31 +356,19 @@ export function createCityScene(
     b.el = el;
     blds.set(p.id, b);
   }
-  // finding markers ride on their host building
-  const findingEls = new Map<string, HTMLDivElement>();
-  for (const f of model.findings) {
-    const host = blds.get(model.lesion[f.id]);
-    if (!host) continue;
-    const stack = [...findingEls.keys()].filter(
-      (id) => model.lesion[id] === model.lesion[f.id],
-    ).length;
-    const el = document.createElement("div");
-    el.className = "cmark vulns show";
-    const sq = document.createElement("i");
-    sq.append(iconEl("warn"));
-    const code = document.createElement("span");
-    code.textContent = f.name.slice(0, 4);
-    el.append(sq, code);
-    const lo = new CSS2DObject(el);
-    lo.position.set(
-      host.mesh.position.x,
-      host.top + 2.6 + stack * 1.1,
-      host.mesh.position.z,
-    );
-    scene.add(lo);
-    findingEls.set(f.id, el);
-    (host.edges.material as THREE.LineBasicMaterial).color.set("#a8433f");
-  }
+  // finding markers: one grouped marker per host building (see city-labels)
+  const findingMarks = addFindingMarkers(
+    scene,
+    model,
+    new Map(
+      [...blds].map(([id, b]) => [id, { pos: b.mesh.position, top: b.top }]),
+    ),
+    (id) => onPick(id),
+  );
+  for (const host of findingMarks.els.keys())
+    (
+      (blds.get(host) as Bld).edges.material as THREE.LineBasicMaterial
+    ).color.set("#a8433f");
   // filler city: dim massing in the free lots and the blocks around districts
   const rand = rng(7);
   for (const k of Object.keys(lots) as DistrictKey[])
@@ -713,6 +713,7 @@ export function createCityScene(
     model.findings.some(
       (f) => model.lesion[f.id] === id && !dismissed.has(f.id),
     );
+  let audit = false;
   const ALWAYS = new Set(["entry", "deps"]);
   function refresh() {
     const near = selected ? model.neighbours(selected) : null;
@@ -745,14 +746,9 @@ export function createCityScene(
       coverage.paint(id, body, edge, focus);
     }
     for (const f of fillers)
-      (f.edges.material as THREE.LineBasicMaterial).opacity = near ? 0.35 : 1;
-    for (const [fid, el] of findingEls) {
-      el.classList.toggle(
-        "dim",
-        !!near && !near.has(fid) && !near.has(model.lesion[fid]),
-      );
-      el.classList.toggle("dismissed", dismissed.has(fid));
-    }
+      (f.edges.material as THREE.LineBasicMaterial).opacity =
+        (near ? 0.35 : 1) * (audit ? 0.35 : 1);
+    findingMarks.refresh(selected, hovered, near, dismissed);
     renderer.domElement.style.cursor = hovered ? "pointer" : "grab";
   }
 
@@ -765,7 +761,7 @@ export function createCityScene(
       ((ev.clientX - r.left) / r.width) * 2 - 1,
       -((ev.clientY - r.top) / r.height) * 2 + 1,
     );
-    ray.setFromCamera(ndc, camera);
+    ray.setFromCamera(ndc, cam);
     return (
       (ray.intersectObjects(pickables, false)[0]?.object.userData
         .id as string) ?? null
@@ -803,9 +799,9 @@ export function createCityScene(
   let zoom: CityZoom = "city";
   const fly = (pos: THREE.Vector3, target: THREE.Vector3) => {
     anim = {
-      fp: camera.position.clone(),
+      fp: cam.position.clone(),
       tp: pos,
-      ft: controls.target.clone(),
+      ft: ctl.target.clone(),
       tt: target,
       t0: performance.now(),
     };
@@ -815,6 +811,10 @@ export function createCityScene(
       selected && blds.has(selected)
         ? (blds.get(selected) as Bld).mesh.position.clone().setY(0)
         : null;
+    if (zoom === "plan") {
+      const at = focus ?? HOME.target.clone();
+      return fly(plan.over(at), at);
+    }
     if (zoom === "city" || !focus) {
       if (zoom === "city" && focus) {
         const dir = camera.position
@@ -839,10 +839,41 @@ export function createCityScene(
     css2.setSize(w, h);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+    plan.fit(w, h);
   };
   const ro = new ResizeObserver(fit);
   ro.observe(stage);
   fit();
+
+  // labels in priority order for the screen-space declutter pass
+  const SYS_PRIO: Partial<Record<Piece["sys"], number>> = {
+    entry: 45,
+    deps: 40,
+    calls: 35,
+  };
+  const labelsNow = (): Label[] => [
+    ...[...findingMarks.els.values()].map((el) => ({
+      el,
+      prio: Number(el.dataset.prio) + (el.classList.contains("open") ? 50 : 0),
+      shift: true,
+      keep: true,
+    })),
+    ...[...blds.values()].flatMap((b) =>
+      b.el?.classList.contains("show")
+        ? [
+            {
+              el: b.el,
+              prio: b.el.classList.contains("focus")
+                ? 95
+                : (SYS_PRIO[(b.piece as Piece).sys] ?? 30),
+            },
+          ]
+        : [],
+    ),
+    ...(cap.visible ? [{ el: capEl, prio: 90, shift: true }] : []),
+    ...distEls.map((el) => ({ el, prio: 10 })),
+  ];
+  let lastDeclutter = 0;
 
   const clock = new THREE.Clock();
   renderer.setAnimationLoop(() => {
@@ -850,8 +881,8 @@ export function createCityScene(
     if (anim) {
       const k = Math.min(1, (performance.now() - anim.t0) / 900);
       const s = ease(k);
-      camera.position.lerpVectors(anim.fp, anim.tp, s);
-      controls.target.lerpVectors(anim.ft, anim.tt, s);
+      cam.position.lerpVectors(anim.fp, anim.tp, s);
+      ctl.target.lerpVectors(anim.ft, anim.tt, s);
       if (k === 1) anim = null;
     }
     base.update(t);
@@ -864,9 +895,13 @@ export function createCityScene(
         process(simLeg.stop, still ? 0.5 : ((ms - 500) / 1000 / PROC) % 1);
     } else if (!simG.children.length) walk(t);
     else idle();
-    controls.update();
-    renderer.render(scene, camera);
-    css2.render(scene, camera);
+    ctl.update();
+    renderer.render(scene, cam);
+    css2.render(scene, cam);
+    if (t - lastDeclutter > 0.12) {
+      lastDeclutter = t;
+      declutter(labelsNow());
+    }
   });
   planJourney(null);
   refresh();
@@ -889,6 +924,14 @@ export function createCityScene(
       refresh();
     },
     setZoom(z) {
+      const next = z === "plan" ? plan : { camera, controls };
+      if (next.camera !== cam) {
+        anim = null;
+        ctl.enabled = false;
+        cam = next.camera;
+        ctl = next.controls;
+        ctl.enabled = true;
+      }
       zoom = z;
       frame();
     },
@@ -900,6 +943,23 @@ export function createCityScene(
       coverage.setVisible(o === "coverage");
       refresh();
     },
+    setAudit(on) {
+      audit = on;
+      streetGrid.visible = !on;
+      scene.traverse((o) => {
+        if (o.userData.deco) o.visible = !on;
+      });
+      for (const f of fillers) {
+        const k = on ? 0.04 / f.top : 1;
+        for (const o of [f.mesh, f.edges]) {
+          o.scale.y = k;
+          o.position.y = (f.top * k) / 2;
+        }
+        const body = f.mesh.material as THREE.MeshStandardMaterial;
+        body.opacity = on ? 0.5 : 1;
+      }
+      refresh();
+    },
     dispose() {
       renderer.setAnimationLoop(null);
       ro.disconnect();
@@ -907,6 +967,7 @@ export function createCityScene(
       renderer.domElement.removeEventListener("pointerdown", onDown);
       renderer.domElement.removeEventListener("pointerup", onUp);
       controls.dispose();
+      plan.controls.dispose();
       scene.traverse((o) => {
         if (o instanceof THREE.Mesh || o instanceof THREE.Line) {
           o.geometry.dispose();
