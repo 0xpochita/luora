@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import type { Piece, Step } from "../types";
 import type { AtlasModel } from "../utils/model";
@@ -13,7 +14,9 @@ import { factoryGeometry } from "./factory";
  *   logic → processor (stacked unit + vents)   access  → gate frame
  *   events → relay mast                         deps / calls → factory (outside the wall)
  *   belts: seq steps (read = item flows to the entry, write / call / event = away from it)
- *   power lines: privileged entry ← relay pylon ← role slot (owner / keeper) it checks
+ *   power lines: Protocol Core (the contract) → role slot (owner / keeper) → relay pylon →
+ *                each entry gated on that role
+ *   calls leave the plot only through the wall gates and cross the river on the bridges
  */
 
 const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
@@ -25,6 +28,8 @@ const STILL =
 export const BASE = { x0: -24.4, x1: 5.2, z0: -18.2, z1: 12.8 };
 const GATES_Z = [-6, 6];
 const GATE_HALF = 1.3;
+/** Protocol Core: free corner of the plot between the state district and the gates. */
+const CORE = { x: 1.6, z: -11.4, top: 6.6 };
 
 // ---- machine geometry -------------------------------------------------------
 
@@ -255,6 +260,14 @@ export function addBase(
     k: Step[0];
   }[] = [];
   let lane = 0;
+  const isExt = (id: string) =>
+    model.byId[id]?.sys === "calls" || model.byId[id]?.sys === "deps";
+  // west edge of the External Island: belts land there after the bridge
+  const islandX =
+    Math.min(
+      ...[...nodes].filter(([id]) => isExt(id)).map(([, n]) => n.pos.x),
+    ) -
+    lot / 2;
   for (const [entry, steps] of Object.entries(model.seq)) {
     const from = nodes.get(entry);
     if (!from) continue;
@@ -269,13 +282,24 @@ export function addBase(
       const b = to.pos;
       const zs = a.z + lot / 2 + off;
       const xs = b.x + lot / 2 + off;
-      const pts = [
-        V(a.x, 0.06, a.z),
-        V(a.x, 0.06, zs),
-        V(xs, 0.06, zs),
-        V(xs, 0.06, b.z),
-        V(b.x, 0.06, b.z),
-      ];
+      const pts = [V(a.x, 0.06, a.z), V(a.x, 0.06, zs)];
+      if (isExt(id)) {
+        // inner lane along the wall → nearest gate → bridge → island edge road → street
+        const gz = GATES_Z.reduce((best, z) =>
+          Math.abs(z - b.z) < Math.abs(best - b.z) ? z : best,
+        );
+        const gx = x1 - 0.9 + off;
+        const ex = islandX + off;
+        const sz = b.z - lot / 2 + off;
+        pts.push(
+          V(gx, 0.06, zs),
+          V(gx, 0.06, gz + off),
+          V(ex, 0.06, gz + off),
+          V(ex, 0.06, sz),
+          V(xs, 0.06, sz),
+        );
+      } else pts.push(V(xs, 0.06, zs));
+      pts.push(V(xs, 0.06, b.z), V(b.x, 0.06, b.z));
       if (k === "r") pts.reverse(); // reads: data comes to the entry
       const path = new THREE.CurvePath<THREE.Vector3>();
       for (let i = 0; i < pts.length - 1; i++) {
@@ -321,13 +345,78 @@ export function addBase(
     for (let i = 0; i < f.n; i++) items.setColorAt(n++, shade[f.k]);
   g.add(items);
 
-  // power grid: role slot (owner / keeper) → relay pylon → each entry gated on that role
+  // Protocol Core: the contract itself, source of the power grid
+  const coreGeo = merged(
+    [
+      cyl(2.3, 0.4, 0, 0, 0, 2.3, 6),
+      cyl(1.15, 3, 0, 0.4, 0, 1.45, 8),
+      cyl(1.7, 0.22, 0, 3.4, 0, 1.7, 8),
+      cyl(0.9, 1, 0, 3.62, 0, 1.1, 8),
+      cyl(0.08, 1.98, 0, 4.62, 0, 0.26, 8),
+    ],
+    CORE.top,
+  );
+  const core = new THREE.Mesh(
+    coreGeo,
+    new THREE.MeshStandardMaterial({
+      color: "#3a3d42",
+      roughness: 0.55,
+      metalness: 0.35,
+    }),
+  );
+  core.position.set(CORE.x, CORE.top / 2, CORE.z);
+  const coreEdges = new THREE.LineSegments(
+    new THREE.EdgesGeometry(coreGeo, 25),
+    new THREE.LineBasicMaterial({ color: "#8a8f96" }),
+  );
+  coreEdges.position.copy(core.position);
+  const coreLightMat = new THREE.MeshBasicMaterial({
+    color: "#ffffff",
+    transparent: true,
+  });
+  const coreLight = new THREE.Mesh(
+    new THREE.OctahedronGeometry(0.24),
+    coreLightMat,
+  );
+  coreLight.position.set(CORE.x, CORE.top + 0.3, CORE.z);
+  g.add(core, coreEdges, coreLight);
+  const el = document.createElement("div");
+  el.className = "cmark core show";
+  const sq = document.createElement("i");
+  const code = document.createElement("span");
+  code.textContent = "CORE";
+  const name = document.createElement("b");
+  name.textContent = `${model.contract} · solc ${model.compiler}`;
+  el.append(sq, code, name);
+  const label = new CSS2DObject(el);
+  label.position.set(CORE.x, CORE.top + 1.6, CORE.z);
+  g.add(label);
+
+  // power grid: core → role slot (owner / keeper) → relay pylon → each entry gated on that role
   const powerMat = new THREE.LineBasicMaterial({
     color: "#ffffff",
     transparent: true,
     opacity: 0.55,
   });
   const nodeMat = new THREE.MeshBasicMaterial({ color: "#ffffff" });
+  const roles = new Set(
+    model.entry
+      .map((id) => model.byId[id]?.caller)
+      .filter((c): c is string => !!c && c !== "anyone"),
+  );
+  for (const role of roles) {
+    const slot = nodes.get(role);
+    if (!slot) continue;
+    g.add(
+      new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([
+          V(CORE.x, CORE.top - 1.2, CORE.z),
+          V(slot.pos.x, slot.top, slot.pos.z),
+        ]),
+        powerMat,
+      ),
+    );
+  }
   for (const id of model.entry) {
     const p = model.byId[id];
     const src = p?.caller && p.caller !== "anyone" ? nodes.get(p.caller) : null;
@@ -370,5 +459,12 @@ export function addBase(
     items.instanceMatrix.needsUpdate = true;
   };
   place(0);
-  return { update: (t) => !STILL && place(t) };
+  return {
+    update: (t) => {
+      if (STILL) return;
+      place(t);
+      coreLightMat.opacity = 0.45 + 0.55 * Math.max(0, Math.sin(t * 1.6)) ** 3;
+      coreLight.rotation.y = t * 0.8;
+    },
+  };
 }

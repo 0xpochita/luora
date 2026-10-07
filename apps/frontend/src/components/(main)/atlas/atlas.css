@@ -211,6 +211,13 @@
   width: 20px;
   height: 20px;
 }
+/* Protocol Core (the contract itself): name always visible */
+.atlas .cmark.core b {
+  display: inline;
+}
+.atlas .cmark.core span {
+  border-color: var(--ink);
+}
 .atlas .cmark.dim {
   opacity: 0.25;
 }
