@@ -14,14 +14,18 @@ export function ToggleChip({
       type="button"
       aria-pressed={on}
       onClick={onToggle}
-      className={`inline-flex items-center gap-2 whitespace-nowrap border px-2.5 py-1.5 transition-colors hud-label ${
-        on ? "border-edge text-ink" : "border-line text-dim"
-      }`}
+      className={`chamfer p-px [--cut:7px] ${on ? "bg-edge" : "bg-line"}`}
     >
       <span
-        className={`size-2 border ${on ? "border-accent bg-accent" : "border-dim"}`}
-      />
-      {label}
+        className={`inline-flex chamfer items-center gap-2 whitespace-nowrap bg-shell px-2.5 py-1.5 transition-colors hud-label [--cut:7px] ${
+          on ? "text-ink" : "text-dim"
+        }`}
+      >
+        <span
+          className={`size-2 border ${on ? "border-accent bg-accent" : "border-dim"}`}
+        />
+        {label}
+      </span>
     </button>
   );
 }

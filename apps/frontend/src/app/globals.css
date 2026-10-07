@@ -61,6 +61,18 @@
   text-transform: uppercase;
 }
 
+/* chamfered top-right corner (folder-tab look). For a border that follows the cut,
+   nest: outer = border colour + 1px padding, inner = fill; both `chamfer`. --cut sets the size. */
+@utility chamfer {
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--cut, 10px)) 0,
+    100% var(--cut, 10px),
+    100% 100%,
+    0 100%
+  );
+}
+
 /* diagonal stripes for progress bars */
 @utility hud-stripes {
   background-image: repeating-linear-gradient(
