@@ -406,15 +406,15 @@ export const LESION: Record<string, string> = {
   f5: "_computeShares",
 };
 
-/** Layer palette (also mirrored as CSS vars in atlas.css). */
+/** Layer palette: monochrome greys by layer; red is reserved for findings. */
 export const COLORS = {
-  ext: "#b07bff",
-  entry: "#3fa9ff",
-  logic: "#2ee6d6",
-  state: "#2bdc7f",
-  access: "#f5b544",
-  events: "#9fe7ff",
-  vulns: "#ff4d5e",
+  ext: "#7d8288",
+  entry: "#f2f3f4",
+  logic: "#c3c6ca",
+  state: "#9ca0a6",
+  access: "#dfe1e3",
+  events: "#a9adb2",
+  vulns: "#ff4545",
 } as const;
 export const SYS_COLOR: Record<SystemKey, keyof typeof COLORS> = {
   entry: "entry",

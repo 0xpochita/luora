@@ -1,5 +1,6 @@
 "use client";
 
+import { Panel, Tabs } from "@/components/ui";
 import { type SourceSpan, spanLines } from "@/features/trace";
 import { CodeView } from "./CodeView";
 
@@ -17,31 +18,30 @@ export function SourcePanel({
   caption: string | null;
 }) {
   return (
-    <aside className="my-2 mr-2 flex w-[440px] flex-none flex-col overflow-hidden rounded-r-[32px] border-line border-l bg-panel shadow-sh1">
-      <div className="mx-3.5 mt-3.5 mb-2 flex gap-1 overflow-x-auto rounded-full bg-soft p-1">
-        {Object.keys(sources).map((f) => (
-          <button
-            key={f}
-            type="button"
-            onClick={() => onFile(f)}
-            className={`whitespace-nowrap rounded-full px-3 py-1.5 font-medium font-mono text-[11.5px] ${
-              f === file ? "bg-card text-ink shadow-sh1" : "text-muted"
-            }`}
-          >
-            {f.split("/").pop()}
-          </button>
-        ))}
-      </div>
-      <p className="px-4.5 pt-1.5 pb-2.5 text-muted text-xs">
+    <Panel
+      label="Source"
+      aside={span ? `L${span.start + 1}–${span.end + 1}` : "—"}
+      className="m-3 flex w-[440px] flex-none flex-col"
+    >
+      <Tabs
+        value={file}
+        onChange={onFile}
+        className="overflow-x-auto border-line border-b px-1"
+        options={Object.keys(sources).map((f) => ({
+          value: f,
+          label: f.split("/").pop() ?? f,
+        }))}
+      />
+      <p className="truncate border-line border-b px-3 py-2 font-mono text-muted text-xs">
         {caption ? (
           <>
             <b className="font-semibold text-ink">{caption}</b>
-            {span && ` · ${span.file} L${span.start + 1}–${span.end + 1}`}
+            {span && ` · ${span.file}`}
             {span?.lines &&
               ` · ${spanLines(span, span.file).length} lines executed`}
           </>
         ) : (
-          "Select a frame."
+          <span className="hud-label text-dim">Select a frame</span>
         )}
       </p>
       <CodeView
@@ -49,6 +49,6 @@ export function SourcePanel({
         lines={spanLines(span, file)}
         notes={span?.notes?.[file]}
       />
-    </aside>
+    </Panel>
   );
 }

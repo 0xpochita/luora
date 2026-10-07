@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Chip, Panel } from "@/components/ui";
 import {
   type AiQuestion,
   aiAnswer,
@@ -57,73 +58,74 @@ export function PieceInspector({
 
   return (
     <>
-      <div
-        className="box ins"
-        style={{ "--c": colorOf(p) } as React.CSSProperties}
-      >
-        <h3>
-          <span className="kind">
-            {SYSTEMS[p.sys].label} · {layerOf(p).name} layer
-          </span>
+      <Panel
+        label={`${SYSTEMS[p.sys].label} · ${layerOf(p).name} layer`}
+        aside={
           <button
             type="button"
             className="x"
             aria-label="Close"
             onClick={() => onSelect(null)}
           >
-            ✕
+            ✕ Esc
           </button>
-        </h3>
-        <h2>{p.name}</h2>
-        <div className="badges">
-          {p.caller && <span className="badge">caller: {p.caller}</span>}
-          {findings.map((f) => (
-            <span key={f.id} className={`badge ${f.risk}`}>
-              {f.name.slice(0, 4)} · {RISK_LABEL[f.risk ?? "low"]}
-            </span>
-          ))}
-        </div>
-        <p>{p.desc}</p>
-        <div className="conns">
-          {conns.map((c) => (
-            <button
-              type="button"
-              key={c}
-              className="conn"
-              style={{ "--c": colorOf(byId[c]) } as React.CSSProperties}
-              onClick={() => onSelect(c)}
-            >
-              {byId[c].name}
-            </button>
-          ))}
-        </div>
-        <pre className="code">
-          {LINES.slice(from, to + 1).map((line, k) => {
-            const n = from + k;
-            return (
-              <span
-                key={`L${n}`}
-                className={`cl ${marks.has(n) ? "mk" : n >= s && n <= e ? "hl" : ""}`}
+        }
+        className="ins"
+      >
+        <div
+          className="p-3"
+          style={{ "--c": colorOf(p) } as React.CSSProperties}
+        >
+          <h2>{p.name}</h2>
+          <div className="badges">
+            {p.caller && <Chip>Caller {p.caller}</Chip>}
+            {findings.map((f) => (
+              <Chip key={f.id} dot tone="bad">
+                {f.name.slice(0, 4)} · {RISK_LABEL[f.risk ?? "low"]}
+              </Chip>
+            ))}
+          </div>
+          <p>{p.desc}</p>
+          <div className="conns">
+            {conns.map((c) => (
+              <button
+                type="button"
+                key={c}
+                className="conn"
+                style={{ "--c": colorOf(byId[c]) } as React.CSSProperties}
+                onClick={() => onSelect(c)}
               >
-                <span className="n">{n + 1}</span>
-                {tokenize(line).map((t, j) => (
-                  <span
-                    key={`L${n}:${j.toString()}`}
-                    className={t.type === "plain" ? undefined : `tok-${t.type}`}
-                  >
-                    {t.text}
-                  </span>
-                ))}
-                {line === "" && " "}
-              </span>
-            );
-          })}
-        </pre>
-      </div>
-      <div className="ai">
-        <div className="hd">
-          ✦ Luora AI <span>demo · mock</span>
+                {byId[c].name}
+              </button>
+            ))}
+          </div>
+          <pre className="code">
+            {LINES.slice(from, to + 1).map((line, k) => {
+              const n = from + k;
+              return (
+                <span
+                  key={`L${n}`}
+                  className={`cl ${marks.has(n) ? "mk" : n >= s && n <= e ? "hl" : ""}`}
+                >
+                  <span className="n">{n + 1}</span>
+                  {tokenize(line).map((t, j) => (
+                    <span
+                      key={`L${n}:${j.toString()}`}
+                      className={
+                        t.type === "plain" ? undefined : `tok-${t.type}`
+                      }
+                    >
+                      {t.text}
+                    </span>
+                  ))}
+                  {line === "" && " "}
+                </span>
+              );
+            })}
+          </pre>
         </div>
+      </Panel>
+      <Panel label="Luora AI" aside="Demo · mock">
         <div className="qs">
           {QUESTIONS.map(({ q, label }) => (
             <button type="button" key={q} className="q" onClick={() => ask(q)}>
@@ -132,7 +134,7 @@ export function PieceInspector({
           ))}
         </div>
         {answer && <div className="msg">{answer}</div>}
-      </div>
+      </Panel>
     </>
   );
 }

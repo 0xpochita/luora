@@ -11,11 +11,11 @@ export function ReloadButton() {
     <button
       type="button"
       onClick={() => start(() => router.refresh())}
-      className="mb-3.5 flex w-full items-center gap-2 rounded-3xl bg-card px-3.5 py-3 font-medium shadow-sh1"
+      className="mb-3 flex w-full items-center gap-2 border border-edge bg-card px-3 py-2.5 text-ink transition-colors hud-label hover:border-accent"
     >
       <span className={pending ? "animate-spin" : ""}>↻</span>
       {pending ? "Reloading…" : "Reload trace"}
-      <kbd className="ml-auto font-mono text-[11px] text-dim">⌘R</kbd>
+      <kbd className="ml-auto font-mono text-[10px] text-dim">⌘R</kbd>
     </button>
   );
 }

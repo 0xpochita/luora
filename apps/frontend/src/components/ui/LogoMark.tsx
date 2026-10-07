@@ -1,5 +1,8 @@
 export function LogoMark() {
   return (
-    <span className="size-[26px] rounded-[9px] bg-[conic-gradient(#6d5efc_0_25%,#d3e8ff_0_50%,#6d5efc_0_75%,#ffdccb_0)] shadow-sh1" />
+    <span className="relative grid size-[26px] place-items-center border border-edge font-bold font-mono text-[13px]">
+      L
+      <span className="absolute -top-px -right-px size-1.5 bg-accent" />
+    </span>
   );
 }

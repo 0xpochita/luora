@@ -50,7 +50,9 @@ export function TraceWorkspace({ source }: { source: TraceSource }) {
     });
 
   if (!test)
-    return <p className="p-10 text-muted">No tests in luora-data.json.</p>;
+    return (
+      <p className="p-10 text-muted hud-label">No tests in luora-data.json.</p>
+    );
 
   return (
     <div className="flex min-h-0 flex-1">
@@ -73,7 +75,7 @@ export function TraceWorkspace({ source }: { source: TraceSource }) {
           origin={origin}
         />
         <div className="flex min-h-0 flex-1">
-          <main className="my-2 flex min-w-0 flex-1 flex-col rounded-l-[32px] bg-panel shadow-sh1">
+          <main className="flex min-w-0 flex-1 flex-col bg-panel">
             <TraceHeader
               title={test.name}
               mode={mode}
@@ -82,7 +84,7 @@ export function TraceWorkspace({ source }: { source: TraceSource }) {
               onToggle={toggle}
             />
             <div
-              className={`flex-1 overflow-auto px-7 pb-7 ${mode === "graph" ? "flex flex-col" : ""}`}
+              className={`flex-1 overflow-auto p-5 ${mode === "graph" ? "flex flex-col" : ""}`}
             >
               <StatusBar
                 test={test}

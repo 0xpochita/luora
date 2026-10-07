@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Panel, SegmentedControl, ToggleChip } from "@/components/ui";
 import {
   type AtlasScene,
   type CamView,
@@ -10,10 +11,10 @@ import {
   PIECES,
 } from "@/features/atlas";
 
-const CAMS: { v: CamView; label: string; title: string }[] = [
-  { v: "iso", label: "¾", title: "Isometric" },
-  { v: "front", label: "F", title: "Front" },
-  { v: "top", label: "T", title: "Top" },
+const CAMS: { value: CamView; label: string; title: string }[] = [
+  { value: "iso", label: "ISO", title: "Isometric" },
+  { value: "front", label: "FRT", title: "Front" },
+  { value: "top", label: "TOP", title: "Top" },
 ];
 
 /** 3D pyramid view. The three.js engine is loaded client-side only and driven through a small API. */
@@ -74,57 +75,45 @@ export function AtlasStage({
             style={{ "--c": L.color } as React.CSSProperties}
             onClick={() => toggleLayer(L.key)}
           >
-            <div className="hx">
-              <b />
+            <div className="nm">
+              <i />
+              {L.name} layer
             </div>
-            <div className="nm">{L.name} layer</div>
             <div className="ct">
-              {
+              {String(
                 PIECES.filter((p) => p.sys !== "vulns" && layerOf(p) === L)
-                  .length
-              }
+                  .length,
+              ).padStart(2, "0")}
             </div>
             <div className="sb">{L.sub}</div>
           </button>
         ))}
       </div>
       <div className="views">
-        {CAMS.map((c) => (
-          <button
-            type="button"
-            key={c.v}
-            title={c.title}
-            className={cam === c.v ? "on" : ""}
-            onClick={() => {
-              setCam(c.v);
-              scene.current?.setCamera(c.v);
-            }}
-          >
-            {c.label}
-          </button>
-        ))}
-        <button
-          type="button"
-          title="Auto-rotate"
-          className={spin ? "on" : ""}
-          onClick={() => setSpin((s) => !s)}
-        >
-          ⟳
-        </button>
+        <SegmentedControl
+          value={cam}
+          options={CAMS}
+          onChange={(v) => {
+            setCam(v);
+            scene.current?.setCamera(v);
+          }}
+        />
+        <ToggleChip
+          label="Rotate"
+          on={spin}
+          onToggle={() => setSpin((s) => !s)}
+        />
       </div>
-      <div className="spread">
-        <div className="row">
-          <span>Layer spacing</span>
-          <span>{spread}%</span>
-        </div>
+      <Panel label="Layer spacing" aside={`${spread}%`} className="spread">
         <input
           type="range"
           min={0}
           max={100}
           value={spread}
+          aria-label="Layer spacing"
           onChange={(e) => setSpread(+e.target.value)}
         />
-      </div>
+      </Panel>
       <div className="hint">
         drag to orbit · scroll to zoom · click a node to isolate it
       </div>

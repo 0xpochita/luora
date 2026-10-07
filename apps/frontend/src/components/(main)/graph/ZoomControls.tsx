@@ -9,11 +9,11 @@ export function ZoomControls({
   onOut: () => void;
   onFit: () => void;
 }) {
-  const btn = "h-[30px] w-8 rounded-full hover:bg-soft";
+  const btn = "h-7 w-8 font-mono text-muted hover:bg-soft hover:text-ink";
   return (
     <div
       data-no-pan
-      className="absolute right-3.5 bottom-3.5 flex gap-0.5 rounded-full bg-card p-1 shadow-sh2"
+      className="absolute right-3 bottom-3 flex divide-x divide-line border border-edge bg-shell"
     >
       <button
         type="button"
