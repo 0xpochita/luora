@@ -8,7 +8,8 @@ import type { Piece } from "../types";
 import type { AtlasModel } from "../utils/model";
 import { protocolOf } from "../utils/protocols";
 import { unitCode } from "../utils/units";
-import { addBeacon, factoryGeometry } from "./factory";
+import { addBase, addStatusLamp, BASE, machineGeometry } from "./endfield";
+import { addBeacon } from "./factory";
 
 export type CityZoom = "city" | "district" | "street";
 export type CityScene = {
@@ -196,12 +197,12 @@ export function createCityScene(
   const pickables: THREE.Mesh[] = [];
 
   const heightOf = (p: Piece) => {
-    if (p.sys === "entry") return 3 + (model.seq[p.id]?.length ?? 2) * 0.9;
-    if (p.sys === "logic") return 2.4 + model.neighbours(p.id).size * 0.45;
-    if (p.sys === "storage") return p.mapping ? 3.2 : 1.4;
+    if (p.sys === "entry") return 1.8 + (model.seq[p.id]?.length ?? 2) * 0.35;
+    if (p.sys === "logic") return 1.6 + model.neighbours(p.id).size * 0.25;
+    if (p.sys === "storage") return p.mapping ? 2.4 : 1.6;
     if (p.sys === "deps") return 3 + model.neighbours(p.id).size * 0.25;
     if (p.sys === "calls") return 2.2;
-    if (p.sys === "events") return 4.2;
+    if (p.sys === "events") return 3.4;
     return 1; // access gates
   };
   const footprint = (p: Piece): [number, number] => {
@@ -221,9 +222,8 @@ export function createCityScene(
     h: number,
     piece?: Piece,
   ): Bld {
-    const factory = !!piece && districtOf(piece) === "ext";
-    const geo = factory
-      ? factoryGeometry(w, h, d, piece.sys === "deps" ? 2 : 1)
+    const geo = piece
+      ? machineGeometry(piece, w, h, d)
       : new THREE.BoxGeometry(w, h, d);
     const mat = bodyMat();
     if (piece?.ghost) {
@@ -232,9 +232,10 @@ export function createCityScene(
     }
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(x, h / 2, z);
-    if (factory && piece.sys === "deps") addBeacon(mesh, w, h, d);
+    if (piece?.sys === "deps") addBeacon(mesh, w, h, d);
+    if (piece) addStatusLamp(mesh, model, piece, w, h, d);
     const edges = new THREE.LineSegments(
-      new THREE.EdgesGeometry(geo),
+      new THREE.EdgesGeometry(geo, 25),
       edgeMat(),
     );
     edges.position.copy(mesh.position);
@@ -340,7 +341,7 @@ export function createCityScene(
           z,
           1.4 + rand() * 0.8,
           1.4 + rand() * 0.8,
-          0.8 + rand() * 2.2,
+          0.12 + rand() * 0.2, // empty build pad
         ),
       );
   for (let gx = -42; gx <= 36; gx += LOT)
@@ -351,12 +352,25 @@ export function createCityScene(
           Math.abs(gx - d.x) < (d.cols * LOT) / 2 + 2.2 &&
           Math.abs(gz - d.z) < (d.rows * LOT) / 2 + 3.6,
       );
-      if (inside || rand() < 0.35) continue;
-      const h = 0.6 + rand() ** 2 * 6;
+      const onBase =
+        gx > BASE.x0 - 1.5 &&
+        gx < BASE.x1 + 1.5 &&
+        gz > BASE.z0 - 1.5 &&
+        gz < BASE.z1 + 1.5;
+      if (inside || onBase || rand() < 0.35) continue;
+      const h = 0.3 + rand() ** 2 * 3;
       fillers.push(
         addBuilding(gx, gz, 1.3 + rand() * 1.2, 1.3 + rand() * 1.2, h),
       );
     }
+  const base = addBase(
+    scene,
+    model,
+    new Map(
+      [...blds].map(([id, b]) => [id, { pos: b.mesh.position, top: b.top }]),
+    ),
+    LOT,
+  );
   for (const f of fillers) {
     (f.mesh.material as THREE.MeshStandardMaterial).color.set("#1b1d20");
     (f.edges.material as THREE.LineBasicMaterial).color.set("#2c2f34");
@@ -554,6 +568,7 @@ export function createCityScene(
       controls.target.lerpVectors(anim.ft, anim.tt, s);
       if (k === 1) anim = null;
     }
+    base.update(t);
     pulses.forEach((p, i) => {
       p.dot.position.copy(p.curve.getPoint((t * 0.35 + i * 0.19) % 1));
     });
