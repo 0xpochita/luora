@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   buildTree,
   type DisplayKind,
@@ -28,12 +28,34 @@ export function CallGraph({
 }) {
   const vp = useRef<HTMLDivElement>(null);
   const { view, zoomAt, fit, moved } = usePanZoom(vp);
+  const [dragId, setDragId] = useState<number | null>(null);
+  const dragged = useRef(false);
+  const viewK = useRef(view.k);
+  viewK.current = view.k;
 
-  const { placed, edges, size } = useMemo(() => {
+  const base = useMemo(() => {
     const visible = frames
       .map((frame, index) => ({ frame, index }))
       .filter(({ frame }) => !hidden.has(displayKind(frame)));
-    const placed = layoutTree(buildTree(visible), (n) => nodeHeight(n.frame));
+    return layoutTree(buildTree(visible), (n) => nodeHeight(n.frame));
+  }, [frames, hidden]);
+
+  // per-node drag offsets on top of the auto layout; tied to `base`, so a new
+  // test or filter change starts from the clean layout again
+  type Offsets = Record<number, { dx: number; dy: number }>;
+  const [drag, setDrag] = useState<{ base: typeof base; offset: Offsets }>({
+    base,
+    offset: {},
+  });
+  const offset = drag.base === base ? drag.offset : {};
+  const setOffset = (fn: (o: Offsets) => Offsets) =>
+    setDrag((d) => ({ base, offset: fn(d.base === base ? d.offset : {}) }));
+
+  const { placed, edges, size } = useMemo(() => {
+    const placed = base.map((p) => {
+      const o = offset[p.node.index];
+      return o ? { ...p, x: p.x + o.dx, y: p.y + o.dy } : p;
+    });
     const at = new Map(placed.map((p) => [p.node.index, p]));
     const edges = placed.flatMap((p) =>
       p.node.children.map((c) => {
@@ -58,9 +80,48 @@ export function CallGraph({
       h: Math.max(1, ...placed.map((p) => p.y + p.h)),
     };
     return { placed, edges, size };
-  }, [frames, hidden]);
+  }, [base, offset]);
 
-  useEffect(() => fit(size.w, size.h), [fit, size]);
+  // fit only when the layout itself changes, not on every drag
+  const baseSize = useMemo(
+    () => ({
+      w: Math.max(NODE_W, ...base.map((p) => p.x + NODE_W)),
+      h: Math.max(1, ...base.map((p) => p.y + p.h)),
+    }),
+    [base],
+  );
+  useEffect(() => fit(baseSize.w, baseSize.h), [fit, baseSize]);
+
+  const startDrag = (index: number) => (e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    const sx = e.clientX;
+    const sy = e.clientY;
+    const start = offset[index] ?? { dx: 0, dy: 0 };
+    dragged.current = false;
+    const move = (ev: PointerEvent) => {
+      const dx = (ev.clientX - sx) / viewK.current;
+      const dy = (ev.clientY - sy) / viewK.current;
+      if (!dragged.current && Math.abs(dx) + Math.abs(dy) < 3) return;
+      dragged.current = true;
+      setDragId(index);
+      setOffset((o) => ({
+        ...o,
+        [index]: { dx: start.dx + dx, dy: start.dy + dy },
+      }));
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      setDragId(null);
+      // let the click that follows pointerup see the drag, then clear
+      setTimeout(() => {
+        dragged.current = false;
+      });
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
 
   return (
     <div
@@ -131,8 +192,10 @@ export function CallGraph({
             y={p.y}
             order={order}
             selected={selected === p.node.index}
+            dragging={dragId === p.node.index}
+            onDragStart={startDrag(p.node.index)}
             onSelect={() => {
-              if (!moved.current) onSelect(p.node.index);
+              if (!moved.current && !dragged.current) onSelect(p.node.index);
             }}
           />
         ))}
@@ -141,6 +204,9 @@ export function CallGraph({
         onIn={() => zoomAt(1.25)}
         onOut={() => zoomAt(0.8)}
         onFit={() => fit(size.w, size.h)}
+        onReset={
+          Object.keys(offset).length ? () => setOffset(() => ({})) : undefined
+        }
       />
     </div>
   );

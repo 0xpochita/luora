@@ -4,10 +4,13 @@ export function ZoomControls({
   onIn,
   onOut,
   onFit,
+  onReset,
 }: {
   onIn: () => void;
   onOut: () => void;
   onFit: () => void;
+  /** restore the auto layout after nodes were dragged */
+  onReset?: () => void;
 }) {
   const btn = "h-7 w-8 font-mono text-muted hover:bg-soft hover:text-ink";
   return (
@@ -29,6 +32,17 @@ export function ZoomControls({
       <button type="button" aria-label="Zoom in" className={btn} onClick={onIn}>
         +
       </button>
+      {onReset && (
+        <button
+          type="button"
+          aria-label="Reset layout"
+          title="Reset layout"
+          className={btn}
+          onClick={onReset}
+        >
+          ↺
+        </button>
+      )}
     </div>
   );
 }
