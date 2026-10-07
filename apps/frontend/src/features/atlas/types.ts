@@ -8,7 +8,28 @@ export type SystemKey =
   | "events"
   | "vulns";
 
-export type Risk = "high" | "med" | "low";
+export type Risk = "high" | "med" | "low" | "info";
+
+/** Who reported a finding: a static analyzer, or Luora's own atlas checks. */
+export type FindingTool = "slither" | "aderyn" | "manual";
+export type Confidence = "high" | "med" | "low";
+/** One tool's report of a finding (several when tools agree on the same issue). */
+export type FindingReport = {
+  tool: FindingTool;
+  detector: string;
+  risk: Risk;
+  confidence?: Confidence;
+  /** detector documentation */
+  ref?: string;
+};
+
+/** Auditor triage of a finding (kept in the browser, per contract). */
+export type TriageStatus =
+  | "open"
+  | "confirmed"
+  | "false-positive"
+  | "duplicate";
+export type Triage = { status: TriageStatus; note: string };
 
 /** One mapped part of the contract: a function, modifier, slot, call, dependency, event or finding. */
 export type Piece = {
@@ -38,6 +59,11 @@ export type Piece = {
   target?: string;
   member?: string;
   risk?: Risk;
+  /** finding: primary report (worst severity) and every tool that reported it */
+  tool?: FindingTool;
+  detector?: string;
+  confidence?: Confidence;
+  reports?: FindingReport[];
 };
 
 export type LayerKey = "ext" | "entry" | "logic" | "state";

@@ -24,6 +24,8 @@ export type CityScene = {
   select: (id: string | null) => void;
   setSim: (sim: CitySimFrame | null) => void;
   setZoom: (z: CityZoom) => void;
+  /** triaged-away findings (false positive / duplicate): markers fade, hosts lose the red edge */
+  setDismissed: (ids: Set<string>) => void;
   dispose: () => void;
 };
 
@@ -703,6 +705,11 @@ export function createCityScene(
   // ---- state / highlight ----
   let selected: string | null = null;
   let hovered: string | null = null;
+  let dismissed = new Set<string>();
+  const liveHost = (id: string) =>
+    model.findings.some(
+      (f) => model.lesion[f.id] === id && !dismissed.has(f.id),
+    );
   const ALWAYS = new Set(["entry", "deps"]);
   function refresh() {
     const near = selected ? model.neighbours(selected) : null;
@@ -721,7 +728,7 @@ export function createCityScene(
       edge.opacity = dim ? 0.25 : 1;
       if (target && (simTarget?.id === id ? simTarget.late : procLate))
         edge.color.set("#ff4545");
-      else if (!model.isLesionHost(id))
+      else if (!liveHost(id))
         edge.color.set(
           focus ? "#ffffff" : lit ? "#c9ccd1" : p.ghost ? "#8a8f96" : "#5a5e65",
         );
@@ -735,11 +742,13 @@ export function createCityScene(
     }
     for (const f of fillers)
       (f.edges.material as THREE.LineBasicMaterial).opacity = near ? 0.35 : 1;
-    for (const [fid, el] of findingEls)
+    for (const [fid, el] of findingEls) {
       el.classList.toggle(
         "dim",
         !!near && !near.has(fid) && !near.has(model.lesion[fid]),
       );
+      el.classList.toggle("dismissed", dismissed.has(fid));
+    }
     renderer.domElement.style.cursor = hovered ? "pointer" : "grab";
   }
 
@@ -878,6 +887,10 @@ export function createCityScene(
     setZoom(z) {
       zoom = z;
       frame();
+    },
+    setDismissed(ids) {
+      dismissed = ids;
+      refresh();
     },
     dispose() {
       renderer.setAnimationLoop(null);

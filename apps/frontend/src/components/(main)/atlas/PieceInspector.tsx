@@ -9,8 +9,10 @@ import {
   colorOf,
   RISK_LABEL,
   SYSTEMS,
+  type TriageState,
 } from "@/features/atlas";
 import { protocolOf } from "@/features/atlas/utils/protocols";
+import { FindingTriage } from "./FindingTriage";
 
 const QUESTIONS: { q: AiQuestion; label: string }[] = [
   { q: "explain", label: "Explain" },
@@ -23,10 +25,12 @@ export function PieceInspector({
   model,
   id,
   onSelect,
+  triage,
 }: {
   model: AtlasModel;
   id: string;
   onSelect: (id: string | null) => void;
+  triage: TriageState;
 }) {
   const { byId, findings: FINDINGS, layerOf, neighbours } = model;
   const p = byId[id];
@@ -91,7 +95,7 @@ export function PieceInspector({
               </Chip>
             ))}
           </div>
-          <p>{p.desc}</p>
+          <p className="whitespace-pre-line">{p.desc}</p>
           <div className="conns">
             {conns.map((c) => (
               <button
@@ -107,6 +111,9 @@ export function PieceInspector({
           </div>
         </div>
       </Panel>
+      {p.sys === "vulns" && (
+        <FindingTriage model={model} finding={p} triage={triage} />
+      )}
       <Panel label="Luora AI" aside="Demo · mock">
         <div className="qs">
           {QUESTIONS.map(({ q, label }) => (

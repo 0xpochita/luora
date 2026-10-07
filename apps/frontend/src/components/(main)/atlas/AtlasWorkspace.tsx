@@ -7,6 +7,7 @@ import {
   type AtlasView,
   createAtlasModel,
   useCitySim,
+  useTriage,
 } from "@/features/atlas";
 import { AtlasDashboard } from "./AtlasDashboard";
 import { CityStage } from "./CityStage";
@@ -21,6 +22,7 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
   const [view, setView] = useState<AtlasView>("city");
   const [selected, setSelected] = useState<string | null>(null);
   const sim = useCitySim(model, view === "city" ? selected : null);
+  const triage = useTriage(model.contract);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -65,6 +67,7 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
             selected={selected}
             onSelect={setSelected}
             sim={sim}
+            triage={triage}
           />
         )}
         <aside>
@@ -75,6 +78,7 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
               model={model}
               id={selected}
               onSelect={setSelected}
+              triage={triage}
             />
           ) : (
             <AtlasDashboard model={model} />

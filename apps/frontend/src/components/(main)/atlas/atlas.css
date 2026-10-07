@@ -241,6 +241,11 @@
 .atlas .cmark.dim {
   opacity: 0.25;
 }
+/* triaged as false positive / duplicate */
+.atlas .cmark.vulns.dismissed {
+  opacity: 0.18;
+  filter: grayscale(1);
+}
 
 /* Explorer: contract orb → system hubs → fan of pieces */
 .atlas .explorer {

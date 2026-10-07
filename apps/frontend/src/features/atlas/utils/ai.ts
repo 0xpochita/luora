@@ -3,7 +3,12 @@ import type { AiQuestion, Piece, SystemKey } from "../types";
 import type { AtlasModel } from "./model";
 
 // ponytail: canned, defensive-only answers; swap for a backend call that sends {piece, source, question} to the model
-const RISK_LABEL = { high: "High", med: "Medium", low: "Low" } as const;
+const RISK_LABEL = {
+  high: "High",
+  med: "Medium",
+  low: "Low",
+  info: "Info",
+} as const;
 
 const CHECKLIST: Record<SystemKey, string[]> = {
   entry: [

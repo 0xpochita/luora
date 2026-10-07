@@ -2,13 +2,19 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Brackets, Chip, Panel, SegmentedControl, Tabs } from "@/components/ui";
-import type { AtlasModel, CitySim, SystemKey } from "@/features/atlas";
+import type {
+  AtlasModel,
+  CitySim,
+  SystemKey,
+  TriageState,
+} from "@/features/atlas";
 import type {
   CityScene,
   CityZoom,
 } from "@/features/atlas/engine/create-city-scene";
 import { protocolOf } from "@/features/atlas/utils/protocols";
 import { STEP_VERB, unitCode, unitStatus } from "@/features/atlas/utils/units";
+import { FindingsTab } from "./FindingsTab";
 import { PieceIcon } from "./PieceIcon";
 
 type UnitTab = "entry" | "storage" | "external" | "findings";
@@ -31,11 +37,13 @@ export function CityStage({
   selected,
   onSelect,
   sim,
+  triage,
 }: {
   model: AtlasModel;
   selected: string | null;
   onSelect: (id: string | null) => void;
   sim: CitySim;
+  triage: TriageState;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const scene = useRef<CityScene | null>(null);
@@ -43,6 +51,8 @@ export function CityStage({
   pick.current = onSelect;
   const [zoom, setZoom] = useState<CityZoom>("city");
   const [tab, setTab] = useState<UnitTab>("entry");
+  const dismissed = useRef(triage.dismissed);
+  dismissed.current = triage.dismissed;
 
   useEffect(() => {
     let alive = true;
@@ -52,6 +62,7 @@ export function CityStage({
         scene.current = createCityScene(ref.current, model, (id) =>
           pick.current(id),
         );
+        scene.current.setDismissed(dismissed.current);
       },
     );
     return () => {
@@ -62,6 +73,12 @@ export function CityStage({
   }, [model]);
 
   useEffect(() => scene.current?.select(selected), [selected]);
+  const dismissedKey = [...triage.dismissed].join();
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-apply only when the dismissed ids change
+  useEffect(
+    () => scene.current?.setDismissed(dismissed.current),
+    [dismissedKey],
+  );
   useEffect(() => scene.current?.setZoom(zoom), [zoom]);
   const { entry, steps, step, late } = sim;
   useEffect(() => {
@@ -100,55 +117,64 @@ export function CityStage({
           onChange={setTab}
           options={UNIT_TABS.map((t) => ({ value: t.value, label: t.label }))}
         />
-        <div className="flex gap-2.5 overflow-x-auto pt-3 pb-1">
-          {units.map((p) => {
-            const st =
-              p.sys === "vulns"
-                ? { tone: "bad" as const, label: p.risk ?? "Finding" }
-                : STATUS[unitStatus(model, p.id)];
-            const on = selected === p.id;
-            const proto = protocolOf(p);
-            return (
-              <button
-                type="button"
-                key={p.id}
-                onClick={() => onSelect(on ? null : p.id)}
-                className={`relative flex flex-none items-center gap-2.5 border px-3 py-2.5 transition-colors ${
-                  on
-                    ? "border-accent bg-panel"
-                    : "border-line bg-tray hover:border-edge"
-                }`}
-              >
-                <Brackets />
-                <PieceIcon piece={p} />
-                <Chip tone={st.tone} dot>
-                  {st.label}
-                </Chip>
-                {proto && (
-                  <span
-                    role="img"
-                    aria-label={proto.name}
-                    title={proto.name}
-                    className="plogo"
-                    style={{ backgroundImage: `url(${proto.logo})` }}
-                  />
-                )}
-                <span className="font-mono text-[13px] text-ink">
-                  {unitCode(model, p.id)}
-                </span>
-                <span className="max-w-[160px] truncate font-mono text-muted text-xs">
-                  {p.name}
-                </span>
-                <span className="border border-line px-1 text-dim text-xs">
-                  ↗
-                </span>
-              </button>
-            );
-          })}
-          {!units.length && (
-            <span className="py-2 text-dim hud-label">Nothing here</span>
-          )}
-        </div>
+        {tab === "findings" ? (
+          <FindingsTab
+            model={model}
+            triage={triage}
+            selected={selected}
+            onSelect={onSelect}
+          />
+        ) : (
+          <div className="flex gap-2.5 overflow-x-auto pt-3 pb-1">
+            {units.map((p) => {
+              const st =
+                p.sys === "vulns"
+                  ? { tone: "bad" as const, label: p.risk ?? "Finding" }
+                  : STATUS[unitStatus(model, p.id)];
+              const on = selected === p.id;
+              const proto = protocolOf(p);
+              return (
+                <button
+                  type="button"
+                  key={p.id}
+                  onClick={() => onSelect(on ? null : p.id)}
+                  className={`relative flex flex-none items-center gap-2.5 border px-3 py-2.5 transition-colors ${
+                    on
+                      ? "border-accent bg-panel"
+                      : "border-line bg-tray hover:border-edge"
+                  }`}
+                >
+                  <Brackets />
+                  <PieceIcon piece={p} />
+                  <Chip tone={st.tone} dot>
+                    {st.label}
+                  </Chip>
+                  {proto && (
+                    <span
+                      role="img"
+                      aria-label={proto.name}
+                      title={proto.name}
+                      className="plogo"
+                      style={{ backgroundImage: `url(${proto.logo})` }}
+                    />
+                  )}
+                  <span className="font-mono text-[13px] text-ink">
+                    {unitCode(model, p.id)}
+                  </span>
+                  <span className="max-w-[160px] truncate font-mono text-muted text-xs">
+                    {p.name}
+                  </span>
+                  <span className="border border-line px-1 text-dim text-xs">
+                    ↗
+                  </span>
+                </button>
+              );
+            })}
+            {!units.length && (
+              <span className="py-2 text-dim hud-label">Nothing here</span>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );

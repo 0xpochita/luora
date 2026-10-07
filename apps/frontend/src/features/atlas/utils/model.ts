@@ -85,7 +85,7 @@ export function createAtlasModel(data: AtlasData) {
   /** Weighted finding severity → 0..10. */
   function riskScore(): number {
     if (!findings.length) return 0;
-    const w = { high: 3, med: 2, low: 1 } as const;
+    const w = { high: 3, med: 2, low: 1, info: 0 } as const;
     const score = findings.reduce((s, f) => s + w[f.risk ?? "low"], 0);
     return (score / (findings.length * 3)) * 10;
   }
