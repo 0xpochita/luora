@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-07T05:01:37.604Z",
+  "generatedAt": "2026-10-07T16:52:37.585Z",
   "forgeVersion": "forge Version: 1.5.1-stable",
   "command": "forge test --json -vvvv",
   "tests": [
@@ -27,7 +27,32 @@
           "ok": true,
           "status": "Stop",
           "gas": 107748,
-          "events": []
+          "events": [],
+          "lines": {
+            "test/LuoraVault.t.sol": [32, 33, 34, 35]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "test/LuoraVault.t.sol",
+              "line": 32
+            },
+            {
+              "op": "SLOAD",
+              "file": "test/LuoraVault.t.sol",
+              "line": 33
+            },
+            {
+              "op": "SLOAD",
+              "file": "test/LuoraVault.t.sol",
+              "line": 34
+            },
+            {
+              "op": "SLOAD",
+              "file": "test/LuoraVault.t.sol",
+              "line": 35
+            }
+          ]
         },
         {
           "d": 1,
@@ -41,7 +66,11 @@
           "ok": true,
           "status": "Return",
           "gas": 0,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 32
+          }
         },
         {
           "d": 1,
@@ -55,7 +84,51 @@
           "ok": true,
           "status": "Stop",
           "gas": 91190,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 33
+          },
+          "lines": {
+            "src/LuoraVault.sol": [35, 53, 54, 55, 56, 57, 85, 86]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 35
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 86
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 54
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 55
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/LuoraVault.sol",
+              "line": 55
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 56
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/LuoraVault.sol",
+              "line": 56
+            }
+          ]
         },
         {
           "d": 2,
@@ -69,7 +142,46 @@
           "ok": true,
           "status": "Return",
           "gas": 36161,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "src/LuoraVault.sol",
+            "line": 54
+          },
+          "lines": {
+            "src/mocks/Mocks.sol": [30, 31, 32, 35, 36, 37, 38, 39]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/mocks/Mocks.sol",
+              "line": 31
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/mocks/Mocks.sol",
+              "line": 31
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/mocks/Mocks.sol",
+              "line": 36
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/mocks/Mocks.sol",
+              "line": 36
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/mocks/Mocks.sol",
+              "line": 37
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/mocks/Mocks.sol",
+              "line": 37
+            }
+          ]
         },
         {
           "d": 3,
@@ -81,7 +193,11 @@
           "args": "from=alice, to=LuoraVault, value=1000000000",
           "ret": "",
           "ok": true,
-          "gas": null
+          "gas": null,
+          "callSite": {
+            "file": "src/mocks/Mocks.sol",
+            "line": 38
+          }
         },
         {
           "d": 2,
@@ -93,7 +209,11 @@
           "args": "user=alice, assets=1000000000, shares=1000000000",
           "ret": "",
           "ok": true,
-          "gas": null
+          "gas": null,
+          "callSite": {
+            "file": "src/LuoraVault.sol",
+            "line": 57
+          }
         },
         {
           "d": 1,
@@ -107,7 +227,21 @@
           "ok": true,
           "status": "Return",
           "gas": 890,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 34
+          },
+          "lines": {
+            "src/LuoraVault.sol": [27]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 27
+            }
+          ]
         },
         {
           "d": 1,
@@ -121,7 +255,21 @@
           "ok": true,
           "status": "Return",
           "gas": 823,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 35
+          },
+          "lines": {
+            "src/mocks/Mocks.sol": [9]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/mocks/Mocks.sol",
+              "line": 9
+            }
+          ]
         }
       ],
       "transfers": [
@@ -157,7 +305,47 @@
           "ok": true,
           "status": "Stop",
           "gas": 171583,
-          "events": []
+          "events": [],
+          "lines": {
+            "test/LuoraVault.t.sol": [39, 40, 41, 42, 43, 44, 45, 46]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "test/LuoraVault.t.sol",
+              "line": 39
+            },
+            {
+              "op": "SLOAD",
+              "file": "test/LuoraVault.t.sol",
+              "line": 40
+            },
+            {
+              "op": "SLOAD",
+              "file": "test/LuoraVault.t.sol",
+              "line": 41
+            },
+            {
+              "op": "SLOAD",
+              "file": "test/LuoraVault.t.sol",
+              "line": 42
+            },
+            {
+              "op": "SLOAD",
+              "file": "test/LuoraVault.t.sol",
+              "line": 43
+            },
+            {
+              "op": "SLOAD",
+              "file": "test/LuoraVault.t.sol",
+              "line": 45
+            },
+            {
+              "op": "SLOAD",
+              "file": "test/LuoraVault.t.sol",
+              "line": 46
+            }
+          ]
         },
         {
           "d": 1,
@@ -171,7 +359,11 @@
           "ok": true,
           "status": "Return",
           "gas": 0,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 39
+          }
         },
         {
           "d": 1,
@@ -185,7 +377,51 @@
           "ok": true,
           "status": "Stop",
           "gas": 91190,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 40
+          },
+          "lines": {
+            "src/LuoraVault.sol": [35, 53, 54, 55, 56, 57, 85, 86]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 35
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 86
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 54
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 55
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/LuoraVault.sol",
+              "line": 55
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 56
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/LuoraVault.sol",
+              "line": 56
+            }
+          ]
         },
         {
           "d": 2,
@@ -199,7 +435,46 @@
           "ok": true,
           "status": "Return",
           "gas": 36161,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "src/LuoraVault.sol",
+            "line": 54
+          },
+          "lines": {
+            "src/mocks/Mocks.sol": [30, 31, 32, 35, 36, 37, 38, 39]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/mocks/Mocks.sol",
+              "line": 31
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/mocks/Mocks.sol",
+              "line": 31
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/mocks/Mocks.sol",
+              "line": 36
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/mocks/Mocks.sol",
+              "line": 36
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/mocks/Mocks.sol",
+              "line": 37
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/mocks/Mocks.sol",
+              "line": 37
+            }
+          ]
         },
         {
           "d": 3,
@@ -211,7 +486,11 @@
           "args": "from=bob, to=LuoraVault, value=20000000000",
           "ret": "",
           "ok": true,
-          "gas": null
+          "gas": null,
+          "callSite": {
+            "file": "src/mocks/Mocks.sol",
+            "line": 38
+          }
         },
         {
           "d": 2,
@@ -223,7 +502,11 @@
           "args": "user=bob, assets=20000000000, shares=20000000000",
           "ret": "",
           "ok": true,
-          "gas": null
+          "gas": null,
+          "callSite": {
+            "file": "src/LuoraVault.sol",
+            "line": 57
+          }
         },
         {
           "d": 1,
@@ -237,7 +520,11 @@
           "ok": true,
           "status": "Return",
           "gas": 0,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 41
+          }
         },
         {
           "d": 1,
@@ -251,7 +538,56 @@
           "ok": true,
           "status": "Stop",
           "gas": 49515,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 42
+          },
+          "lines": {
+            "src/LuoraVault.sol": [35, 53, 54, 55, 56, 57, 85, 86, 87, 90, 91]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 35
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 86
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 91
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 54
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 55
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/LuoraVault.sol",
+              "line": 55
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 56
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/LuoraVault.sol",
+              "line": 56
+            }
+          ]
         },
         {
           "d": 2,
@@ -265,7 +601,21 @@
           "ok": true,
           "status": "Return",
           "gas": 2718,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "src/LuoraVault.sol",
+            "line": 91
+          },
+          "lines": {
+            "src/mocks/Mocks.sol": [47, 48]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/mocks/Mocks.sol",
+              "line": 48
+            }
+          ]
         },
         {
           "d": 2,
@@ -279,7 +629,46 @@
           "ok": true,
           "status": "Return",
           "gas": 14261,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "src/LuoraVault.sol",
+            "line": 54
+          },
+          "lines": {
+            "src/mocks/Mocks.sol": [30, 31, 32, 35, 36, 37, 38, 39]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/mocks/Mocks.sol",
+              "line": 31
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/mocks/Mocks.sol",
+              "line": 31
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/mocks/Mocks.sol",
+              "line": 36
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/mocks/Mocks.sol",
+              "line": 36
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/mocks/Mocks.sol",
+              "line": 37
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/mocks/Mocks.sol",
+              "line": 37
+            }
+          ]
         },
         {
           "d": 3,
@@ -291,7 +680,11 @@
           "args": "from=alice, to=LuoraVault, value=1000000000",
           "ret": "",
           "ok": true,
-          "gas": null
+          "gas": null,
+          "callSite": {
+            "file": "src/mocks/Mocks.sol",
+            "line": 38
+          }
         },
         {
           "d": 2,
@@ -303,7 +696,11 @@
           "args": "user=alice, assets=1000000000, shares=1000000000",
           "ret": "",
           "ok": true,
-          "gas": null
+          "gas": null,
+          "callSite": {
+            "file": "src/LuoraVault.sol",
+            "line": 57
+          }
         },
         {
           "d": 1,
@@ -317,7 +714,56 @@
           "ok": true,
           "status": "Stop",
           "gas": 10613,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 43
+          },
+          "lines": {
+            "src/LuoraVault.sol": [35, 61, 62, 63, 64, 65, 66, 90, 91]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 35
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 61
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 91
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 63
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 64
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/LuoraVault.sol",
+              "line": 64
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 65
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/LuoraVault.sol",
+              "line": 65
+            }
+          ]
         },
         {
           "d": 2,
@@ -331,7 +777,21 @@
           "ok": true,
           "status": "Return",
           "gas": 718,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "src/LuoraVault.sol",
+            "line": 91
+          },
+          "lines": {
+            "src/mocks/Mocks.sol": [47, 48]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/mocks/Mocks.sol",
+              "line": 48
+            }
+          ]
         },
         {
           "d": 2,
@@ -345,7 +805,36 @@
           "ok": true,
           "status": "Return",
           "gas": 3880,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "src/LuoraVault.sol",
+            "line": 63
+          },
+          "lines": {
+            "src/mocks/Mocks.sol": [26, 27, 35, 36, 37, 38, 39]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/mocks/Mocks.sol",
+              "line": 36
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/mocks/Mocks.sol",
+              "line": 36
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/mocks/Mocks.sol",
+              "line": 37
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/mocks/Mocks.sol",
+              "line": 37
+            }
+          ]
         },
         {
           "d": 3,
@@ -357,7 +846,11 @@
           "args": "from=LuoraVault, to=alice, value=1000000000",
           "ret": "",
           "ok": true,
-          "gas": null
+          "gas": null,
+          "callSite": {
+            "file": "src/mocks/Mocks.sol",
+            "line": 38
+          }
         },
         {
           "d": 2,
@@ -369,7 +862,11 @@
           "args": "user=alice, assets=1000000000, shares=1000000000",
           "ret": "",
           "ok": true,
-          "gas": null
+          "gas": null,
+          "callSite": {
+            "file": "src/LuoraVault.sol",
+            "line": 66
+          }
         },
         {
           "d": 1,
@@ -383,7 +880,11 @@
           "ok": true,
           "status": "Return",
           "gas": 0,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 44
+          }
         },
         {
           "d": 1,
@@ -397,7 +898,21 @@
           "ok": true,
           "status": "Return",
           "gas": 823,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 45
+          },
+          "lines": {
+            "src/mocks/Mocks.sol": [9]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/mocks/Mocks.sol",
+              "line": 9
+            }
+          ]
         },
         {
           "d": 1,
@@ -411,7 +926,21 @@
           "ok": true,
           "status": "Return",
           "gas": 448,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 46
+          },
+          "lines": {
+            "src/LuoraVault.sol": [26]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 26
+            }
+          ]
         }
       ],
       "transfers": [
@@ -459,7 +988,37 @@
           "ok": true,
           "status": "Stop",
           "gas": 173784,
-          "events": []
+          "events": [],
+          "lines": {
+            "test/LuoraVault.t.sol": [50, 51, 52, 53, 54]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "test/LuoraVault.t.sol",
+              "line": 50
+            },
+            {
+              "op": "SLOAD",
+              "file": "test/LuoraVault.t.sol",
+              "line": 51
+            },
+            {
+              "op": "SLOAD",
+              "file": "test/LuoraVault.t.sol",
+              "line": 52
+            },
+            {
+              "op": "SLOAD",
+              "file": "test/LuoraVault.t.sol",
+              "line": 53
+            },
+            {
+              "op": "SLOAD",
+              "file": "test/LuoraVault.t.sol",
+              "line": 54
+            }
+          ]
         },
         {
           "d": 1,
@@ -473,7 +1032,11 @@
           "ok": true,
           "status": "Return",
           "gas": 0,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 50
+          }
         },
         {
           "d": 1,
@@ -487,7 +1050,51 @@
           "ok": true,
           "status": "Stop",
           "gas": 91190,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 51
+          },
+          "lines": {
+            "src/LuoraVault.sol": [35, 53, 54, 55, 56, 57, 85, 86]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 35
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 86
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 54
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 55
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/LuoraVault.sol",
+              "line": 55
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 56
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/LuoraVault.sol",
+              "line": 56
+            }
+          ]
         },
         {
           "d": 2,
@@ -501,7 +1108,46 @@
           "ok": true,
           "status": "Return",
           "gas": 36161,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "src/LuoraVault.sol",
+            "line": 54
+          },
+          "lines": {
+            "src/mocks/Mocks.sol": [30, 31, 32, 35, 36, 37, 38, 39]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/mocks/Mocks.sol",
+              "line": 31
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/mocks/Mocks.sol",
+              "line": 31
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/mocks/Mocks.sol",
+              "line": 36
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/mocks/Mocks.sol",
+              "line": 36
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/mocks/Mocks.sol",
+              "line": 37
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/mocks/Mocks.sol",
+              "line": 37
+            }
+          ]
         },
         {
           "d": 3,
@@ -513,7 +1159,11 @@
           "args": "from=alice, to=LuoraVault, value=1000000000",
           "ret": "",
           "ok": true,
-          "gas": null
+          "gas": null,
+          "callSite": {
+            "file": "src/mocks/Mocks.sol",
+            "line": 38
+          }
         },
         {
           "d": 2,
@@ -525,7 +1175,11 @@
           "args": "user=alice, assets=1000000000, shares=1000000000",
           "ret": "",
           "ok": true,
-          "gas": null
+          "gas": null,
+          "callSite": {
+            "file": "src/LuoraVault.sol",
+            "line": 57
+          }
         },
         {
           "d": 1,
@@ -539,7 +1193,56 @@
           "ok": true,
           "status": "Stop",
           "gas": 62495,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 52
+          },
+          "lines": {
+            "src/LuoraVault.sol": [70, 71, 72, 73, 95, 96, 97]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 70
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 71
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 72
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 95
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 96
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/LuoraVault.sol",
+              "line": 96
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 97
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/LuoraVault.sol",
+              "line": 97
+            }
+          ]
         },
         {
           "d": 2,
@@ -553,7 +1256,21 @@
           "ok": true,
           "status": "Return",
           "gas": 823,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "src/LuoraVault.sol",
+            "line": 70
+          },
+          "lines": {
+            "src/mocks/Mocks.sol": [9]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/mocks/Mocks.sol",
+              "line": 9
+            }
+          ]
         },
         {
           "d": 2,
@@ -567,7 +1284,36 @@
           "ok": true,
           "status": "Return",
           "gas": 25780,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "src/LuoraVault.sol",
+            "line": 71
+          },
+          "lines": {
+            "src/mocks/Mocks.sol": [26, 27, 35, 36, 37, 38, 39]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/mocks/Mocks.sol",
+              "line": 36
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/mocks/Mocks.sol",
+              "line": 36
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/mocks/Mocks.sol",
+              "line": 37
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/mocks/Mocks.sol",
+              "line": 37
+            }
+          ]
         },
         {
           "d": 3,
@@ -579,7 +1325,11 @@
           "args": "from=LuoraVault, to=MockStrategy, value=1000000000",
           "ret": "",
           "ok": true,
-          "gas": null
+          "gas": null,
+          "callSite": {
+            "file": "src/mocks/Mocks.sol",
+            "line": 38
+          }
         },
         {
           "d": 2,
@@ -593,7 +1343,14 @@
           "ok": true,
           "status": "Return",
           "gas": 997,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "src/LuoraVault.sol",
+            "line": 72
+          },
+          "lines": {
+            "src/mocks/Mocks.sol": [54, 55]
+          }
         },
         {
           "d": 1,
@@ -607,7 +1364,21 @@
           "ok": true,
           "status": "Return",
           "gas": 823,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 53
+          },
+          "lines": {
+            "src/mocks/Mocks.sol": [9]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/mocks/Mocks.sol",
+              "line": 9
+            }
+          ]
         },
         {
           "d": 1,
@@ -621,7 +1392,21 @@
           "ok": true,
           "status": "Return",
           "gas": 574,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 54
+          },
+          "lines": {
+            "src/LuoraVault.sol": [21]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 21
+            }
+          ]
         },
         {
           "d": 1,
@@ -635,7 +1420,21 @@
           "ok": true,
           "status": "Return",
           "gas": 890,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 54
+          },
+          "lines": {
+            "src/LuoraVault.sol": [27]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 27
+            }
+          ]
         }
       ],
       "transfers": [
@@ -677,7 +1476,32 @@
           "ok": true,
           "status": "Stop",
           "gas": 39857,
-          "events": []
+          "events": [],
+          "lines": {
+            "test/LuoraVault.t.sol": [64, 65, 66, 67, 68]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "test/LuoraVault.t.sol",
+              "line": 64
+            },
+            {
+              "op": "SLOAD",
+              "file": "test/LuoraVault.t.sol",
+              "line": 65
+            },
+            {
+              "op": "SLOAD",
+              "file": "test/LuoraVault.t.sol",
+              "line": 66
+            },
+            {
+              "op": "SLOAD",
+              "file": "test/LuoraVault.t.sol",
+              "line": 68
+            }
+          ]
         },
         {
           "d": 1,
@@ -691,7 +1515,11 @@
           "ok": true,
           "status": "Return",
           "gas": 0,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 64
+          }
         },
         {
           "d": 1,
@@ -705,7 +1533,31 @@
           "ok": true,
           "status": "Stop",
           "gas": 24523,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 65
+          },
+          "lines": {
+            "src/LuoraVault.sol": [81, 82]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 81
+            },
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 82
+            },
+            {
+              "op": "SSTORE",
+              "file": "src/LuoraVault.sol",
+              "line": 82
+            }
+          ]
         },
         {
           "d": 1,
@@ -719,7 +1571,11 @@
           "ok": true,
           "status": "Return",
           "gas": 0,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 66
+          }
         },
         {
           "d": 1,
@@ -728,12 +1584,16 @@
           "contract": "vm",
           "file": null,
           "fn": "expectRevert",
-          "args": "revertData=…",
+          "args": "revertData=0x706175736564",
           "ret": "",
           "ok": true,
           "status": "Return",
           "gas": 0,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 67
+          }
         },
         {
           "d": 1,
@@ -747,7 +1607,21 @@
           "ok": false,
           "status": "Revert",
           "gas": 904,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 68
+          },
+          "lines": {
+            "src/LuoraVault.sol": [35, 52]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 35
+            }
+          ]
         }
       ],
       "transfers": []
@@ -776,7 +1650,22 @@
           "ok": true,
           "status": "Stop",
           "gas": 14332,
-          "events": []
+          "events": [],
+          "lines": {
+            "test/LuoraVault.t.sol": [58, 59, 60]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "test/LuoraVault.t.sol",
+              "line": 58
+            },
+            {
+              "op": "SLOAD",
+              "file": "test/LuoraVault.t.sol",
+              "line": 60
+            }
+          ]
         },
         {
           "d": 1,
@@ -790,7 +1679,11 @@
           "ok": true,
           "status": "Return",
           "gas": 0,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 58
+          }
         },
         {
           "d": 1,
@@ -799,12 +1692,16 @@
           "contract": "vm",
           "file": null,
           "fn": "expectRevert",
-          "args": "revertData=…",
+          "args": "revertData=0x216f776e6572",
           "ret": "",
           "ok": true,
           "status": "Return",
           "gas": 0,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 59
+          }
         },
         {
           "d": 1,
@@ -818,7 +1715,21 @@
           "ok": false,
           "status": "Revert",
           "gas": 3030,
-          "events": []
+          "events": [],
+          "callSite": {
+            "file": "test/LuoraVault.t.sol",
+            "line": 60
+          },
+          "lines": {
+            "src/LuoraVault.sol": [40, 76]
+          },
+          "storage": [
+            {
+              "op": "SLOAD",
+              "file": "src/LuoraVault.sol",
+              "line": 40
+            }
+          ]
         }
       ],
       "transfers": []
@@ -832,16 +1743,16 @@
         "Invariant": {
           "runs": 256,
           "calls": 128000,
-          "reverts": 101,
+          "reverts": 146,
           "metrics": {
-            "test/Solvency.invariant.t.sol:Handler.deposit": {
-              "calls": 63830,
-              "reverts": 101,
+            "test/Solvency.invariant.t.sol:Handler.withdraw": {
+              "calls": 64026,
+              "reverts": 0,
               "discards": 0
             },
-            "test/Solvency.invariant.t.sol:Handler.withdraw": {
-              "calls": 64170,
-              "reverts": 0,
+            "test/Solvency.invariant.t.sol:Handler.deposit": {
+              "calls": 63974,
+              "reverts": 146,
               "discards": 0
             }
           },
@@ -856,89 +1767,30 @@
           "to": "Handler",
           "contract": "Handler",
           "file": "test/Solvency.invariant.t.sol",
-          "fn": "deposit",
-          "args": "who=315194, amount=115792089237316195423570985008687907853269984665640564039457584007913129639934",
+          "fn": "withdraw",
+          "args": "who=0, amount=3869343887574153590",
           "ret": "",
           "ok": true,
           "status": "Stop",
-          "gas": 103827,
+          "gas": 11284,
           "events": []
         },
         {
           "d": 1,
-          "kind": "CALL",
-          "to": "vm",
-          "contract": "vm",
-          "file": null,
-          "fn": "prank",
-          "args": "msgSender=0x000000…",
-          "ret": "",
-          "ok": true,
-          "status": "Return",
-          "gas": 0,
-          "events": []
-        },
-        {
-          "d": 1,
-          "kind": "CALL",
+          "kind": "STATICCALL",
           "to": "LuoraVault",
           "contract": "LuoraVault",
           "file": "src/LuoraVault.sol",
-          "fn": "deposit",
-          "args": "amount=99999999999",
-          "ret": "",
-          "ok": true,
-          "status": "Stop",
-          "gas": 91190,
-          "events": []
-        },
-        {
-          "d": 2,
-          "kind": "CALL",
-          "to": "MockUSDC",
-          "contract": "MockUSDC",
-          "file": "src/mocks/Mocks.sol",
-          "fn": "transferFrom",
-          "args": "from=0x000000…, to=LuoraVault, amount=99999999999",
-          "ret": "true",
+          "fn": "shares",
+          "args": "arg0=0x000000…",
+          "ret": "0",
           "ok": true,
           "status": "Return",
-          "gas": 36161,
+          "gas": 2890,
           "events": []
-        },
-        {
-          "d": 3,
-          "kind": "EVENT",
-          "to": "MockUSDC",
-          "contract": "MockUSDC",
-          "file": null,
-          "fn": "Transfer",
-          "args": "from=0x000000…, to=LuoraVault, value=99999999999",
-          "ret": "",
-          "ok": true,
-          "gas": null
-        },
-        {
-          "d": 2,
-          "kind": "EVENT",
-          "to": "LuoraVault",
-          "contract": "LuoraVault",
-          "file": null,
-          "fn": "Deposit",
-          "args": "user=0x000000…, assets=99999999999, shares=99999999999",
-          "ret": "",
-          "ok": true,
-          "gas": null
         }
       ],
-      "transfers": [
-        {
-          "token": "MockUSDC",
-          "from": "0x000000…",
-          "to": "LuoraVault",
-          "value": "99999999999"
-        }
-      ]
+      "transfers": []
     }
   ],
   "sources": {

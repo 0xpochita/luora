@@ -62,6 +62,14 @@ export function TraceRow({
         </span>
       )}
       <span className="ml-auto flex flex-none items-center gap-2 pl-3.5">
+        {frame.callSite && (
+          <span
+            title={`${frame.callSite.file}:${frame.callSite.line}`}
+            className="font-mono text-[11px] text-dim"
+          >
+            L{frame.callSite.line}
+          </span>
+        )}
         {frame.gas != null && kind !== "EVENT" && (
           <>
             <i className="block h-1.5 w-16 overflow-hidden rounded-full bg-soft">
