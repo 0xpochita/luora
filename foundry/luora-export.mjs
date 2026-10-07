@@ -3,9 +3,11 @@
 // attributes every frame to the exact source lines it executed (via `forge test --debug --dump`
 // step data + solc source maps), and writes luora-data.json for the Luora Workbench. The `atlas`
 // section (contract map for /atlas) comes from luora-atlas.mjs; set LUORA_ATLAS=<Contract> to pick.
+// Slither / Aderyn JSON reports are merged into its findings by luora-findings.mjs.
 //
 //   node luora-export.mjs                 # all tests
 //   node luora-export.mjs --mt test_deposit
+//   node luora-export.mjs --slither=out/slither.json --aderyn=report.json   # default: reports/*.json
 //
 // No dependencies; needs `forge` on PATH.
 import { execFile, execFileSync } from 'node:child_process';
@@ -13,10 +15,11 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSy
 import { availableParallelism, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { buildAtlas } from './luora-atlas.mjs';
+import { loadReports, mergeFindings, reportFiles } from './luora-findings.mjs';
 import { decodeParams, fmtWord, innermost, keccak256, lineIndex, parseSourceMap, pcToIc, revertReason, sig } from './luora-lib.mjs';
 
 const ROOT = process.cwd();
-const extra = process.argv.slice(2);
+const extra = process.argv.slice(2).filter(a => !/^--(slither|aderyn)=/.test(a));
 const sh = (cmd, args) => execFileSync(cmd, args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 512 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
 
 // ---------- artifacts: selectors, events, bytecode → contract, source maps ----------
@@ -197,6 +200,11 @@ rmSync(TMP, { recursive: true, force: true });
 
 let atlas = null;
 try { atlas = buildAtlas({ root: ROOT }); } catch (e) { console.warn(`luora: atlas skipped — ${e.message}`); }
+if (atlas) {
+  const files = reportFiles(ROOT, process.argv.slice(2));
+  mergeFindings(atlas, loadReports(files));
+  console.log(`luora: findings ${atlas.pieces.filter(p => p.sys === 'vulns').length} (${Object.entries(files).filter(([, f]) => f).map(([t]) => t).join(' + ') || 'atlas checks only'})`);
+}
 
 const forgeVersion = sh('forge', ['--version']).split('\n')[0];
 writeFileSync(join(ROOT, 'luora-data.json'), JSON.stringify({ generatedAt: new Date().toISOString(), forgeVersion, command: ['forge', 'test', '--json', '-vvvv', ...extra].join(' '), tests, sources, atlas }, null, 1));
