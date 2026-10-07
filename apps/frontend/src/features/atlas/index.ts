@@ -1,25 +1,7 @@
-export {
-  BANKS,
-  COLORS,
-  ENTRY,
-  INTERNAL,
-  LAYERS,
-  PIECES,
-  SYS_COLOR,
-  SYSTEMS,
-} from "./data/pieces";
-export { SOURCE } from "./data/source";
+export { COLORS, LAYERS, SYS_COLOR, SYSTEMS } from "./data/layers";
 export type { AtlasScene } from "./engine/create-atlas-scene";
 export type * from "./types";
 export { aiAnswer, RISK_LABEL } from "./utils/ai";
-export {
-  byId,
-  colorOf,
-  FINDINGS,
-  LINES,
-  layerOf,
-  lineOf,
-  neighbours,
-  riskScore,
-} from "./utils/model";
+export type { AtlasModel } from "./utils/model";
+export { colorOf, createAtlasModel } from "./utils/model";
 export { buildTerminalSvg } from "./utils/terminal-svg";

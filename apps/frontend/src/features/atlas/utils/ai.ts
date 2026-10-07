@@ -1,6 +1,6 @@
-import { SYSTEMS } from "../data/pieces";
+import { SYSTEMS } from "../data/layers";
 import type { AiQuestion, Piece, SystemKey } from "../types";
-import { byId, FINDINGS } from "./model";
+import type { AtlasModel } from "./model";
 
 // ponytail: canned, defensive-only answers; swap for a backend call that sends {piece, source, question} to the model
 const RISK_LABEL = { high: "High", med: "Medium", low: "Low" } as const;
@@ -68,12 +68,14 @@ const TESTS: Record<string, string> = {
   _computeShares: T_PRICE,
 };
 
-export function aiAnswer(p: Piece, q: AiQuestion): string {
+export function aiAnswer(
+  { byId, findings: all }: AtlasModel,
+  p: Piece,
+  q: AiQuestion,
+): string {
   const conns = (p.links ?? []).map((c) => byId[c]?.name).filter(Boolean);
   const findings =
-    p.sys === "vulns"
-      ? [p]
-      : FINDINGS.filter((x) => (x.links ?? []).includes(p.id));
+    p.sys === "vulns" ? [p] : all.filter((x) => (x.links ?? []).includes(p.id));
   if (q === "explain")
     return `${p.name} lives in the "${SYSTEMS[p.sys].label}" system (${SYSTEMS[p.sys].sub}).\n\n${p.desc}\n\nConnected to: ${conns.join(", ") || "nothing else directly"}.`;
   if (q === "risks")

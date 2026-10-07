@@ -1,67 +1,83 @@
-import { COLORS, LAYERS, LESION, PIECES, SEQ, SYS_COLOR } from "../data/pieces";
-import { SOURCE } from "../data/source";
-import type { Layer, Piece } from "../types";
+import { COLORS, LAYERS, SYS_COLOR } from "../data/layers";
+import type { AtlasData, Layer, Piece } from "../types";
 
-export const byId: Record<string, Piece> = Object.fromEntries(
-  PIECES.map((p) => [p.id, p]),
-);
-export const FINDINGS = PIECES.filter((p) => p.sys === "vulns");
-export const LINES = SOURCE.split("\n");
-export const lineOf = (anchor: string) =>
-  Math.max(
-    0,
-    LINES.findIndex((l) => l.includes(anchor)),
-  );
 export const colorOf = (p: Piece) => COLORS[SYS_COLOR[p.sys]];
 
-export function layerOf(p: Piece): Layer {
-  if (p.sys === "vulns") return layerOf(byId[LESION[p.id]]);
-  return LAYERS.find((L) => L.sys.includes(p.sys)) ?? LAYERS[0];
-}
+export type AtlasModel = ReturnType<typeof createAtlasModel>;
 
-/** Undirected, de-duplicated relations between pieces. */
-export const LINKS: [string, string][] = (() => {
-  const out: [string, string][] = [];
+/** Lookups and derived relations over one contract's atlas data. */
+export function createAtlasModel(data: AtlasData) {
+  const byId: Record<string, Piece> = Object.fromEntries(
+    data.pieces.map((p) => [p.id, p]),
+  );
+  const findings = data.pieces.filter((p) => p.sys === "vulns");
+  const lines = data.source.split("\n");
+  const lineOf = (p: Piece) =>
+    p.line ??
+    Math.max(
+      0,
+      lines.findIndex((l) => l.includes(p.find)),
+    );
+
+  function layerOf(p: Piece): Layer {
+    const host = p.sys === "vulns" ? byId[data.lesion[p.id]] : p;
+    if (!host || host.sys === "vulns") return LAYERS[0];
+    return LAYERS.find((L) => L.sys.includes(host.sys)) ?? LAYERS[0];
+  }
+
+  /** Undirected, de-duplicated relations between pieces. */
+  const links: [string, string][] = [];
   const seen = new Set<string>();
-  for (const p of PIECES)
+  for (const p of data.pieces)
     for (const t of p.links ?? []) {
       const k = [p.id, t].sort().join("|");
       if (byId[t] && !seen.has(k)) {
         seen.add(k);
-        out.push([p.id, t]);
+        links.push([p.id, t]);
       }
     }
-  return out;
-})();
 
-export function neighbours(id: string): Set<string> {
-  const n = new Set([id]);
-  for (const [a, b] of LINKS) {
-    if (a === id) n.add(b);
-    if (b === id) n.add(a);
+  function neighbours(id: string): Set<string> {
+    const n = new Set([id]);
+    for (const [a, b] of links) {
+      if (a === id) n.add(b);
+      if (b === id) n.add(a);
+    }
+    return n;
   }
-  return n;
-}
 
-export const hasFinding = (id: string) =>
-  FINDINGS.some((f) => (f.links ?? []).includes(id));
-export const isLesionHost = (id: string) =>
-  FINDINGS.some((f) => LESION[f.id] === id);
-export const gated = (id: string) =>
-  (byId[id].links ?? []).includes("onlyOwner");
+  /** A write after a state-changing external call breaks checks-effects-interactions. */
+  function lateWrites(fn: string): boolean[] {
+    let called = false;
+    return (data.seq[fn] ?? []).map(([k, t]) => {
+      if (k === "c" && !byId[t]?.view) called = true;
+      return k === "w" && called;
+    });
+  }
 
-/** A write that happens after an external call breaks checks-effects-interactions. */
-export function lateWrites(fn: string): boolean[] {
-  let called = false;
-  return (SEQ[fn] ?? []).map(([k]) => {
-    if (k === "c") called = true;
-    return k === "w" && called;
-  });
-}
+  /** Weighted finding severity → 0..10. */
+  function riskScore(): number {
+    if (!findings.length) return 0;
+    const w = { high: 3, med: 2, low: 1 } as const;
+    const score = findings.reduce((s, f) => s + w[f.risk ?? "low"], 0);
+    return (score / (findings.length * 3)) * 10;
+  }
 
-/** Weighted finding severity → 0..10. */
-export function riskScore(): number {
-  const w = { high: 3, med: 2, low: 1 } as const;
-  const score = FINDINGS.reduce((s, f) => s + w[f.risk ?? "low"], 0);
-  return (score / (FINDINGS.length * 3)) * 10;
+  return {
+    ...data,
+    byId,
+    findings,
+    lines,
+    lineOf,
+    layerOf,
+    links,
+    neighbours,
+    lateWrites,
+    riskScore,
+    hasFinding: (id: string) =>
+      findings.some((f) => (f.links ?? []).includes(id)),
+    isLesionHost: (id: string) =>
+      findings.some((f) => data.lesion[f.id] === id),
+    gated: (id: string) => (byId[id].caller ?? "anyone") !== "anyone",
+  };
 }

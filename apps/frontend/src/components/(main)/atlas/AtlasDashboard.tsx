@@ -1,4 +1,4 @@
-import { FINDINGS, LAYERS, layerOf, PIECES, riskScore } from "@/features/atlas";
+import { type AtlasModel, LAYERS } from "@/features/atlas";
 
 /** round so server and client render identical SVG attributes */
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -123,12 +123,19 @@ function Gauge({ value }: { value: number }) {
   );
 }
 
-export function AtlasDashboard() {
+export function AtlasDashboard({
+  model,
+  origin,
+}: {
+  model: AtlasModel;
+  origin: "local" | "sample";
+}) {
+  const { findings: FINDINGS, layerOf, pieces: PIECES, riskScore } = model;
   return (
     <>
       <div className="box">
         <h3>
-          Audit risk <small>SAMPLE</small>
+          Audit risk <small>{origin === "sample" ? "SAMPLE" : "STATIC"}</small>
         </h3>
         <div className="gauge">
           <Gauge value={riskScore()} />

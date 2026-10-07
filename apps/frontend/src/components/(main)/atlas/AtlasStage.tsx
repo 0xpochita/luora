@@ -2,12 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+  type AtlasModel,
   type AtlasScene,
   type CamView,
   LAYERS,
   type LayerKey,
-  layerOf,
-  PIECES,
 } from "@/features/atlas";
 
 const CAMS: { v: CamView; label: string; title: string }[] = [
@@ -18,10 +17,12 @@ const CAMS: { v: CamView; label: string; title: string }[] = [
 
 /** 3D pyramid view. The three.js engine is loaded client-side only and driven through a small API. */
 export function AtlasStage({
+  model,
   selected,
   onSelect,
   children,
 }: {
+  model: AtlasModel;
   selected: string | null;
   onSelect: (id: string | null) => void;
   children?: React.ReactNode;
@@ -40,7 +41,9 @@ export function AtlasStage({
     import("@/features/atlas/engine/create-atlas-scene").then(
       ({ createAtlasScene }) => {
         if (!alive || !ref.current) return;
-        scene.current = createAtlasScene(ref.current, (id) => pick.current(id));
+        scene.current = createAtlasScene(ref.current, model, (id) =>
+          pick.current(id),
+        );
       },
     );
     return () => {
@@ -48,7 +51,7 @@ export function AtlasStage({
       scene.current?.dispose();
       scene.current = null;
     };
-  }, []);
+  }, [model]);
 
   useEffect(() => scene.current?.select(selected), [selected]);
   useEffect(() => scene.current?.setHiddenLayers(hidden), [hidden]);
@@ -80,8 +83,9 @@ export function AtlasStage({
             <div className="nm">{L.name} layer</div>
             <div className="ct">
               {
-                PIECES.filter((p) => p.sys !== "vulns" && layerOf(p) === L)
-                  .length
+                model.pieces.filter(
+                  (p) => p.sys !== "vulns" && model.layerOf(p) === L,
+                ).length
               }
             </div>
             <div className="sb">{L.sub}</div>

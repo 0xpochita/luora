@@ -1,8 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import type { AtlasView } from "@/features/atlas";
+import { useEffect, useMemo, useState } from "react";
+import {
+  type AtlasSource,
+  type AtlasView,
+  createAtlasModel,
+} from "@/features/atlas";
 import { AtlasDashboard } from "./AtlasDashboard";
 import { AtlasStage } from "./AtlasStage";
 import { PieceInspector } from "./PieceInspector";
@@ -10,7 +14,8 @@ import { TerminalView } from "./TerminalView";
 import "./atlas.css";
 
 /** Smart-contract visual: 3D layered atlas + terminal I/O HUD, sharing one selection. */
-export function AtlasWorkspace() {
+export function AtlasWorkspace({ source }: { source: AtlasSource }) {
+  const model = useMemo(() => createAtlasModel(source.data), [source.data]);
   const [view, setView] = useState<AtlasView>("atlas");
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -46,24 +51,30 @@ export function AtlasWorkspace() {
           <Link href="/trace">Trace</Link>
         </nav>
         <div className="who">
-          LuoraVault.sol · solc 0.8.20 <i />
+          {model.file} · solc {model.compiler}
+          {source.origin === "sample" && " · sample"} <i />
         </div>
       </header>
       <div className="body">
-        <AtlasStage selected={selected} onSelect={setSelected}>
+        <AtlasStage model={model} selected={selected} onSelect={setSelected}>
           {view === "terminal" && (
-            <TerminalView selected={selected} onSelect={setSelected} />
+            <TerminalView
+              model={model}
+              selected={selected}
+              onSelect={setSelected}
+            />
           )}
         </AtlasStage>
         <aside>
           {selected ? (
             <PieceInspector
               key={selected}
+              model={model}
               id={selected}
               onSelect={setSelected}
             />
           ) : (
-            <AtlasDashboard />
+            <AtlasDashboard model={model} origin={source.origin} />
           )}
         </aside>
       </div>

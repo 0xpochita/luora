@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { buildTerminalSvg } from "@/features/atlas";
+import { type AtlasModel, buildTerminalSvg } from "@/features/atlas";
 
 type View = { x: number; y: number; k: number };
 
 /** HUD I/O diagram with drag-to-pan, wheel zoom (towards cursor) and double-click reset. */
 export function TerminalView({
+  model,
   selected,
   onSelect,
 }: {
+  model: AtlasModel;
   selected: string | null;
   onSelect: (id: string | null) => void;
 }) {
@@ -18,7 +20,10 @@ export function TerminalView({
   const latest = useRef(view);
   latest.current = view;
   const moved = useRef(false);
-  const markup = useMemo(() => buildTerminalSvg(selected), [selected]);
+  const markup = useMemo(
+    () => buildTerminalSvg(model, selected),
+    [model, selected],
+  );
 
   useEffect(() => {
     const el = svg.current;
@@ -95,7 +100,7 @@ export function TerminalView({
       >
         <g
           transform={`translate(${view.x} ${view.y}) scale(${view.k})`}
-          // biome-ignore lint/security/noDangerouslySetInnerHtml: generated from internal static data, all text escaped
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: generated from atlas data, all text and attributes escaped
           dangerouslySetInnerHTML={{ __html: markup }}
         />
       </svg>
