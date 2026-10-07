@@ -4,19 +4,39 @@ import {
   CSS2DObject,
   CSS2DRenderer,
 } from "three/addons/renderers/CSS2DRenderer.js";
-import type { Piece } from "../types";
+import type { Piece, Step } from "../types";
+import { ICON_PATH, type IconKey, iconOf } from "../utils/icons";
 import type { AtlasModel } from "../utils/model";
 import { unitCode } from "../utils/units";
 
 export type CityZoom = "city" | "district" | "street";
+/** Simulation frame: steps 0..step of `entry`'s sequence are drawn, `step` is current. */
+export type CitySimFrame = {
+  entry: string;
+  steps: Step[];
+  step: number;
+  late: boolean[];
+};
 export type CityScene = {
   select: (id: string | null) => void;
+  setSim: (sim: CitySimFrame | null) => void;
   setZoom: (z: CityZoom) => void;
   dispose: () => void;
 };
 
 const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
 const LOT = 3.2; // lot pitch: building footprint + street
+const SVG = "http://www.w3.org/2000/svg";
+/** Monochrome inline-SVG glyph for a marker (stroke = currentColor). */
+function iconEl(key: IconKey) {
+  const svg = document.createElementNS(SVG, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  const path = document.createElementNS(SVG, "path");
+  path.setAttribute("d", ICON_PATH[key]);
+  svg.append(path);
+  return svg;
+}
 const ease = (x: number) => (x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2);
 
 /** Districts on the XZ plane. `ext` is an island across the river. */
@@ -242,6 +262,15 @@ export function createCityScene(
     return b;
   }
 
+  /**
+   * Building for a piece on the External Island (dependencies + the calls into them).
+   * Kept separate so the external look can be swapped without touching the rest of the city.
+   */
+  function externalBuilding(x: number, z: number, p: Piece): Bld {
+    const [w, d] = footprint(p);
+    return addBuilding(x, z, w, d, heightOf(p), p);
+  }
+
   const lots: Record<DistrictKey, [number, number][]> = {
     entry: [],
     logic: [],
@@ -278,10 +307,14 @@ export function createCityScene(
     const i = used[k]++;
     const [x, z] = lots[k][i] ?? overflow(k, i - lots[k].length);
     const [w, d] = footprint(p);
-    const b = addBuilding(x, z, w, d, heightOf(p), p);
+    const b =
+      k === "ext"
+        ? externalBuilding(x, z, p)
+        : addBuilding(x, z, w, d, heightOf(p), p);
     const el = document.createElement("div");
     el.className = `cmark ${p.sys}`;
     const sq = document.createElement("i");
+    sq.append(iconEl(iconOf(p)));
     const code = document.createElement("span");
     code.textContent = unitCode(model, p.id);
     const name = document.createElement("b");
@@ -304,6 +337,7 @@ export function createCityScene(
     const el = document.createElement("div");
     el.className = "cmark vulns show";
     const sq = document.createElement("i");
+    sq.append(iconEl("warn"));
     const code = document.createElement("span");
     code.textContent = f.name.slice(0, 4);
     el.append(sq, code);
@@ -362,11 +396,7 @@ export function createCityScene(
     return path;
   }
   function drawRoutes(sel: string | null) {
-    for (const c of [...routeG.children]) {
-      routeG.remove(c);
-      if (c instanceof THREE.Line || c instanceof THREE.Mesh)
-        c.geometry.dispose();
-    }
+    clearGroup(routeG);
     pulses = [];
     if (!sel || !blds.has(sel)) return;
     const a = (blds.get(sel) as Bld).mesh.position;
@@ -405,6 +435,83 @@ export function createCityScene(
     }
   }
 
+  // ---- simulation: one route per executed step, a pulse on the current one ----
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const simG = new THREE.Group();
+  scene.add(simG);
+  let simPulse: {
+    curve: THREE.CurvePath<THREE.Vector3>;
+    dot: THREE.Mesh;
+    t0: number;
+  } | null = null;
+  let simTarget: { id: string; late: boolean } | null = null;
+  /** read = dashed grey, write = solid white, call = solid grey, event = fine dashes; late write = red */
+  const STEP_STYLE: Record<
+    Step[0],
+    { color: string; dash?: [number, number]; dot: () => THREE.BufferGeometry }
+  > = {
+    r: {
+      color: "#9ca0a6",
+      dash: [0.45, 0.3],
+      dot: () => new THREE.SphereGeometry(0.2, 10, 8),
+    },
+    w: { color: "#ffffff", dot: () => new THREE.BoxGeometry(0.34, 0.34, 0.34) },
+    c: { color: "#c3c6ca", dot: () => new THREE.OctahedronGeometry(0.3) },
+    e: {
+      color: "#dfe1e3",
+      dash: [0.12, 0.22],
+      dot: () => new THREE.TorusGeometry(0.22, 0.06, 6, 16),
+    },
+  };
+  function clearGroup(g: THREE.Group) {
+    for (const c of [...g.children]) {
+      g.remove(c);
+      if (c instanceof THREE.Line || c instanceof THREE.Mesh) {
+        c.geometry.dispose();
+        (c.material as THREE.Material).dispose();
+      }
+    }
+  }
+  function drawSim(sim: CitySimFrame | null) {
+    clearGroup(simG);
+    simPulse = null;
+    simTarget = null;
+    const from = sim && blds.get(sim.entry);
+    routeG.visible = !from || sim.step < 0;
+    if (!from || sim.step < 0) return;
+    sim.steps.slice(0, sim.step + 1).forEach(([k, t], i) => {
+      const to = blds.get(t);
+      if (!to) return;
+      const st = STEP_STYLE[k];
+      const color = sim.late[i] ? "#ff4545" : st.color;
+      const cur = i === sim.step;
+      const curve = route(from.mesh.position, to.mesh.position);
+      const mat = st.dash
+        ? new THREE.LineDashedMaterial({
+            color,
+            dashSize: st.dash[0],
+            gapSize: st.dash[1],
+          })
+        : new THREE.LineBasicMaterial({ color });
+      mat.transparent = true;
+      mat.opacity = cur ? 1 : 0.3;
+      const line = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(curve.getPoints(24)),
+        mat,
+      );
+      line.computeLineDistances();
+      simG.add(line);
+      if (!cur) return;
+      const dot = new THREE.Mesh(
+        st.dot(),
+        new THREE.MeshBasicMaterial({ color }),
+      );
+      simG.add(dot);
+      simPulse = { curve, dot, t0: performance.now() };
+      simTarget = { id: t, late: sim.late[i] };
+    });
+  }
+
   // ---- state / highlight ----
   let selected: string | null = null;
   let hovered: string | null = null;
@@ -413,7 +520,8 @@ export function createCityScene(
     const near = selected ? model.neighbours(selected) : null;
     for (const [id, b] of blds) {
       const p = b.piece as Piece;
-      const focus = id === selected || id === hovered;
+      const target = simTarget?.id === id;
+      const focus = id === selected || id === hovered || target;
       const lit = !!near?.has(id);
       const dim = !!near && !lit;
       const body = b.mesh.material as THREE.MeshStandardMaterial;
@@ -423,10 +531,13 @@ export function createCityScene(
         body.opacity = dim ? 0.35 : 1;
       }
       edge.opacity = dim ? 0.25 : 1;
-      if (!model.isLesionHost(id))
+      if (target && simTarget?.late) edge.color.set("#ff4545");
+      else if (!model.isLesionHost(id))
         edge.color.set(
           focus ? "#ffffff" : lit ? "#c9ccd1" : p.ghost ? "#8a8f96" : "#5a5e65",
         );
+      else edge.color.set("#a8433f");
+      if (target && !p.ghost) body.color.set("#5d626a");
       b.el?.classList.toggle(
         "show",
         focus || lit || (!near && ALWAYS.has(p.sys)),
@@ -542,8 +653,17 @@ export function createCityScene(
       if (k === 1) anim = null;
     }
     pulses.forEach((p, i) => {
-      p.dot.position.copy(p.curve.getPoint((t * 0.35 + i * 0.19) % 1));
+      p.dot.position.copy(
+        p.curve.getPoint(still ? 0.5 : (t * 0.35 + i * 0.19) % 1),
+      );
     });
+    if (simPulse) {
+      const k = still
+        ? 1
+        : Math.min(1, (performance.now() - simPulse.t0) / 900);
+      simPulse.dot.position.copy(simPulse.curve.getPoint(ease(k)));
+      simPulse.dot.rotation.y = t * 2;
+    }
     controls.update();
     renderer.render(scene, camera);
     css2.render(scene, camera);
@@ -561,6 +681,10 @@ export function createCityScene(
       drawRoutes(selected);
       refresh();
       frame();
+    },
+    setSim(sim) {
+      drawSim(sim);
+      refresh();
     },
     setZoom(z) {
       zoom = z;

@@ -6,9 +6,11 @@ import {
   type AtlasSource,
   type AtlasView,
   createAtlasModel,
+  useCitySim,
 } from "@/features/atlas";
 import { AtlasDashboard } from "./AtlasDashboard";
 import { CityStage } from "./CityStage";
+import { ContractSource } from "./ContractSource";
 import { ExplorerView } from "./ExplorerView";
 import { PieceInspector } from "./PieceInspector";
 import "./atlas.css";
@@ -18,6 +20,7 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
   const model = useMemo(() => createAtlasModel(source.data), [source.data]);
   const [view, setView] = useState<AtlasView>("city");
   const [selected, setSelected] = useState<string | null>(null);
+  const sim = useCitySim(model, view === "city" ? selected : null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -57,9 +60,15 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
             />
           </section>
         ) : (
-          <CityStage model={model} selected={selected} onSelect={setSelected} />
+          <CityStage
+            model={model}
+            selected={selected}
+            onSelect={setSelected}
+            sim={sim}
+          />
         )}
         <aside>
+          <ContractSource model={model} selected={selected} sim={sim} />
           {selected ? (
             <PieceInspector
               key={selected}
@@ -68,7 +77,7 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
               onSelect={setSelected}
             />
           ) : (
-            <AtlasDashboard model={model} origin={source.origin} />
+            <AtlasDashboard model={model} />
           )}
         </aside>
       </div>

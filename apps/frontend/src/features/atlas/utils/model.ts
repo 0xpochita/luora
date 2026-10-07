@@ -55,6 +55,33 @@ export function createAtlasModel(data: AtlasData) {
     });
   }
 
+  /**
+   * Source line of each step of `fn`: the next line in the function body that mentions the
+   * target (slot name, call anchor, `emit Event`), else the target's own line (e.g. via a helper).
+   */
+  function stepLines(fn: string): number[] {
+    const entry = byId[fn];
+    if (!entry) return [];
+    const end = lineOf(entry) + (entry.n ?? 1);
+    let at = lineOf(entry);
+    return (data.seq[fn] ?? []).map(([k, t]) => {
+      const p = byId[t];
+      if (!p) return at;
+      const needle =
+        k === "e"
+          ? `emit ${p.name}`
+          : k === "c"
+            ? p.find
+            : (p.name.split("· ").pop() ?? "").replace("[]", "");
+      for (let i = at; needle && i < end; i++)
+        if (lines[i].includes(needle)) {
+          at = i;
+          return i;
+        }
+      return lineOf(p);
+    });
+  }
+
   /** Weighted finding severity → 0..10. */
   function riskScore(): number {
     if (!findings.length) return 0;
@@ -73,6 +100,7 @@ export function createAtlasModel(data: AtlasData) {
     links,
     neighbours,
     lateWrites,
+    stepLines,
     riskScore,
     hasFinding: (id: string) =>
       findings.some((f) => (f.links ?? []).includes(id)),

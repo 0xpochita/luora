@@ -10,7 +10,6 @@ import {
   RISK_LABEL,
   SYSTEMS,
 } from "@/features/atlas";
-import { tokenize } from "@/features/trace";
 
 const QUESTIONS: { q: AiQuestion; label: string }[] = [
   { q: "explain", label: "Explain" },
@@ -18,7 +17,7 @@ const QUESTIONS: { q: AiQuestion; label: string }[] = [
   { q: "test", label: "Write invariant test" },
 ];
 
-/** Selected piece: description, connections, source excerpt and the (mock, defensive) AI assistant. */
+/** Selected piece: description, connections and the (mock, defensive) AI assistant. */
 export function PieceInspector({
   model,
   id,
@@ -28,15 +27,10 @@ export function PieceInspector({
   id: string;
   onSelect: (id: string | null) => void;
 }) {
-  const { byId, findings: FINDINGS, lines: LINES, layerOf, neighbours } = model;
+  const { byId, findings: FINDINGS, layerOf, neighbours } = model;
   const p = byId[id];
   const [answer, setAnswer] = useState("");
 
-  const s = model.lineOf(p);
-  const e = s + (p.n ?? 1) - 1;
-  const marks = new Set((p.mark ?? []).map((m) => s + m));
-  const from = Math.max(0, s - 2);
-  const to = Math.min(LINES.length - 1, e + 2);
   const findings =
     p.sys === "vulns"
       ? [p]
@@ -97,30 +91,6 @@ export function PieceInspector({
               </button>
             ))}
           </div>
-          <pre className="code">
-            {LINES.slice(from, to + 1).map((line, k) => {
-              const n = from + k;
-              return (
-                <span
-                  key={`L${n}`}
-                  className={`cl ${marks.has(n) ? "mk" : n >= s && n <= e ? "hl" : ""}`}
-                >
-                  <span className="n">{n + 1}</span>
-                  {tokenize(line).map((t, j) => (
-                    <span
-                      key={`L${n}:${j.toString()}`}
-                      className={
-                        t.type === "plain" ? undefined : `tok-${t.type}`
-                      }
-                    >
-                      {t.text}
-                    </span>
-                  ))}
-                  {line === "" && " "}
-                </span>
-              );
-            })}
-          </pre>
         </div>
       </Panel>
       <Panel label="Luora AI" aside="Demo · mock">

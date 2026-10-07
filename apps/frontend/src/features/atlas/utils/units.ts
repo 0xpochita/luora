@@ -33,3 +33,11 @@ export function unitStatus(model: AtlasModel, id: string): UnitStatus {
   if (p?.caller && p.caller !== "anyone") return "privileged";
   return "ok";
 }
+
+/** Simulation step verb per `Step` kind. */
+export const STEP_VERB = {
+  r: "READ",
+  w: "WRITE",
+  c: "CALL",
+  e: "EMIT",
+} as const;

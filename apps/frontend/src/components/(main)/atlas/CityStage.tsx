@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Brackets, Chip, SegmentedControl, Tabs } from "@/components/ui";
-import type { AtlasModel, SystemKey } from "@/features/atlas";
+import { Brackets, Chip, Panel, SegmentedControl, Tabs } from "@/components/ui";
+import type { AtlasModel, CitySim, SystemKey } from "@/features/atlas";
 import type {
   CityScene,
   CityZoom,
 } from "@/features/atlas/engine/create-city-scene";
-import { unitCode, unitStatus } from "@/features/atlas/utils/units";
+import { STEP_VERB, unitCode, unitStatus } from "@/features/atlas/utils/units";
+import { PieceIcon } from "./PieceIcon";
 
 type UnitTab = "entry" | "storage" | "external" | "findings";
 const UNIT_TABS: { value: UnitTab; label: string; sys: SystemKey[] }[] = [
@@ -28,10 +29,12 @@ export function CityStage({
   model,
   selected,
   onSelect,
+  sim,
 }: {
   model: AtlasModel;
   selected: string | null;
   onSelect: (id: string | null) => void;
+  sim: CitySim;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const scene = useRef<CityScene | null>(null);
@@ -59,6 +62,10 @@ export function CityStage({
 
   useEffect(() => scene.current?.select(selected), [selected]);
   useEffect(() => scene.current?.setZoom(zoom), [zoom]);
+  const { entry, steps, step, late } = sim;
+  useEffect(() => {
+    scene.current?.setSim(entry ? { entry, steps, step, late } : null);
+  }, [entry, steps, step, late]);
 
   const sys = UNIT_TABS.find((t) => t.value === tab)?.sys ?? [];
   const units = model.pieces.filter((p) => sys.includes(p.sys));
@@ -77,6 +84,11 @@ export function CityStage({
             ]}
           />
         </div>
+        {sim.entry && (
+          <div className="absolute top-14 left-3 z-[3] w-[300px]">
+            <SimPanel model={model} sim={sim} />
+          </div>
+        )}
         <div className="pointer-events-none absolute bottom-3 left-3 z-[3] text-dim hud-label">
           Drag to orbit · scroll to zoom · click a building
         </div>
@@ -106,6 +118,7 @@ export function CityStage({
                 }`}
               >
                 <Brackets />
+                <PieceIcon piece={p} />
                 <Chip tone={st.tone} dot>
                   {st.label}
                 </Chip>
@@ -127,5 +140,67 @@ export function CityStage({
         </div>
       </div>
     </section>
+  );
+}
+
+/** Play / step through what the selected entry point touches, in execution order. */
+function SimPanel({ model, sim }: { model: AtlasModel; sim: CitySim }) {
+  const at = sim.step;
+  const done = at >= sim.steps.length - 1;
+  const controls = [
+    sim.playing
+      ? { label: "Pause", on: true, run: sim.pause }
+      : { label: done ? "Replay" : "Play", on: false, run: sim.play },
+    { label: "Step", on: false, run: sim.next, off: done },
+    { label: "Reset", on: false, run: sim.reset, off: at < 0 },
+  ];
+  return (
+    <Panel
+      label={`Simulate · ${model.byId[sim.entry as string].name}`}
+      aside={`${String(Math.max(at + 1, 0)).padStart(2, "0")}/${String(sim.steps.length).padStart(2, "0")}`}
+    >
+      <div className="flex border-line border-b p-2">
+        {controls.map((c) => (
+          <button
+            key={c.label}
+            type="button"
+            disabled={c.off}
+            aria-pressed={c.on}
+            onClick={c.run}
+            className={`flex-1 border border-line px-3 py-1.5 transition-colors hud-label -ml-px first:ml-0 disabled:opacity-40 ${
+              c.on
+                ? "bg-accent text-shell"
+                : "bg-tray text-muted enabled:hover:bg-soft enabled:hover:text-ink"
+            }`}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+      <ol className="max-h-[260px] overflow-auto py-1.5">
+        {sim.steps.map(([k, t], i) => (
+          <li key={`${i.toString()}${k}${t}`}>
+            <button
+              type="button"
+              onClick={() => sim.seek(i)}
+              className={`sim-step ${i < at ? "done" : ""} ${i === at ? "on" : ""} ${sim.late[i] ? "late" : ""}`}
+            >
+              <span>{String(i + 1).padStart(2, "0")}</span>
+              <span className={`k ${k}`}>{STEP_VERB[k]}</span>
+              <span className="truncate">{model.byId[t]?.name ?? t}</span>
+              {sim.late[i] && (
+                <span title="Write after external call">CEI</span>
+              )}
+            </button>
+          </li>
+        ))}
+      </ol>
+      {sim.late.some(Boolean) && (
+        <p className="border-line border-t px-3 py-2 text-bad text-xs">
+          Red writes happen after a state-changing external call
+          (checks-effects-interactions order not followed).
+        </p>
+      )}
+    </Panel>
   );
 }

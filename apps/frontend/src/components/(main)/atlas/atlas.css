@@ -14,6 +14,7 @@
   min-height: 0;
   display: grid;
   grid-template-columns: 1fr 400px;
+  grid-template-rows: minmax(0, 1fr);
 }
 .atlas .stage {
   position: relative;
@@ -155,14 +156,35 @@
 .atlas .cmark.show {
   opacity: 1;
 }
-.atlas .cmark i {
-  width: 12px;
-  height: 12px;
+/* code-meaning glyph: square marker with a monochrome stroke icon */
+.atlas .cmark i,
+.atlas .picon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
   border: 1.5px solid var(--ink);
   background: var(--shell);
-  box-shadow:
-    inset 0 0 0 2px var(--shell),
-    inset 0 0 0 6px var(--ink);
+  color: var(--ink);
+}
+.atlas .cmark svg,
+.atlas .picon svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: square;
+}
+.atlas .picon {
+  border-width: 1px;
+  border-color: var(--edge);
+  color: var(--tick);
+}
+.atlas .picon.vulns {
+  border-color: var(--bad);
+  color: var(--bad);
 }
 .atlas .cmark span {
   padding: 1px 5px;
@@ -184,9 +206,7 @@
 }
 .atlas .cmark.vulns i {
   border-color: var(--bad);
-  box-shadow:
-    inset 0 0 0 2px var(--shell),
-    inset 0 0 0 6px var(--bad);
+  color: var(--bad);
 }
 .atlas .cmark.vulns span {
   color: var(--bad);
@@ -359,4 +379,42 @@
     opacity: 1;
     stroke-dashoffset: 0;
   }
+}
+
+/* city simulation: step list */
+.atlas .sim-step {
+  display: grid;
+  grid-template-columns: 22px 46px 1fr auto;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+  padding: 3px 10px;
+  text-align: left;
+  font: 11px / 1.5 var(--font-geist-mono);
+  color: var(--dim);
+  border-left: 2px solid transparent;
+}
+.atlas .sim-step.done {
+  color: var(--muted);
+}
+.atlas .sim-step.on {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.07);
+  border-left-color: var(--accent);
+}
+.atlas .sim-step.late {
+  color: var(--bad);
+}
+.atlas .sim-step.late.on {
+  background: color-mix(in srgb, var(--bad) 14%, transparent);
+  border-left-color: var(--bad);
+}
+.atlas .sim-step .k {
+  letter-spacing: 0.12em;
+}
+.atlas .sim-step .k.r {
+  text-decoration: underline dashed;
+}
+.atlas .sim-step .k.e {
+  text-decoration: underline dotted;
 }

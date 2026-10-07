@@ -14,10 +14,16 @@ export function CodeView({
   source,
   lines: marked,
   notes,
+  bad = [],
+  current,
 }: {
   source: string;
   /** 0-based lines to highlight. */
   lines: number[];
+  /** 0-based lines marked red (findings). */
+  bad?: number[];
+  /** 0-based line in focus right now (scrolled to, strongest highlight). */
+  current?: number;
   /** 0-based line → tags shown at the end of the line. */
   notes?: Record<number, string[]>;
 }) {
@@ -34,7 +40,9 @@ export function CodeView({
     [source],
   );
   const on = new Set(marked);
-  const first = marked[0] ?? Number(Object.keys(notes ?? {})[0] ?? -1);
+  const red = new Set(bad);
+  const first =
+    current ?? marked[0] ?? Number(Object.keys(notes ?? {})[0] ?? -1);
 
   useEffect(() => {
     if (first < 0) return;
@@ -53,7 +61,17 @@ export function CodeView({
       {lines.map((line) => (
         <span
           key={line.id}
-          className={`block pr-3.5 transition-colors ${on.has(line.n) ? "bg-accent/8 shadow-[inset_2px_0_var(--accent)]" : ""}`}
+          className={`block pr-3.5 transition-colors ${
+            line.n === current
+              ? red.has(line.n)
+                ? "bg-bad/25 shadow-[inset_3px_0_var(--bad)]"
+                : "bg-accent/20 shadow-[inset_3px_0_var(--accent)]"
+              : red.has(line.n)
+                ? "bg-bad/12 shadow-[inset_2px_0_var(--bad)]"
+                : on.has(line.n)
+                  ? "bg-accent/8 shadow-[inset_2px_0_var(--accent)]"
+                  : ""
+          }`}
         >
           <span className="inline-block w-[42px] select-none pr-3.5 text-right text-dim">
             {line.n + 1}
