@@ -11,6 +11,6 @@ export {
 } from "./utils/frame";
 export { tokenize } from "./utils/highlight";
 export type { SourceSpan } from "./utils/source";
-export { locateFrame } from "./utils/source";
+export { locateFrame, spanLines } from "./utils/source";
 export type { Placed, TreeNode } from "./utils/tree";
 export { buildTree, layoutTree } from "./utils/tree";

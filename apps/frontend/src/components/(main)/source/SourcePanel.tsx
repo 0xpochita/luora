@@ -1,6 +1,6 @@
 "use client";
 
-import type { SourceSpan } from "@/features/trace";
+import { type SourceSpan, spanLines } from "@/features/trace";
 import { CodeView } from "./CodeView";
 
 export function SourcePanel({
@@ -37,6 +37,8 @@ export function SourcePanel({
           <>
             <b className="font-semibold text-ink">{caption}</b>
             {span && ` · ${span.file} L${span.start + 1}–${span.end + 1}`}
+            {span?.lines &&
+              ` · ${spanLines(span, span.file).length} lines executed`}
           </>
         ) : (
           "Select a frame."
@@ -44,7 +46,8 @@ export function SourcePanel({
       </p>
       <CodeView
         source={sources[file] ?? ""}
-        highlight={span && span.file === file ? [span.start, span.end] : null}
+        lines={spanLines(span, file)}
+        notes={span?.notes?.[file]}
       />
     </aside>
   );

@@ -20,7 +20,15 @@ export type Frame = {
   ok: boolean;
   status?: string;
   gas: number | null;
+  /** Executed source lines per file (1-based), from `forge test --debug` step data. */
+  lines?: Record<string, number[]>;
+  /** Line in the caller that made this call (or emitted this event). */
+  callSite?: SourceLine;
+  /** Storage reads/writes this frame's own code performed, by line. */
+  storage?: (SourceLine & { op: "SLOAD" | "SSTORE" })[];
 };
+
+export type SourceLine = { file: string; line: number };
 
 export type Transfer = {
   token: string;
