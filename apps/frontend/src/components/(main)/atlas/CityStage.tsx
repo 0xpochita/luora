@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Brackets, Chip, Panel, SegmentedControl, Tabs } from "@/components/ui";
+import {
+  Brackets,
+  Chip,
+  Panel,
+  SegmentedControl,
+  Tabs,
+  ToggleChip,
+} from "@/components/ui";
 import type { AtlasModel, CitySim, SystemKey } from "@/features/atlas";
 import type {
   CityScene,
@@ -9,6 +16,7 @@ import type {
 } from "@/features/atlas/engine/create-city-scene";
 import { protocolOf } from "@/features/atlas/utils/protocols";
 import { STEP_VERB, unitCode, unitStatus } from "@/features/atlas/utils/units";
+import { CityLegend } from "./CityLegend";
 import { PieceIcon } from "./PieceIcon";
 
 type UnitTab = "entry" | "storage" | "external" | "findings";
@@ -42,6 +50,9 @@ export function CityStage({
   const pick = useRef(onSelect);
   pick.current = onSelect;
   const [zoom, setZoom] = useState<CityZoom>("city");
+  const [audit, setAudit] = useState(true);
+  const view = useRef({ zoom, audit });
+  view.current = { zoom, audit };
   const [tab, setTab] = useState<UnitTab>("entry");
 
   useEffect(() => {
@@ -52,6 +63,8 @@ export function CityStage({
         scene.current = createCityScene(ref.current, model, (id) =>
           pick.current(id),
         );
+        scene.current.setAudit(view.current.audit);
+        scene.current.setZoom(view.current.zoom);
       },
     );
     return () => {
@@ -63,6 +76,7 @@ export function CityStage({
 
   useEffect(() => scene.current?.select(selected), [selected]);
   useEffect(() => scene.current?.setZoom(zoom), [zoom]);
+  useEffect(() => scene.current?.setAudit(audit), [audit]);
   const { entry, steps, step, late } = sim;
   useEffect(() => {
     scene.current?.setSim(entry ? { entry, steps, step, late } : null);
@@ -74,7 +88,7 @@ export function CityStage({
   return (
     <section className="stage city flex flex-col">
       <div ref={ref} className="relative min-h-0 flex-1">
-        <div className="absolute top-3 left-1/2 z-[3] -translate-x-1/2">
+        <div className="absolute top-3 left-1/2 z-[3] flex -translate-x-1/2 items-center gap-2">
           <SegmentedControl
             value={zoom}
             onChange={setZoom}
@@ -82,8 +96,17 @@ export function CityStage({
               { value: "city", label: "City" },
               { value: "district", label: "District" },
               { value: "street", label: "Street" },
+              { value: "plan", label: "2D", title: "Top-down map" },
             ]}
           />
+          <ToggleChip
+            label="Audit mode"
+            on={audit}
+            onToggle={() => setAudit(!audit)}
+          />
+        </div>
+        <div className="absolute top-3 right-3 z-[3]">
+          <CityLegend />
         </div>
         {sim.entry && (
           <div className="absolute top-14 left-3 z-[3] w-[300px]">
@@ -91,7 +114,8 @@ export function CityStage({
           </div>
         )}
         <div className="pointer-events-none absolute bottom-3 left-3 z-[3] text-dim hud-label">
-          Drag to orbit · scroll to zoom · click a building
+          {zoom === "plan" ? "Drag to pan" : "Drag to orbit"} · scroll to zoom ·
+          click a building · / search · Esc clear
         </div>
       </div>
       <div className="relative z-[3] flex-none border-line border-t bg-shell/95 px-3 pt-2 pb-3">
