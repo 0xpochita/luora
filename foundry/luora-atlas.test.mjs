@@ -6,7 +6,7 @@ import { buildAtlas } from './luora-atlas.mjs';
 test('atlas reflects LuoraVault.sol', () => {
   const a = buildAtlas({ contract: 'LuoraVault' });
   const by = Object.fromEntries(a.pieces.map(p => [p.id, p]));
-  assert.deepEqual(a.entry, ['deposit', 'withdraw', 'harvest', 'setOracle', 'pause']);
+  assert.deepEqual(a.entry, ['deposit', 'withdraw', 'harvest', 'harvestRewards', 'setOracle', 'pause']);
   assert.equal(by.setOracle.caller, 'owner');
   assert.equal(by.pause.caller, 'keeper');
   assert.equal(by.deposit.caller, 'anyone');
@@ -18,6 +18,8 @@ test('atlas reflects LuoraVault.sol', () => {
   // withdraw: modifier read, external call, then the share writes, then the event
   assert.deepEqual(a.seq.withdraw.filter(([k]) => k !== 'r'), [['c', 'c_oracle_getPrice'], ['c', 'c_asset_transfer'], ['w', 'shares'], ['w', 'totalShares'], ['e', 'evWithdraw']]);
   assert.equal(a.callTarget.c_asset_transfer, 'dep_IERC20');
+  assert.equal(a.callTarget.c_router_swapExactTokensForTokens, 'dep_IUniswapV2Router02');
+  assert.equal(by.harvestRewards.caller, 'keeper');
   const findings = a.pieces.filter(p => p.sys === 'vulns');
   assert.ok(findings.some(f => f.links.includes('withdraw') && f.name.includes('after external call')));
   assert.ok(!findings.some(f => f.links.includes('setOracle') && f.name.includes('after external call')));

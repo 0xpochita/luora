@@ -49,6 +49,25 @@ contract MockOracle {
     }
 }
 
+/// Uniswap V2 style router for local tests: pays out `path[last]` 1:1 by minting it (MockUSDC).
+contract MockUniswapRouter {
+    function swapExactTokensForTokens(
+        uint256 amountIn,
+        uint256 amountOutMin,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+    ) external returns (uint256[] memory amounts) {
+        require(block.timestamp <= deadline, "expired");
+        require(amountIn >= amountOutMin, "slippage");
+        require(MockUSDC(path[0]).transferFrom(msg.sender, address(this), amountIn), "transferFrom");
+        MockUSDC(path[path.length - 1]).mint(to, amountIn);
+        amounts = new uint256[](path.length);
+        amounts[0] = amountIn;
+        amounts[path.length - 1] = amountIn;
+    }
+}
+
 /// Strategy that just holds funds and reports a fixed 2% profit.
 contract MockStrategy {
     function invest(uint256 amount) external pure returns (uint256) {

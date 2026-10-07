@@ -212,6 +212,32 @@
   color: var(--bad);
   border-color: var(--bad);
 }
+/* recognised protocol: its logo replaces the square (only colour besides red / green) */
+.atlas .cmark img,
+.atlas .plogo {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 1.5px var(--shell),
+    0 0 0 2.5px var(--line);
+}
+.atlas .plogo {
+  display: inline-block;
+  background: center / contain no-repeat;
+}
+.atlas .plogo.lg {
+  width: 20px;
+  height: 20px;
+}
+/* Protocol Core (the contract itself): name always visible */
+.atlas .cmark.core b {
+  display: inline;
+}
+.atlas .cmark.core span {
+  border-color: var(--ink);
+}
 .atlas .cmark.dim {
   opacity: 0.25;
 }

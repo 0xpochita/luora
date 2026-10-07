@@ -7,6 +7,7 @@ import type {
   CityScene,
   CityZoom,
 } from "@/features/atlas/engine/create-city-scene";
+import { protocolOf } from "@/features/atlas/utils/protocols";
 import { STEP_VERB, unitCode, unitStatus } from "@/features/atlas/utils/units";
 import { PieceIcon } from "./PieceIcon";
 
@@ -106,6 +107,7 @@ export function CityStage({
                 ? { tone: "bad" as const, label: p.risk ?? "Finding" }
                 : STATUS[unitStatus(model, p.id)];
             const on = selected === p.id;
+            const proto = protocolOf(p);
             return (
               <button
                 type="button"
@@ -122,6 +124,15 @@ export function CityStage({
                 <Chip tone={st.tone} dot>
                   {st.label}
                 </Chip>
+                {proto && (
+                  <span
+                    role="img"
+                    aria-label={proto.name}
+                    title={proto.name}
+                    className="plogo"
+                    style={{ backgroundImage: `url(${proto.logo})` }}
+                  />
+                )}
                 <span className="font-mono text-[13px] text-ink">
                   {unitCode(model, p.id)}
                 </span>
