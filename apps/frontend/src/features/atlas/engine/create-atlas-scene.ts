@@ -4,16 +4,10 @@ import {
   CSS2DObject,
   CSS2DRenderer,
 } from "three/addons/renderers/CSS2DRenderer.js";
-import { LAYERS, LESION, PIECES, SPOT } from "../data/pieces";
+import { LAYERS } from "../data/layers";
 import type { CamView, LayerKey, Piece } from "../types";
-import {
-  byId,
-  colorOf,
-  isLesionHost,
-  LINKS,
-  layerOf,
-  neighbours,
-} from "../utils/model";
+import { type AtlasModel, colorOf } from "../utils/model";
+import { CELL, placePieces, reach } from "../utils/place";
 
 export type AtlasScene = {
   select: (id: string | null) => void;
@@ -24,7 +18,6 @@ export type AtlasScene = {
   dispose: () => void;
 };
 
-const CELL = 1.6;
 const VIEW = 33;
 const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
 const TARGET = V(0, 6, 0);
@@ -44,8 +37,27 @@ type Mat = THREE.Material & { opacity: number; userData: { base?: number } };
  */
 export function createAtlasScene(
   stage: HTMLElement,
+  model: AtlasModel,
   onPick: (id: string | null) => void,
 ): AtlasScene {
+  const {
+    pieces: PIECES,
+    lesion: LESION,
+    byId,
+    isLesionHost,
+    links: LINKS,
+    layerOf,
+    neighbours,
+  } = model;
+  const SPOT = placePieces(PIECES, layerOf);
+  // findings sharing a host stack upwards
+  const stackAt: Record<string, number> = {};
+  const seenHost: Record<string, number> = {};
+  for (const f of model.findings) {
+    const h = LESION[f.id];
+    stackAt[f.id] = seenHost[h] ?? 0;
+    seenHost[h] = stackAt[f.id] + 1;
+  }
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -114,7 +126,7 @@ export function createAtlasScene(
         SPOT[p.id].join(),
       ),
     );
-    const n = Math.floor((L.half - 0.6) / CELL);
+    const n = reach(L.half);
     for (let i = -n; i <= n; i++)
       for (let j = -n; j <= n; j++)
         if (!used.has(`${i},${j}`)) {
@@ -159,7 +171,7 @@ export function createAtlasScene(
         ),
       );
     } else {
-      const ghost = p.id === "noReentrancy";
+      const ghost = !!p.ghost;
       const body = new THREE.Mesh(
         hexBody,
         ghost
@@ -192,7 +204,7 @@ export function createAtlasScene(
         g.add(cap);
         nd.cap = cap;
       }
-      if (p.id === "shares" && nd.cap)
+      if (p.mapping && nd.cap)
         for (let k = 1; k < 3; k++) {
           const b = body.clone();
           b.material = (body.material as THREE.MeshStandardMaterial).clone();
@@ -229,12 +241,11 @@ export function createAtlasScene(
     const el = document.createElement("div");
     el.className = `chip3d ${p.sys}`;
     el.style.setProperty("--c", colorOf(p));
-    el.innerHTML =
-      p.sys === "vulns"
-        ? `<i>■</i>${p.name.slice(0, 4)}`
-        : `<i>■</i>${p.name.replace(/</g, "&lt;")}`;
+    const icon = document.createElement("i");
+    icon.textContent = "■";
+    el.append(icon, p.sys === "vulns" ? p.name.slice(0, 4) : p.name);
     const lo = new CSS2DObject(el);
-    lo.position.y = p.sys === "vulns" ? 0.5 : p.id === "shares" ? 2.4 : 1.25;
+    lo.position.y = p.sys === "vulns" ? 0.5 : p.mapping ? 2.4 : 1.25;
     g.add(lo);
     nd.el = el;
     data.set(p.id, nd as NodeData);
@@ -254,8 +265,8 @@ export function createAtlasScene(
   function nodePos(p: Piece) {
     const y = layerOf(p).y * (1 + spread * 0.9);
     if (p.sys === "vulns") {
-      const [i, j] = SPOT[LESION[p.id]];
-      return V(i * CELL, y + 2.2, j * CELL);
+      const [i, j] = SPOT[LESION[p.id]] ?? [0, 0];
+      return V(i * CELL, y + 2.2 + stackAt[p.id] * 0.8, j * CELL);
     }
     const [i, j] = SPOT[p.id] ?? [0, 0];
     return V(i * CELL, y + 0.14, j * CELL);

@@ -4,14 +4,9 @@ import { useState } from "react";
 import { Chip, Panel } from "@/components/ui";
 import {
   type AiQuestion,
+  type AtlasModel,
   aiAnswer,
-  byId,
   colorOf,
-  FINDINGS,
-  LINES,
-  layerOf,
-  lineOf,
-  neighbours,
   RISK_LABEL,
   SYSTEMS,
 } from "@/features/atlas";
@@ -25,16 +20,19 @@ const QUESTIONS: { q: AiQuestion; label: string }[] = [
 
 /** Selected piece: description, connections, source excerpt and the (mock, defensive) AI assistant. */
 export function PieceInspector({
+  model,
   id,
   onSelect,
 }: {
+  model: AtlasModel;
   id: string;
   onSelect: (id: string | null) => void;
 }) {
+  const { byId, findings: FINDINGS, lines: LINES, layerOf, neighbours } = model;
   const p = byId[id];
   const [answer, setAnswer] = useState("");
 
-  const s = lineOf(p.find);
+  const s = model.lineOf(p);
   const e = s + (p.n ?? 1) - 1;
   const marks = new Set((p.mark ?? []).map((m) => s + m));
   const from = Math.max(0, s - 2);
@@ -46,7 +44,7 @@ export function PieceInspector({
   const conns = [...neighbours(p.id)].filter((c) => c !== p.id);
 
   const ask = (q: AiQuestion) => {
-    const text = aiAnswer(p, q);
+    const text = aiAnswer(model, p, q);
     let i = 0;
     const tick = () => {
       i += 5;

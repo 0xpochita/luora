@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Luora exporter: runs `forge test`, decodes the call traces with the project's own ABIs,
 // attributes every frame to the exact source lines it executed (via `forge test --debug --dump`
-// step data + solc source maps), and writes luora-data.json for the Luora Workbench.
+// step data + solc source maps), and writes luora-data.json for the Luora Workbench. The `atlas`
+// section (contract map for /atlas) comes from luora-atlas.mjs; set LUORA_ATLAS=<Contract> to pick.
 //
 //   node luora-export.mjs                 # all tests
 //   node luora-export.mjs --mt test_deposit
@@ -11,6 +12,7 @@ import { execFile, execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { availableParallelism, tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { buildAtlas } from './luora-atlas.mjs';
 import { decodeParams, fmtWord, innermost, keccak256, lineIndex, parseSourceMap, pcToIc, revertReason, sig } from './luora-lib.mjs';
 
 const ROOT = process.cwd();
@@ -193,7 +195,10 @@ for (const [suiteId, suite] of Object.entries(results)) {
 }
 rmSync(TMP, { recursive: true, force: true });
 
+let atlas = null;
+try { atlas = buildAtlas({ root: ROOT }); } catch (e) { console.warn(`luora: atlas skipped — ${e.message}`); }
+
 const forgeVersion = sh('forge', ['--version']).split('\n')[0];
-writeFileSync(join(ROOT, 'luora-data.json'), JSON.stringify({ generatedAt: new Date().toISOString(), forgeVersion, command: ['forge', 'test', '--json', '-vvvv', ...extra].join(' '), tests, sources }, null, 1));
+writeFileSync(join(ROOT, 'luora-data.json'), JSON.stringify({ generatedAt: new Date().toISOString(), forgeVersion, command: ['forge', 'test', '--json', '-vvvv', ...extra].join(' '), tests, sources, atlas }, null, 1));
 const traced = tests.reduce((n, t) => n + t.frames.filter(f => f.lines).length, 0);
 console.log(`luora: ${tests.length} tests, ${tests.reduce((n, t) => n + t.frames.length, 0)} frames (${traced} with source lines) → luora-data.json`);

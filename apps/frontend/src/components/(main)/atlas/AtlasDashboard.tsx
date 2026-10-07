@@ -1,5 +1,5 @@
 import { Chip, KV, Meter, Panel } from "@/components/ui";
-import { FINDINGS, LAYERS, layerOf, PIECES, riskScore } from "@/features/atlas";
+import { type AtlasModel, LAYERS } from "@/features/atlas";
 
 /** round so server and client render identical SVG attributes */
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -126,11 +126,21 @@ function Gauge({ value }: { value: number }) {
   );
 }
 
-export function AtlasDashboard() {
+export function AtlasDashboard({
+  model,
+  origin,
+}: {
+  model: AtlasModel;
+  origin: "local" | "sample";
+}) {
+  const { findings: FINDINGS, layerOf, pieces: PIECES, riskScore } = model;
   const mapped = PIECES.filter((p) => p.sys !== "vulns");
   return (
     <>
-      <Panel label="Audit risk" aside={<Chip>Sample</Chip>}>
+      <Panel
+        label="Audit risk"
+        aside={<Chip>{origin === "sample" ? "Sample" : "Static"}</Chip>}
+      >
         <div className="grid grid-cols-[170px_1fr] items-center gap-3 p-3">
           <Gauge value={riskScore()} />
           <div>

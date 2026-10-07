@@ -1,18 +1,9 @@
-import type { Layer, Piece, Step, SystemKey } from "../types";
+import type { AtlasData, Piece, Step } from "../types";
+import { SOURCE } from "./sample-source";
 
-export const SYSTEMS: Record<SystemKey, { label: string; sub: string }> = {
-  entry: { label: "Entry points", sub: "layer 1 · external functions" },
-  access: { label: "Access control", sub: "gates on the entry layer" },
-  logic: { label: "Internal logic", sub: "layer 2 · internal functions" },
-  storage: { label: "Storage", sub: "layer 3 · state slots" },
-  calls: { label: "External calls", sub: "pipes through the trust boundary" },
-  deps: { label: "External contracts", sub: "outside the trust boundary" },
-  events: { label: "Events", sub: "signals emitted" },
-  vulns: { label: "Findings", sub: "risk markers" },
-};
-
+/** Hand-written demo map of the sample contract; shown when no `luora-data.json` atlas exists. */
 // find = source anchor, n = lines shown, mark = highlighted line offsets, caller = who may call (entry only)
-export const PIECES: Piece[] = [
+const PIECES: Piece[] = [
   // ---- layer 1: entry points (the attack surface) ----
   {
     id: "deposit",
@@ -121,6 +112,7 @@ export const PIECES: Piece[] = [
   {
     id: "noReentrancy",
     sys: "access",
+    ghost: true,
     name: "nonReentrant (missing)",
     find: "function withdraw",
     n: 1,
@@ -190,6 +182,7 @@ export const PIECES: Piece[] = [
       id: v,
       sys: "storage",
       slot: i,
+      ...(v === "shares" && { mapping: true }),
       name: `slot ${i} · ${v === "shares" ? "shares[]" : v}`,
       find:
         v === "shares"
@@ -253,6 +246,7 @@ export const PIECES: Piece[] = [
   {
     id: "cPrice",
     sys: "calls",
+    view: true,
     name: "oracle.getSpotPrice",
     find: "oracle.getSpotPrice",
     n: 1,
@@ -398,7 +392,7 @@ export const PIECES: Piece[] = [
 ];
 
 /** Which finding sits on which piece. */
-export const LESION: Record<string, string> = {
+const LESION: Record<string, string> = {
   f1: "withdraw",
   f2: "_price",
   f3: "_sendOut",
@@ -406,110 +400,8 @@ export const LESION: Record<string, string> = {
   f5: "_computeShares",
 };
 
-/** Layer palette: monochrome greys by layer; red is reserved for findings. */
-export const COLORS = {
-  ext: "#7d8288",
-  entry: "#f2f3f4",
-  logic: "#c3c6ca",
-  state: "#9ca0a6",
-  access: "#dfe1e3",
-  events: "#a9adb2",
-  vulns: "#ff4545",
-} as const;
-export const SYS_COLOR: Record<SystemKey, keyof typeof COLORS> = {
-  entry: "entry",
-  access: "access",
-  logic: "logic",
-  storage: "state",
-  calls: "ext",
-  deps: "ext",
-  events: "events",
-  vulns: "vulns",
-};
-
-// A pyramid of diamonds, the outside world on top.
-export const LAYERS: Layer[] = [
-  {
-    key: "ext",
-    name: "External",
-    sub: "contracts it calls",
-    y: 12.6,
-    half: 4.0,
-    color: COLORS.ext,
-    sys: ["deps", "calls"],
-  },
-  {
-    key: "entry",
-    name: "Entry",
-    sub: "external functions",
-    y: 8.4,
-    half: 6.0,
-    color: COLORS.entry,
-    sys: ["entry", "access", "events"],
-  },
-  {
-    key: "logic",
-    name: "Logic",
-    sub: "internal functions",
-    y: 4.2,
-    half: 7.6,
-    color: COLORS.logic,
-    sys: ["logic"],
-  },
-  {
-    key: "state",
-    name: "State",
-    sub: "storage slots",
-    y: 0,
-    half: 9.6,
-    color: COLORS.state,
-    sys: ["storage"],
-  },
-];
-
-/** Grid cell per piece. Lower layers use the outer ring so the plate above never hides them. */
-export const SPOT: Record<string, [number, number]> = {
-  depERC20: [-1, -1],
-  depOracle: [1, -1],
-  depStrategy: [1, 1],
-  depFlash: [-1, 1],
-  depSender: [0, 0],
-  cTransferFrom: [-2, 0],
-  cTransfer: [-1, 0],
-  cOnFlash: [0, 2],
-  cInvest: [2, 0],
-  cPrice: [0, -2],
-  cCall: [1, 0],
-  deposit: [-3, 3],
-  whenNotPaused: [-2, 3],
-  withdraw: [-1, 3],
-  noReentrancy: [0, 3],
-  flashLoan: [1, 3],
-  receive: [2, 3],
-  harvest: [3, 3],
-  evDeposit: [3, 2],
-  evWithdraw: [3, 1],
-  setOracle: [3, 0],
-  onlyOwner: [3, -1],
-  emergencyWithdraw: [3, -2],
-  evOracle: [3, -3],
-  _computeShares: [-2, 4],
-  _price: [0, 4],
-  _accrueFee: [2, 4],
-  ctor: [4, 4],
-  _sendOut: [4, 1],
-  owner: [-4, 5],
-  asset: [-2, 5],
-  oracle: [0, 5],
-  strategy: [2, 5],
-  totalShares: [5, 3],
-  shares: [5, 1],
-  paused: [5, -1],
-  feeBps: [5, -3],
-};
-
 /** What each entry point touches, in execution order. */
-export const SEQ: Record<string, Step[]> = {
+const SEQ: Record<string, Step[]> = {
   deposit: [
     ["r", "paused"],
     ["r", "totalShares"],
@@ -553,7 +445,7 @@ export const SEQ: Record<string, Step[]> = {
   ],
   receive: [],
 };
-export const CALL_TARGET: Record<string, string> = {
+const CALL_TARGET: Record<string, string> = {
   cPrice: "depOracle",
   cTransferFrom: "depERC20",
   cTransfer: "depERC20",
@@ -561,7 +453,7 @@ export const CALL_TARGET: Record<string, string> = {
   cOnFlash: "depFlash",
   cInvest: "depStrategy",
 };
-export const BANKS = [
+const BANKS = [
   {
     title: "DATA BANK // 01",
     sub: "CONFIG",
@@ -583,7 +475,7 @@ export const BANKS = [
     ids: ["evDeposit", "evWithdraw", "evOracle"],
   },
 ];
-export const ENTRY = [
+const ENTRY = [
   "deposit",
   "withdraw",
   "flashLoan",
@@ -592,10 +484,18 @@ export const ENTRY = [
   "emergencyWithdraw",
   "receive",
 ];
-export const INTERNAL = [
-  "ctor",
-  "_computeShares",
-  "_price",
-  "_sendOut",
-  "_accrueFee",
-];
+const INTERNAL = ["ctor", "_computeShares", "_price", "_sendOut", "_accrueFee"];
+
+export const SAMPLE_ATLAS: AtlasData = {
+  contract: "LuoraVault",
+  file: "LuoraVault.sol",
+  compiler: "0.8.20",
+  source: SOURCE,
+  pieces: PIECES,
+  lesion: LESION,
+  seq: SEQ,
+  callTarget: CALL_TARGET,
+  banks: BANKS,
+  entry: ENTRY,
+  internal: INTERNAL,
+};
