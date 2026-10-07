@@ -6,7 +6,9 @@ import {
 } from "three/addons/renderers/CSS2DRenderer.js";
 import type { Piece } from "../types";
 import type { AtlasModel } from "../utils/model";
+import { protocolOf } from "../utils/protocols";
 import { unitCode } from "../utils/units";
+import { addBeacon, factoryGeometry } from "./factory";
 
 export type CityZoom = "city" | "district" | "street";
 export type CityScene = {
@@ -197,8 +199,8 @@ export function createCityScene(
     if (p.sys === "entry") return 3 + (model.seq[p.id]?.length ?? 2) * 0.9;
     if (p.sys === "logic") return 2.4 + model.neighbours(p.id).size * 0.45;
     if (p.sys === "storage") return p.mapping ? 3.2 : 1.4;
-    if (p.sys === "deps") return 6 + model.neighbours(p.id).size * 0.6;
-    if (p.sys === "calls") return 1.1;
+    if (p.sys === "deps") return 3 + model.neighbours(p.id).size * 0.25;
+    if (p.sys === "calls") return 2.2;
     if (p.sys === "events") return 4.2;
     return 1; // access gates
   };
@@ -206,7 +208,8 @@ export function createCityScene(
     if (p.sys === "storage") return [2.4, 2.4];
     if (p.sys === "events") return [0.5, 0.5];
     if (p.sys === "access") return [2.3, 0.7];
-    if (p.sys === "calls") return [1.4, 1.4];
+    if (p.sys === "deps") return [2.7, 2];
+    if (p.sys === "calls") return [2, 1.4];
     return [1.9, 1.9];
   };
 
@@ -218,7 +221,10 @@ export function createCityScene(
     h: number,
     piece?: Piece,
   ): Bld {
-    const geo = new THREE.BoxGeometry(w, h, d);
+    const factory = !!piece && districtOf(piece) === "ext";
+    const geo = factory
+      ? factoryGeometry(w, h, d, piece.sys === "deps" ? 2 : 1)
+      : new THREE.BoxGeometry(w, h, d);
     const mat = bodyMat();
     if (piece?.ghost) {
       mat.opacity = 0.08;
@@ -226,6 +232,7 @@ export function createCityScene(
     }
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(x, h / 2, z);
+    if (factory && piece.sys === "deps") addBeacon(mesh, w, h, d);
     const edges = new THREE.LineSegments(
       new THREE.EdgesGeometry(geo),
       edgeMat(),
@@ -286,7 +293,13 @@ export function createCityScene(
     code.textContent = unitCode(model, p.id);
     const name = document.createElement("b");
     name.textContent = p.name;
-    el.append(sq, code, name);
+    const proto = protocolOf(p);
+    if (proto) {
+      const logo = document.createElement("img");
+      logo.src = proto.logo;
+      logo.alt = proto.name;
+      el.append(logo, code, name);
+    } else el.append(sq, code, name);
     const lo = new CSS2DObject(el);
     lo.position.set(x, b.top + 1.4, z);
     scene.add(lo);

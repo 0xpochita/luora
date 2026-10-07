@@ -2,8 +2,8 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {LuoraVault, IERC20, IOracle, IStrategy} from "../src/LuoraVault.sol";
-import {MockUSDC, MockOracle, MockStrategy} from "../src/mocks/Mocks.sol";
+import {LuoraVault, IERC20, IOracle, IStrategy, IUniswapV2Router02} from "../src/LuoraVault.sol";
+import {MockUSDC, MockOracle, MockStrategy, MockUniswapRouter} from "../src/mocks/Mocks.sol";
 
 /// Drives the vault with random deposits / withdrawals from a few users.
 contract Handler is Test {
@@ -45,7 +45,14 @@ contract SolvencyInvariantTest is Test {
 
     function setUp() public {
         usdc = new MockUSDC();
-        vault = new LuoraVault(IERC20(address(usdc)), IOracle(address(new MockOracle())), IStrategy(address(new MockStrategy())), address(this));
+        vault = new LuoraVault(
+            IERC20(address(usdc)),
+            IOracle(address(new MockOracle())),
+            IStrategy(address(new MockStrategy())),
+            address(this),
+            IUniswapV2Router02(address(new MockUniswapRouter())),
+            IERC20(address(new MockUSDC()))
+        );
         handler = new Handler(vault, usdc);
         targetContract(address(handler));
     }

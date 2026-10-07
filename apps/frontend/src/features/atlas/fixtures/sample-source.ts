@@ -6,6 +6,7 @@ import {IERC20} from "./IERC20.sol";
 import {IOracle} from "./IOracle.sol";
 import {IStrategy} from "./IStrategy.sol";
 import {IFlashReceiver} from "./IFlashReceiver.sol";
+import {IUniswapV2Router02} from "./IUniswapV2Router02.sol";
 
 contract LuoraVault {
     address public owner;
@@ -16,6 +17,8 @@ contract LuoraVault {
     mapping(address => uint256) public shares;
     bool public paused;
     uint256 public feeBps = 50;
+    IUniswapV2Router02 public router;
+    IERC20 public rewardToken;
 
     event Deposit(address indexed user, uint256 assets, uint256 shares);
     event Withdraw(address indexed user, uint256 assets, uint256 shares);
@@ -31,11 +34,13 @@ contract LuoraVault {
         _;
     }
 
-    constructor(IERC20 _asset, IOracle _oracle, IStrategy _strategy) {
+    constructor(IERC20 _asset, IOracle _oracle, IStrategy _strategy, IUniswapV2Router02 _router, IERC20 _rewardToken) {
         owner = msg.sender;
         asset = _asset;
         oracle = _oracle;
         strategy = _strategy;
+        router = _router;
+        rewardToken = _rewardToken;
     }
 
     receive() external payable {}
@@ -68,6 +73,15 @@ contract LuoraVault {
     function harvest() external {
         uint256 profit = strategy.invest(asset.balanceOf(address(this)));
         _accrueFee(profit);
+    }
+
+    function harvestRewards(uint256 minOut, uint256 deadline) external onlyOwner {
+        uint256 amount = rewardToken.balanceOf(address(this));
+        require(rewardToken.approve(address(router), amount), "approve");
+        address[] memory path = new address[](2);
+        path[0] = address(rewardToken);
+        path[1] = address(asset);
+        router.swapExactTokensForTokens(amount, minOut, path, address(this), deadline);
     }
 
     function setOracle(IOracle newOracle) external onlyOwner {

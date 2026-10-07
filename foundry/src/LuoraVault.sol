@@ -16,6 +16,16 @@ interface IStrategy {
     function invest(uint256 amount) external returns (uint256 profit);
 }
 
+interface IUniswapV2Router02 {
+    function swapExactTokensForTokens(
+        uint256 amountIn,
+        uint256 amountOutMin,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+    ) external returns (uint256[] memory amounts);
+}
+
 /// @title LuoraVault — sample USDC vault used to demo Luora's visual audit views
 contract LuoraVault {
     address public owner;
@@ -27,6 +37,8 @@ contract LuoraVault {
     mapping(address => uint256) public shares;
     bool public paused;
     uint256 public feeBps = 50;
+    IUniswapV2Router02 public router;
+    IERC20 public rewardToken;
 
     event Deposit(address indexed user, uint256 assets, uint256 shares);
     event Withdraw(address indexed user, uint256 assets, uint256 shares);
@@ -41,12 +53,21 @@ contract LuoraVault {
         _;
     }
 
-    constructor(IERC20 _asset, IOracle _oracle, IStrategy _strategy, address _keeper) {
+    constructor(
+        IERC20 _asset,
+        IOracle _oracle,
+        IStrategy _strategy,
+        address _keeper,
+        IUniswapV2Router02 _router,
+        IERC20 _rewardToken
+    ) {
         owner = msg.sender;
         asset = _asset;
         oracle = _oracle;
         strategy = _strategy;
         keeper = _keeper;
+        router = _router;
+        rewardToken = _rewardToken;
     }
 
     function deposit(uint256 amount) external whenNotPaused {
@@ -71,6 +92,17 @@ contract LuoraVault {
         asset.transfer(address(strategy), bal);
         uint256 profit = strategy.invest(bal);
         _accrueFee(profit);
+    }
+
+    /// Keeper swaps strategy rewards into the vault asset through the Uniswap V2 router.
+    function harvestRewards(uint256 minOut, uint256 deadline) external {
+        require(msg.sender == keeper, "!keeper");
+        uint256 amount = rewardToken.balanceOf(address(this));
+        require(rewardToken.approve(address(router), amount), "approve");
+        address[] memory path = new address[](2);
+        path[0] = address(rewardToken);
+        path[1] = address(asset);
+        router.swapExactTokensForTokens(amount, minOut, path, address(this), deadline);
     }
 
     function setOracle(IOracle newOracle) external onlyOwner {

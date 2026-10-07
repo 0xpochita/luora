@@ -10,6 +10,7 @@ import {
   RISK_LABEL,
   SYSTEMS,
 } from "@/features/atlas";
+import { protocolOf } from "@/features/atlas/utils/protocols";
 import { tokenize } from "@/features/trace";
 
 const QUESTIONS: { q: AiQuestion; label: string }[] = [
@@ -42,6 +43,7 @@ export function PieceInspector({
       ? [p]
       : FINDINGS.filter((f) => (f.links ?? []).includes(p.id));
   const conns = [...neighbours(p.id)].filter((c) => c !== p.id);
+  const proto = protocolOf(p);
 
   const ask = (q: AiQuestion) => {
     const text = aiAnswer(model, p, q);
@@ -74,9 +76,21 @@ export function PieceInspector({
           className="p-3"
           style={{ "--c": colorOf(p) } as React.CSSProperties}
         >
-          <h2>{p.name}</h2>
+          <h2 className="flex items-center gap-2">
+            {proto && (
+              <span
+                role="img"
+                aria-label={proto.name}
+                title={proto.name}
+                className="plogo lg"
+                style={{ backgroundImage: `url(${proto.logo})` }}
+              />
+            )}
+            {p.name}
+          </h2>
           <div className="badges">
             {p.caller && <Chip>Caller {p.caller}</Chip>}
+            {proto && <Chip>Integration · {proto.name}</Chip>}
             {findings.map((f) => (
               <Chip key={f.id} dot tone="bad">
                 {f.name.slice(0, 4)} · {RISK_LABEL[f.risk ?? "low"]}

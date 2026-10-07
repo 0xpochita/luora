@@ -2,14 +2,16 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {LuoraVault, IERC20, IOracle, IStrategy} from "../src/LuoraVault.sol";
-import {MockUSDC, MockOracle, MockStrategy} from "../src/mocks/Mocks.sol";
+import {LuoraVault, IERC20, IOracle, IStrategy, IUniswapV2Router02} from "../src/LuoraVault.sol";
+import {MockUSDC, MockOracle, MockStrategy, MockUniswapRouter} from "../src/mocks/Mocks.sol";
 
 contract LuoraVaultTest is Test {
     LuoraVault vault;
     MockUSDC usdc;
     MockOracle oracle;
     MockStrategy strategy;
+    MockUniswapRouter router;
+    MockUSDC reward;
 
     address alice = makeAddr("alice");
     address bob = makeAddr("bob");
@@ -19,7 +21,16 @@ contract LuoraVaultTest is Test {
         usdc = new MockUSDC();
         oracle = new MockOracle();
         strategy = new MockStrategy();
-        vault = new LuoraVault(IERC20(address(usdc)), IOracle(address(oracle)), IStrategy(address(strategy)), keeper);
+        router = new MockUniswapRouter();
+        reward = new MockUSDC();
+        vault = new LuoraVault(
+            IERC20(address(usdc)),
+            IOracle(address(oracle)),
+            IStrategy(address(strategy)),
+            keeper,
+            IUniswapV2Router02(address(router)),
+            IERC20(address(reward))
+        );
         usdc.mint(alice, 5_000e6);
         usdc.mint(bob, 20_000e6);
         vm.prank(alice);
@@ -52,6 +63,20 @@ contract LuoraVaultTest is Test {
         vault.harvest();
         assertEq(usdc.balanceOf(address(strategy)), 1_000e6);
         assertEq(vault.shares(vault.owner()), 0.1e6); // 2% profit × 0.5% fee
+    }
+
+    function test_harvestRewards_swapsToAsset() public {
+        reward.mint(address(vault), 50e6);
+        vm.prank(keeper);
+        vault.harvestRewards(50e6, block.timestamp);
+        assertEq(reward.balanceOf(address(vault)), 0);
+        assertEq(usdc.balanceOf(address(vault)), 50e6);
+    }
+
+    function test_harvestRewards_onlyKeeper() public {
+        vm.prank(alice);
+        vm.expectRevert("!keeper");
+        vault.harvestRewards(0, block.timestamp);
     }
 
     function test_setOracle_onlyOwner() public {

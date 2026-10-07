@@ -63,6 +63,16 @@ const PIECES: Piece[] = [
     links: ["cInvest", "_accrueFee"],
   },
   {
+    id: "harvestRewards",
+    sys: "entry",
+    caller: "owner",
+    name: "harvestRewards()",
+    find: "function harvestRewards",
+    n: 8,
+    desc: "Owner-only: swaps the accrued reward token into the vault asset (USDC) through the Uniswap V2 router, with a caller-supplied minimum output and deadline.",
+    links: ["onlyOwner", "rewardToken", "router", "cApprove", "cSwap"],
+  },
+  {
     id: "setOracle",
     sys: "entry",
     caller: "owner",
@@ -124,9 +134,9 @@ const PIECES: Piece[] = [
     sys: "logic",
     name: "constructor",
     find: "constructor(",
-    n: 6,
-    desc: "Runs once at deployment: wires token, oracle and strategy; sets owner = deployer.",
-    links: ["owner", "asset", "oracle", "strategy"],
+    n: 8,
+    desc: "Runs once at deployment: wires token, oracle, strategy, swap router and reward token; sets owner = deployer.",
+    links: ["owner", "asset", "oracle", "strategy", "router", "rewardToken"],
   },
   {
     id: "_computeShares",
@@ -177,6 +187,8 @@ const PIECES: Piece[] = [
     "shares",
     "paused",
     "feeBps",
+    "router",
+    "rewardToken",
   ].map(
     (v, i): Piece => ({
       id: v,
@@ -202,6 +214,9 @@ const PIECES: Piece[] = [
             "Per-user share balances (mapping). Updated after the external call in withdraw().",
           paused: "Read by whenNotPaused; never written.",
           feeBps: "Protocol fee (0.5%). No setter.",
+          router: "Uniswap V2 router used by harvestRewards(). Set once.",
+          rewardToken:
+            "Token the strategy pays rewards in; swapped to the asset.",
         } as Record<string, string>
       )[v],
     }),
@@ -262,6 +277,27 @@ const PIECES: Piece[] = [
     n: 1,
     desc: "Outgoing token transfer; return value not checked.",
   },
+  {
+    id: "cApprove",
+    sys: "calls",
+    name: "rewardToken.approve",
+    target: "rewardToken",
+    member: "approve",
+    find: "rewardToken.approve",
+    n: 1,
+    desc: "Lets the router pull exactly the reward balance; the return value is required.",
+  },
+  {
+    id: "cSwap",
+    sys: "calls",
+    name: "router.swapExactTokensForTokens",
+    target: "router",
+    member: "swapExactTokensForTokens",
+    find: "router.swapExactTokensForTokens",
+    n: 1,
+    desc: "Swaps rewards to the asset along [rewardToken, asset]; reverts below minOut or after the deadline.",
+    links: ["router"],
+  },
   // ---- external contracts ----
   {
     id: "depERC20",
@@ -270,7 +306,7 @@ const PIECES: Piece[] = [
     find: "import {IERC20}",
     n: 1,
     desc: "The token. The vault assumes standard return values; fee-on-transfer or non-returning tokens would break accounting.",
-    links: ["asset", "cTransferFrom", "cTransfer"],
+    links: ["asset", "rewardToken", "cTransferFrom", "cTransfer", "cApprove"],
   },
   {
     id: "depOracle",
@@ -298,6 +334,15 @@ const PIECES: Piece[] = [
     n: 1,
     desc: "Callback interface implemented by any borrower.",
     links: ["cOnFlash"],
+  },
+  {
+    id: "depUniswap",
+    sys: "deps",
+    name: "IUniswapV2Router02",
+    find: "import {IUniswapV2Router02}",
+    n: 1,
+    desc: "Uniswap V2 router. Executes the reward → asset swap; output is bounded by minOut.",
+    links: ["router", "cSwap"],
   },
   {
     id: "depSender",
@@ -443,6 +488,14 @@ const SEQ: Record<string, Step[]> = {
     ["r", "asset"],
     ["c", "cTransfer"],
   ],
+  harvestRewards: [
+    ["r", "owner"],
+    ["r", "rewardToken"],
+    ["c", "cApprove"],
+    ["r", "router"],
+    ["r", "asset"],
+    ["c", "cSwap"],
+  ],
   receive: [],
 };
 const CALL_TARGET: Record<string, string> = {
@@ -452,12 +505,23 @@ const CALL_TARGET: Record<string, string> = {
   cCall: "depSender",
   cOnFlash: "depFlash",
   cInvest: "depStrategy",
+  cApprove: "depERC20",
+  cSwap: "depUniswap",
 };
 const BANKS = [
   {
     title: "DATA BANK // 01",
     sub: "CONFIG",
-    ids: ["owner", "asset", "oracle", "strategy", "paused", "feeBps"],
+    ids: [
+      "owner",
+      "asset",
+      "oracle",
+      "strategy",
+      "paused",
+      "feeBps",
+      "router",
+      "rewardToken",
+    ],
   },
   {
     title: "DATA BANK // 02",
@@ -467,7 +531,14 @@ const BANKS = [
   {
     title: "DATA BANK // 03",
     sub: "EXTERNAL",
-    ids: ["depERC20", "depOracle", "depStrategy", "depFlash", "depSender"],
+    ids: [
+      "depERC20",
+      "depOracle",
+      "depStrategy",
+      "depFlash",
+      "depUniswap",
+      "depSender",
+    ],
   },
   {
     title: "DATA BANK // 04",
@@ -480,6 +551,7 @@ const ENTRY = [
   "withdraw",
   "flashLoan",
   "harvest",
+  "harvestRewards",
   "setOracle",
   "emergencyWithdraw",
   "receive",
