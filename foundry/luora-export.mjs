@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Luora exporter: runs `forge test`, decodes the call traces with the project's own ABIs,
-// and writes luora-data.json for the Luora Workbench to visualise.
+// and writes luora-data.json for the Luora Workbench to visualise. The `atlas` section (contract map
+// for /atlas) comes from luora-atlas.mjs; set LUORA_ATLAS=<Contract> to pick which contract.
 //
 //   node luora-export.mjs                 # all tests
 //   node luora-export.mjs --mt test_deposit
@@ -9,6 +10,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { buildAtlas } from './luora-atlas.mjs';
 
 const ROOT = process.cwd();
 const extra = process.argv.slice(2);
@@ -116,6 +118,9 @@ for (const [suiteId, suite] of Object.entries(results)) {
 const sources = {};
 for (const a of artifacts) if (!a.file.startsWith('lib/') && existsSync(join(ROOT, a.file))) sources[a.file] = readFileSync(join(ROOT, a.file), 'utf8');
 
+let atlas = null;
+try { atlas = buildAtlas({ root: ROOT }); } catch (e) { console.warn(`luora: atlas skipped — ${e.message}`); }
+
 const forgeVersion = sh('forge', ['--version']).split('\n')[0];
-writeFileSync(join(ROOT, 'luora-data.json'), JSON.stringify({ generatedAt: new Date().toISOString(), forgeVersion, command: ['forge', 'test', '--json', '-vvvv', ...extra].join(' '), tests, sources }, null, 1));
+writeFileSync(join(ROOT, 'luora-data.json'), JSON.stringify({ generatedAt: new Date().toISOString(), forgeVersion, command: ['forge', 'test', '--json', '-vvvv', ...extra].join(' '), tests, sources, atlas }, null, 1));
 console.log(`luora: ${tests.length} tests, ${tests.reduce((n, t) => n + t.frames.length, 0)} frames → luora-data.json`);
