@@ -10,6 +10,7 @@ import {
   RISK_LABEL,
   SYSTEMS,
 } from "@/features/atlas";
+import { pctLabel, pieceCoverage } from "@/features/atlas/utils/coverage";
 import { protocolOf } from "@/features/atlas/utils/protocols";
 
 const QUESTIONS: { q: AiQuestion; label: string }[] = [
@@ -38,6 +39,7 @@ export function PieceInspector({
       : FINDINGS.filter((f) => (f.links ?? []).includes(p.id));
   const conns = [...neighbours(p.id)].filter((c) => c !== p.id);
   const proto = protocolOf(p);
+  const cov = pieceCoverage(model, p.id);
 
   const ask = (q: AiQuestion) => {
     const text = aiAnswer(model, p, q);
@@ -91,6 +93,16 @@ export function PieceInspector({
               </Chip>
             ))}
           </div>
+          {cov && (
+            <div
+              className={`mb-2.5 font-mono text-xs ${cov.state === "untested" ? "text-bad" : cov.state === "covered" ? "text-ok" : "text-muted"}`}
+            >
+              Tests cover {pctLabel(cov.pct)} · lines {cov.lines.hit}/
+              {cov.lines.found} · branches {cov.branches.hit}/
+              {cov.branches.found}
+              {cov.calls != null && ` · entered ${cov.calls}×`}
+            </div>
+          )}
           <p>{p.desc}</p>
           <div className="conns">
             {conns.map((c) => (

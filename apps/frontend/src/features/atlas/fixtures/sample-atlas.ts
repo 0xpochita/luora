@@ -1,4 +1,5 @@
 import type { AtlasData, Piece, Step } from "../types";
+import { SAMPLE_COVERAGE } from "./sample-coverage";
 import { SOURCE } from "./sample-source";
 
 /** Hand-written demo map of the sample contract; shown when no `luora-data.json` atlas exists. */
@@ -570,4 +571,5 @@ export const SAMPLE_ATLAS: AtlasData = {
   banks: BANKS,
   entry: ENTRY,
   internal: INTERNAL,
+  coverage: SAMPLE_COVERAGE,
 };

@@ -2,6 +2,7 @@
 
 import { Panel } from "@/components/ui";
 import type { AtlasModel, CitySim } from "@/features/atlas";
+import { hitLabel } from "@/features/atlas/utils/coverage";
 import { STEP_VERB } from "@/features/atlas/utils/units";
 import { CodeView } from "../source/CodeView";
 
@@ -25,6 +26,33 @@ export function ContractSource({
   const current = at >= 0 ? sim.lines[at] : undefined;
   if (current != null && sim.late[at]) bad.push(current);
   const [k, t] = sim.steps[at] ?? [];
+  const cov = model.coverage;
+  // coverage gutter: times each line ran under the tests (red 0 = never), ◆ taken/total branches when some never ran
+  const gutter = cov
+    ? (n: number) => {
+        const hits = cov.hits[n];
+        const br = cov.branchHits[n] ?? [];
+        const taken = br.filter((b) => b != null && b > 0).length;
+        return (
+          <span className="inline-flex w-[64px] select-none text-[10px]">
+            <span
+              title={hits == null ? undefined : `Ran ${hits}× under the tests`}
+              className={`w-[36px] pr-1.5 text-right ${hits === 0 ? "bg-bad/20 text-bad" : "text-dim"}`}
+            >
+              {hits == null ? "" : hits ? hitLabel(hits) : "0"}
+            </span>
+            {taken < br.length && (
+              <span
+                title={`${br.length - taken} of ${br.length} branches never taken`}
+                className="pl-1 text-bad"
+              >
+                ◆{taken}/{br.length}
+              </span>
+            )}
+          </span>
+        );
+      }
+    : undefined;
 
   return (
     <Panel
@@ -49,6 +77,7 @@ export function ContractSource({
         ) : (
           <span className="text-dim hud-label">
             Select a building · red = finding
+            {cov && " · gutter = test hits"}
           </span>
         )}
       </p>
@@ -57,6 +86,7 @@ export function ContractSource({
         lines={lines}
         bad={bad}
         current={current}
+        gutter={gutter}
       />
     </Panel>
   );

@@ -476,3 +476,58 @@
 .atlas .cproc.late b {
   color: var(--bad);
 }
+
+/* coverage overlay: % on each code building, UNTESTED flag on state-changing entries that never ran */
+.atlas .ccov {
+  padding: 1px 4px;
+  border: 1px solid var(--line);
+  background: rgba(10, 11, 12, 0.85);
+  font-family: var(--font-geist-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.atlas .ccov.covered {
+  color: var(--ok);
+}
+.atlas .ccov.untested {
+  color: var(--bad);
+  border-color: var(--bad);
+}
+.atlas .ccov.flag {
+  padding: 2px 6px;
+  background: var(--bad);
+  color: var(--shell);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+.atlas .covkey {
+  display: flex;
+  gap: 10px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  background: rgba(10, 11, 12, 0.85);
+  color: var(--muted);
+}
+.atlas .covkey span::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 5px;
+  border: 1px solid var(--tick);
+}
+.atlas .covkey .untested::before {
+  border-color: var(--bad);
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--bad) 0 1px,
+    transparent 1px 3px
+  );
+}
+.atlas .covkey .covered::before {
+  border-color: var(--ok);
+  background: var(--ok);
+}
