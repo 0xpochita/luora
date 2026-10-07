@@ -852,12 +852,12 @@ export function createCityScene(
     calls: 35,
   };
   const labelsNow = (): Label[] => [
-    ...[...findingMarks.els.values()].map((el) => ({
-      el,
-      prio: Number(el.dataset.prio) + (el.classList.contains("open") ? 50 : 0),
-      shift: true,
-      keep: true,
-    })),
+    ...[...findingMarks.els.values()].map((el) => {
+      const open = el.classList.contains("open");
+      const prio = Number(el.dataset.prio) + (open ? 50 : 0);
+      // HIGH / MED (prio ≥ 120) and the open group always stay; LOW / INFO may yield
+      return { el, prio, shift: true, keep: open || prio >= 120 };
+    }),
     ...[...blds.values()].flatMap((b) =>
       b.el?.classList.contains("show")
         ? [

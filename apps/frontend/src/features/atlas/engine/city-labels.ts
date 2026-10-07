@@ -123,6 +123,13 @@ export function declutter(labels: Label[]) {
     if (hit(r) && !l.keep) {
       l.el.style.marginTop = "";
       l.el.classList.add("occl");
-    } else placed.push(r);
+      continue;
+    }
+    if (hit(r)) {
+      // kept but still crowded: stay compact (▲n) on its own anchor rather than stacking up
+      l.el.style.marginTop = "";
+      r = l.el.getBoundingClientRect();
+    }
+    placed.push(r);
   }
 }
