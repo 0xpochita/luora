@@ -11,6 +11,7 @@ import { protocolOf } from "../utils/protocols";
 import { STEP_VERB, unitCode } from "../utils/units";
 import { addBase, addStatusLamp, BASE, machineGeometry } from "./endfield";
 import { addBeacon } from "./factory";
+import { type CityOverlay, createCoverageOverlay } from "./overlays/coverage";
 
 export type CityZoom = "city" | "district" | "street";
 /** Simulation frame: steps 0..step of `entry`'s sequence are drawn, `step` is current. */
@@ -26,6 +27,7 @@ export type CityScene = {
   setZoom: (z: CityZoom) => void;
   /** triaged-away findings (false positive / duplicate): markers fade, hosts lose the red edge */
   setDismissed: (ids: Set<string>) => void;
+  setOverlay: (o: CityOverlay | null) => void;
   dispose: () => void;
 };
 
@@ -411,6 +413,7 @@ export function createCityScene(
     (f.mesh.material as THREE.MeshStandardMaterial).color.set("#1b1d20");
     (f.edges.material as THREE.LineBasicMaterial).color.set("#2c2f34");
   }
+  const coverage = createCoverageOverlay(scene, model, blds);
 
   // ---- routes between connected buildings, along the street grid ----
   const routeG = new THREE.Group();
@@ -739,6 +742,7 @@ export function createCityScene(
         focus || lit || (!near && ALWAYS.has(p.sys)),
       );
       b.el?.classList.toggle("focus", focus);
+      coverage.paint(id, body, edge, focus);
     }
     for (const f of fillers)
       (f.edges.material as THREE.LineBasicMaterial).opacity = near ? 0.35 : 1;
@@ -890,6 +894,10 @@ export function createCityScene(
     },
     setDismissed(ids) {
       dismissed = ids;
+      refresh();
+    },
+    setOverlay(o) {
+      coverage.setVisible(o === "coverage");
       refresh();
     },
     dispose() {

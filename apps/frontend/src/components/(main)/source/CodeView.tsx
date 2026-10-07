@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { type ReactNode, useEffect, useMemo, useRef } from "react";
 import { tokenize } from "@/features/trace";
 
 const NOTE_TONE: Record<string, string> = {
@@ -16,6 +16,7 @@ export function CodeView({
   notes,
   bad = [],
   current,
+  gutter,
 }: {
   source: string;
   /** 0-based lines to highlight. */
@@ -26,6 +27,8 @@ export function CodeView({
   current?: number;
   /** 0-based line → tags shown at the end of the line. */
   notes?: Record<number, string[]>;
+  /** extra gutter cell after the line number (e.g. test coverage hits), by 0-based line */
+  gutter?: (line: number) => ReactNode;
 }) {
   const ref = useRef<HTMLPreElement>(null);
   // Lines/tokens are positional; give them stable ids up front.
@@ -76,6 +79,7 @@ export function CodeView({
           <span className="inline-block w-[42px] select-none pr-3.5 text-right text-dim">
             {line.n + 1}
           </span>
+          {gutter?.(line.n)}
           {line.tokens.map((t) => (
             <span
               key={t.id}

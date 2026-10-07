@@ -9,13 +9,14 @@
 //   node luora-export.mjs --mt test_deposit
 //   node luora-export.mjs --slither=out/slither.json --aderyn=report.json   # default: reports/*.json
 //
-// No dependencies; needs `forge` on PATH.
+// Coverage (atlas.coverage) comes from luora-coverage.mjs. No dependencies; needs `forge` on PATH.
 import { execFile, execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { availableParallelism, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { buildAtlas } from './luora-atlas.mjs';
 import { loadReports, mergeFindings, reportFiles } from './luora-findings.mjs';
+import { buildCoverage } from './luora-coverage.mjs';
 import { decodeParams, fmtWord, innermost, keccak256, lineIndex, parseSourceMap, pcToIc, revertReason, sig } from './luora-lib.mjs';
 
 const ROOT = process.cwd();
@@ -205,6 +206,8 @@ if (atlas) {
   mergeFindings(atlas, loadReports(files));
   console.log(`luora: findings ${atlas.pieces.filter(p => p.sys === 'vulns').length} (${Object.entries(files).filter(([, f]) => f).map(([t]) => t).join(' + ') || 'atlas checks only'})`);
 }
+// coverage runs the whole suite (match filters dropped) so untested code is not an artefact of --mt
+if (atlas) try { atlas.coverage = buildCoverage({ root: ROOT, atlas, args: passthrough }); } catch (e) { console.warn(`luora: coverage skipped — ${e.message.split('\n')[0]}`); }
 
 const forgeVersion = sh('forge', ['--version']).split('\n')[0];
 writeFileSync(join(ROOT, 'luora-data.json'), JSON.stringify({ generatedAt: new Date().toISOString(), forgeVersion, command: ['forge', 'test', '--json', '-vvvv', ...extra].join(' '), tests, sources, atlas }, null, 1));

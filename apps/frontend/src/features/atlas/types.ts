@@ -98,6 +98,26 @@ export type AtlasData = {
   banks: Bank[];
   entry: string[];
   internal: string[];
+  /** forge coverage of this contract (absent when the export ran without it) */
+  coverage?: AtlasCoverage;
+};
+
+export type CoverageCount = { hit: number; found: number };
+/** `forge coverage` lcov folded onto the atlas. Line keys are 0-based, like `Piece.line`. */
+export type AtlasCoverage = {
+  tool: string;
+  lines: CoverageCount;
+  branches: CoverageCount;
+  functions: CoverageCount;
+  /** instrumented source line → times executed */
+  hits: Record<string, number>;
+  /** source line → per-branch times taken (null = branch point never reached) */
+  branchHits: Record<string, (number | null)[]>;
+  /** piece id → its body's coverage (functions exclude their signature line); calls = times entered */
+  pieces: Record<
+    string,
+    { lines: CoverageCount; branches: CoverageCount; calls?: number }
+  >;
 };
 
 export type AtlasSource = { data: AtlasData; origin: "local" | "sample" };

@@ -12,6 +12,7 @@ import {
 import { AtlasDashboard } from "./AtlasDashboard";
 import { CityStage } from "./CityStage";
 import { ContractSource } from "./ContractSource";
+import { CoverageSummary } from "./CoverageSummary";
 import { ExplorerView } from "./ExplorerView";
 import { PieceInspector } from "./PieceInspector";
 import "./atlas.css";
@@ -81,7 +82,10 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
               triage={triage}
             />
           ) : (
-            <AtlasDashboard model={model} />
+            <>
+              <CoverageSummary model={model} onSelect={setSelected} />
+              <AtlasDashboard model={model} />
+            </>
           )}
         </aside>
       </div>

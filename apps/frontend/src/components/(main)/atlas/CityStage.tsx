@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Brackets, Chip, Panel, SegmentedControl, Tabs } from "@/components/ui";
+import {
+  Brackets,
+  Chip,
+  Panel,
+  SegmentedControl,
+  Tabs,
+  ToggleChip,
+} from "@/components/ui";
 import type {
   AtlasModel,
   CitySim,
@@ -12,6 +19,7 @@ import type {
   CityScene,
   CityZoom,
 } from "@/features/atlas/engine/create-city-scene";
+import { pctLabel, pieceCoverage } from "@/features/atlas/utils/coverage";
 import { protocolOf } from "@/features/atlas/utils/protocols";
 import { STEP_VERB, unitCode, unitStatus } from "@/features/atlas/utils/units";
 import { FindingsTab } from "./FindingsTab";
@@ -53,6 +61,11 @@ export function CityStage({
   const [tab, setTab] = useState<UnitTab>("entry");
   const dismissed = useRef(triage.dismissed);
   dismissed.current = triage.dismissed;
+  const hasCov = !!model.coverage;
+  const [cov, setCov] = useState(false);
+  const covOn = useRef(cov);
+  covOn.current = cov;
+  const [least, setLeast] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -63,6 +76,7 @@ export function CityStage({
           pick.current(id),
         );
         scene.current.setDismissed(dismissed.current);
+        scene.current.setOverlay(covOn.current ? "coverage" : null);
       },
     );
     return () => {
@@ -80,13 +94,20 @@ export function CityStage({
     [dismissedKey],
   );
   useEffect(() => scene.current?.setZoom(zoom), [zoom]);
+  useEffect(() => scene.current?.setOverlay(cov ? "coverage" : null), [cov]);
   const { entry, steps, step, late } = sim;
   useEffect(() => {
     scene.current?.setSim(entry ? { entry, steps, step, late } : null);
   }, [entry, steps, step, late]);
 
   const sys = UNIT_TABS.find((t) => t.value === tab)?.sys ?? [];
-  const units = model.pieces.filter((p) => sys.includes(p.sys));
+  const covOf = (id: string) => pieceCoverage(model, id);
+  const units = model.pieces.filter(
+    (p) => sys.includes(p.sys) && (!least || covOf(p.id)),
+  );
+  // least tested first: lowest lines + branches coverage leads
+  if (least)
+    units.sort((a, b) => (covOf(a.id)?.pct ?? 1) - (covOf(b.id)?.pct ?? 1));
 
   return (
     <section className="stage city flex flex-col">
@@ -102,6 +123,22 @@ export function CityStage({
             ]}
           />
         </div>
+        {hasCov && (
+          <div className="absolute top-3 right-3 z-[3] flex flex-col items-end gap-2">
+            <ToggleChip
+              label="Coverage"
+              on={cov}
+              onToggle={() => setCov(!cov)}
+            />
+            {cov && (
+              <div className="covkey hud-label">
+                <span className="untested">Untested</span>
+                <span className="partial">Partial</span>
+                <span className="covered">Covered</span>
+              </div>
+            )}
+          </div>
+        )}
         {sim.entry && (
           <div className="absolute top-14 left-3 z-[3] w-[300px]">
             <SimPanel model={model} sim={sim} />
@@ -112,11 +149,22 @@ export function CityStage({
         </div>
       </div>
       <div className="relative z-[3] flex-none border-line border-t bg-shell/95 px-3 pt-2 pb-3">
-        <Tabs
-          value={tab}
-          onChange={setTab}
-          options={UNIT_TABS.map((t) => ({ value: t.value, label: t.label }))}
-        />
+        <div className="flex items-end gap-2">
+          <Tabs
+            value={tab}
+            onChange={setTab}
+            options={UNIT_TABS.map((t) => ({ value: t.value, label: t.label }))}
+          />
+          {hasCov && (
+            <div className="ml-auto self-center">
+              <ToggleChip
+                label="Least tested first"
+                on={least}
+                onToggle={() => setLeast(!least)}
+              />
+            </div>
+          )}
+        </div>
         {tab === "findings" ? (
           <FindingsTab
             model={model}
@@ -133,6 +181,7 @@ export function CityStage({
                   : STATUS[unitStatus(model, p.id)];
               const on = selected === p.id;
               const proto = protocolOf(p);
+              const c = covOf(p.id);
               return (
                 <button
                   type="button"
@@ -164,6 +213,14 @@ export function CityStage({
                   <span className="max-w-[160px] truncate font-mono text-muted text-xs">
                     {p.name}
                   </span>
+                  {c && (
+                    <span
+                      title={`Coverage: ${c.lines.hit}/${c.lines.found} lines, ${c.branches.hit}/${c.branches.found} branches`}
+                      className={`font-mono text-xs ${c.state === "untested" ? "text-bad" : c.state === "covered" ? "text-ok" : "text-muted"}`}
+                    >
+                      {pctLabel(c.pct)}
+                    </span>
+                  )}
                   <span className="border border-line px-1 text-dim text-xs">
                     ↗
                   </span>
