@@ -413,7 +413,6 @@ export function createCityScene(
   // ---- routes between connected buildings, along the street grid ----
   const routeG = new THREE.Group();
   scene.add(routeG);
-  let pulses: { curve: THREE.CurvePath<THREE.Vector3>; dot: THREE.Mesh }[] = [];
   function route(a: THREE.Vector3, b: THREE.Vector3) {
     const y = 0.08;
     const pts = [V(a.x, y, a.z), V(a.x, y, b.z), V(b.x, y, b.z)];
@@ -424,7 +423,6 @@ export function createCityScene(
   }
   function drawRoutes(sel: string | null) {
     clearGroup(routeG);
-    pulses = [];
     if (!sel || !blds.has(sel)) return;
     const a = (blds.get(sel) as Bld).mesh.position;
     // leader line from rooftop to marker
@@ -453,42 +451,84 @@ export function createCityScene(
           new THREE.LineBasicMaterial({ color: col }),
         ),
       );
-      const dot = new THREE.Mesh(
-        new THREE.BoxGeometry(0.28, 0.28, 0.28),
-        new THREE.MeshBasicMaterial({ color: col }),
-      );
-      routeG.add(dot);
-      pulses.push({ curve: path, dot });
     }
+  }
+
+  // ---- one USDC token walks the selected entry point's steps along the belts ----
+  type Seg = {
+    path: THREE.CurvePath<THREE.Vector3>;
+    rev: boolean;
+    len: number;
+  };
+  const tex = new THREE.TextureLoader().load("/logos/usdc.png");
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const token = new THREE.Sprite(
+    new THREE.SpriteMaterial({ map: tex, depthTest: false, fog: false }),
+  );
+  token.scale.set(1.8, 1.8, 1);
+  token.renderOrder = 10;
+  token.visible = false;
+  scene.add(token);
+  const legOf = (entry: string, id: string) =>
+    base.leg(entry, id) ??
+    (blds.has(entry) && blds.has(id)
+      ? route(
+          (blds.get(entry) as Bld).mesh.position,
+          (blds.get(id) as Bld).mesh.position,
+        )
+      : undefined);
+  let journey: { segs: Seg[]; total: number } | null = null;
+  function planJourney(sel: string | null) {
+    const entry =
+      sel && model.seq[sel]
+        ? sel
+        : (model.entry.find((id) => model.seq[id]?.length) ?? null);
+    const segs: Seg[] = [];
+    // entry → target → back to the entry, for each step in execution order
+    for (const [, id] of entry ? model.seq[entry] : []) {
+      const path = id !== entry && entry ? legOf(entry, id) : undefined;
+      if (!path) continue;
+      const len = path.getLength();
+      segs.push({ path, rev: false, len }, { path, rev: true, len });
+    }
+    const total = segs.reduce((n, g) => n + g.len, 0);
+    journey = total ? { segs, total } : null;
+  }
+  const SPEED = 6; // world units per second
+  const REST = 1.2; // seconds parked at the entry before the next run
+  function walk(t: number) {
+    token.visible = !!journey;
+    if (!journey) return;
+    const cycle = journey.total / SPEED + REST;
+    let d = still ? 0 : (t % cycle) * SPEED;
+    for (const g of journey.segs) {
+      if (d <= g.len) {
+        const u = d / g.len;
+        token.position.copy(g.path.getPointAt(g.rev ? 1 - u : u)).setY(1);
+        return;
+      }
+      d -= g.len;
+    }
+    const first = journey.segs[0];
+    token.position.copy(first.path.getPointAt(0)).setY(1);
   }
 
   // ---- simulation: one route per executed step, a pulse on the current one ----
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const simG = new THREE.Group();
   scene.add(simG);
-  let simPulse: {
-    curve: THREE.CurvePath<THREE.Vector3>;
-    dot: THREE.Mesh;
-    t0: number;
-  } | null = null;
+  let simLeg: { curve: THREE.CurvePath<THREE.Vector3>; t0: number } | null =
+    null;
   let simTarget: { id: string; late: boolean } | null = null;
   /** read = dashed grey, write = solid white, call = solid grey, event = fine dashes; late write = red */
   const STEP_STYLE: Record<
     Step[0],
-    { color: string; dash?: [number, number]; dot: () => THREE.BufferGeometry }
+    { color: string; dash?: [number, number] }
   > = {
-    r: {
-      color: "#9ca0a6",
-      dash: [0.45, 0.3],
-      dot: () => new THREE.SphereGeometry(0.2, 10, 8),
-    },
-    w: { color: "#ffffff", dot: () => new THREE.BoxGeometry(0.34, 0.34, 0.34) },
-    c: { color: "#c3c6ca", dot: () => new THREE.OctahedronGeometry(0.3) },
-    e: {
-      color: "#dfe1e3",
-      dash: [0.12, 0.22],
-      dot: () => new THREE.TorusGeometry(0.22, 0.06, 6, 16),
-    },
+    r: { color: "#9ca0a6", dash: [0.45, 0.3] },
+    w: { color: "#ffffff" },
+    c: { color: "#c3c6ca" },
+    e: { color: "#dfe1e3", dash: [0.12, 0.22] },
   };
   function clearGroup(g: THREE.Group) {
     for (const c of [...g.children]) {
@@ -501,7 +541,7 @@ export function createCityScene(
   }
   function drawSim(sim: CitySimFrame | null) {
     clearGroup(simG);
-    simPulse = null;
+    simLeg = null;
     simTarget = null;
     const from = sim && blds.get(sim.entry);
     routeG.visible = !from || sim.step < 0;
@@ -529,12 +569,10 @@ export function createCityScene(
       line.computeLineDistances();
       simG.add(line);
       if (!cur) return;
-      const dot = new THREE.Mesh(
-        st.dot(),
-        new THREE.MeshBasicMaterial({ color }),
-      );
-      simG.add(dot);
-      simPulse = { curve, dot, t0: performance.now() };
+      simLeg = {
+        curve: legOf(sim.entry, t) ?? curve,
+        t0: performance.now(),
+      };
       simTarget = { id: t, late: sim.late[i] };
     });
   }
@@ -680,22 +718,16 @@ export function createCityScene(
       if (k === 1) anim = null;
     }
     base.update(t);
-    pulses.forEach((p, i) => {
-      p.dot.position.copy(
-        p.curve.getPoint(still ? 0.5 : (t * 0.35 + i * 0.19) % 1),
-      );
-    });
-    if (simPulse) {
-      const k = still
-        ? 1
-        : Math.min(1, (performance.now() - simPulse.t0) / 900);
-      simPulse.dot.position.copy(simPulse.curve.getPoint(ease(k)));
-      simPulse.dot.rotation.y = t * 2;
-    }
+    if (simLeg) {
+      const k = still ? 1 : Math.min(1, (performance.now() - simLeg.t0) / 900);
+      token.visible = true;
+      token.position.copy(simLeg.curve.getPointAt(ease(k))).setY(1);
+    } else if (!simG.children.length) walk(t);
     controls.update();
     renderer.render(scene, camera);
     css2.render(scene, camera);
   });
+  planJourney(null);
   refresh();
 
   return {
@@ -707,6 +739,7 @@ export function createCityScene(
             ? model.lesion[id]
             : id;
       drawRoutes(selected);
+      planJourney(selected);
       refresh();
       frame();
     },

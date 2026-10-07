@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
-import type { Piece, Step } from "../types";
+import type { Piece } from "../types";
 import type { AtlasModel } from "../utils/model";
 import { unitStatus } from "../utils/units";
 import { factoryGeometry } from "./factory";
@@ -13,7 +13,7 @@ import { factoryGeometry } from "./factory";
  *   entry → intake machine (hopper on top)     storage → tank (mapping: 2×2 tank farm)
  *   logic → processor (stacked unit + vents)   access  → gate frame
  *   events → relay mast                         deps / calls → factory (outside the wall)
- *   belts: seq steps (read = item flows to the entry, write / call / event = away from it)
+ *   belts: seq steps; one USDC token travels them in execution order (see create-city-scene)
  *   power lines: Protocol Core (the contract) → role slot (owner / keeper) → relay pylon →
  *                each entry gated on that role
  *   calls leave the plot only through the wall gates and cross the river on the bridges
@@ -173,7 +173,14 @@ export function addStatusLamp(
 // ---- plot, belts, power -----------------------------------------------------
 
 export type BaseNode = { pos: THREE.Vector3; top: number };
-export type Base = { update: (t: number) => void };
+export type Base = {
+  update: (t: number) => void;
+  /** belt from an entry to a target, always oriented entry → target */
+  leg: (
+    entry: string,
+    target: string,
+  ) => THREE.CurvePath<THREE.Vector3> | undefined;
+};
 
 /**
  * Adds the base around the inner districts: pipeline wall with gates, conveyor belts per
@@ -254,11 +261,7 @@ export function addBase(
     roughness: 0.8,
   });
   const railMat = new THREE.LineBasicMaterial({ color: "#3a3e44" });
-  const flows: {
-    path: THREE.CurvePath<THREE.Vector3>;
-    n: number;
-    k: Step[0];
-  }[] = [];
+  const legs = new Map<string, THREE.CurvePath<THREE.Vector3>>();
   let lane = 0;
   const isExt = (id: string) =>
     model.byId[id]?.sys === "calls" || model.byId[id]?.sys === "deps";
@@ -271,10 +274,10 @@ export function addBase(
   for (const [entry, steps] of Object.entries(model.seq)) {
     const from = nodes.get(entry);
     if (!from) continue;
-    const kinds = new Map<string, Step[0]>();
-    for (const [k, id] of steps)
-      if (id !== entry && (!kinds.has(id) || k === "w")) kinds.set(id, k);
-    for (const [id, k] of kinds) {
+    const targets = new Set(
+      steps.map(([, id]) => id).filter((id) => id !== entry),
+    );
+    for (const id of targets) {
       const to = nodes.get(id);
       if (!to) continue;
       const off = ((lane++ % 5) - 2) * 0.16;
@@ -300,7 +303,6 @@ export function addBase(
         );
       } else pts.push(V(xs, 0.06, zs));
       pts.push(V(xs, 0.06, b.z), V(b.x, 0.06, b.z));
-      if (k === "r") pts.reverse(); // reads: data comes to the entry
       const path = new THREE.CurvePath<THREE.Vector3>();
       for (let i = 0; i < pts.length - 1; i++) {
         const [p, q] = [pts[i], pts[i + 1]];
@@ -324,27 +326,9 @@ export function addBase(
       );
       rail.position.y = 0.04;
       g.add(rail);
-      flows.push({ path, n: Math.max(1, Math.round(path.getLength() / 3)), k });
+      legs.set(`${entry}>${id}`, path);
     }
   }
-  const total = flows.reduce((s, f) => s + f.n, 0);
-  const items = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(0.16, 0.12, 0.16),
-    new THREE.MeshBasicMaterial({ color: "#ffffff" }),
-    Math.max(1, total),
-  );
-  items.count = total;
-  const shade: Record<Step[0], THREE.Color> = {
-    r: new THREE.Color("#6b7077"),
-    w: new THREE.Color("#b4b8bd"),
-    c: new THREE.Color("#8a8f96"),
-    e: new THREE.Color("#4a4e55"),
-  };
-  let n = 0;
-  for (const f of flows)
-    for (let i = 0; i < f.n; i++) items.setColorAt(n++, shade[f.k]);
-  g.add(items);
-
   // Protocol Core: the contract itself, source of the power grid
   const coreGeo = merged(
     [
@@ -446,23 +430,10 @@ export function addBase(
     );
   }
 
-  const m = new THREE.Matrix4();
-  const place = (t: number) => {
-    let i = 0;
-    for (const f of flows)
-      for (let j = 0; j < f.n; j++) {
-        const u = STILL ? (j + 0.5) / f.n : (t * 0.08 + j / f.n) % 1;
-        const at = f.path.getPointAt(u);
-        m.makeTranslation(at.x, 0.13, at.z);
-        items.setMatrixAt(i++, m);
-      }
-    items.instanceMatrix.needsUpdate = true;
-  };
-  place(0);
   return {
+    leg: (entry, target) => legs.get(`${entry}>${target}`),
     update: (t) => {
       if (STILL) return;
-      place(t);
       coreLightMat.opacity = 0.45 + 0.55 * Math.max(0, Math.sin(t * 1.6)) ** 3;
       coreLight.rotation.y = t * 0.8;
     },
