@@ -35,7 +35,7 @@ export function CodeView({
   return (
     <pre
       ref={ref}
-      className="relative mx-2.5 mb-2.5 flex-1 overflow-auto rounded-3xl border-[1.5px] border-trayline bg-tray py-2.5 pb-10 font-mono text-xs leading-[1.8]"
+      className="relative flex-1 overflow-auto bg-tray py-2.5 pb-10 font-mono text-xs leading-[1.8]"
     >
       {lines.map((line) => {
         const on =
@@ -43,7 +43,7 @@ export function CodeView({
         return (
           <span
             key={line.id}
-            className={`block pr-3.5 transition-colors ${on ? "bg-accent/11 shadow-[inset_3px_0_var(--accent)]" : ""}`}
+            className={`block pr-3.5 transition-colors ${on ? "bg-accent/8 shadow-[inset_2px_0_var(--accent)]" : ""}`}
           >
             <span className="inline-block w-[42px] select-none pr-3.5 text-right text-dim">
               {line.n + 1}

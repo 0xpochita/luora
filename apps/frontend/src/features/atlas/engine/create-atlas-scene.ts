@@ -69,7 +69,7 @@ export function createAtlasScene(
   controls.enableDamping = true;
   controls.minZoom = 0.6;
   controls.maxZoom = 4;
-  scene.add(new THREE.HemisphereLight("#c9d6ff", "#0a0b0d", 1.2));
+  scene.add(new THREE.HemisphereLight("#d6d8db", "#0a0b0c", 1.2));
   const key = new THREE.DirectionalLight("#ffffff", 1.6);
   key.position.set(-10, 30, 14);
   scene.add(key);
@@ -231,8 +231,8 @@ export function createAtlasScene(
     el.style.setProperty("--c", colorOf(p));
     el.innerHTML =
       p.sys === "vulns"
-        ? `<i>●</i>${p.name.slice(0, 4)}`
-        : `<i>⬢</i>${p.name.replace(/</g, "&lt;")}`;
+        ? `<i>■</i>${p.name.slice(0, 4)}`
+        : `<i>■</i>${p.name.replace(/</g, "&lt;")}`;
     const lo = new CSS2DObject(el);
     lo.position.y = p.sys === "vulns" ? 0.5 : p.id === "shares" ? 2.4 : 1.25;
     g.add(lo);

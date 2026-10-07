@@ -1,3 +1,4 @@
+import { Chip, KV, Meter, Panel } from "@/components/ui";
 import { FINDINGS, LAYERS, layerOf, PIECES, riskScore } from "@/features/atlas";
 
 /** round so server and client render identical SVG attributes */
@@ -19,7 +20,7 @@ function Spark({ seed, color }: { seed: number; color: string }) {
     <svg viewBox={`0 0 ${W} ${H + 8}`} aria-hidden="true">
       <defs>
         <linearGradient id={`spark${seed}`} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor={color} stopOpacity=".35" />
+          <stop offset="0" stopColor={color} stopOpacity=".18" />
           <stop offset="1" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
@@ -30,19 +31,19 @@ function Spark({ seed, color }: { seed: number; color: string }) {
           x2={W}
           y1={gy}
           y2={gy}
-          stroke="#2a2e35"
+          stroke="var(--line)"
           strokeDasharray="2 3"
         />
       ))}
       <path d={`${d}L${x(8)} ${H}L${x(0)} ${H}Z`} fill={`url(#spark${seed})`} />
-      <path d={d} fill="none" stroke="#e7eaee" strokeWidth="1.6" />
+      <path d={d} fill="none" stroke={color} strokeWidth="1.2" />
       {[0, 2, 4, 6, 8].map((i) => (
         <text
           key={i}
           x={x(i)}
           y={H + 7}
           fontSize="9"
-          fill="#5a6069"
+          fill="var(--dim)"
           textAnchor="middle"
         >
           t{i}
@@ -71,25 +72,19 @@ function Gauge({ value }: { value: number }) {
       role="img"
       aria-label={`Risk score ${value.toFixed(1)} of 10`}
     >
-      <defs>
-        <linearGradient id="gauge" x1="0" x2="1">
-          <stop offset="0" stopColor="#ff7a1a" stopOpacity=".25" />
-          <stop offset="1" stopColor="#ffb02e" />
-        </linearGradient>
-      </defs>
       <path
         d={arc(70, a0, a1)}
         fill="none"
-        stroke="#24282e"
-        strokeWidth="12"
-        strokeLinecap="round"
+        stroke="var(--line)"
+        strokeWidth="10"
+        strokeDasharray="2 2"
       />
       <path
         d={arc(70, a0, aV)}
         fill="none"
-        stroke="url(#gauge)"
-        strokeWidth="12"
-        strokeLinecap="round"
+        stroke="var(--accent)"
+        strokeWidth="10"
+        strokeDasharray="2 2"
       />
       {[0, 1, 2, 3, 4, 5].map((i) => {
         const [x, y] = A(52, a0 + ((a1 - a0) * i) / 5);
@@ -99,7 +94,7 @@ function Gauge({ value }: { value: number }) {
             x={x}
             y={y + 3}
             fontSize="9"
-            fill="#5a6069"
+            fill="var(--dim)"
             textAnchor="middle"
           >
             {i * 2}
@@ -112,64 +107,70 @@ function Gauge({ value }: { value: number }) {
         textAnchor="middle"
         fontSize="38"
         fontWeight="300"
-        fill="#eef0f3"
+        fill="var(--ink)"
+        fontFamily="var(--font-geist-mono)"
       >
         {value.toFixed(1)}
       </text>
-      <text x="95" y="128" textAnchor="middle" fontSize="11" fill="#8a9099">
-        risk score / 10
+      <text
+        x="95"
+        y="128"
+        textAnchor="middle"
+        fontSize="11"
+        fill="var(--muted)"
+        letterSpacing="1.5"
+      >
+        RISK / 10
       </text>
     </svg>
   );
 }
 
 export function AtlasDashboard() {
+  const mapped = PIECES.filter((p) => p.sys !== "vulns");
   return (
     <>
-      <div className="box">
-        <h3>
-          Audit risk <small>SAMPLE</small>
-        </h3>
-        <div className="gauge">
+      <Panel label="Audit risk" aside={<Chip>Sample</Chip>}>
+        <div className="grid grid-cols-[170px_1fr] items-center gap-3 p-3">
           <Gauge value={riskScore()} />
-          <div className="tot">
-            <div>
-              <span>Pieces mapped</span>
-              <b>{PIECES.filter((p) => p.sys !== "vulns").length}</b>
-            </div>
-            <div>
-              <span>Open findings</span>
-              <b style={{ color: "var(--a-vulns)" }}>{FINDINGS.length}</b>
-            </div>
+          <div>
+            <KV k="Pieces mapped">{mapped.length}</KV>
+            <KV k="Open findings">
+              <span className="text-bad">{FINDINGS.length}</span>
+            </KV>
+            <KV k="Layers">{LAYERS.length}</KV>
           </div>
         </div>
-      </div>
-      <div className="box">
-        <h3>
-          Layers <small>CALLS PER TEST · SAMPLE</small>
-        </h3>
+      </Panel>
+      <Panel label="Layers" aside="Calls per test · sample">
         {LAYERS.map((L, i) => {
-          const n = PIECES.filter(
-            (p) => p.sys !== "vulns" && layerOf(p) === L,
-          ).length;
+          const n = mapped.filter((p) => layerOf(p) === L).length;
           const f = FINDINGS.filter((x) => layerOf(x) === L).length;
           return (
             <div
               key={L.key}
-              className="lcard"
-              style={{ "--c": L.color } as React.CSSProperties}
+              className="grid grid-cols-[130px_1fr] items-center gap-3 border-line border-b px-3 py-2.5 last:border-b-0"
             >
-              <div className="k">
-                <div className="hx" />
-                <b>{n}</b>
-                <span>{L.name} pieces</span>
-                <em>{f ? `▲ ${f} finding${f > 1 ? "s" : ""}` : ""}</em>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="size-2" style={{ background: L.color }} />
+                  <span className="text-muted hud-label">{L.name}</span>
+                </div>
+                <b className="mt-1 block font-light font-mono text-[22px]">
+                  {String(n).padStart(2, "0")}
+                </b>
+                <Meter value={n / mapped.length} className="w-full" />
+                <span
+                  className={`mt-1.5 block hud-label ${f ? "text-bad" : "text-dim"}`}
+                >
+                  {f ? `▲ ${f} finding${f > 1 ? "s" : ""}` : "Clear"}
+                </span>
               </div>
               <Spark seed={i + 1} color={L.color} />
             </div>
           );
         })}
-      </div>
+      </Panel>
     </>
   );
 }

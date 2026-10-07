@@ -1,6 +1,6 @@
 "use client";
 
-import { Tray, TrayCard } from "@/components/ui";
+import { Panel } from "@/components/ui";
 import { type DisplayKind, displayKind, type Frame } from "@/features/trace";
 import { TraceRow } from "./TraceRow";
 
@@ -20,8 +20,8 @@ export function TraceList({
     .map((frame, index) => ({ frame, index }))
     .filter(({ frame }) => !hidden.has(displayKind(frame)));
   return (
-    <Tray>
-      <TrayCard className="p-2">
+    <Panel label="Frames" aside={`${visible.length} / ${frames.length}`}>
+      <div className="p-1.5">
         {visible.map(({ frame, index }, order) => (
           <TraceRow
             key={index}
@@ -33,7 +33,7 @@ export function TraceList({
             onSelect={() => onSelect(index)}
           />
         ))}
-      </TrayCard>
-    </Tray>
+      </div>
+    </Panel>
   );
 }

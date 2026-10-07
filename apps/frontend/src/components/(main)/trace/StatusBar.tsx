@@ -1,4 +1,4 @@
-import { Pill } from "@/components/ui";
+import { Chip } from "@/components/ui";
 import type { TestResult } from "@/features/trace";
 
 export function StatusBar({
@@ -12,15 +12,17 @@ export function StatusBar({
 }) {
   const pass = test.status === "Success";
   return (
-    <div className="mb-3.5 flex flex-wrap items-center gap-2.5 rounded-3xl border-[1.5px] border-trayline bg-tray px-3 py-2.5 text-[12.5px] text-muted">
-      <Pill tone={pass ? "ok" : "bad"}>{pass ? "✓ PASS" : "✕ FAIL"}</Pill>
-      <code className="rounded-xl bg-card px-2.5 py-1 font-mono text-ink text-xs shadow-sh1">
+    <div className="mb-3 flex flex-wrap items-center gap-2.5 border border-line bg-tray px-3 py-2 text-muted text-xs">
+      <Chip tone={pass ? "ok" : "bad"} dot>
+        {pass ? "Pass" : "Fail"}
+      </Chip>
+      <code className="border border-line bg-card px-2 py-0.5 font-mono text-ink text-xs">
         {command}
       </code>
-      <span>{test.file}</span>
+      <span className="font-mono">{test.file}</span>
       {test.reason && <span className="text-bad">{test.reason}</span>}
-      <span className="ml-auto">
-        exported {new Date(exportedAt).toLocaleString()}
+      <span className="ml-auto hud-label text-dim">
+        Exported {new Date(exportedAt).toLocaleString()}
       </span>
     </div>
   );

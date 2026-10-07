@@ -1,39 +1,29 @@
-import type { ReactNode } from "react";
-import { Tray, TrayCard } from "@/components/ui";
+import { KV, Panel } from "@/components/ui";
 import { human, netBalances, type Transfer } from "@/features/trace";
 
-function Panel({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <Tray>
-      <h4 className="mx-3 mt-2 mb-2.5 font-semibold text-sm tracking-tight">
-        {title}
-      </h4>
-      <TrayCard className="px-3.5 py-1.5">{children}</TrayCard>
-    </Tray>
-  );
-}
-
 const Empty = ({ text }: { text: string }) => (
-  <p className="py-2.5 text-[12.5px] text-muted">{text}</p>
+  <p className="px-3 py-3 text-dim hud-label">{text}</p>
 );
 
 export function BalancePanels({ transfers }: { transfers: Transfer[] }) {
   const net = netBalances(transfers);
   return (
-    <div className="mt-3.5 grid grid-cols-2 gap-3.5">
-      <Panel title="Token transfers">
+    <div className="mt-3 grid grid-cols-2 gap-3">
+      <Panel label="Token transfers" aside={transfers.length}>
         {transfers.length ? (
-          <ul className="divide-y divide-line text-[12.5px]">
+          <ul className="divide-y divide-line px-3 py-1 text-[12.5px]">
             {transfers.map((t, i) => (
               <li
                 key={`${t.from}-${t.to}-${t.value}-${i.toString()}`}
-                className="flex gap-3 py-2.5"
+                className="flex gap-3 py-2"
               >
-                <span className="text-dim">[{i + 1}]</span>
+                <span className="font-mono text-dim text-xs">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
                 <span>
                   {t.from} → {t.to}
                 </span>
-                <span className="ml-auto font-medium font-mono text-xs">
+                <span className="ml-auto font-mono text-xs">
                   {human(t.value)} {t.token}
                 </span>
               </li>
@@ -43,21 +33,18 @@ export function BalancePanels({ transfers }: { transfers: Transfer[] }) {
           <Empty text="No token transfers in this test." />
         )}
       </Panel>
-      <Panel title="Net balance change">
+      <Panel label="Net balance change" aside={net.length}>
         {net.length ? (
-          <ul className="divide-y divide-line text-[12.5px]">
+          <div className="divide-y divide-line px-3 py-1">
             {net.map(([addr, v]) => (
-              <li key={addr} className="flex py-2.5">
-                {addr}
-                <span
-                  className={`ml-auto font-medium font-mono text-xs ${v > 0n ? "text-ok" : "text-bad"}`}
-                >
+              <KV key={addr} k={addr} className="py-2">
+                <span className={v > 0n ? "text-ok" : "text-bad"}>
                   {v > 0n ? "+" : "−"}
                   {human((v < 0n ? -v : v).toString())}
                 </span>
-              </li>
+              </KV>
             ))}
-          </ul>
+          </div>
         ) : (
           <Empty text="Balances unchanged (or mint only)." />
         )}

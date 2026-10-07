@@ -14,11 +14,13 @@ export function ToggleChip({
       type="button"
       aria-pressed={on}
       onClick={onToggle}
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-2xl border border-trayline bg-card px-3 py-1.5 font-medium text-[12.5px] shadow-sh1 transition-opacity ${
-        on ? "" : "opacity-45"
+      className={`inline-flex items-center gap-2 whitespace-nowrap border px-2.5 py-1.5 transition-colors hud-label ${
+        on ? "border-edge text-ink" : "border-line text-dim"
       }`}
     >
-      <span className={`size-2 rounded-full ${on ? "bg-ok" : "bg-dim"}`} />
+      <span
+        className={`size-2 border ${on ? "border-accent bg-accent" : "border-dim"}`}
+      />
       {label}
     </button>
   );

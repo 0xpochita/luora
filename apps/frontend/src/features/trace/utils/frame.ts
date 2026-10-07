@@ -18,19 +18,6 @@ export const KIND_ICON: Record<DisplayKind, string> = {
   REVERT: "✕",
 };
 
-/** Pastel bubble behind each kind's icon (Tailwind classes). */
-export const KIND_TONE: Record<DisplayKind, string> = {
-  CALL: "bg-sky",
-  STATICCALL: "bg-mint",
-  DELEGATECALL: "bg-lilac",
-  CALLCODE: "bg-lilac",
-  CREATE: "bg-mint",
-  CREATE2: "bg-mint",
-  EVENT: "bg-butter",
-  VM: "bg-lilac",
-  REVERT: "bg-peach",
-};
-
 export function edgeLabel(child: Frame): string {
   const k = displayKind(child);
   if (k === "EVENT") return "emits";

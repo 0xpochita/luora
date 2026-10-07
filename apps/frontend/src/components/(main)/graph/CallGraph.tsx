@@ -65,7 +65,7 @@ export function CallGraph({
   return (
     <div
       ref={vp}
-      className="dot-grid relative h-full min-h-[440px] cursor-grab overflow-hidden rounded-[32px] border-[1.5px] border-trayline bg-tray active:cursor-grabbing"
+      className="hud-grid relative h-full min-h-[440px] cursor-grab overflow-hidden border border-line bg-tray active:cursor-grabbing"
       style={{
         backgroundSize: `${24 * view.k}px ${24 * view.k}px`,
         backgroundPosition: `${view.x}px ${view.y}px`,
@@ -91,23 +91,24 @@ export function CallGraph({
                 <path
                   d={`M${e.x1} ${e.y1} C${m} ${e.y1} ${m} ${e.y2} ${e.x2} ${e.y2}`}
                   fill="none"
-                  strokeLinecap="round"
-                  className={on ? "stroke-accent" : "stroke-guide"}
-                  strokeWidth={on ? 2.4 : 2}
+                  className={on ? "stroke-accent" : "stroke-edge"}
+                  strokeWidth={on ? 1.6 : 1.2}
                 />
-                <circle
-                  cx={e.x1}
-                  cy={e.y1}
-                  r={4}
-                  className="fill-card stroke-guide"
-                  strokeWidth={2}
+                <rect
+                  x={e.x1 - 3.5}
+                  y={e.y1 - 3.5}
+                  width={7}
+                  height={7}
+                  className="fill-shell stroke-tick"
+                  strokeWidth={1.5}
                 />
-                <circle
-                  cx={e.x2}
-                  cy={e.y2}
-                  r={4}
-                  className="fill-card stroke-guide"
-                  strokeWidth={2}
+                <rect
+                  x={e.x2 - 3.5}
+                  y={e.y2 - 3.5}
+                  width={7}
+                  height={7}
+                  className="fill-shell stroke-tick"
+                  strokeWidth={1.5}
                 />
               </g>
             );
@@ -116,7 +117,7 @@ export function CallGraph({
         {edges.map((e) => (
           <span
             key={`l-${e.id}`}
-            className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-trayline bg-card px-2.5 py-0.5 font-medium text-[11px] text-muted shadow-sh1"
+            className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap border border-line bg-shell px-1.5 py-px text-[9.5px] text-muted hud-label"
             style={{ left: (e.x1 + e.x2) / 2, top: (e.y1 + e.y2) / 2 }}
           >
             {e.label}
