@@ -8,7 +8,7 @@ import type { Piece, Step } from "../types";
 import { ICON_PATH, type IconKey, iconOf } from "../utils/icons";
 import type { AtlasModel } from "../utils/model";
 import { protocolOf } from "../utils/protocols";
-import { unitCode } from "../utils/units";
+import { STEP_VERB, unitCode } from "../utils/units";
 import { addBase, addStatusLamp, BASE, machineGeometry } from "./endfield";
 import { addBeacon } from "./factory";
 
@@ -454,18 +454,26 @@ export function createCityScene(
     }
   }
 
-  // ---- one USDC token walks the selected entry point's steps along the belts ----
-  type Seg = {
+  // ---- one USDC token is carried through the entry point's steps and processed at each ----
+  type Stop = {
+    i: number;
+    k: Step[0];
+    id: string;
     path: THREE.CurvePath<THREE.Vector3>;
-    rev: boolean;
     len: number;
+    line: number;
+    late: boolean;
   };
   const tex = new THREE.TextureLoader().load("/logos/usdc.png");
   tex.colorSpace = THREE.SRGBColorSpace;
-  const token = new THREE.Sprite(
-    new THREE.SpriteMaterial({ map: tex, depthTest: false, fog: false }),
-  );
-  token.scale.set(1.8, 1.8, 1);
+  const tokenMat = new THREE.SpriteMaterial({
+    map: tex,
+    depthTest: false,
+    fog: false,
+  });
+  const token = new THREE.Sprite(tokenMat);
+  const TOKEN = 1.8;
+  token.scale.set(TOKEN, TOKEN, 1);
   token.renderOrder = 10;
   token.visible = false;
   scene.add(token);
@@ -477,48 +485,154 @@ export function createCityScene(
           (blds.get(id) as Bld).mesh.position,
         )
       : undefined);
-  let journey: { segs: Seg[]; total: number } | null = null;
+  const SPEED = 9; // world units per second on the belts
+  const PROC = 1.8; // seconds spent processing at each stop
+  const REST = 1.2; // seconds parked at the entry before the next run
+  function stopsOf(entry: string): Stop[] {
+    const lines = model.stepLines(entry);
+    const late = model.lateWrites(entry);
+    return (model.seq[entry] ?? []).flatMap(([k, id], i) => {
+      const path = id !== entry ? legOf(entry, id) : undefined;
+      if (!path || !blds.has(id)) return [];
+      return [
+        {
+          i,
+          k,
+          id,
+          path,
+          len: path.getLength(),
+          line: lines[i],
+          late: late[i],
+        },
+      ];
+    });
+  }
+  let journey: { stops: Stop[]; total: number } | null = null;
   function planJourney(sel: string | null) {
     const entry =
       sel && model.seq[sel]
         ? sel
         : (model.entry.find((id) => model.seq[id]?.length) ?? null);
-    const segs: Seg[] = [];
-    // entry → target → back to the entry, for each step in execution order
-    for (const [, id] of entry ? model.seq[entry] : []) {
-      const path = id !== entry && entry ? legOf(entry, id) : undefined;
-      if (!path) continue;
-      const len = path.getLength();
-      segs.push({ path, rev: false, len }, { path, rev: true, len });
-    }
-    const total = segs.reduce((n, g) => n + g.len, 0);
-    journey = total ? { segs, total } : null;
+    const stops = entry ? stopsOf(entry) : [];
+    const total =
+      stops.reduce((n, s) => n + (2 * s.len) / SPEED + PROC, 0) + REST;
+    journey = stops.length ? { stops, total } : null;
   }
-  const SPEED = 6; // world units per second
-  const REST = 1.2; // seconds parked at the entry before the next run
+
+  // processing: a ring works the building while a caption shows the executing source line
+  const fxMat = new THREE.MeshBasicMaterial({
+    color: "#ffffff",
+    transparent: true,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+    fog: false,
+  });
+  const fx = new THREE.Mesh(new THREE.RingGeometry(0.9, 1, 48), fxMat);
+  fx.rotation.x = -Math.PI / 2;
+  fx.visible = false;
+  scene.add(fx);
+  const capEl = document.createElement("div");
+  capEl.className = "cproc";
+  const capHead = document.createElement("b");
+  const capCode = document.createElement("code");
+  capEl.append(capHead, capCode);
+  const cap = new CSS2DObject(capEl);
+  cap.visible = false;
+  scene.add(cap);
+  let capKey = "";
+  let procId: string | null = null;
+  let procLate = false;
+  function setProc(id: string | null, late = false) {
+    if (procId === id && procLate === late) return;
+    procId = id;
+    procLate = late;
+    refresh();
+  }
+  function idle() {
+    fx.visible = false;
+    cap.visible = false;
+    tokenMat.rotation = 0;
+    token.scale.set(TOKEN, TOKEN, 1);
+    setProc(null);
+  }
+  function travel(s: Stop, u: number) {
+    idle();
+    token.position.copy(s.path.getPointAt(u)).setY(1);
+  }
+  function process(s: Stop, u: number) {
+    const b = blds.get(s.id) as Bld;
+    const { x, z } = b.mesh.position;
+    const top = b.top;
+    const dip = Math.sin(Math.PI * u); // 0 → 1 → 0 over the stop
+    let y = top + 1;
+    let size = TOKEN;
+    tokenMat.rotation = 0;
+    fx.visible = true;
+    fxMat.color.set(s.late ? "#ff4545" : "#ffffff");
+    if (s.k === "r") {
+      // read: scanner sweeps up the slot, the token waits for the value
+      fx.position.set(x, top * u, z);
+      fx.scale.setScalar(1.6);
+      fxMat.opacity = 0.9;
+      y += Math.sin(u * Math.PI * 4) * 0.12;
+    } else if (s.k === "w") {
+      // write: the token is pressed into the slot, the ring stamps down
+      fx.position.set(x, top * (1 - u), z);
+      fx.scale.setScalar(1.6);
+      fxMat.opacity = 0.9;
+      y -= dip * 1.1;
+      size *= 1 - 0.4 * dip;
+    } else if (s.k === "c") {
+      // external call: the token goes into the factory and spins while it is worked on
+      const q = (u * 3) % 1;
+      fx.position.set(x, 0.12, z);
+      fx.scale.setScalar(1.3 + q * 1.8);
+      fxMat.opacity = 1 - q;
+      y -= dip * Math.min(top, 2.4);
+      size *= 1 - 0.5 * dip;
+      tokenMat.rotation = u * Math.PI * 4;
+    } else {
+      // event: the result is broadcast from the relay mast
+      const q = (u * 2) % 1;
+      fx.position.set(x, top + 0.2, z);
+      fx.scale.setScalar(0.5 + q * 4);
+      fxMat.opacity = 1 - q;
+    }
+    token.position.set(x, y, z);
+    token.scale.set(size, size, 1);
+    const key = `${s.i}:${s.id}`;
+    if (capKey !== key) {
+      capKey = key;
+      const p = model.byId[s.id];
+      capHead.textContent = `${String(s.i + 1).padStart(2, "0")} ${STEP_VERB[s.k]} · ${p?.name ?? s.id}${s.late ? " · AFTER CALL" : ""}`;
+      capCode.textContent = `L${s.line + 1}  ${model.lines[s.line]?.trim() ?? ""}`;
+      capEl.classList.toggle("late", s.late);
+    }
+    cap.position.set(x, top + 2.8, z);
+    cap.visible = true;
+    setProc(s.id, s.late);
+  }
   function walk(t: number) {
     token.visible = !!journey;
-    if (!journey) return;
-    const cycle = journey.total / SPEED + REST;
-    let d = still ? 0 : (t % cycle) * SPEED;
-    for (const g of journey.segs) {
-      if (d <= g.len) {
-        const u = d / g.len;
-        token.position.copy(g.path.getPointAt(g.rev ? 1 - u : u)).setY(1);
-        return;
-      }
-      d -= g.len;
+    if (!journey) return idle();
+    let d = still ? 0 : t % journey.total;
+    for (const s of journey.stops) {
+      const go = s.len / SPEED;
+      if (d < go) return travel(s, d / go);
+      d -= go;
+      if (d < PROC) return process(s, d / PROC);
+      d -= PROC;
+      if (d < go) return travel(s, 1 - d / go);
+      d -= go;
     }
-    const first = journey.segs[0];
-    token.position.copy(first.path.getPointAt(0)).setY(1);
+    travel(journey.stops[0], 0);
   }
 
   // ---- simulation: one route per executed step, a pulse on the current one ----
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const simG = new THREE.Group();
   scene.add(simG);
-  let simLeg: { curve: THREE.CurvePath<THREE.Vector3>; t0: number } | null =
-    null;
+  let simLeg: { stop: Stop; t0: number } | null = null;
   let simTarget: { id: string; late: boolean } | null = null;
   /** read = dashed grey, write = solid white, call = solid grey, event = fine dashes; late write = red */
   const STEP_STYLE: Record<
@@ -569,8 +683,17 @@ export function createCityScene(
       line.computeLineDistances();
       simG.add(line);
       if (!cur) return;
+      const path = legOf(sim.entry, t) ?? curve;
       simLeg = {
-        curve: legOf(sim.entry, t) ?? curve,
+        stop: {
+          i,
+          k,
+          id: t,
+          path,
+          len: path.getLength(),
+          line: model.stepLines(sim.entry)[i],
+          late: sim.late[i],
+        },
         t0: performance.now(),
       };
       simTarget = { id: t, late: sim.late[i] };
@@ -585,7 +708,7 @@ export function createCityScene(
     const near = selected ? model.neighbours(selected) : null;
     for (const [id, b] of blds) {
       const p = b.piece as Piece;
-      const target = simTarget?.id === id;
+      const target = simTarget?.id === id || procId === id;
       const focus = id === selected || id === hovered || target;
       const lit = !!near?.has(id);
       const dim = !!near && !lit;
@@ -596,7 +719,8 @@ export function createCityScene(
         body.opacity = dim ? 0.35 : 1;
       }
       edge.opacity = dim ? 0.25 : 1;
-      if (target && simTarget?.late) edge.color.set("#ff4545");
+      if (target && (simTarget?.id === id ? simTarget.late : procLate))
+        edge.color.set("#ff4545");
       else if (!model.isLesionHost(id))
         edge.color.set(
           focus ? "#ffffff" : lit ? "#c9ccd1" : p.ghost ? "#8a8f96" : "#5a5e65",
@@ -719,10 +843,14 @@ export function createCityScene(
     }
     base.update(t);
     if (simLeg) {
-      const k = still ? 1 : Math.min(1, (performance.now() - simLeg.t0) / 900);
+      // sim: ride the current step's belt, then keep processing until the next step
+      const ms = performance.now() - simLeg.t0;
       token.visible = true;
-      token.position.copy(simLeg.curve.getPointAt(ease(k))).setY(1);
+      if (!still && ms < 500) travel(simLeg.stop, ease(ms / 500));
+      else if (blds.has(simLeg.stop.id))
+        process(simLeg.stop, still ? 0.5 : ((ms - 500) / 1000 / PROC) % 1);
     } else if (!simG.children.length) walk(t);
+    else idle();
     controls.update();
     renderer.render(scene, camera);
     css2.render(scene, camera);

@@ -444,3 +444,35 @@
 .atlas .sim-step .k.e {
   text-decoration: underline dotted;
 }
+
+/* City: caption over the building the USDC token is being processed in */
+.atlas .cproc {
+  display: grid;
+  gap: 3px;
+  max-width: 320px;
+  padding: 5px 8px;
+  border: 1px solid var(--edge);
+  background: color-mix(in srgb, var(--shell) 88%, transparent);
+  font-family: var(--font-geist-mono);
+  pointer-events: none;
+}
+.atlas .cproc b {
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+  text-transform: uppercase;
+}
+.atlas .cproc code {
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.atlas .cproc.late {
+  border-color: var(--bad);
+}
+.atlas .cproc.late b {
+  color: var(--bad);
+}
