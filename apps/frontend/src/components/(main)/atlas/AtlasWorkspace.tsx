@@ -9,6 +9,8 @@ import {
 } from "@/features/atlas";
 import { AtlasDashboard } from "./AtlasDashboard";
 import { AtlasStage } from "./AtlasStage";
+import { CityStage } from "./CityStage";
+import { ExplorerView } from "./ExplorerView";
 import { PieceInspector } from "./PieceInspector";
 import { TerminalView } from "./TerminalView";
 import "./atlas.css";
@@ -35,6 +37,8 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
           onChange={setView}
           options={[
             { value: "atlas", label: "Contract atlas" },
+            { value: "city", label: "City" },
+            { value: "explorer", label: "Explorer" },
             { value: "terminal", label: "Terminal I/O" },
           ]}
         />
@@ -48,15 +52,27 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
         </div>
       </header>
       <div className="body">
-        <AtlasStage model={model} selected={selected} onSelect={setSelected}>
-          {view === "terminal" && (
-            <TerminalView
+        {view === "explorer" ? (
+          <section className="stage">
+            <ExplorerView
               model={model}
               selected={selected}
               onSelect={setSelected}
             />
-          )}
-        </AtlasStage>
+          </section>
+        ) : view === "city" ? (
+          <CityStage model={model} selected={selected} onSelect={setSelected} />
+        ) : (
+          <AtlasStage model={model} selected={selected} onSelect={setSelected}>
+            {view === "terminal" && (
+              <TerminalView
+                model={model}
+                selected={selected}
+                onSelect={setSelected}
+              />
+            )}
+          </AtlasStage>
+        )}
         <aside>
           {selected ? (
             <PieceInspector

@@ -76,6 +76,6 @@ export type AtlasData = {
 
 export type AtlasSource = { data: AtlasData; origin: "local" | "sample" };
 
-export type AtlasView = "atlas" | "terminal";
+export type AtlasView = "atlas" | "city" | "explorer" | "terminal";
 export type CamView = "iso" | "front" | "top";
 export type AiQuestion = "explain" | "risks" | "test";
