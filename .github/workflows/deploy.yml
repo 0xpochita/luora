@@ -1,0 +1,51 @@
+name: Deploy (Vercel)
+
+# Preview deploy for every PR, production deploy on main.
+# Needs repo secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
+# (Vercel project with Root Directory = apps/frontend). Skips cleanly when unset.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Vercel secrets
+        id: gate
+        run: echo "enabled=${{ secrets.VERCEL_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
+      - if: steps.gate.outputs.enabled == 'true'
+        uses: actions/checkout@v4
+      - if: steps.gate.outputs.enabled == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          package_json_file: apps/frontend/package.json
+      - if: steps.gate.outputs.enabled == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - if: steps.gate.outputs.enabled == 'true'
+        name: Deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          PROD: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: |
+          ENV=$([ "$PROD" = "true" ] && echo production || echo preview)
+          FLAG=$([ "$PROD" = "true" ] && echo --prod || echo "")
+          npx vercel@latest pull --yes --environment=$ENV --token=$VERCEL_TOKEN
+          npx vercel@latest build $FLAG --token=$VERCEL_TOKEN
+          npx vercel@latest deploy --prebuilt $FLAG --token=$VERCEL_TOKEN
+      - if: steps.gate.outputs.enabled != 'true'
+        run: echo "::notice::Vercel secrets not set — skipping deploy."

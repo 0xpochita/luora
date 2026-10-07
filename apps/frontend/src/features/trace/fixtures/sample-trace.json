@@ -1,0 +1,950 @@
+{
+  "generatedAt": "2026-10-07T05:01:37.604Z",
+  "forgeVersion": "forge Version: 1.5.1-stable",
+  "command": "forge test --json -vvvv",
+  "tests": [
+    {
+      "suite": "LuoraVaultTest",
+      "file": "test/LuoraVault.t.sol",
+      "name": "test_deposit()",
+      "status": "Success",
+      "kind": {
+        "Unit": {
+          "gas": 107748
+        }
+      },
+      "reason": null,
+      "frames": [
+        {
+          "d": 0,
+          "kind": "CALL",
+          "to": "LuoraVaultTest",
+          "contract": "LuoraVaultTest",
+          "file": "test/LuoraVault.t.sol",
+          "fn": "test_deposit",
+          "args": "",
+          "ret": "",
+          "ok": true,
+          "status": "Stop",
+          "gas": 107748,
+          "events": []
+        },
+        {
+          "d": 1,
+          "kind": "CALL",
+          "to": "vm",
+          "contract": "vm",
+          "file": null,
+          "fn": "prank",
+          "args": "msgSender=alice",
+          "ret": "",
+          "ok": true,
+          "status": "Return",
+          "gas": 0,
+          "events": []
+        },
+        {
+          "d": 1,
+          "kind": "CALL",
+          "to": "LuoraVault",
+          "contract": "LuoraVault",
+          "file": "src/LuoraVault.sol",
+          "fn": "deposit",
+          "args": "amount=1000000000",
+          "ret": "",
+          "ok": true,
+          "status": "Stop",
+          "gas": 91190,
+          "events": []
+        },
+        {
+          "d": 2,
+          "kind": "CALL",
+          "to": "MockUSDC",
+          "contract": "MockUSDC",
+          "file": "src/mocks/Mocks.sol",
+          "fn": "transferFrom",
+          "args": "from=alice, to=LuoraVault, amount=1000000000",
+          "ret": "true",
+          "ok": true,
+          "status": "Return",
+          "gas": 36161,
+          "events": []
+        },
+        {
+          "d": 3,
+          "kind": "EVENT",
+          "to": "MockUSDC",
+          "contract": "MockUSDC",
+          "file": null,
+          "fn": "Transfer",
+          "args": "from=alice, to=LuoraVault, value=1000000000",
+          "ret": "",
+          "ok": true,
+          "gas": null
+        },
+        {
+          "d": 2,
+          "kind": "EVENT",
+          "to": "LuoraVault",
+          "contract": "LuoraVault",
+          "file": null,
+          "fn": "Deposit",
+          "args": "user=alice, assets=1000000000, shares=1000000000",
+          "ret": "",
+          "ok": true,
+          "gas": null
+        },
+        {
+          "d": 1,
+          "kind": "STATICCALL",
+          "to": "LuoraVault",
+          "contract": "LuoraVault",
+          "file": "src/LuoraVault.sol",
+          "fn": "shares",
+          "args": "arg0=alice",
+          "ret": "1000000000",
+          "ok": true,
+          "status": "Return",
+          "gas": 890,
+          "events": []
+        },
+        {
+          "d": 1,
+          "kind": "STATICCALL",
+          "to": "MockUSDC",
+          "contract": "MockUSDC",
+          "file": "src/mocks/Mocks.sol",
+          "fn": "balanceOf",
+          "args": "arg0=LuoraVault",
+          "ret": "1000000000",
+          "ok": true,
+          "status": "Return",
+          "gas": 823,
+          "events": []
+        }
+      ],
+      "transfers": [
+        {
+          "token": "MockUSDC",
+          "from": "alice",
+          "to": "LuoraVault",
+          "value": "1000000000"
+        }
+      ]
+    },
+    {
+      "suite": "LuoraVaultTest",
+      "file": "test/LuoraVault.t.sol",
+      "name": "test_depositThenWithdraw()",
+      "status": "Success",
+      "kind": {
+        "Unit": {
+          "gas": 144083
+        }
+      },
+      "reason": null,
+      "frames": [
+        {
+          "d": 0,
+          "kind": "CALL",
+          "to": "LuoraVaultTest",
+          "contract": "LuoraVaultTest",
+          "file": "test/LuoraVault.t.sol",
+          "fn": "test_depositThenWithdraw",
+          "args": "",
+          "ret": "",
+          "ok": true,
+          "status": "Stop",
+          "gas": 171583,
+          "events": []
+        },
+        {
+          "d": 1,
+          "kind": "CALL",
+          "to": "vm",
+          "contract": "vm",
+          "file": null,
+          "fn": "prank",
+          "args": "msgSender=bob",
+          "ret": "",
+          "ok": true,
+          "status": "Return",
+          "gas": 0,
+          "events": []
+        },
+        {
+          "d": 1,
+          "kind": "CALL",
+          "to": "LuoraVault",
+          "contract": "LuoraVault",
+          "file": "src/LuoraVault.sol",
+          "fn": "deposit",
+          "args": "amount=20000000000",
+          "ret": "",
+          "ok": true,
+          "status": "Stop",
+          "gas": 91190,
+          "events": []
+        },
+        {
+          "d": 2,
+          "kind": "CALL",
+          "to": "MockUSDC",
+          "contract": "MockUSDC",
+          "file": "src/mocks/Mocks.sol",
+          "fn": "transferFrom",
+          "args": "from=bob, to=LuoraVault, amount=20000000000",
+          "ret": "true",
+          "ok": true,
+          "status": "Return",
+          "gas": 36161,
+          "events": []
+        },
+        {
+          "d": 3,
+          "kind": "EVENT",
+          "to": "MockUSDC",
+          "contract": "MockUSDC",
+          "file": null,
+          "fn": "Transfer",
+          "args": "from=bob, to=LuoraVault, value=20000000000",
+          "ret": "",
+          "ok": true,
+          "gas": null
+        },
+        {
+          "d": 2,
+          "kind": "EVENT",
+          "to": "LuoraVault",
+          "contract": "LuoraVault",
+          "file": null,
+          "fn": "Deposit",
+          "args": "user=bob, assets=20000000000, shares=20000000000",
+          "ret": "",
+          "ok": true,
+          "gas": null
+        },
+        {
+          "d": 1,
+          "kind": "CALL",
+          "to": "vm",
+          "contract": "vm",
+          "file": null,
+          "fn": "startPrank",
+          "args": "msgSender=alice",
+          "ret": "",
+          "ok": true,
+          "status": "Return",
+          "gas": 0,
+          "events": []
+        },
+        {
+          "d": 1,
+          "kind": "CALL",
+          "to": "LuoraVault",
+          "contract": "LuoraVault",
+          "file": "src/LuoraVault.sol",
+          "fn": "deposit",
+          "args": "amount=1000000000",
+          "ret": "",
+          "ok": true,
+          "status": "Stop",
+          "gas": 49515,
+          "events": []
+        },
+        {
+          "d": 2,
+          "kind": "STATICCALL",
+          "to": "MockOracle",
+          "contract": "MockOracle",
+          "file": "src/mocks/Mocks.sol",
+          "fn": "getPrice",
+          "args": "arg0=MockUSDC",
+          "ret": "1000000000000000000",
+          "ok": true,
+          "status": "Return",
+          "gas": 2718,
+          "events": []
+        },
+        {
+          "d": 2,
+          "kind": "CALL",
+          "to": "MockUSDC",
+          "contract": "MockUSDC",
+          "file": "src/mocks/Mocks.sol",
+          "fn": "transferFrom",
+          "args": "from=alice, to=LuoraVault, amount=1000000000",
+          "ret": "true",
+          "ok": true,
+          "status": "Return",
+          "gas": 14261,
+          "events": []
+        },
+        {
+          "d": 3,
+          "kind": "EVENT",
+          "to": "MockUSDC",
+          "contract": "MockUSDC",
+          "file": null,
+          "fn": "Transfer",
+          "args": "from=alice, to=LuoraVault, value=1000000000",
+          "ret": "",
+          "ok": true,
+          "gas": null
+        },
+        {
+          "d": 2,
+          "kind": "EVENT",
+          "to": "LuoraVault",
+          "contract": "LuoraVault",
+          "file": null,
+          "fn": "Deposit",
+          "args": "user=alice, assets=1000000000, shares=1000000000",
+          "ret": "",
+          "ok": true,
+          "gas": null
+        },
+        {
+          "d": 1,
+          "kind": "CALL",
+          "to": "LuoraVault",
+          "contract": "LuoraVault",
+          "file": "src/LuoraVault.sol",
+          "fn": "withdraw",
+          "args": "shareAmount=1000000000",
+          "ret": "",
+          "ok": true,
+          "status": "Stop",
+          "gas": 10613,
+          "events": []
+        },
+        {
+          "d": 2,
+          "kind": "STATICCALL",
+          "to": "MockOracle",
+          "contract": "MockOracle",
+          "file": "src/mocks/Mocks.sol",
+          "fn": "getPrice",
+          "args": "arg0=MockUSDC",
+          "ret": "1000000000000000000",
+          "ok": true,
+          "status": "Return",
+          "gas": 718,
+          "events": []
+        },
+        {
+          "d": 2,
+          "kind": "CALL",
+          "to": "MockUSDC",
+          "contract": "MockUSDC",
+          "file": "src/mocks/Mocks.sol",
+          "fn": "transfer",
+          "args": "to=alice, amount=1000000000",
+          "ret": "true",
+          "ok": true,
+          "status": "Return",
+          "gas": 3880,
+          "events": []
+        },
+        {
+          "d": 3,
+          "kind": "EVENT",
+          "to": "MockUSDC",
+          "contract": "MockUSDC",
+          "file": null,
+          "fn": "Transfer",
+          "args": "from=LuoraVault, to=alice, value=1000000000",
+          "ret": "",
+          "ok": true,
+          "gas": null
+        },
+        {
+          "d": 2,
+          "kind": "EVENT",
+          "to": "LuoraVault",
+          "contract": "LuoraVault",
+          "file": null,
+          "fn": "Withdraw",
+          "args": "user=alice, assets=1000000000, shares=1000000000",
+          "ret": "",
+          "ok": true,
+          "gas": null
+        },
+        {
+          "d": 1,
+          "kind": "CALL",
+          "to": "vm",
+          "contract": "vm",
+          "file": null,
+          "fn": "stopPrank",
+          "args": "",
+          "ret": "",
+          "ok": true,
+          "status": "Return",
+          "gas": 0,
+          "events": []
+        },
+        {
+          "d": 1,
+          "kind": "STATICCALL",
+          "to": "MockUSDC",
+          "contract": "MockUSDC",
+          "file": "src/mocks/Mocks.sol",
+          "fn": "balanceOf",
+          "args": "arg0=alice",
+          "ret": "5000000000",
+          "ok": true,
+          "status": "Return",
+          "gas": 823,
+          "events": []
+        },
+        {
+          "d": 1,
+          "kind": "STATICCALL",
+          "to": "LuoraVault",
+          "contract": "LuoraVault",
+          "file": "src/LuoraVault.sol",
+          "fn": "totalShares",
+          "args": "",
+          "ret": "20000000000",
+          "ok": true,
+          "status": "Return",
+          "gas": 448,
+          "events": []
+        }
+      ],
+      "transfers": [
+        {
+          "token": "MockUSDC",
+          "from": "bob",
+          "to": "LuoraVault",
+          "value": "20000000000"
+        },
+        {
+          "token": "MockUSDC",
+          "from": "alice",
+          "to": "LuoraVault",
+          "value": "1000000000"
+        },
+        {
+          "token": "MockUSDC",
+          "from": "LuoraVault",
+          "to": "alice",
+          "value": "1000000000"
+        }
+      ]
+    },
+    {
+      "suite": "LuoraVaultTest",
+      "file": "test/LuoraVault.t.sol",
+      "name": "test_harvestMovesFundsToStrategy()",
+      "status": "Success",
+      "kind": {
+        "Unit": {
+          "gas": 153884
+        }
+      },
+      "reason": null,
+      "frames": [
+        {
+          "d": 0,
+          "kind": "CALL",
+          "to": "LuoraVaultTest",
+          "contract": "LuoraVaultTest",
+          "file": "test/LuoraVault.t.sol",
+          "fn": "test_harvestMovesFundsToStrategy",
+          "args": "",
+          "ret": "",
+          "ok": true,
+          "status": "Stop",
+          "gas": 173784,
+          "events": []
+        },
+        {
+          "d": 1,
+          "kind": "CALL",
+          "to": "vm",
+          "contract": "vm",
+          "file": null,
+          "fn": "prank",
+          "args": "msgSender=alice",
+          "ret": "",
+          "ok": true,
+          "status": "Return",
+          "gas": 0,
+          "events": []
+        },
+        {
+          "d": 1,
+          "kind": "CALL",
+          "to": "LuoraVault",
+          "contract": "LuoraVault",
+          "file": "src/LuoraVault.sol",
+          "fn": "deposit",
+          "args": "amount=1000000000",
+          "ret": "",
+          "ok": true,
+          "status": "Stop",
+          "gas": 91190,
+          "events": []
+        },
+        {
+          "d": 2,
+          "kind": "CALL",
+          "to": "MockUSDC",
+          "contract": "MockUSDC",
+          "file": "src/mocks/Mocks.sol",
+          "fn": "transferFrom",
+          "args": "from=alice, to=LuoraVault, amount=1000000000",
+          "ret": "true",
+          "ok": true,
+          "status": "Return",
+          "gas": 36161,
+          "events": []
+        },
+        {
+          "d": 3,
+          "kind": "EVENT",
+          "to": "MockUSDC",
+          "contract": "MockUSDC",
+          "file": null,
+          "fn": "Transfer",
+          "args": "from=alice, to=LuoraVault, value=1000000000",
+          "ret": "",
+          "ok": true,
+          "gas": null
+        },
+        {
+          "d": 2,
+          "kind": "EVENT",
+          "to": "LuoraVault",
+          "contract": "LuoraVault",
+          "file": null,
+          "fn": "Deposit",
+          "args": "user=alice, assets=1000000000, shares=1000000000",
+          "ret": "",
+          "ok": true,
+          "gas": null
+        },
+        {
+          "d": 1,
+          "kind": "CALL",
+          "to": "LuoraVault",
+          "contract": "LuoraVault",
+          "file": "src/LuoraVault.sol",
+          "fn": "harvest",
+          "args": "",
+          "ret": "",
+          "ok": true,
+          "status": "Stop",
+          "gas": 62495,
+          "events": []
+        },
+        {
+          "d": 2,
+          "kind": "STATICCALL",
+          "to": "MockUSDC",
+          "contract": "MockUSDC",
+          "file": "src/mocks/Mocks.sol",
+          "fn": "balanceOf",
+          "args": "arg0=LuoraVault",
+          "ret": "1000000000",
+          "ok": true,
+          "status": "Return",
+          "gas": 823,
+          "events": []
+        },
+        {
+          "d": 2,
+          "kind": "CALL",
+          "to": "MockUSDC",
+          "contract": "MockUSDC",
+          "file": "src/mocks/Mocks.sol",
+          "fn": "transfer",
+          "args": "to=MockStrategy, amount=1000000000",
+          "ret": "true",
+          "ok": true,
+          "status": "Return",
+          "gas": 25780,
+          "events": []
+        },
+        {
+          "d": 3,
+          "kind": "EVENT",
+          "to": "MockUSDC",
+          "contract": "MockUSDC",
+          "file": null,
+          "fn": "Transfer",
+          "args": "from=LuoraVault, to=MockStrategy, value=1000000000",
+          "ret": "",
+          "ok": true,
+          "gas": null
+        },
+        {
+          "d": 2,
+          "kind": "CALL",
+          "to": "MockStrategy",
+          "contract": "MockStrategy",
+          "file": "src/mocks/Mocks.sol",
+          "fn": "invest",
+          "args": "amount=1000000000",
+          "ret": "20000000",
+          "ok": true,
+          "status": "Return",
+          "gas": 997,
+          "events": []
+        },
+        {
+          "d": 1,
+          "kind": "STATICCALL",
+          "to": "MockUSDC",
+          "contract": "MockUSDC",
+          "file": "src/mocks/Mocks.sol",
+          "fn": "balanceOf",
+          "args": "arg0=MockStrategy",
+          "ret": "1000000000",
+          "ok": true,
+          "status": "Return",
+          "gas": 823,
+          "events": []
+        },
+        {
+          "d": 1,
+          "kind": "STATICCALL",
+          "to": "LuoraVault",
+          "contract": "LuoraVault",
+          "file": "src/LuoraVault.sol",
+          "fn": "owner",
+          "args": "",
+          "ret": "LuoraVaultTest",
+          "ok": true,
+          "status": "Return",
+          "gas": 574,
+          "events": []
+        },
+        {
+          "d": 1,
+          "kind": "STATICCALL",
+          "to": "LuoraVault",
+          "contract": "LuoraVault",
+          "file": "src/LuoraVault.sol",
+          "fn": "shares",
+          "args": "arg0=LuoraVaultTest",
+          "ret": "100000",
+          "ok": true,
+          "status": "Return",
+          "gas": 890,
+          "events": []
+        }
+      ],
+      "transfers": [
+        {
+          "token": "MockUSDC",
+          "from": "alice",
+          "to": "LuoraVault",
+          "value": "1000000000"
+        },
+        {
+          "token": "MockUSDC",
+          "from": "LuoraVault",
+          "to": "MockStrategy",
+          "value": "1000000000"
+        }
+      ]
+    },
+    {
+      "suite": "LuoraVaultTest",
+      "file": "test/LuoraVault.t.sol",
+      "name": "test_pause_blocksDeposits()",
+      "status": "Success",
+      "kind": {
+        "Unit": {
+          "gas": 39857
+        }
+      },
+      "reason": null,
+      "frames": [
+        {
+          "d": 0,
+          "kind": "CALL",
+          "to": "LuoraVaultTest",
+          "contract": "LuoraVaultTest",
+          "file": "test/LuoraVault.t.sol",
+          "fn": "test_pause_blocksDeposits",
+          "args": "",
+          "ret": "",
+          "ok": true,
+          "status": "Stop",
+          "gas": 39857,
+          "events": []
+        },
+        {
+          "d": 1,
+          "kind": "CALL",
+          "to": "vm",
+          "contract": "vm",
+          "file": null,
+          "fn": "prank",
+          "args": "msgSender=keeper",
+          "ret": "",
+          "ok": true,
+          "status": "Return",
+          "gas": 0,
+          "events": []
+        },
+        {
+          "d": 1,
+          "kind": "CALL",
+          "to": "LuoraVault",
+          "contract": "LuoraVault",
+          "file": "src/LuoraVault.sol",
+          "fn": "pause",
+          "args": "",
+          "ret": "",
+          "ok": true,
+          "status": "Stop",
+          "gas": 24523,
+          "events": []
+        },
+        {
+          "d": 1,
+          "kind": "CALL",
+          "to": "vm",
+          "contract": "vm",
+          "file": null,
+          "fn": "prank",
+          "args": "msgSender=alice",
+          "ret": "",
+          "ok": true,
+          "status": "Return",
+          "gas": 0,
+          "events": []
+        },
+        {
+          "d": 1,
+          "kind": "CALL",
+          "to": "vm",
+          "contract": "vm",
+          "file": null,
+          "fn": "expectRevert",
+          "args": "revertData=…",
+          "ret": "",
+          "ok": true,
+          "status": "Return",
+          "gas": 0,
+          "events": []
+        },
+        {
+          "d": 1,
+          "kind": "CALL",
+          "to": "LuoraVault",
+          "contract": "LuoraVault",
+          "file": "src/LuoraVault.sol",
+          "fn": "deposit",
+          "args": "amount=1000000",
+          "ret": "paused",
+          "ok": false,
+          "status": "Revert",
+          "gas": 904,
+          "events": []
+        }
+      ],
+      "transfers": []
+    },
+    {
+      "suite": "LuoraVaultTest",
+      "file": "test/LuoraVault.t.sol",
+      "name": "test_setOracle_onlyOwner()",
+      "status": "Success",
+      "kind": {
+        "Unit": {
+          "gas": 14332
+        }
+      },
+      "reason": null,
+      "frames": [
+        {
+          "d": 0,
+          "kind": "CALL",
+          "to": "LuoraVaultTest",
+          "contract": "LuoraVaultTest",
+          "file": "test/LuoraVault.t.sol",
+          "fn": "test_setOracle_onlyOwner",
+          "args": "",
+          "ret": "",
+          "ok": true,
+          "status": "Stop",
+          "gas": 14332,
+          "events": []
+        },
+        {
+          "d": 1,
+          "kind": "CALL",
+          "to": "vm",
+          "contract": "vm",
+          "file": null,
+          "fn": "prank",
+          "args": "msgSender=alice",
+          "ret": "",
+          "ok": true,
+          "status": "Return",
+          "gas": 0,
+          "events": []
+        },
+        {
+          "d": 1,
+          "kind": "CALL",
+          "to": "vm",
+          "contract": "vm",
+          "file": null,
+          "fn": "expectRevert",
+          "args": "revertData=…",
+          "ret": "",
+          "ok": true,
+          "status": "Return",
+          "gas": 0,
+          "events": []
+        },
+        {
+          "d": 1,
+          "kind": "CALL",
+          "to": "LuoraVault",
+          "contract": "LuoraVault",
+          "file": "src/LuoraVault.sol",
+          "fn": "setOracle",
+          "args": "newOracle=0x000000…",
+          "ret": "!owner",
+          "ok": false,
+          "status": "Revert",
+          "gas": 3030,
+          "events": []
+        }
+      ],
+      "transfers": []
+    },
+    {
+      "suite": "SolvencyInvariantTest",
+      "file": "test/Solvency.invariant.t.sol",
+      "name": "invariant_solvency()",
+      "status": "Success",
+      "kind": {
+        "Invariant": {
+          "runs": 256,
+          "calls": 128000,
+          "reverts": 101,
+          "metrics": {
+            "test/Solvency.invariant.t.sol:Handler.deposit": {
+              "calls": 63830,
+              "reverts": 101,
+              "discards": 0
+            },
+            "test/Solvency.invariant.t.sol:Handler.withdraw": {
+              "calls": 64170,
+              "reverts": 0,
+              "discards": 0
+            }
+          },
+          "failed_corpus_replays": 0
+        }
+      },
+      "reason": null,
+      "frames": [
+        {
+          "d": 0,
+          "kind": "CALL",
+          "to": "Handler",
+          "contract": "Handler",
+          "file": "test/Solvency.invariant.t.sol",
+          "fn": "deposit",
+          "args": "who=315194, amount=115792089237316195423570985008687907853269984665640564039457584007913129639934",
+          "ret": "",
+          "ok": true,
+          "status": "Stop",
+          "gas": 103827,
+          "events": []
+        },
+        {
+          "d": 1,
+          "kind": "CALL",
+          "to": "vm",
+          "contract": "vm",
+          "file": null,
+          "fn": "prank",
+          "args": "msgSender=0x000000…",
+          "ret": "",
+          "ok": true,
+          "status": "Return",
+          "gas": 0,
+          "events": []
+        },
+        {
+          "d": 1,
+          "kind": "CALL",
+          "to": "LuoraVault",
+          "contract": "LuoraVault",
+          "file": "src/LuoraVault.sol",
+          "fn": "deposit",
+          "args": "amount=99999999999",
+          "ret": "",
+          "ok": true,
+          "status": "Stop",
+          "gas": 91190,
+          "events": []
+        },
+        {
+          "d": 2,
+          "kind": "CALL",
+          "to": "MockUSDC",
+          "contract": "MockUSDC",
+          "file": "src/mocks/Mocks.sol",
+          "fn": "transferFrom",
+          "args": "from=0x000000…, to=LuoraVault, amount=99999999999",
+          "ret": "true",
+          "ok": true,
+          "status": "Return",
+          "gas": 36161,
+          "events": []
+        },
+        {
+          "d": 3,
+          "kind": "EVENT",
+          "to": "MockUSDC",
+          "contract": "MockUSDC",
+          "file": null,
+          "fn": "Transfer",
+          "args": "from=0x000000…, to=LuoraVault, value=99999999999",
+          "ret": "",
+          "ok": true,
+          "gas": null
+        },
+        {
+          "d": 2,
+          "kind": "EVENT",
+          "to": "LuoraVault",
+          "contract": "LuoraVault",
+          "file": null,
+          "fn": "Deposit",
+          "args": "user=0x000000…, assets=99999999999, shares=99999999999",
+          "ret": "",
+          "ok": true,
+          "gas": null
+        }
+      ],
+      "transfers": [
+        {
+          "token": "MockUSDC",
+          "from": "0x000000…",
+          "to": "LuoraVault",
+          "value": "99999999999"
+        }
+      ]
+    }
+  ],
+  "sources": {
+    "src/LuoraVault.sol": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\n\ninterface IERC20 {\n    function transfer(address to, uint256 amount) external returns (bool);\n    function transferFrom(address from, address to, uint256 amount) external returns (bool);\n    function balanceOf(address who) external view returns (uint256);\n    function approve(address spender, uint256 amount) external returns (bool);\n}\n\ninterface IOracle {\n    function getPrice(address asset) external view returns (uint256);\n}\n\ninterface IStrategy {\n    function invest(uint256 amount) external returns (uint256 profit);\n}\n\n/// @title LuoraVault — sample USDC vault used to demo Luora's visual audit views\ncontract LuoraVault {\n    address public owner;\n    address public keeper;\n    IERC20 public asset;\n    IOracle public oracle;\n    IStrategy public strategy;\n    uint256 public totalShares;\n    mapping(address => uint256) public shares;\n    bool public paused;\n    uint256 public feeBps = 50;\n\n    event Deposit(address indexed user, uint256 assets, uint256 shares);\n    event Withdraw(address indexed user, uint256 assets, uint256 shares);\n\n    modifier whenNotPaused() {\n        require(!paused, \"paused\");\n        _;\n    }\n\n    modifier onlyOwner() {\n        require(msg.sender == owner, \"!owner\");\n        _;\n    }\n\n    constructor(IERC20 _asset, IOracle _oracle, IStrategy _strategy, address _keeper) {\n        owner = msg.sender;\n        asset = _asset;\n        oracle = _oracle;\n        strategy = _strategy;\n        keeper = _keeper;\n    }\n\n    function deposit(uint256 amount) external whenNotPaused {\n        uint256 minted = _computeShares(amount);\n        asset.transferFrom(msg.sender, address(this), amount);\n        shares[msg.sender] += minted;\n        totalShares += minted;\n        emit Deposit(msg.sender, amount, minted);\n    }\n\n    function withdraw(uint256 shareAmount) external whenNotPaused {\n        require(shares[msg.sender] >= shareAmount, \"!shares\");\n        uint256 value = shareAmount * _price() / 1e18;\n        asset.transfer(msg.sender, value);\n        shares[msg.sender] -= shareAmount;\n        totalShares -= shareAmount;\n        emit Withdraw(msg.sender, value, shareAmount);\n    }\n\n    function harvest() external {\n        uint256 bal = asset.balanceOf(address(this));\n        asset.transfer(address(strategy), bal);\n        uint256 profit = strategy.invest(bal);\n        _accrueFee(profit);\n    }\n\n    function setOracle(IOracle newOracle) external onlyOwner {\n        oracle = newOracle;\n    }\n\n    function pause() external {\n        require(msg.sender == keeper, \"!keeper\");\n        paused = true;\n    }\n\n    function _computeShares(uint256 amount) internal view returns (uint256) {\n        if (totalShares == 0) return amount;\n        return amount * 1e18 / _price();\n    }\n\n    function _price() internal view returns (uint256) {\n        return oracle.getPrice(address(asset));\n    }\n\n    function _accrueFee(uint256 profit) internal {\n        uint256 fee = profit * feeBps / 10_000;\n        shares[owner] += fee;\n        totalShares += fee;\n    }\n}\n",
+    "test/LuoraVault.t.sol": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\n\nimport {Test} from \"forge-std/Test.sol\";\nimport {LuoraVault, IERC20, IOracle, IStrategy} from \"../src/LuoraVault.sol\";\nimport {MockUSDC, MockOracle, MockStrategy} from \"../src/mocks/Mocks.sol\";\n\ncontract LuoraVaultTest is Test {\n    LuoraVault vault;\n    MockUSDC usdc;\n    MockOracle oracle;\n    MockStrategy strategy;\n\n    address alice = makeAddr(\"alice\");\n    address bob = makeAddr(\"bob\");\n    address keeper = makeAddr(\"keeper\");\n\n    function setUp() public {\n        usdc = new MockUSDC();\n        oracle = new MockOracle();\n        strategy = new MockStrategy();\n        vault = new LuoraVault(IERC20(address(usdc)), IOracle(address(oracle)), IStrategy(address(strategy)), keeper);\n        usdc.mint(alice, 5_000e6);\n        usdc.mint(bob, 20_000e6);\n        vm.prank(alice);\n        usdc.approve(address(vault), type(uint256).max);\n        vm.prank(bob);\n        usdc.approve(address(vault), type(uint256).max);\n    }\n\n    function test_deposit() public {\n        vm.prank(alice);\n        vault.deposit(1_000e6);\n        assertEq(vault.shares(alice), 1_000e6);\n        assertEq(usdc.balanceOf(address(vault)), 1_000e6);\n    }\n\n    function test_depositThenWithdraw() public {\n        vm.prank(bob);\n        vault.deposit(20_000e6);\n        vm.startPrank(alice);\n        vault.deposit(1_000e6);\n        vault.withdraw(1_000e6);\n        vm.stopPrank();\n        assertEq(usdc.balanceOf(alice), 5_000e6);\n        assertEq(vault.totalShares(), 20_000e6);\n    }\n\n    function test_harvestMovesFundsToStrategy() public {\n        vm.prank(alice);\n        vault.deposit(1_000e6);\n        vault.harvest();\n        assertEq(usdc.balanceOf(address(strategy)), 1_000e6);\n        assertEq(vault.shares(vault.owner()), 0.1e6); // 2% profit × 0.5% fee\n    }\n\n    function test_setOracle_onlyOwner() public {\n        vm.prank(alice);\n        vm.expectRevert(\"!owner\");\n        vault.setOracle(IOracle(address(0xBEEF)));\n    }\n\n    function test_pause_blocksDeposits() public {\n        vm.prank(keeper);\n        vault.pause();\n        vm.prank(alice);\n        vm.expectRevert(\"paused\");\n        vault.deposit(1e6);\n    }\n}\n",
+    "src/mocks/Mocks.sol": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\n\n/// Minimal 6-decimal stablecoin for local tests.\ncontract MockUSDC {\n    string public constant name = \"Mock USDC\";\n    string public constant symbol = \"USDC\";\n    uint8 public constant decimals = 6;\n    mapping(address => uint256) public balanceOf;\n    mapping(address => mapping(address => uint256)) public allowance;\n\n    event Transfer(address indexed from, address indexed to, uint256 value);\n    event Approval(address indexed owner, address indexed spender, uint256 value);\n\n    function mint(address to, uint256 amount) external {\n        balanceOf[to] += amount;\n        emit Transfer(address(0), to, amount);\n    }\n\n    function approve(address spender, uint256 amount) external returns (bool) {\n        allowance[msg.sender][spender] = amount;\n        emit Approval(msg.sender, spender, amount);\n        return true;\n    }\n\n    function transfer(address to, uint256 amount) external returns (bool) {\n        return _move(msg.sender, to, amount);\n    }\n\n    function transferFrom(address from, address to, uint256 amount) external returns (bool) {\n        allowance[from][msg.sender] -= amount;\n        return _move(from, to, amount);\n    }\n\n    function _move(address from, address to, uint256 amount) internal returns (bool) {\n        balanceOf[from] -= amount;\n        balanceOf[to] += amount;\n        emit Transfer(from, to, amount);\n        return true;\n    }\n}\n\n/// Fixed-price oracle: 1 share == 1 USDC.\ncontract MockOracle {\n    uint256 public price = 1e18;\n\n    function getPrice(address) external view returns (uint256) {\n        return price;\n    }\n}\n\n/// Strategy that just holds funds and reports a fixed 2% profit.\ncontract MockStrategy {\n    function invest(uint256 amount) external pure returns (uint256) {\n        return amount * 2 / 100;\n    }\n}\n",
+    "test/Solvency.invariant.t.sol": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\n\nimport {Test} from \"forge-std/Test.sol\";\nimport {LuoraVault, IERC20, IOracle, IStrategy} from \"../src/LuoraVault.sol\";\nimport {MockUSDC, MockOracle, MockStrategy} from \"../src/mocks/Mocks.sol\";\n\n/// Drives the vault with random deposits / withdrawals from a few users.\ncontract Handler is Test {\n    LuoraVault vault;\n    MockUSDC usdc;\n    address[3] users = [address(0xA11CE), address(0xB0B), address(0xCA7)];\n\n    constructor(LuoraVault _vault, MockUSDC _usdc) {\n        vault = _vault;\n        usdc = _usdc;\n        for (uint256 i; i < users.length; i++) {\n            usdc.mint(users[i], 1_000_000e6);\n            vm.prank(users[i]);\n            usdc.approve(address(vault), type(uint256).max);\n        }\n    }\n\n    function deposit(uint256 who, uint256 amount) external {\n        address u = users[who % users.length];\n        amount = bound(amount, 1e6, 100_000e6);\n        vm.prank(u);\n        vault.deposit(amount);\n    }\n\n    function withdraw(uint256 who, uint256 amount) external {\n        address u = users[who % users.length];\n        uint256 held = vault.shares(u);\n        if (held == 0) return;\n        amount = bound(amount, 1, held);\n        vm.prank(u);\n        vault.withdraw(amount);\n    }\n}\n\ncontract SolvencyInvariantTest is Test {\n    LuoraVault vault;\n    MockUSDC usdc;\n    Handler handler;\n\n    function setUp() public {\n        usdc = new MockUSDC();\n        vault = new LuoraVault(IERC20(address(usdc)), IOracle(address(new MockOracle())), IStrategy(address(new MockStrategy())), address(this));\n        handler = new Handler(vault, usdc);\n        targetContract(address(handler));\n    }\n\n    /// Every share must stay fully backed by USDC held in the vault.\n    function invariant_solvency() public view {\n        assertGe(usdc.balanceOf(address(vault)), vault.totalShares());\n    }\n}\n"
+  }
+}

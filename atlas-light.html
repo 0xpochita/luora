@@ -1,0 +1,826 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Luora Sec — Contract Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f2ef; --card:#ffffff; --ink:#1d2228; --muted:#7a7f86; --line:#e6e4df; --soft:#efede8;
+  --storage:#cdb98f; --functions:#d9826f; --entry:#e07a5f; --logic:#8b7cf6; --access:#d8ac3a; --calls:#c44d4d; --events:#6f9fb3; --value:#d9a520; --vulns:#e2482f; --deps:#8f9bb3;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:radial-gradient(ellipse at 50% 40%,#fbfaf7 0%,var(--bg) 70%);color:var(--ink);font:14px/1.45 Inter,system-ui,sans-serif;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+.card{background:var(--card);border-radius:16px;box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.04)}
+
+/* header */
+.brand{position:absolute;left:32px;top:28px;z-index:5}
+.eyebrow{font-size:11px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.eyebrow:before{content:"";width:6px;height:6px;border-radius:50%;background:#3aa76d}
+.brand h1{margin:6px 0 2px;font-size:34px;letter-spacing:-.03em;display:flex;align-items:center;gap:10px}
+.tag{font-size:11px;font-weight:500;border:1px solid var(--line);border-radius:6px;padding:2px 6px;color:var(--muted);letter-spacing:0}
+.meta{color:var(--muted);font-size:12.5px}
+.target{margin-top:14px;display:flex;gap:8px}
+.target select,.target input{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:9px 12px;font:inherit;font-size:13px}
+.target input{width:230px;font-family:var(--mono);font-size:12px}
+
+.top-right{position:absolute;right:32px;top:28px;display:flex;gap:10px;z-index:5}
+.search{display:flex;align-items:center;gap:8px;padding:0 12px;height:44px;width:280px}
+.search input{border:0;outline:0;flex:1;font:inherit;background:none}
+.kbd{border:1px solid var(--line);border-radius:5px;font-size:11px;padding:0 6px;color:var(--muted)}
+.views{display:flex;padding:4px;height:44px;gap:2px}
+.views button{border:0;background:none;padding:0 14px;border-radius:10px;font-size:13px;color:var(--muted)}
+.views.legend{align-items:center;gap:12px;padding:0 14px}
+.lg{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.lg i{width:9px;height:9px;border-radius:3px}
+.views button.on{background:var(--ink);color:#fff}
+
+/* systems panel */
+.systems{position:absolute;left:32px;top:200px;width:280px;padding:18px;z-index:5}
+.systems h3{margin:0 0 12px;font-size:15px;display:flex;justify-content:space-between}
+.pill-count{background:var(--soft);border-radius:999px;font-size:11px;padding:2px 8px;color:var(--muted);font-weight:500}
+.sys{display:flex;align-items:center;gap:10px;padding:8px 2px;font-size:13.5px}
+.dot{width:8px;height:8px;border-radius:50%;flex:none}
+.sys .n{margin-left:auto;color:var(--muted);font-size:12px}
+.sys .sub{display:block;color:var(--muted);font-size:11px}
+.toggle{width:36px;height:20px;border-radius:999px;background:#c9ccd0;border:0;position:relative;flex:none;transition:.2s}
+.toggle:after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.2s}
+.toggle.on{background:#3b4652}.toggle.on:after{left:18px}
+.systems .foot{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;border-top:1px solid var(--line);margin-top:8px;padding-top:12px}
+.linkbtn{border:0;background:none;color:var(--muted);padding:0;font-size:12px}
+
+/* stage */
+.center{position:absolute;left:330px;right:500px;top:0;bottom:0}
+#stageWrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.labels{position:absolute;inset:0;pointer-events:none}
+#stageWrap canvas{display:block;touch-action:none}
+.label3d{font:500 12px/1 Inter,sans-serif;padding:7px 11px 7px 10px;border-radius:999px;background:#fff;color:var(--ink);display:flex;align-items:center;gap:7px;
+  box-shadow:0 2px 4px rgba(0,0,0,.04),0 6px 18px rgba(40,30,20,.12);white-space:nowrap;opacity:0;transform:translateY(-8px) scale(.96);transition:opacity .2s,transform .2s;pointer-events:none}
+.label3d:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c);flex:none}
+.label3d.show{opacity:1;transform:translateY(-8px)}
+.label3d.focus{background:var(--ink);color:#fff}
+.label3d.vulns span{display:none}
+.label3d.vulns.focus span,.label3d.vulns.near span{display:inline}
+.label3d.vulns b{color:var(--vulns)}
+.label3d.vulns.focus b{color:#ff8a72}
+.layerlab{font:600 10.5px Inter,sans-serif;letter-spacing:.12em;color:color-mix(in srgb,var(--c) 75%,#000);background:rgba(255,255,255,.85);border:1px solid color-mix(in srgb,var(--c) 40%,#fff);padding:4px 9px;border-radius:999px;white-space:nowrap;transform:translate(0,-50%);transition:opacity .3s;pointer-events:none}
+.layerlab.boundary{color:#3f6fc0;border-color:#b9d3fb}
+.label3d .who{font-style:normal;font-size:10px;font-weight:600;color:#fff;background:var(--w);border-radius:999px;padding:1px 7px;margin-left:2px}
+.colhead3d{transform:translateX(-50%);font:500 11px Inter,sans-serif;padding:6px 10px;border-radius:999px;background:#fff;box-shadow:0 4px 14px rgba(40,30,20,.1);white-space:nowrap;opacity:0;transition:opacity .3s;display:flex;gap:6px;align-items:center}
+.colhead3d:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c)}
+.colhead3d b{color:var(--muted);font-weight:500}
+#viewbar{position:absolute;right:14px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:4px;padding:6px;z-index:5}
+#viewbar button{border:0;background:none;width:38px;height:38px;border-radius:10px;font-size:13px;color:var(--muted)}
+#viewbar button.on{background:var(--ink);color:#fff}
+#viewbar hr{border:0;border-top:1px solid var(--line);margin:4px 6px}
+.caption{position:absolute;left:50%;bottom:118px;transform:translateX(-50%);font-size:11px;letter-spacing:.18em;color:var(--muted);display:flex;gap:14px;align-items:center;z-index:4}
+.caption:before,.caption:after{content:"";width:26px;height:1px;background:#cfccc5}
+
+/* explode control */
+.explode{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);width:min(540px,calc(100% - 24px));display:flex;padding:16px 22px;gap:18px;z-index:5}
+.explode .main{flex:1}
+.explode .row{display:flex;justify-content:space-between;align-items:center;font-weight:500}
+.pct{background:var(--soft);border-radius:8px;padding:4px 10px;font-weight:600;font-size:13px}
+.pct small{color:var(--muted);font-weight:400}
+input[type=range]{width:100%;accent-color:var(--ink);margin:12px 0 4px}
+.explode .ends{display:flex;justify-content:space-between;color:var(--muted);font-size:11.5px}
+.reset{border:0;border-left:1px solid var(--line);background:none;padding-left:18px;color:var(--muted);font-size:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.reset b{font-size:18px;color:var(--ink);font-weight:400}
+
+.hint{position:absolute;left:32px;bottom:22px;color:var(--muted);font-size:12px;z-index:4}
+.hint span+span:before{content:" · "}
+
+/* right side: full source + inspector */
+.side{position:absolute;right:32px;top:92px;bottom:24px;width:452px;z-index:6;display:flex;flex-direction:column;overflow:hidden}
+.src-head{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);font-size:13px}
+.src-head b{font:600 13px var(--mono)}
+.src-head .meta{margin-left:auto;font-size:11.5px}
+.src{flex:1;min-height:0}
+.ins{display:none;flex-direction:column;max-height:46%;border-top:1px solid var(--line);background:#fff;box-shadow:0 -10px 24px rgba(0,0,0,.05)}
+.ins.open{display:flex}
+.ins-head{padding:14px 18px 10px;position:relative}
+.ins-head .kind{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;display:flex;align-items:center;gap:8px;color:var(--muted)}
+.ins-head h2{margin:4px 0 2px;font:600 16px/1.25 var(--mono);word-break:break-all;padding-right:30px}
+.ins-head .close{position:absolute;right:14px;top:12px;border:0;background:var(--soft);width:26px;height:26px;border-radius:8px}
+.ins-body{overflow:auto;padding:0 18px 12px;flex:1;min-height:0}
+.ins-body h4{margin:12px 0 6px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.ins-body p{margin:0;color:#3a4048;font-size:13px}
+.badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.badge{font-size:11px;border-radius:6px;padding:2px 8px;background:var(--soft);color:#555}
+.badge.high{background:#fde3dd;color:#b2321d}.badge.med{background:#fdf0d4;color:#946300}.badge.low{background:#e3eef6;color:#2f6585}
+pre.code{position:relative;margin:0;background:#fbfaf8;color:#2b3036;padding:10px 0 40px;font:11.5px/1.75 var(--mono);overflow:auto;tab-size:4}
+pre.code .l{display:block;padding-right:14px;cursor:pointer;position:relative;transition:background .15s}
+pre.code .l:hover{background:#f1efea}
+pre.code .ln{display:inline-block;width:42px;text-align:right;padding-right:14px;color:#b3b0a8;user-select:none}
+pre.code .l.vl:before{content:"";position:absolute;left:6px;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:var(--vulns)}
+pre.code .l.sel{background:color-mix(in srgb,var(--c) 14%,transparent);box-shadow:inset 3px 0 var(--c)}
+pre.code .l.sel .ln{color:color-mix(in srgb,var(--c) 80%,#000)}
+pre.code .l.mark{background:rgba(226,72,47,.16);box-shadow:inset 3px 0 #e2482f}
+.k{color:#c2410c}.t{color:#0e7490}.s{color:#4d7c0f}.c{color:#a3a39c;font-style:italic}.num{color:#b45309}
+.conns{display:flex;flex-wrap:wrap;gap:6px}
+.conn{border:0;font:500 11px var(--mono);border-radius:999px;padding:4px 9px;background:color-mix(in srgb,var(--c) 18%,#fff);color:color-mix(in srgb,var(--c) 75%,#000)}
+
+.ai{border-top:1px solid var(--line);padding:10px 16px 12px;background:#fbfaf8}
+.ai-head{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:600;margin-bottom:8px}
+.ai-head span{font-weight:400;color:var(--muted);font-size:11px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 10px;font-size:11.5px}
+.chip:hover{border-color:var(--ink)}
+.msgs{max-height:110px;overflow:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
+.msg{font-size:12.5px;padding:8px 10px;border-radius:10px;white-space:pre-wrap}
+.msg.u{align-self:flex-end;background:var(--ink);color:#fff;max-width:85%}
+.msg.a{background:#fff;border:1px solid var(--line)}
+.msg.a code{font-family:var(--mono);font-size:11.5px;background:var(--soft);padding:0 3px;border-radius:3px}
+.ask{display:flex;gap:6px}
+.ask input{flex:1;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;font-size:12.5px}
+.ask button{border:0;background:var(--ink);color:#fff;border-radius:10px;padding:0 14px}
+
+/* other views */
+.view{position:absolute;inset:0;display:none}
+.view.on{display:block}
+.panel{position:absolute;left:32px;right:32px;top:190px;bottom:28px;overflow:auto;padding:22px 26px}
+.panel h3{margin:0 0 4px}
+.panel .sub{color:var(--muted);font-size:12.5px;margin-bottom:16px}
+.ai-sum{display:flex;gap:12px;background:#fff6f3;border:1px solid #f7d6cd;border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:13px}
+.ai-sum b{color:#b2321d}
+.trace{font:12.5px/1 var(--mono)}
+.trow{display:flex;align-items:center;gap:8px;height:34px;border-radius:6px;padding-right:8px;white-space:nowrap}
+.trow:hover{background:#f7f6f3}
+.trow .idx{width:34px;color:var(--muted);text-align:right;flex:none}
+.trow .ind{flex:none;border-left:1px solid #ddd;height:100%}
+.ct{border:1px solid #9cb7e6;color:#2d5fb4;border-radius:5px;padding:4px 6px;font-size:11px}
+.ct.STATICCALL{border-color:#ccc;color:#777}
+.fn{color:#d9622f}.ctr{color:#2d5fb4}.ret{border:1px solid var(--line);border-radius:6px;padding:4px 7px;color:#444}
+.trow.bad{background:#fff1ee}
+.note{font-family:Inter;font-size:11.5px;background:#e2482f;color:#fff;border-radius:999px;padding:3px 9px}
+.note.warn{background:#d8ac3a}
+.ffwrap{position:relative;height:520px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.ffnode{position:absolute;width:240px;transform:translate(-50%,-50%);padding:14px 16px;border-radius:12px;font-size:13px}
+.ffnode b{display:block;font-size:14px;margin-bottom:2px}
+.ffnode span{font-family:var(--mono);font-size:11.5px;color:#666}
+.loser{background:#fbe4e1;color:#b2321d}.gainer{background:#e2f4e7;color:#22713b}.neutral{background:#f1f0ec}
+
+@media (max-width:1300px){.systems{display:none}.center{left:16px}}
+@media (max-width:900px){.side{left:16px;right:16px;top:auto;height:50%}.center{right:16px;bottom:50%}}
+</style>
+</head>
+<body>
+
+<div class="brand">
+  <div class="eyebrow">Interactive contract atlas</div>
+  <h1>Luora Sec <span class="tag">ATLAS</span></h1>
+  <div class="meta"><span id="pieceCount"></span> dissected pieces · Solidity 0.8.20</div>
+  <div class="target">
+    <select><option>Ethereum</option><option>Base</option><option>Arbitrum</option></select>
+    <input value="LuoraVault.sol (sample)" title="Paste address or source">
+  </div>
+</div>
+
+<div class="top-right">
+  <div class="views card legend">
+    <span class="lg"><i style="background:#e2482f"></i>anyone can call</span>
+    <span class="lg"><i style="background:#d99a06"></i>owner only</span>
+    <span class="lg"><i style="background:#7aa9f0"></i>trust boundary</span>
+  </div>
+  <label class="search card">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="search" placeholder="Find a structure" list="names">
+    <span class="kbd">/</span>
+  </label>
+  <datalist id="names"></datalist>
+</div>
+
+<!-- ANATOMY -->
+<section class="view on" id="v-anatomy">
+  <div class="systems card">
+    <h3>Systems <span class="pill-count" id="sysCount"></span></h3>
+    <div id="sysList"></div>
+    <div class="foot"><span id="visible"></span><button class="linkbtn" id="hideAll">Hide all</button></div>
+  </div>
+
+  <div class="center">
+  <div id="stageWrap"></div>
+  <div class="card" id="viewbar">
+    <button data-cam="q" class="on" title="Isometric">¾</button>
+    <button data-cam="f" title="Front">F</button>
+    <button data-cam="s" title="Side">S</button>
+    <button data-cam="b" title="Back">B</button>
+    <hr><button data-cam="spin" title="Auto-rotate">⟳</button>
+  </div>
+
+  <div class="caption" id="caption">SMART CONTRACT · LUORAVAULT</div>
+  <div class="explode card">
+    <div class="main">
+      <div class="row">Explode contract <span class="pct"><span id="pct">0</span> <small>%</small></span></div>
+      <input type="range" id="explode" min="0" max="100" value="0">
+      <div class="ends"><span>Assembled</span><span>Every piece</span></div>
+    </div>
+    <button class="reset" id="reset"><b>↺</b>Reset</button>
+  </div>
+  </div>
+  <aside class="side card">
+    <div class="src-head"><span class="dot" style="background:var(--functions)"></span><b>LuoraVault.sol</b>
+      <span class="meta"><span id="srcLines"></span> lines · <span style="color:var(--vulns)">●</span> AI finding · click a line</span></div>
+    <pre class="code src" id="src"></pre>
+  <div class="ins" id="ins">
+    <div class="ins-head">
+      <button class="close" id="close">✕</button>
+      <div class="kind"><span class="dot" id="insDot"></span><span id="insKind"></span></div>
+      <h2 id="insName"></h2>
+      <div class="badges" id="insBadges"></div>
+    </div>
+    <div class="ins-body">
+      <h4>What it is</h4><p id="insDesc"></p>
+      <h4>Connected to</h4><div class="conns" id="insConns"></div>
+    </div>
+    <div class="ai">
+      <div class="ai-head">✦ Ask Luora AI <span>demo · mock responses</span></div>
+      <div class="msgs" id="msgs"></div>
+      <div class="chips">
+        <button class="chip" data-q="explain">Explain</button>
+        <button class="chip" data-q="risks">What could go wrong?</button>
+        <button class="chip" data-q="test">Write invariant test</button>
+      </div>
+      <form class="ask" id="ask"><input placeholder="Ask about this piece…"><button>↑</button></form>
+    </div>
+  </div>
+  </aside>
+  <div class="hint"><span>Drag to orbit</span><span>Scroll to zoom</span><span>Click to inspect</span><span>/ to search</span></div>
+</section>
+
+
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+const SRC = `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import {IERC20} from "./IERC20.sol";
+import {IOracle} from "./IOracle.sol";
+import {IStrategy} from "./IStrategy.sol";
+import {IFlashReceiver} from "./IFlashReceiver.sol";
+
+contract LuoraVault {
+    address public owner;
+    IERC20 public asset;
+    IOracle public oracle;
+    IStrategy public strategy;
+    uint256 public totalShares;
+    mapping(address => uint256) public shares;
+    bool public paused;
+    uint256 public feeBps = 50;
+
+    event Deposit(address indexed user, uint256 assets, uint256 shares);
+    event Withdraw(address indexed user, uint256 assets, uint256 shares);
+    event OracleUpdated(address oldOracle, address newOracle);
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "!owner");
+        _;
+    }
+
+    modifier whenNotPaused() {
+        require(!paused, "paused");
+        _;
+    }
+
+    constructor(IERC20 _asset, IOracle _oracle, IStrategy _strategy) {
+        owner = msg.sender;
+        asset = _asset;
+        oracle = _oracle;
+        strategy = _strategy;
+    }
+
+    receive() external payable {}
+
+    function deposit(uint256 amount) external whenNotPaused {
+        uint256 minted = _computeShares(amount);
+        asset.transferFrom(msg.sender, address(this), amount);
+        shares[msg.sender] += minted;
+        totalShares += minted;
+        emit Deposit(msg.sender, amount, minted);
+    }
+
+    function withdraw(uint256 shareAmount) external whenNotPaused {
+        require(shares[msg.sender] >= shareAmount, "!shares");
+        uint256 value = shareAmount * _price() / 1e18;
+        (bool ok, ) = msg.sender.call{value: value}("");
+        require(ok, "send failed");
+        shares[msg.sender] -= shareAmount;
+        totalShares -= shareAmount;
+        emit Withdraw(msg.sender, value, shareAmount);
+    }
+
+    function flashLoan(uint256 amount, IFlashReceiver receiver, bytes calldata data) external {
+        uint256 before = asset.balanceOf(address(this));
+        asset.transfer(address(receiver), amount);
+        receiver.onFlashLoan(msg.sender, amount, data);
+        require(asset.balanceOf(address(this)) >= before, "!repaid");
+    }
+
+    function harvest() external {
+        uint256 profit = strategy.invest(asset.balanceOf(address(this)));
+        _accrueFee(profit);
+    }
+
+    function setOracle(IOracle newOracle) external onlyOwner {
+        emit OracleUpdated(address(oracle), address(newOracle));
+        oracle = newOracle;
+    }
+
+    function emergencyWithdraw(address to) external onlyOwner {
+        _sendOut(to, asset.balanceOf(address(this)));
+    }
+
+    function _computeShares(uint256 amount) internal view returns (uint256) {
+        if (totalShares == 0) return amount;
+        return amount * 1e18 / _price();
+    }
+
+    function _price() internal view returns (uint256) {
+        return oracle.getSpotPrice(address(asset));
+    }
+
+    function _sendOut(address to, uint256 amount) internal {
+        asset.transfer(to, amount);
+    }
+
+    function _accrueFee(uint256 profit) internal {
+        uint256 fee = profit * feeBps / 10_000;
+        shares[owner] += fee;
+        totalShares += fee;
+    }
+}`;
+
+const SYSTEMS = {
+  entry:{label:'Entry points',sub:'layer 1 · external functions'},
+  access:{label:'Access control',sub:'gates on the entry layer'},
+  logic:{label:'Internal logic',sub:'layer 2 · internal functions'},
+  storage:{label:'Storage',sub:'layer 3 · state slots'},
+  calls:{label:'External calls',sub:'pipes through the trust boundary'},
+  deps:{label:'External contracts',sub:'outside the trust boundary'},
+  events:{label:'Events',sub:'signals emitted'},
+  vulns:{label:'Findings',sub:'risk markers'},
+};
+
+// find = source anchor, n = lines shown, mark = highlighted line offsets, caller = who may call (entry only)
+const P = [
+  // ---- layer 1: entry points (the attack surface) ----
+  {id:'deposit',sys:'entry',caller:'anyone',name:'deposit()',find:'function deposit',n:7,desc:'Public entry: pulls tokens in and mints shares. Prices shares through _computeShares → _price → oracle.',links:['whenNotPaused','_computeShares','cTransferFrom','shares','totalShares','evDeposit']},
+  {id:'withdraw',sys:'entry',caller:'anyone',name:'withdraw()',find:'function withdraw',n:9,mark:[3,4],desc:'Public entry: burns shares and sends value back. The external call happens before the share balance is updated (checks-effects-interactions order is not followed).',links:['whenNotPaused','_price','cCall','shares','totalShares','evWithdraw','f1','noReentrancy']},
+  {id:'flashLoan',sys:'entry',caller:'anyone',name:'flashLoan()',find:'function flashLoan',n:6,desc:'Public entry: lends the vault balance within one transaction and hands control to an untrusted receiver before checking repayment.',links:['cOnFlash','cTransfer','f2']},
+  {id:'harvest',sys:'entry',caller:'anyone',name:'harvest()',find:'function harvest',n:4,desc:'Public entry with no access control: moves funds into the strategy and mints a fee from the reported profit.',links:['cInvest','_accrueFee']},
+  {id:'setOracle',sys:'entry',caller:'owner',name:'setOracle()',find:'function setOracle',n:4,desc:'Owner-only: replaces the price source immediately. No timelock or multisig.',links:['onlyOwner','oracle','evOracle','f4']},
+  {id:'emergencyWithdraw',sys:'entry',caller:'owner',name:'emergencyWithdraw()',find:'function emergencyWithdraw',n:3,desc:'Owner-only: can move the entire token balance to any address.',links:['onlyOwner','_sendOut','f4']},
+  {id:'receive',sys:'entry',caller:'anyone',name:'receive()',find:'receive()',n:1,desc:'Accepts plain ETH transfers.',links:['withdraw']},
+  // ---- access gates ----
+  {id:'whenNotPaused',sys:'access',name:'whenNotPaused',find:'modifier whenNotPaused',n:4,desc:'Gate on deposit/withdraw. Note: nothing in the contract ever sets paused = true, so this gate can never close.'},
+  {id:'onlyOwner',sys:'access',name:'onlyOwner',find:'modifier onlyOwner',n:4,desc:'Gate for admin functions: a single externally-owned key.'},
+  {id:'noReentrancy',sys:'access',name:'nonReentrant (missing)',find:'function withdraw',n:1,desc:'Missing protection, drawn as a wireframe "ghost": no reentrancy guard on any function that makes external calls.'},
+  // ---- layer 2: internal logic ----
+  {id:'ctor',sys:'logic',name:'constructor',find:'constructor(',n:6,desc:'Runs once at deployment: wires token, oracle and strategy; sets owner = deployer.',links:['owner','asset','oracle','strategy']},
+  {id:'_computeShares',sys:'logic',name:'_computeShares()',find:'function _computeShares',n:4,mark:[1],desc:'Converts assets to shares. Mints 1:1 when totalShares is zero — first-depositor rounding edge case.',links:['_price','totalShares','f5']},
+  {id:'_price',sys:'logic',name:'_price()',find:'function _price',n:3,mark:[1],desc:'Reads an instantaneous (spot) price from the oracle. Every share conversion depends on it.',links:['cPrice','f2']},
+  {id:'_sendOut',sys:'logic',name:'_sendOut()',find:'function _sendOut',n:3,mark:[1],desc:'Raw token transfer; the boolean return value is not checked.',links:['cTransfer','f3']},
+  {id:'_accrueFee',sys:'logic',name:'_accrueFee()',find:'function _accrueFee',n:5,desc:'Mints fee shares to the owner from the profit the strategy reports.',links:['shares','totalShares','owner']},
+  // ---- layer 3: storage ----
+  ...['owner','asset','oracle','strategy','totalShares','shares','paused','feeBps'].map((v,i)=>({
+    id:v,sys:'storage',slot:i,name:`slot ${i} · ${v==='shares'?'shares[]':v}`,
+    find:v==='shares'?'mapping(address':(' '+v+';').replace(' feeBps;',' feeBps ='),n:1,
+    desc:{owner:'Admin key. Controls the oracle and emergency withdrawals.',asset:'The ERC20 token the vault accounts in.',oracle:'Price source used for every share ↔ asset conversion. Mutable by owner.',strategy:'External contract that receives funds on harvest().',totalShares:'Sum of all shares; the denominator of every conversion.',shares:'Per-user share balances (mapping). Updated after the external call in withdraw().',paused:'Read by whenNotPaused; never written.',feeBps:'Protocol fee (0.5%). No setter.'}[v]})),
+  // ---- external calls (cross the trust boundary) ----
+  {id:'cTransferFrom',sys:'calls',name:'asset.transferFrom',find:'asset.transferFrom',n:1,mark:[0],desc:'Pulls tokens from the caller. Return value not checked.',links:['f3']},
+  {id:'cCall',sys:'calls',name:'msg.sender.call{value}',find:'msg.sender.call',n:1,mark:[0],desc:'Sends ETH by calling the caller. If the caller is a contract, its code runs here — before shares are burned.',links:['f1','receive']},
+  {id:'cOnFlash',sys:'calls',name:'receiver.onFlashLoan',find:'receiver.onFlashLoan',n:1,desc:'Callback into an untrusted contract in the middle of vault execution.'},
+  {id:'cInvest',sys:'calls',name:'strategy.invest',find:'strategy.invest',n:1,desc:'Sends funds to the strategy and trusts the profit it reports.'},
+  {id:'cPrice',sys:'calls',name:'oracle.getSpotPrice',find:'oracle.getSpotPrice',n:1,mark:[0],desc:'The single price every share conversion depends on.',links:['oracle']},
+  {id:'cTransfer',sys:'calls',name:'asset.transfer',find:'asset.transfer(to',n:1,desc:'Outgoing token transfer; return value not checked.'},
+  // ---- external contracts ----
+  {id:'depERC20',sys:'deps',name:'IERC20 token',find:'import {IERC20}',n:1,desc:'The token. The vault assumes standard return values; fee-on-transfer or non-returning tokens would break accounting.',links:['asset','cTransferFrom','cTransfer']},
+  {id:'depOracle',sys:'deps',name:'IOracle',find:'import {IOracle}',n:1,desc:'Price feed. Fully trusted by the vault.',links:['oracle','cPrice']},
+  {id:'depStrategy',sys:'deps',name:'IStrategy',find:'import {IStrategy}',n:1,desc:'Yield strategy. Fully trusted: its reported profit becomes fees.',links:['strategy','cInvest']},
+  {id:'depFlash',sys:'deps',name:'IFlashReceiver',find:'import {IFlashReceiver}',n:1,desc:'Callback interface implemented by any borrower.',links:['cOnFlash']},
+  {id:'depSender',sys:'deps',name:'msg.sender (caller)',find:'function withdraw',n:1,desc:'Whoever calls withdraw(). Could be a contract with its own code.',links:['cCall']},
+  // ---- events ----
+  {id:'evDeposit',sys:'events',name:'Deposit',find:'event Deposit',n:1,desc:'Emitted on deposit. Monitors and indexers listen here.'},
+  {id:'evWithdraw',sys:'events',name:'Withdraw',find:'event Withdraw',n:1,desc:'Emitted at the end of withdraw().'},
+  {id:'evOracle',sys:'events',name:'OracleUpdated',find:'event OracleUpdated',n:1,desc:'Signals a price-source change; worth alerting on.'},
+  // ---- findings ----
+  {id:'f1',sys:'vulns',name:'F-01 External call before state update',risk:'high',find:'(bool ok, ) =',n:5,mark:[0],desc:'withdraw() calls out before burning shares and has no reentrancy guard. Fix: update shares first (CEI) and add nonReentrant.',links:['withdraw','cCall']},
+  {id:'f2',sys:'vulns',name:'F-02 Spot-price dependency',risk:'high',find:'return oracle.getSpotPrice',n:1,mark:[0],desc:'Share value comes from an instantaneous price that can move within a single transaction. Fix: use a TWAP or a robust price feed with sanity bounds.',links:['_price','flashLoan']},
+  {id:'f3',sys:'vulns',name:'F-03 Unchecked ERC20 return',risk:'med',find:'asset.transfer(to',n:1,mark:[0],desc:'transfer / transferFrom return values are ignored. Fix: use SafeERC20.',links:['_sendOut','cTransferFrom']},
+  {id:'f4',sys:'vulns',name:'F-04 Centralization',risk:'low',find:'function setOracle',n:1,mark:[0],desc:'One key can swap the oracle and move all funds immediately. Fix: multisig + timelock.',links:['setOracle','emergencyWithdraw']},
+  {id:'f5',sys:'vulns',name:'F-05 First-deposit rounding',risk:'med',find:'if (totalShares == 0)',n:1,mark:[0],desc:'Share math is sensitive when the vault is empty. Fix: virtual shares / minimum initial deposit.',links:['_computeShares']},
+];
+
+const byId = Object.fromEntries(P.map(p=>[p.id,p]));
+const color = s => getComputedStyle(document.documentElement).getPropertyValue('--'+s).trim();
+
+// ---------- source helpers ----------
+const LINES = SRC.split('\n');
+const KW = 'pragma|solidity|import|from|contract|function|modifier|event|emit|returns|return|require|if|external|internal|public|view|payable|calldata|memory|constructor|receive|mapping|indexed';
+const TY = 'address|uint256|bool|bytes|IERC20|IOracle|IStrategy|IFlashReceiver';
+const RE = new RegExp(`(\\/\\/.*$)|("[^"]*")|\\b(${KW})\\b|\\b(${TY})\\b|\\b(\\d[\\d_]*(?:e\\d+)?)\\b`,'g');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const hl = l => esc(l).replace(RE,(m,c,s,k,t,n)=>`<span class="${c?'c':s?'s':k?'k':t?'t':'num'}">${m}</span>`);
+// each piece covers source lines [s, e] (0-based)
+P.forEach(p=>{ p.s = Math.max(0, LINES.findIndex(l=>l.includes(p.find))); p.e = p.s + (p.n||1) - 1; });
+const lesionLines = new Set(P.filter(p=>p.sys==='vulns').flatMap(p=>(p.mark||[0]).map(m=>p.s+m)));
+const srcEl = document.getElementById('src');
+srcEl.innerHTML = LINES.map((l,i)=>`<span class="l${lesionLines.has(i)?' vl':''}" data-ln="${i}"><span class="ln">${i+1}</span>${hl(l)||' '}</span>`).join('');
+document.getElementById('srcLines').textContent = LINES.length;
+const lineEls = [...srcEl.children];
+function showSource(p){
+  lineEls.forEach(el=>{ el.classList.remove('sel','mark'); el.style.removeProperty('--c'); });
+  if(!p) return;
+  for(let i=p.s;i<=p.e;i++){ lineEls[i].classList.add('sel'); lineEls[i].style.setProperty('--c',color(p.sys)); }
+  (p.mark||[]).forEach(m=>lineEls[p.s+m].classList.add('mark'));
+  const top = lineEls[p.s].offsetTop - 16;
+  srcEl.scrollTo({top, behavior:'smooth'});
+}
+// click a line → select the tightest piece covering it (findings win ties: they're what auditors want)
+srcEl.onclick = e=>{
+  const l = e.target.closest('.l'); if(!l) return;
+  const i = +l.dataset.ln;
+  const hit = P.filter(p=>!hidden.has(p.sys) && i>=p.s && i<=p.e)
+    .sort((a,b)=>(a.e-a.s)-(b.e-b.s) || (b.sys==='vulns')-(a.sys==='vulns'))[0];
+  if(hit) select(hit.id);
+};
+
+// ---------- 3D stage: Contract Atlas — layered contract inside a trust boundary ----------
+const wrap = document.getElementById('stageWrap');
+const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+wrap.appendChild(renderer.domElement);
+const labels = new CSS2DRenderer(); labels.domElement.className = 'labels'; wrap.appendChild(labels.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(30, 1, .1, 500);
+const V = (x=0,y=0,z=0) => new THREE.Vector3(x,y,z), UP = V(0,1,0);
+const TARGET = V(0, 3.2, 0);
+const DIRS = {q: V(14,19,46), f: V(0,12,52), s: V(52,12,0), b: V(0,12,-52)};
+camera.position.copy(TARGET).add(DIRS.q);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.copy(TARGET); controls.enableDamping = true; controls.minDistance = 8; controls.maxDistance = 90; controls.maxPolarAngle = Math.PI/2.05;
+
+scene.add(new THREE.HemisphereLight('#ffffff', '#e8e4dc', 2.0));
+const sun = new THREE.DirectionalLight('#ffffff', 2.0); sun.position.set(-12, 26, 16); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048); sun.shadow.radius = 6; sun.shadow.bias = -.0004;
+Object.assign(sun.shadow.camera, {left:-24, right:24, top:24, bottom:-24, near:1, far:80}); scene.add(sun);
+
+// ---- primitives ----
+const col = s => new THREE.Color(color(s));
+const M = (c, o={}) => new THREE.MeshStandardMaterial({color:c, roughness:.7, metalness:0, transparent:true, ...o});
+const mesh = (g, m) => { const o = new THREE.Mesh(g, m); o.castShadow = o.receiveShadow = true; return o; };
+const rb = (w,h,d,m,r=.08) => mesh(new RoundedBoxGeometry(w,h,d,3,Math.min(r,w/2-.001,h/2-.001,d/2-.001)), m);
+const at = (o,x,y,z) => { o.position.set(x,y,z); return o; };
+const grp = (...k) => { const g = new THREE.Group(); k.forEach(o => g.add(o)); return g; };
+const WHITE = M('#ffffff'), BONE = M('#f6f4ef');
+
+// floor + soft contact shadow
+const floor = mesh(new THREE.CircleGeometry(30, 64), M('#f3f2ef', {roughness:1})); floor.rotation.x = -Math.PI/2; floor.position.y = -.6; floor.castShadow = false; scene.add(floor);
+const ring = new THREE.Mesh(new THREE.RingGeometry(15.6, 15.66, 128), new THREE.MeshBasicMaterial({color:'#dcd8cf'})); ring.rotation.x = -Math.PI/2; ring.position.y = -.58; scene.add(ring);
+
+// ---- the three layers ----
+const W = 16, D = 10, LAYERS = {entry:{y:6, c:'entry', title:'ENTRY · who can call in'}, logic:{y:3.2, c:'logic', title:'LOGIC · internal functions'}, storage:{y:.4, c:'storage', title:'STATE · storage slots'}};
+const plates = {};
+Object.entries(LAYERS).forEach(([k, L]) => {
+  const g = grp(at(rb(W, .22, D, M('#ffffff', {opacity:.92}), .3), 0, 0, 0), at(rb(W+.08, .06, D+.08, M(col(L.c).lerp(new THREE.Color('#fff'), .35), {opacity:.9}), .3), 0, -.13, 0));
+  const el = document.createElement('div'); el.className = 'layerlab'; el.style.setProperty('--c', color(L.c)); el.textContent = L.title;
+  const lo = new CSS2DObject(el); lo.position.set(-W/2 + .2, .2, D/2 + .2); g.add(lo);
+  g.position.y = L.y; g.userData = {baseY: L.y, el}; scene.add(g); plates[k] = g;
+});
+// trust boundary: translucent wall with crisp edges
+const BW = W + 2.4, BD = D + 2.4, BH = 7.8;
+const boundary = new THREE.Group(); scene.add(boundary);
+const wallMat = new THREE.MeshPhysicalMaterial({color:'#9cc3ff', transparent:true, opacity:.07, roughness:.1, depthWrite:false, side:THREE.DoubleSide});
+boundary.add(at(new THREE.Mesh(new THREE.BoxGeometry(BW, BH, BD), wallMat), 0, BH/2 - .4, 0));
+const edgeMat = new THREE.LineBasicMaterial({color:'#7aa9f0', transparent:true, opacity:.55});
+boundary.add(at(new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(BW, BH, BD)), edgeMat), 0, BH/2 - .4, 0));
+{ const el = document.createElement('div'); el.className = 'layerlab boundary'; el.textContent = 'TRUST BOUNDARY';
+  const lo = new CSS2DObject(el); lo.position.set(BW/2 - 1.6, BH - .2, BD/2); boundary.add(lo); }
+
+// ---- piece builders (abstract, clean — Human-Atlas-like) ----
+const CALLER = {anyone:'#e2482f', owner:'#d99a06', keeper:'#5b8def'};
+function door(p){ // entry point: a port on the top plate, cap colour = who may call
+  const capC = p.id === 'receive' ? color('value') : CALLER[p.caller];
+  return grp(at(rb(1.7,.7,1.7,M('#ffffff')),0,.35,0), at(rb(1.74,.14,1.74,M(capC),.06),0,.74,0), at(rb(.9,.06,.32,M('#2a2f38'),.03),0,.83,0));
+}
+function arch(width, ghost){ // modifier gate standing over the doors it guards
+  const m = ghost ? new THREE.MeshBasicMaterial({color:color('access'), wireframe:true, transparent:true, opacity:.75}) : M(col('access'), {emissive:col('access'), emissiveIntensity:.15});
+  const a = new THREE.Mesh(new THREE.TorusGeometry(1, .07, 10, 40, Math.PI), m); a.castShadow = !ghost;
+  a.scale.set(width/2, 1.35, 1); a.position.y = 0;
+  return grp(a);
+}
+const hexagon = () => grp(at(mesh(new THREE.CylinderGeometry(.85,.85,.55,6), M(col('logic').lerp(new THREE.Color('#fff'), .45))),0,.28,0), at(mesh(new THREE.CylinderGeometry(.6,.6,.05,6), M(col('logic'))),0,.58,0));
+function slot(p){ // storage cell; mappings are stacked
+  const c = M(col('storage').lerp(new THREE.Color('#fff'), .25)), g = new THREE.Group();
+  const layers = p.id === 'shares' ? 3 : 1;
+  for (let i = 0; i < layers; i++) g.add(at(rb(2.3,.32,2.3,c,.06),0,.16 + i*.38,0));
+  return g;
+}
+const signal = () => grp(at(mesh(new THREE.OctahedronGeometry(.32), M(col('events'), {emissive:col('events'), emissiveIntensity:.25})),0,0,0));
+const valve = () => { const g = grp(at(mesh(new THREE.TorusGeometry(.42,.12,12,32), M(col('calls'))),0,0,0), at(mesh(new THREE.SphereGeometry(.18,16,16), M('#ffffff')),0,0,0)); g.children[0].rotation.y = Math.PI/2; return g; };
+function extContract(kind){
+  const c = col('deps').lerp(new THREE.Color('#fff'), .3), m = M(c);
+  if (kind === 'token') { const g = new THREE.Group(); for (let i = 0; i < 4; i++) g.add(at(mesh(new THREE.CylinderGeometry(.9,.9,.18,40), M(i === 3 ? '#2775ca' : c)),0,i*.22,0)); return g; }
+  if (kind === 'oracle') return grp(at(mesh(new THREE.CylinderGeometry(.08,.12,1.6,10), m),0,.8,0), at(mesh(new THREE.SphereGeometry(.55,24,24), M('#ffffff')),0,1.9,0), at(mesh(new THREE.TorusGeometry(.75,.05,8,40), m),0,1.9,0));
+  if (kind === 'strategy') return grp(at(rb(1.6,1.6,1.6,m,.2),0,.8,0));
+  if (kind === 'flash') return grp(at(mesh(new THREE.TorusGeometry(.75,.22,16,40), m),0,.9,0));
+  return grp(at(mesh(new THREE.ConeGeometry(.7,1.4,24), m),0,.7,0)); // msg.sender
+}
+function pin(){
+  const head = grp(at(mesh(new THREE.SphereGeometry(.3,20,20), M(col('vulns'), {emissive:col('vulns'), emissiveIntensity:.35})),0,0,0), at(mesh(new THREE.ConeGeometry(.26,.5,20), M(col('vulns'))),0,-.36,0).rotateX(Math.PI));
+  head.userData.bob = true; return grp(head);
+}
+
+// ---- where things live (x across, z depth) ----
+const Y = id => LAYERS[id].y + .11;
+const HOME = {
+  deposit:V(-5.6,Y('entry'),2), withdraw:V(-2.8,Y('entry'),2), flashLoan:V(0,Y('entry'),2), harvest:V(2.8,Y('entry'),2), receive:V(5.6,Y('entry'),2),
+  setOracle:V(-1.4,Y('entry'),-2.4), emergencyWithdraw:V(1.4,Y('entry'),-2.4),
+  whenNotPaused:V(-4.2,Y('entry'),2), onlyOwner:V(0,Y('entry'),-2.4), noReentrancy:V(-2.8,Y('entry'),2.9),
+  ctor:V(-5.4,Y('logic'),-2.2), _computeShares:V(-4,Y('logic'),2), _price:V(-1,Y('logic'),2), _sendOut:V(2.2,Y('logic'),-1.8), _accrueFee:V(4.6,Y('logic'),1.8),
+  evDeposit:V(-5.6,8.1,2), evWithdraw:V(-2.8,8.1,2), evOracle:V(-1.4,8.1,-2.4),
+  depERC20:V(12,1.2,2.5), depStrategy:V(12,3.6,-3), depOracle:V(-12,2.2,2.5), depFlash:V(-12,5.6,-2), depSender:V(-12,5.8,3.6),
+};
+['owner','asset','oracle','strategy','totalShares','shares','paused','feeBps'].forEach((id,i) => HOME[id] = V(-5.1 + (i%4)*3.4, Y('storage'), -2.1 + Math.floor(i/4)*4.2));
+const CALLS = {cTransferFrom:['deposit','depERC20'], cTransfer:['_sendOut','depERC20'], cOnFlash:['flashLoan','depFlash'], cInvest:['harvest','depStrategy'], cPrice:['_price','depOracle'], cCall:['withdraw','depSender']};
+// a valve sits exactly where its pipe crosses the trust boundary
+Object.entries(CALLS).forEach(([id,[a,b]]) => { const A = HOME[a], B = HOME[b], x = Math.sign(B.x) * BW/2, k = (x - A.x) / (B.x - A.x);
+  HOME[id] = V(x, A.y + (B.y - A.y)*k + .9, A.z + (B.z - A.z)*k); });
+const LESION = {f1:'withdraw', f2:'_price', f3:'_sendOut', f4:'setOracle', f5:'_computeShares'};
+P.filter(p => LESION[p.id]).forEach(p => HOME[p.id] = HOME[LESION[p.id]].clone().add(V(0, 2.2, 0)));
+const DEPKIND = {depERC20:'token', depOracle:'oracle', depStrategy:'strategy', depFlash:'flash', depSender:'sender'};
+const ARCHW = {whenNotPaused:4.4, onlyOwner:4.6, noReentrancy:2.2};
+
+const group = {}, pickables = [];
+P.forEach(p => {
+  const g = p.sys === 'entry' ? door(p) : p.sys === 'access' ? arch(ARCHW[p.id], p.id === 'noReentrancy') : p.sys === 'logic' ? hexagon()
+    : p.sys === 'storage' ? slot(p) : p.sys === 'events' ? signal() : p.sys === 'calls' ? valve() : p.sys === 'deps' ? extContract(DEPKIND[p.id]) : pin();
+  p.home = HOME[p.id]; g.userData.id = p.id; scene.add(g); group[p.id] = g;
+  g.traverse(o => { if (!o.isMesh) return; o.material = o.material.clone(); o.material.userData.base = o.material.opacity; o.userData.id = p.id; pickables.push(o); });
+  const lab = document.createElement('div'); lab.className = 'label3d ' + p.sys; lab.style.setProperty('--c', color(p.sys));
+  lab.innerHTML = p.sys === 'vulns' ? `<b>${p.name.slice(0,4)}</b><span>${p.name.slice(4)}</span>` : p.sys === 'entry' ? `${p.name}<i class="who" style="--w:${p.id==='receive'?color('value'):CALLER[p.caller]}">${p.caller}</i>` : p.name;
+  const lo = new CSS2DObject(lab); g.add(lo); g.userData.label = lab; g.userData.labelObj = lo;
+});
+P.forEach(p => { const g = group[p.id]; g.position.copy(p.home);
+  const box = new THREE.Box3().setFromObject(g), size = box.getSize(V());
+  g.userData.radius = Math.max(size.x, size.y, size.z) / 2; g.userData.labelObj.position.set(0, box.max.y - p.home.y + .45, 0); });
+
+// pipes: the external calls, drawn through their valve on the boundary
+const pipes = new THREE.Group(); scene.add(pipes);
+const pipeMat = new THREE.MeshStandardMaterial({color:col('calls'), roughness:.4, transparent:true, opacity:.7});
+Object.entries(CALLS).forEach(([id,[a,b]]) => {
+  const curve = new THREE.CatmullRomCurve3([HOME[a].clone().add(V(0,.6,0)), HOME[id], HOME[b].clone().add(V(0,.8,0))]);
+  const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 48, .05, 8), pipeMat); tube.userData.sys = ['calls', byId[a].sys, byId[b].sys]; pipes.add(tube);
+});
+
+// inventory: one row per system, laid flat on the floor
+const sysKeys = Object.keys(SYSTEMS);
+const rowZ = i => -10 + i * 2.9;
+const heads = sysKeys.map((s, i) => { const d = document.createElement('div'); d.className = 'colhead3d'; d.style.setProperty('--c', color(s));
+  d.innerHTML = `${SYSTEMS[s].label} <b>${P.filter(p => p.sys === s).length}</b>`; const o = new CSS2DObject(d); o.position.set(-13.4, -.4, rowZ(i)); scene.add(o); return d; });
+sysKeys.forEach((s, i) => P.filter(p => p.sys === s).forEach((p, j) => p.inv = V(-10.4 + j*2.3, -.5, rowZ(i))));
+
+// links (dedup undirected), drawn only for the selection
+const LINKS = [], seen = new Set();
+P.forEach(p => (p.links||[]).forEach(t => { const k = [p.id,t].sort().join('|'); if (byId[t] && !seen.has(k)) { seen.add(k); LINKS.push([p.id,t]); } }));
+const neighbours = id => { const n = new Set([id]); LINKS.forEach(([a,b]) => { if (a===id) n.add(b); if (b===id) n.add(a); }); return n; };
+const linkG = new THREE.Group(); scene.add(linkG);
+let linkCurves = [];
+const mid = id => group[id].position.clone().add(V(0, .5, 0));
+function drawLinks(){
+  linkG.clear(); linkCurves = [];
+  if (!selected) return;
+  const a = mid(selected);
+  neighbours(selected).forEach(id => {
+    if (id === selected || hidden.has(byId[id].sys)) return;
+    const b = mid(id), m = a.clone().lerp(b, .5); m.y = Math.max(a.y, b.y) + 1.4 + a.distanceTo(b)*.08;
+    const curve = new THREE.QuadraticBezierCurve3(a, m, b), c = col(byId[id].sys === 'vulns' || byId[selected].sys === 'vulns' ? 'vulns' : byId[id].sys);
+    linkG.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 48, .04, 6), new THREE.MeshBasicMaterial({color:c, transparent:true, opacity:.85})));
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(.1, 12, 12), new THREE.MeshBasicMaterial({color:c})); linkG.add(dot); linkCurves.push([curve, dot]);
+  });
+}
+
+// ---------- state ----------
+let t = 0, selected = null, hovered = null, linksDirty = true;
+const hidden = new Set();
+const ease = x => x<.5 ? 2*x*x : 1-Math.pow(-2*x+2,2)/2;
+// explode in two stages: 0–50% pull the layers apart, 50–100% lay every piece out as an inventory
+const SPREAD = {entry:5.2, access:5.2, events:5.2, logic:2.5, storage:0, vulns:0};
+function layout(){
+  const a = ease(Math.min(1, t*2)), b = ease(Math.max(0, t*2 - 1));
+  Object.entries(plates).forEach(([k, g]) => { g.position.y = g.userData.baseY + SPREAD[k]*a; g.visible = b < .98;
+    g.traverse(o => { if (o.isMesh) o.material.opacity = (k ? .92 : 1) * (1 - b); }); g.userData.el.style.opacity = 1 - b; });
+  P.forEach((p, i) => {
+    const g = group[p.id], lift = p.sys === 'vulns' ? SPREAD[byId[LESION[p.id]].sys] : (SPREAD[p.sys] ?? 0);
+    const exploded = p.home.clone().add(V(0, lift*a, 0)), d = Math.min(1, Math.max(0, b*1.25 - (i%7)*.035));
+    g.position.copy(exploded).lerp(p.inv, d);
+    g.scale.setScalar(1 + (Math.min(1, .95 / g.userData.radius) - 1) * d);
+  });
+  wallMat.opacity = .07 * (1 - a); edgeMat.opacity = .55 * (1 - a); boundary.visible = a < .98;
+  pipes.visible = b < .05; pipes.children.forEach(p => p.visible = !p.userData.sys.some(s => hidden.has(s))); pipeMat.opacity = .7 * (1 - a*.7);
+  heads.forEach(h => h.style.opacity = b);
+  if (!selected && !camAnim) { camera.zoom = 1 - .25*b; camera.updateProjectionMatrix(); }
+  document.getElementById('caption').textContent = t > .5 ? 'CONTRACT INVENTORY · BY SYSTEM' : t > .05 ? 'LAYERS PULLED APART' : 'LUORAVAULT · CONTRACT ATLAS';
+  linksDirty = true; refresh();
+}
+
+function refresh(){
+  const near = selected ? neighbours(selected) : null, b = Math.max(0, t*2 - 1);
+  P.forEach(p => {
+    const g = group[p.id], on = !hidden.has(p.sys);
+    g.visible = on;
+    const focus = p.id === hovered || p.id === selected;
+    g.userData.label.classList.toggle('show', on && (focus || !!(near && near.has(p.id)) || (p.sys === 'vulns' && b < .3 && !selected)));
+    g.userData.label.classList.toggle('focus', focus);
+    g.userData.label.classList.toggle('near', !!(near && near.has(p.id)));
+    const dim = near && !near.has(p.id);
+    g.traverse(o => { if (!o.isMesh) return; const m = o.material; m.opacity = m.userData.base * (dim ? .12 : 1);
+      if (m.emissive && !['vulns','access','events'].includes(p.sys)) m.emissive.copy(col(p.sys)).multiplyScalar(focus ? .3 : 0); });
+  });
+  Object.values(plates).forEach(g => g.traverse(o => { if (o.isMesh) o.material.opacity = (near ? .35 : .92) * (1 - b); }));
+  renderer.domElement.style.cursor = hovered ? 'pointer' : 'grab';
+}
+
+// select = isolate: fly to the piece, fade everything unrelated
+function highlight(id){
+  linksDirty = true; refresh();
+  const off = camAnim ? camAnim.tp.clone().sub(camAnim.tt) : camera.position.clone().sub(controls.target);
+  if (id) { const p = mid(id); flyTo(p.clone().add(off.clone().setLength(Math.min(off.length(), 24))), p, 1); }
+  else flyTo(TARGET.clone().add(DIRS.q), TARGET, 1);
+}
+
+// picking: hover + click (drag ≠ click)
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+function pick(ev){
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.set((ev.clientX - r.left) / r.width * 2 - 1, -(ev.clientY - r.top) / r.height * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  return ray.intersectObjects(pickables.filter(m => group[m.userData.id].visible), false)[0]?.object.userData.id ?? null;
+}
+renderer.domElement.addEventListener('pointermove', ev => { const h = pick(ev); if (h !== hovered) { hovered = h; refresh(); } });
+let down = null;
+renderer.domElement.addEventListener('pointerdown', ev => down = [ev.clientX, ev.clientY]);
+renderer.domElement.addEventListener('pointerup', ev => { if (down && Math.hypot(ev.clientX - down[0], ev.clientY - down[1]) < 5) select(pick(ev)); down = null; });
+
+// camera moves
+let camAnim = null;
+function flyTo(pos, target, zoom){ camAnim = {fp: camera.position.clone(), tp: pos, ft: controls.target.clone(), tt: target.clone(), fz: camera.zoom, tz: zoom, t0: performance.now()}; }
+document.getElementById('viewbar').onclick = e => {
+  const v = e.target.closest('button')?.dataset.cam; if (!v) return;
+  if (v === 'spin') { controls.autoRotate = !controls.autoRotate; e.target.closest('button').classList.toggle('on', controls.autoRotate); return; }
+  document.querySelectorAll('#viewbar [data-cam]:not([data-cam=spin])').forEach(b => b.classList.toggle('on', b.dataset.cam === v));
+  flyTo(TARGET.clone().add(DIRS[v]), TARGET, 1);
+};
+function fit(){ const w = wrap.clientWidth, h = wrap.clientHeight; renderer.setSize(w, h); labels.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+new ResizeObserver(fit).observe(wrap);
+
+const clock = new THREE.Clock();
+renderer.setAnimationLoop(() => {
+  const time = clock.getElapsedTime();
+  if (camAnim) { const k = Math.min(1, (performance.now() - camAnim.t0) / 800), s = ease(k);
+    camera.position.lerpVectors(camAnim.fp, camAnim.tp, s); controls.target.lerpVectors(camAnim.ft, camAnim.tt, s);
+    camera.zoom = camAnim.fz + (camAnim.tz - camAnim.fz) * s; camera.updateProjectionMatrix(); if (k === 1) camAnim = null; }
+  P.forEach((p, i) => { const g = group[p.id];
+    if (p.sys === 'vulns') g.children[0].position.y = Math.sin(time*2.4 + i) * .1;
+    if (p.sys === 'events') g.children[0].rotation.y = time * 1.2;
+    if (p.sys === 'calls') g.children[0].rotation.x = time * .8; });
+  if (linksDirty) { drawLinks(); linksDirty = false; }
+  linkCurves.forEach(([c, dot], i) => dot.position.copy(c.getPoint((time * .45 + i * .17) % 1)));
+  controls.update(); renderer.render(scene, camera); labels.render(scene, camera);
+});
+
+// ---------- systems panel ----------
+const sysList = document.getElementById('sysList');
+function renderSystems(){
+  sysList.innerHTML = sysKeys.map(s=>`
+    <div class="sys"><span class="dot" style="background:${color(s)}"></span>
+      <div>${SYSTEMS[s].label}<span class="sub">${SYSTEMS[s].sub}</span></div>
+      <span class="n">${P.filter(p=>p.sys===s).length}</span>
+      <button class="toggle ${hidden.has(s)?'':'on'}" data-s="${s}" aria-label="toggle ${s}"></button></div>`).join('');
+  document.getElementById('visible').textContent = P.filter(p=>!hidden.has(p.sys)).length+' pieces visible';
+  document.getElementById('hideAll').textContent = hidden.size===sysKeys.length?'Show all':'Hide all';
+  layout();
+}
+sysList.onclick = e=>{const s=e.target.dataset.s; if(!s)return; hidden.has(s)?hidden.delete(s):hidden.add(s); renderSystems();};
+document.getElementById('hideAll').onclick=()=>{ if(hidden.size===sysKeys.length) hidden.clear(); else sysKeys.forEach(s=>hidden.add(s)); renderSystems(); };
+document.getElementById('sysCount').textContent = sysKeys.length;
+document.getElementById('pieceCount').textContent = P.length;
+
+// ---------- explode ----------
+const range = document.getElementById('explode');
+range.oninput = ()=>{ t = range.value/100; document.getElementById('pct').textContent = range.value; layout(); };
+let anim;
+document.getElementById('reset').onclick = ()=>{
+  cancelAnimationFrame(anim); const from=t, t0=performance.now();
+  const step = now=>{ const k=Math.min(1,(now-t0)/600); t=from*(1-k); range.value=Math.round(t*100); document.getElementById('pct').textContent=range.value; layout(); if(k<1) anim=requestAnimationFrame(step); };
+  anim=requestAnimationFrame(step); hidden.clear(); renderSystems(); select(null); flyTo(TARGET.clone().add(DIRS.q), TARGET, 1);
+};
+
+// ---------- inspector ----------
+const ins = document.getElementById('ins');
+const RISK = {high:'High',med:'Medium',low:'Low'};
+function select(id){
+  selected = id;
+  highlight(id);
+  if(!id){ ins.classList.remove('open'); showSource(null); return; }
+  const p = byId[id];
+  document.getElementById('insDot').style.background = color(p.sys);
+  document.getElementById('insKind').textContent = SYSTEMS[p.sys].label+' · '+SYSTEMS[p.sys].sub.split('·')[0];
+  document.getElementById('insName').textContent = p.name;
+  const vis = (p.sys==='entry'||p.sys==='logic') ? (LINES.find(l=>l.includes(p.find))||'').match(/\b(external|internal|public)\b/)?.[0] : null;
+  const findings = P.filter(f=>f.sys==='vulns' && (f.links||[]).includes(id));
+  document.getElementById('insBadges').innerHTML =
+    (p.risk?`<span class="badge ${p.risk}">${RISK[p.risk]} severity</span>`:'') +
+    (vis?`<span class="badge">${vis}</span>`:'') +
+    findings.map(f=>`<span class="badge ${f.risk}">${f.name}</span>`).join('');
+  document.getElementById('insDesc').textContent = p.desc;
+  const conns = new Set(p.links||[]); LINKS.forEach(([a,b])=>{ if(b===id) conns.add(a); });
+  document.getElementById('insConns').innerHTML = [...conns].filter(c=>byId[c]).map(c=>
+    `<button class="conn" style="--c:${color(byId[c].sys)}" data-id="${c}">${byId[c].name}</button>`).join('') || '<span class="meta">none</span>';
+  document.getElementById('msgs').innerHTML = '';
+  ins.classList.add('open');
+  showSource(p); // after open: scroll math needs the final source height
+}
+document.getElementById('insConns').onclick = e=>{ const c=e.target.dataset.id; if(c) select(c); };
+document.getElementById('close').onclick = ()=>select(null);
+
+// ---------- AI (mock) ----------
+// ponytail: canned answers; swap aiAnswer() for a backend call that sends {piece, source, question} to Claude
+const RISKS = {
+  entry:['Who can call it? (anyone / owner / keeper)','Does it make external calls before updating state (CEI)?','Is there a reentrancy guard where external calls happen?','Are token return values checked (SafeERC20)?'],
+  logic:['Rounding direction and divide-by-zero cases','Does it depend on a price or value that can change within one transaction?','Are inputs from external contracts validated?'],
+  storage:['Who writes this slot, and in what order relative to external calls?','Can it reach an edge value (0, max) that breaks the math?'],
+  calls:['What can the called contract do while it has control?','Is the return value checked?','Is the callee trusted, and why?'],
+  access:['Which functions does this gate protect — and which are missing it?','Is the privileged key a multisig / behind a timelock?'],
+  deps:['What does the vault assume about this contract?','What happens if it returns unexpected values or reverts?'],
+  events:['Is the event emitted on every state change it describes?'],
+  vulns:['Confirm the root cause in code','Write a test that fails today and passes after the fix'],
+};
+const TESTS = {
+  withdraw:`// state must be updated before value leaves the vault
+function test_withdraw_updatesSharesBeforeCall() public {
+    vm.prank(alice); vault.deposit(1_000e6);
+    vm.prank(alice); vault.withdraw(1_000e6);
+    assertEq(vault.shares(alice), 0);
+    assertEq(vault.totalShares(), 0);
+}`,
+  _price:`// share value should not move when only the spot price moves
+function invariant_shareValueBounded() public view {
+    uint256 v = vault.totalShares() == 0 ? 1e18
+        : usdc.balanceOf(address(vault)) * 1e18 / vault.totalShares();
+    assertApproxEqRel(v, 1e18, 0.01e18);
+}`,
+  default:`// every share stays fully backed
+function invariant_solvency() public view {
+    assertGe(usdc.balanceOf(address(vault)), vault.totalShares());
+}`,
+};
+TESTS.f1 = TESTS.cCall = TESTS.withdraw; TESTS.f2 = TESTS.cPrice = TESTS._computeShares = TESTS._price;
+function aiAnswer(p,q){
+  const conns = (p.links||[]).map(c=>byId[c]?.name).filter(Boolean);
+  const findings = p.sys==='vulns' ? [p] : P.filter(x=>x.sys==='vulns'&&(x.links||[]).includes(p.id));
+  if(q==='explain') return `${p.name} lives in the "${SYSTEMS[p.sys].label}" system (${SYSTEMS[p.sys].sub}).\n\n${p.desc}\n\nConnected to: ${conns.join(', ')||'nothing else directly'}.`;
+  if(q==='risks') return `Checklist for ${p.name}:\n• ${(RISKS[p.sys]||[]).join('\n• ')}` + (findings.length ? `\n\nOpen findings here:\n${findings.map(f=>`⚠ ${f.name} (${RISK[f.risk]}) — ${f.desc}`).join('\n')}` : '\n\nNo open findings on this piece.');
+  if(q==='test') return `Foundry test to protect this behaviour (run with node luora-export.mjs, results show up in the trace view):\n\n${TESTS[p.id]||TESTS.default}`;
+  return `(${p.name}) Mock AI: in the real build your question, the source of ${p.name} and its ${conns.length} connected pieces go to the model for an answer grounded in the code.`;
+}
+const msgs = document.getElementById('msgs');
+function ask(q,label){
+  if(!selected) return;
+  msgs.insertAdjacentHTML('beforeend',`<div class="msg u">${esc(label)}</div>`);
+  const a = document.createElement('div'); a.className='msg a'; msgs.appendChild(a);
+  const text = aiAnswer(byId[selected],q); let i=0;
+  const tick = ()=>{ i+=4; a.textContent = text.slice(0,i); msgs.scrollTop=msgs.scrollHeight; if(i<text.length) setTimeout(tick,12); };
+  tick();
+}
+document.querySelector('.chips').onclick = e=>{ const q=e.target.dataset.q; if(q) ask(q,e.target.textContent); };
+document.getElementById('ask').onsubmit = e=>{ e.preventDefault(); const i=e.target.querySelector('input'); if(i.value.trim()){ ask('free',i.value); i.value=''; } };
+
+// ---------- search ----------
+const search = document.getElementById('search');
+document.getElementById('names').innerHTML = P.map(p=>`<option value="${p.name}">`).join('');
+search.onchange = ()=>{ const q=search.value.toLowerCase(); const p=P.find(p=>p.name.toLowerCase().includes(q)); if(p){ showView('anatomy'); select(p.id); } };
+addEventListener('keydown',e=>{ if(e.key==='/' && document.activeElement.tagName!=='INPUT'){ e.preventDefault(); search.focus(); } if(e.key==='Escape') select(null); });
+
+function showView(){}
+
+renderSystems();
+Object.assign(window, {select, ask, showView, _dbg:{pick, camera, controls, group}}); // handy from devtools
+// intro: assemble from exploded
+t=1; layout(); setTimeout(()=>document.getElementById('reset').click(),350);
+</script>
+</body>
+</html>

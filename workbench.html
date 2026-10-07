@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Luora Workbench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#0d0f15; --panel:#13161e; --card:#191d27; --card2:#1e2330; --ink:#e8e6f1; --muted:#8a8ea2; --dim:#5d6276; --line:#242936; --soft:#1f2430;
+  --accent:#7c6cff; --usdc:#3d8ee6; --call:#8a90a6; --proxy:#c084fc; --approve:#e8b339; --ok:#34c47c; --warn:#e8b339; --bad:#f0603f; --crit:#ff3d6e;
+  --core:#7c6cff; --peri:#14b8c4; --ext:#22c55e;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:13px/1.45 Inter,system-ui,sans-serif;overflow:hidden;display:grid;grid-template:"top top top" 48px "rail main code" 1fr / 64px 1fr 400px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+
+.top{grid-area:top;display:flex;align-items:center;gap:12px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--line)}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700}
+.mark{width:22px;height:22px;border-radius:6px;border:2px solid var(--ink);background:conic-gradient(var(--usdc) 0 25%,#fff 0 50%,var(--usdc) 0 75%,#fff 0)}
+.crumb{color:var(--muted)}
+.crumb b{color:var(--ink);font-weight:600}
+.meta{margin-left:auto;display:flex;gap:8px}
+.tagx{font:500 11.5px var(--mono);padding:4px 9px;border-radius:999px;background:var(--soft);border:1px solid var(--line);color:#c7c9d6}
+.tagx.ok{color:var(--ok);border-color:rgba(52,196,124,.35)}
+
+.rail{grid-area:rail;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:4px}
+.rail button{width:52px;padding:8px 0 6px;border:0;border-radius:10px;background:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600}
+.rail button svg{width:20px;height:20px}
+.rail button:hover{background:var(--soft);color:var(--ink)}
+.rail button.on{background:rgba(124,108,255,.18);color:#fff}
+.rail button.on svg{color:var(--accent)}
+
+main{grid-area:main;display:flex;flex-direction:column;min-width:0;min-height:0}
+.vh{display:flex;align-items:flex-end;gap:14px;padding:14px 18px 10px;border-bottom:1px solid var(--line)}
+.vh[hidden]{display:none}
+.vh h2{margin:0;font-size:16px;letter-spacing:-.01em}
+.vh p{margin:2px 0 0;color:var(--muted);font-size:12.5px;max-width:720px}
+.vh .ctl{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:2px}
+.seg button{border:0;background:none;padding:4px 10px;border-radius:7px;font-size:12px;color:var(--muted)}
+.seg button.on{background:var(--card2);color:var(--ink)}
+.chipt{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--card);font-size:12px;color:#c7c9d6;cursor:pointer;user-select:none}
+.chipt i{width:14px;height:3px;border-radius:2px;background:var(--c)}
+.chipt i.d{background:repeating-linear-gradient(90deg,var(--c) 0 4px,transparent 4px 7px)}
+.chipt.off{opacity:.4}
+.view{flex:1;min-height:0;position:relative;display:none;overflow:hidden}
+.view.on{display:block}
+.pad{padding:16px 18px;overflow:auto;height:100%}
+
+/* ---------- 1. protocol map ---------- */
+#mapvp{position:absolute;inset:0;cursor:grab;background-color:var(--bg);background-image:radial-gradient(#20242f 1.2px,transparent 1.2px)}
+#mapvp.drag{cursor:grabbing}
+#map{position:absolute;left:0;top:0;transform-origin:0 0}
+#mapedges{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none}
+.frame{position:absolute;border:1.5px dashed color-mix(in srgb,var(--c) 55%,transparent);border-radius:18px;background:color-mix(in srgb,var(--c) 5%,transparent)}
+.frame b{position:absolute;left:14px;top:-11px;padding:1px 8px;border-radius:6px;background:var(--bg);color:var(--c);font:600 11px Inter;letter-spacing:.06em;text-transform:uppercase}
+.ct{position:absolute;width:300px;background:var(--card);border:1.5px solid #343a4c;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.ct .h{display:flex;align-items:center;gap:8px;padding:10px 12px;font:600 13px var(--mono)}
+.ct .h i{width:10px;height:10px;border-radius:3px;background:var(--c)}
+.lg{width:18px;height:18px;border-radius:50%;flex:none;vertical-align:-4px;background:#fff}
+.trow .lg{width:15px;height:15px;margin-right:2px;vertical-align:-3px}
+.ct .h small{margin-left:auto;font:600 10px Inter;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ct .sum{padding:0 12px 10px;color:var(--muted);font-size:11.5px;display:flex;gap:10px}
+.ct .sum b{color:var(--ink);font-weight:600}
+.risk{font:700 10px Inter;padding:1px 7px;border-radius:999px;margin-left:6px}
+.r-crit{background:rgba(255,61,110,.18);color:var(--crit)}.r-high{background:rgba(240,96,63,.18);color:var(--bad)}.r-med{background:rgba(232,179,57,.16);color:var(--warn)}.r-low{background:rgba(52,196,124,.14);color:var(--ok)}
+.fns{display:none;border-top:1px solid var(--line)}
+.fn{padding:6px 12px;border-top:1px solid #20242f;cursor:pointer}
+.fn:first-child{border-top:0}
+.fn:hover{background:var(--soft)}
+.fn.sel{background:rgba(124,108,255,.16);box-shadow:inset 2px 0 var(--accent)}
+.fn .sig{display:flex;align-items:center;gap:6px;font:12px var(--mono)}
+.fn .sig .vis{font-size:10px;color:var(--dim)}
+.fn .sig em{font-style:normal;margin-left:auto;font:600 10px Inter;color:var(--muted)}
+.fn pre{display:none;margin:5px 0 2px;font:10.5px/1.5 var(--mono);color:#a9adbf;white-space:pre;overflow:hidden}
+#map.z1 .fns,#map.z2 .fns{display:block}
+#map.z1 .sum,#map.z2 .sum{display:none}
+#map.z2 .fn pre{display:block}
+.edge{fill:none;stroke-width:2}
+.edge.call{stroke:var(--call)}.edge.token{stroke:var(--usdc);stroke-width:2.6}.edge.proxy{stroke:var(--proxy);stroke-dasharray:7 5}.edge.approve{stroke:var(--approve);stroke-dasharray:3 4}
+.elab{font:500 11px Inter;fill:#8a8ea2;paint-order:stroke;stroke:var(--bg);stroke-width:5px}
+.zl{position:absolute;left:14px;bottom:14px;font:500 11.5px Inter;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 12px}
+.zl b{color:var(--ink)}
+.zbtns{position:absolute;right:14px;bottom:14px;display:flex;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:3px}
+.zbtns button{width:30px;height:28px;border:0;border-radius:7px;background:none}
+.zbtns button:hover{background:var(--soft)}
+
+/* ---------- 2. attack surface ---------- */
+table.mx{width:100%;border-collapse:separate;border-spacing:0;font-size:12.5px}
+.mx th{position:sticky;top:0;background:var(--panel);text-align:left;font:600 10.5px Inter;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:9px 8px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap;z-index:1}
+.mx th.c{text-align:center}
+.mx td{padding:5px 6px;border-bottom:1px solid #1d212b;white-space:nowrap}
+.mx tr{cursor:pointer}
+.mx tbody tr:hover td{background:#171b24}
+.mx tr.sel td{background:rgba(124,108,255,.12)}
+.mx td.fnc{font:12px var(--mono)}
+.mx td.fnc small{color:var(--dim)}
+.cell{display:block;text-align:center;border-radius:6px;padding:4px 6px;font:600 11px Inter}
+.h0{background:#171b24;color:#4d5263}
+.h1{background:rgba(52,196,124,.14);color:var(--ok)}
+.h2{background:rgba(232,179,57,.16);color:var(--warn)}
+.h3{background:rgba(240,96,63,.2);color:var(--bad)}
+.h4{background:rgba(255,61,110,.28);color:#ff8fab}
+.score{display:flex;align-items:center;gap:8px}
+.score .bar{width:70px;height:6px;border-radius:3px;background:#20242f;overflow:hidden}
+.score .bar i{display:block;height:100%;background:var(--c)}
+.note{font-size:11.5px;color:var(--muted);white-space:normal;max-width:260px}
+
+/* ---------- 3. roles ---------- */
+.rolewrap{display:grid;grid-template-columns:1fr 300px;gap:16px;height:100%;padding:16px 18px;overflow:auto}
+#rolesvg{width:100%;min-height:560px}
+.rn rect{rx:12}
+.cards{display:flex;flex-direction:column;gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.card h4{margin:0 0 4px;font-size:13px;display:flex;align-items:center;gap:8px}
+.card p{margin:0;color:#b6b9c8;font-size:12.5px}
+.card.bad{border-color:rgba(240,96,63,.5);background:rgba(240,96,63,.06)}
+.card.warn{border-color:rgba(232,179,57,.45);background:rgba(232,179,57,.05)}
+.gauge{height:8px;border-radius:4px;background:#20242f;overflow:hidden;margin:8px 0 4px}
+.gauge i{display:block;height:100%;background:linear-gradient(90deg,var(--warn),var(--bad))}
+
+/* ---------- 4. trace ---------- */
+.src{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:9px 12px;border-radius:10px;background:rgba(52,196,124,.07);border:1px solid rgba(52,196,124,.3);font-size:12px;color:#b9e8cf}
+.src code{font:12px var(--mono);color:#fff}
+.tr{font:12px var(--mono)}
+.trow{display:flex;align-items:center;gap:7px;height:30px;padding-right:10px;border-radius:6px;white-space:nowrap;cursor:pointer}
+.trow:hover{background:#171b24}
+.trow.sel{background:rgba(124,108,255,.14)}
+.trow.bad{background:rgba(240,96,63,.08)}
+.trow .ix{width:30px;text-align:right;color:var(--dim)}
+.trow .tg{width:16px;color:var(--muted);text-align:center}
+.trow .ind{width:18px;height:100%;border-left:1px solid #2a2f3c;flex:none}
+.ty{font:600 10px var(--mono);padding:2px 6px;border-radius:5px;border:1px solid}
+.ty.CALL{color:#7fb0ff;border-color:#2c4a7a}.ty.STATICCALL{color:#9aa0b4;border-color:#343a4c}.ty.DELEGATECALL{color:var(--proxy);border-color:#5b3f7a}.ty.SSTORE{color:var(--warn);border-color:#6a5420}.ty.EVENT{color:var(--ok);border-color:#1f5a3c}.ty.SLOAD{color:#7d8296;border-color:#2a2f3c}
+.trow .c{color:#8fb7ff}.trow .f{color:#ff9b6b}.trow .a{color:#c7c9d6;overflow:hidden;text-overflow:ellipsis}
+.trow .ret{color:#a7d675}
+.trow .gas{margin-left:auto;color:var(--dim);font-size:11px}
+.trow .flag{font:600 10.5px Inter;padding:2px 8px;border-radius:999px;background:var(--bad);color:#fff}
+.trow .flag.w{background:#8a6a12}
+
+/* ---------- 5. invariants ---------- */
+.invgrid{display:grid;grid-template-columns:1fr 320px;gap:16px;padding:16px 18px;height:100%;overflow:auto}
+.chartbox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;position:relative}
+.chartbox h4{margin:0 0 2px;font-size:13px}
+.chartbox .sub{color:var(--muted);font-size:12px}
+#chart{width:100%;height:360px;display:block;margin-top:8px}
+.tt{position:absolute;pointer-events:none;background:var(--panel);border:1px solid #343a4c;border-radius:10px;padding:8px 10px;font-size:12px;display:none;min-width:200px;box-shadow:0 10px 24px rgba(0,0,0,.45)}
+.tt b{display:block;margin-bottom:3px}
+.tt div{display:flex;justify-content:space-between;gap:12px;font:11.5px var(--mono)}
+.inv{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 12px;cursor:pointer}
+.inv h5{margin:0 0 3px;font-size:12.5px;display:flex;gap:8px;align-items:center}
+.inv code{font:11.5px var(--mono);color:#c7c9d6;display:block;margin:4px 0}
+.inv p{margin:0;color:var(--muted);font-size:12px}
+.inv.bad{border-color:rgba(240,96,63,.55);background:rgba(240,96,63,.06)}
+.st{font:700 10px Inter;padding:1px 7px;border-radius:999px;margin-left:auto}
+.st.ok{background:rgba(52,196,124,.15);color:var(--ok)}.st.bad{background:var(--bad);color:#fff}
+.steps{display:flex;gap:4px;margin-top:10px;flex-wrap:wrap}
+.steps span{font:600 10px var(--mono);padding:3px 7px;border-radius:6px;background:var(--soft);color:var(--muted)}
+.steps span.bad{background:rgba(240,96,63,.2);color:var(--bad)}
+
+/* ---------- 6. sankey ---------- */
+#sankey{width:100%;height:420px;display:block}
+.sk text{font:600 12px Inter;fill:var(--ink)}
+.sk text.v{font:500 11.5px var(--mono);fill:var(--muted)}
+.sk path{fill-opacity:.38;transition:fill-opacity .2s}
+.sk path:hover{fill-opacity:.7}
+table.tx{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+.tx td{padding:7px 6px;border-top:1px solid var(--line)}
+.tx td.n{font:600 12px var(--mono);text-align:right}
+.tx .bar{height:6px;border-radius:3px;background:var(--usdc);opacity:.7}
+
+/* ---------- code panel ---------- */
+.code{grid-area:code;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.ftabs{display:flex;gap:2px;padding:8px 8px 0;border-bottom:1px solid var(--line);overflow-x:auto}
+.ftabs button{border:0;background:none;padding:6px 10px;border-radius:8px 8px 0 0;font:500 11.5px var(--mono);color:var(--muted);white-space:nowrap}
+.ftabs button.on{background:var(--card);color:var(--ink)}
+.ctx{padding:10px 14px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted);min-height:40px}
+.ctx b{color:var(--ink)}
+pre#src{margin:0;flex:1;overflow:auto;padding:6px 0 40px;font:12px/1.7 var(--mono);color:#d7d6e2}
+.l{display:block;position:relative;padding-right:14px;transition:background .25s}
+.ln{display:inline-block;width:40px;padding-right:12px;text-align:right;color:#4b5063;user-select:none}
+.l.hl{background:rgba(124,108,255,.16);box-shadow:inset 3px 0 var(--accent)}
+.l.hl.bad{background:rgba(240,96,63,.16);box-shadow:inset 3px 0 var(--bad)}
+.l.fd:before{content:"";position:absolute;left:6px;top:50%;margin-top:-4px;width:8px;height:8px;border-radius:50%;background:var(--bad)}
+.k{color:#ff9b6b}.t{color:#5fd0e0}.s{color:#a7d675}.cm{color:#666b7e;font-style:italic}.num{color:#f0b85a}
+.nosrc{padding:30px 18px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="logo"><span class="mark"></span>Luora Workbench</div>
+  <div class="crumb">Audits / <b>Luora Protocol</b> / commit <span style="font-family:var(--mono)">a91f3c2</span></div>
+  <div class="meta"><span class="tagx">8 contracts</span><span class="tagx">412 nSLOC</span><span class="tagx">14 external fns</span><span class="tagx ok">● anvil fork · block 21,045,112</span></div>
+</header>
+
+<nav class="rail" id="rail">
+  <button data-v="map" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="7" height="6" rx="1.5"/><rect x="14" y="4" width="7" height="6" rx="1.5"/><rect x="8.5" y="14" width="7" height="6" rx="1.5"/><path d="M6.5 10v2h11v-2M12 12v2"/></svg>Map</button>
+  <button data-v="surface"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>Surface</button>
+  <button data-v="roles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="7" r="3.2"/><path d="M5 20c.8-3.6 3.6-5.6 7-5.6s6.2 2 7 5.6"/><path d="M18 3l2 2-2 2"/></svg>Roles</button>
+  <button data-v="trace"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h6M7 10h7M10 15h6M7 20h9"/><path d="M4 5v15"/></svg>Trace</button>
+  <button data-v="inv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 18l5-6 4 3 4-8 5 5"/><path d="M3 21h18"/></svg>Invariants</button>
+  <button data-v="flow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6c8 0 8 12 18 12M3 12c6 0 8-6 18-6M3 18c7 0 9-6 18-6"/></svg>Fund flow</button>
+</nav>
+
+<main>
+  <!-- 1. MAP -->
+  <div class="vh" data-for="map"><div><h2>Protocol map</h2><p>Generated from the repo. Zoom out → contracts &amp; modules. Zoom in → functions. Zoom in more → code. Edges: calls, token flow, approvals, proxy → implementation.</p></div>
+    <div class="ctl" id="legend"></div></div>
+  <div class="view on" data-view="map"><div id="mapvp"><div id="map"><svg id="mapedges"></svg></div></div>
+    <div class="zl" id="zl"></div><div class="zbtns"><button id="zo">−</button><button id="zf">⤢</button><button id="zi">+</button></div></div>
+
+  <!-- 2. SURFACE -->
+  <div class="vh" data-for="surface" hidden><div><h2>Attack surface</h2><p>Every externally callable function, scored. Red = anyone can call it, it moves funds and talks to untrusted contracts without a guard. Click a row to open the code.</p></div>
+    <div class="ctl"><div class="seg" id="sfilter"><button class="on" data-f="all">All</button><button data-f="anyone">Callable by anyone</button><button data-f="funds">Moves funds</button></div></div></div>
+  <div class="view" data-view="surface"><div class="pad"><table class="mx" id="mx"></table></div></div>
+
+  <!-- 3. ROLES -->
+  <div class="vh" data-for="roles" hidden><div><h2>Roles &amp; privileges</h2><p>Who can do what. Thick red edges = a single key can move or redirect user funds.</p></div></div>
+  <div class="view" data-view="roles"><div class="rolewrap"><svg id="rolesvg"></svg><div class="cards" id="rolecards"></div></div></div>
+
+  <!-- 4. TRACE -->
+  <div class="vh" data-for="trace" hidden><div><h2>Execution trace</h2><p>Real EVM execution replayed from a local fork. Every row is a frame; click it to jump to the exact line that executed.</p></div>
+    <div class="ctl"><span class="chipt" id="tgS">SSTORE</span><span class="chipt" id="tgL">SLOAD</span><span class="chipt" id="tgE">Events</span></div></div>
+  <div class="view" data-view="trace"><div class="pad"><div class="src">✓ Executed on <code>anvil --fork-url mainnet --fork-block-number 21045112</code> · tx <code>forge test --mt test_oracleManipulation -vvvv</code> · status <b>SUCCESS</b> · gas 1,284,913</div><div class="tr" id="trace"></div></div></div>
+
+  <!-- 5. INVARIANTS -->
+  <div class="vh" data-for="inv" hidden><div><h2>State &amp; invariants</h2><p>Storage values at every step of the trace, checked against protocol invariants. The moment an invariant breaks, it turns red.</p></div></div>
+  <div class="view" data-view="inv"><div class="invgrid">
+    <div class="chartbox"><h4>Share backing vs. oracle price</h4><div class="sub">backing = vault USDC / totalShares (should stay ≈ 1.00) · oracle = SpotOracle.getSpotPrice()</div><svg id="chart"></svg><div class="tt" id="tt"></div></div>
+    <div class="cards" id="invs"></div></div></div>
+
+  <!-- 6. FLOW -->
+  <div class="vh" data-for="flow" hidden><div><h2>Fund flow</h2><p>Where the value came from and where it ended up — net of the flash loan round-trip.</p></div>
+    <div class="ctl"><div class="seg" id="fseg"><button class="on" data-m="net">Net value</button><button data-m="gross">Gross transfers</button></div></div></div>
+  <div class="view" data-view="flow"><div class="pad"><svg id="sankey" class="sk"></svg><div id="gross"></div></div></div>
+</main>
+
+<aside class="code">
+  <div class="ftabs" id="ftabs"></div>
+  <div class="ctx" id="ctx">Click any function, row or trace frame to see its code.</div>
+  <pre id="src"></pre>
+</aside>
+
+<script>
+// ===================== sources =====================
+const FILES = {
+'VaultProxy.sol': `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract VaultProxy {
+    bytes32 constant IMPL_SLOT = 0x3608...2bbc; // ERC-1967
+    address public owner;
+
+    constructor(address impl) {
+        owner = msg.sender;
+        _setImpl(impl);
+    }
+
+    function upgradeTo(address newImpl) external {
+        require(msg.sender == owner, "!owner");
+        _setImpl(newImpl);
+    }
+
+    fallback() external payable {
+        address impl;
+        assembly { impl := sload(IMPL_SLOT) }
+        (bool ok, bytes memory ret) = impl.delegatecall(msg.data);
+        require(ok, string(ret));
+    }
+
+    function _setImpl(address i) internal {
+        assembly { sstore(IMPL_SLOT, i) }
+    }
+}`,
+'LuoraVault.sol': `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract LuoraVault {
+    address public owner;
+    address public keeper;
+    IERC20 public asset;          // USDC
+    IOracle public oracle;        // spot price from a DEX pool
+    IStrategy public strategy;
+    uint256 public totalShares;
+    mapping(address => uint256) public shares;
+    bool public paused;
+    uint256 public feeBps = 50;
+
+    modifier whenNotPaused() { require(!paused, "paused"); _; }
+    modifier onlyOwner() { require(msg.sender == owner, "!owner"); _; }
+
+    function deposit(uint256 amount) external whenNotPaused {
+        uint256 minted = _computeShares(amount);
+        asset.transferFrom(msg.sender, address(this), amount);
+        shares[msg.sender] += minted;
+        totalShares += minted;
+    }
+
+    function withdraw(uint256 shareAmount) external whenNotPaused {
+        require(shares[msg.sender] >= shareAmount, "!shares");
+        uint256 value = shareAmount * _price() / 1e18;
+        asset.transfer(msg.sender, value);
+        shares[msg.sender] -= shareAmount;
+        totalShares -= shareAmount;
+    }
+
+    function harvest() external {
+        uint256 bal = asset.balanceOf(address(this));
+        asset.transfer(address(strategy), bal);
+        uint256 profit = strategy.invest(bal);
+        _accrueFee(profit);
+    }
+
+    function setOracle(IOracle newOracle) external onlyOwner {
+        oracle = newOracle;
+    }
+
+    function sweep(address to) external onlyOwner {
+        asset.transfer(to, asset.balanceOf(address(this)));
+    }
+
+    function pause() external {
+        require(msg.sender == keeper, "!keeper");
+        paused = true;
+    }
+
+    function _computeShares(uint256 amount) internal view returns (uint256) {
+        if (totalShares == 0) return amount;
+        return amount * 1e18 / _price();
+    }
+
+    function _price() internal view returns (uint256) {
+        return oracle.getSpotPrice(address(asset));
+    }
+
+    function _accrueFee(uint256 profit) internal {
+        uint256 fee = profit * feeBps / 10_000;
+        shares[owner] += fee;
+        totalShares += fee;
+    }
+}`,
+'SpotOracle.sol': `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract SpotOracle {
+    IUniswapV2Pair public pair;
+
+    constructor(IUniswapV2Pair _pair) { pair = _pair; }
+
+    function getSpotPrice(address) external view returns (uint256) {
+        (uint112 r0, uint112 r1, ) = pair.getReserves();
+        return uint256(r0) * 1e18 / (uint256(r1) * 2500);
+    }
+}`,
+'YieldStrategy.sol': `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract YieldStrategy {
+    IERC20 public usdc;
+    IAavePool public aave;
+    address public vault;
+    address public strategist;
+
+    function invest(uint256 amount) external returns (uint256 profit) {
+        usdc.approve(address(aave), amount);
+        aave.supply(address(usdc), amount, address(this), 0);
+        return amount * 2 / 100;          // reported, not measured
+    }
+
+    function withdrawAll() external {
+        require(msg.sender == strategist, "!strategist");
+        aave.withdraw(address(usdc), type(uint256).max, vault);
+    }
+}`,
+'Keeper.sol': `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract Keeper {
+    ILuoraVault public vault;
+
+    function work() external {
+        vault.harvest();
+    }
+}`,
+};
+const FINDINGS = {'LuoraVault.sol':['return oracle.getSpotPrice','asset.transfer(msg.sender','if (totalShares == 0)','function harvest','function sweep'],
+  'YieldStrategy.sol':['function invest','return amount * 2 / 100'],'SpotOracle.sol':['pair.getReserves()'],'VaultProxy.sol':['function upgradeTo']};
+
+// ===================== protocol model =====================
+// fn: [name, vis, caller, anchor, flags]  flags: w=writes state, x=external call, $=moves funds, o=reads oracle, g=has guard
+const C = [
+  {id:'proxy', name:'VaultProxy', file:'VaultProxy.sol', mod:'core', kind:'ERC-1967 proxy', x:40, y:70, fns:[
+    ['upgradeTo(address)','external','owner','function upgradeTo','w'],
+    ['fallback()','external','anyone','fallback()','x']]},
+  {id:'vault', name:'LuoraVault', file:'LuoraVault.sol', mod:'core', kind:'implementation', x:40, y:330, fns:[
+    ['deposit(uint256)','external','anyone','function deposit','wx$o'],
+    ['withdraw(uint256)','external','anyone','function withdraw','wx$o'],
+    ['harvest()','external','anyone','function harvest','wx$'],
+    ['setOracle(IOracle)','external','owner','function setOracle','w'],
+    ['sweep(address)','external','owner','function sweep','x$'],
+    ['pause()','external','keeper','function pause','w'],
+    ['_computeShares(uint256)','internal','—','function _computeShares','o'],
+    ['_price()','internal','—','function _price','xo'],
+    ['_accrueFee(uint256)','internal','—','function _accrueFee','w']]},
+  {id:'oracle', name:'SpotOracle', file:'SpotOracle.sol', mod:'peri', kind:'price feed', x:480, y:70, fns:[
+    ['getSpotPrice(address)','external view','anyone','function getSpotPrice','x']]},
+  {id:'strat', name:'YieldStrategy', file:'YieldStrategy.sol', mod:'peri', kind:'strategy', x:480, y:300, fns:[
+    ['invest(uint256)','external','anyone','function invest','wx$'],
+    ['withdrawAll()','external','strategist','function withdrawAll','x$']]},
+  {id:'keeper', name:'Keeper', file:'Keeper.sol', mod:'peri', kind:'automation', x:480, y:560, fns:[
+    ['work()','external','anyone','function work','x']]},
+  {id:'usdc', name:'USDC', mod:'ext', kind:'ERC-20', x:920, y:70, fns:[['transfer / transferFrom','external','anyone',null,''],['approve','external','anyone',null,'']]},
+  {id:'pair', name:'UniswapV2Pair', mod:'ext', kind:'AMM pool', x:920, y:280, fns:[['getReserves()','view','anyone',null,''],['swap(...)','external','anyone',null,'']]},
+  {id:'aave', name:'AavePool', mod:'ext', kind:'lending', x:920, y:480, fns:[['supply / withdraw','external','anyone',null,''],['flashLoanSimple','external','anyone',null,'']]},
+];
+// token / protocol logos (CoinGecko)
+const LOGO = {
+  USDC:'https://coin-images.coingecko.com/coins/images/6319/large/USDC.png?1769615602',
+  UniswapV2Pair:'https://coin-images.coingecko.com/coins/images/12504/large/uniswap-logo.png?1720676669',
+  AavePool:'https://coin-images.coingecko.com/coins/images/12645/large/aave-token-round.png?1720472354',
+  WETH:'https://coin-images.coingecko.com/coins/images/2518/large/weth.png?1696503332',
+};
+LOGO.Uniswap = LOGO.UniswapV2Pair; LOGO.Aave = LOGO.AavePool;
+const logo = n => LOGO[n] ? `<img class="lg" src="${LOGO[n]}" alt="${n}">` : '';
+const MODS = {core:['Core','--core'], peri:['Periphery','--peri'], ext:['External (out of scope)','--ext']};
+const ETYPES = {call:['calls','--call'], token:['token flow','--usdc'], approve:['approval','--approve'], proxy:['proxy → impl','--proxy']};
+const E = [
+  ['proxy','vault','proxy','delegatecall'],
+  ['vault','oracle','call','getSpotPrice'], ['oracle','pair','call','getReserves'],
+  ['vault','strat','call','invest()'], ['keeper','vault','call','harvest()'],
+  ['vault','usdc','token','transfer / transferFrom'], ['strat','aave','token','supply USDC'],
+  ['strat','aave','approve','approve(aave)'], ['strat','aave','call','withdrawAll'],
+];
+const byId = Object.fromEntries(C.map(c => [c.id, c]));
+
+// ===================== code panel =====================
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const KW = 'pragma|solidity|contract|function|modifier|returns|return|require|if|external|internal|public|view|payable|constructor|mapping|assembly|fallback|constant|memory';
+const TY = 'address|uint256|uint112|bool|bytes|bytes32|IERC20|IOracle|IStrategy|IUniswapV2Pair|IAavePool|ILuoraVault|string';
+const RE = new RegExp(`(\\/\\/.*$)|("[^"]*")|\\b(${KW})\\b|\\b(${TY})\\b|\\b(\\d[\\d_]*(?:e\\d+)?)\\b`,'g');
+const hl = l => esc(l).replace(RE,(m,c,s,k,t)=>`<span class="${c?'cm':s?'s':k?'k':t?'t':'num'}">${m}</span>`);
+let curFile = 'LuoraVault.sol';
+const lineOf = (f, a) => Math.max(0, FILES[f].split('\n').findIndex(l => l.includes(a)));
+function fnSpan(f, anchor){ // from the anchor line to its closing brace
+  const L = FILES[f].split('\n'), s = lineOf(f, anchor); let d = 0, e = s;
+  for (let i = s; i < L.length; i++) { d += (L[i].match(/{/g)||[]).length - (L[i].match(/}/g)||[]).length; e = i; if (d <= 0 && L[i].includes('}')) break; if (d <= 0 && i > s) break; }
+  return [s, e];
+}
+function renderFile(f){
+  curFile = f;
+  document.getElementById('ftabs').innerHTML = Object.keys(FILES).map(k => `<button class="${k===f?'on':''}" data-f="${k}">${k}</button>`).join('');
+  const fd = new Set((FINDINGS[f]||[]).map(a => lineOf(f, a)));
+  document.getElementById('src').innerHTML = FILES[f].split('\n').map((l,i) => `<span class="l${fd.has(i)?' fd':''}"><span class="ln">${i+1}</span>${hl(l)||' '}</span>`).join('');
+}
+function openCode(f, anchor, ctx, bad = false, span = true){
+  if (!f || !FILES[f]) { document.getElementById('src').innerHTML = `<div class="nosrc">${esc(ctx || '')}<br><br>External contract — verified source is outside the audit scope.</div>`; document.getElementById('ctx').innerHTML = `<b>${esc(ctx||'')}</b>`; return; }
+  if (f !== curFile) renderFile(f);
+  const [s, e] = span ? fnSpan(f, anchor) : [lineOf(f, anchor), lineOf(f, anchor)];
+  const els = [...document.getElementById('src').children];
+  els.forEach(x => x.classList.remove('hl','bad'));
+  for (let i = s; i <= e; i++) { els[i].classList.add('hl'); if (bad) els[i].classList.add('bad'); }
+  document.getElementById('src').scrollTo({top: els[s].offsetTop - 80, behavior:'smooth'});
+  document.getElementById('ctx').innerHTML = ctx ? ctx : `<b>${f}</b> · L${s+1}–${e+1}`;
+}
+document.getElementById('ftabs').onclick = e => { const f = e.target.dataset.f; if (f) { renderFile(f); document.getElementById('ctx').innerHTML = `<b>${f}</b>`; } };
+
+// ===================== views =====================
+document.getElementById('rail').onclick = e => {
+  const v = e.target.closest('button')?.dataset.v; if (!v) return;
+  document.querySelectorAll('#rail button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  document.querySelectorAll('.vh').forEach(h => h.hidden = h.dataset.for !== v);
+  document.querySelectorAll('[data-view]').forEach(x => x.classList.toggle('on', x.dataset.view === v));
+  if (v === 'map') requestAnimationFrame(drawMap);
+  if (v === 'inv') requestAnimationFrame(drawChart);
+  if (v === 'flow') requestAnimationFrame(drawFlow);
+  if (v === 'roles') requestAnimationFrame(drawRoles);
+};
+
+// ===================== 1. protocol map =====================
+const map = document.getElementById('map'), mapvp = document.getElementById('mapvp'), medges = document.getElementById('mapedges');
+const showE = new Set(Object.keys(ETYPES));
+const fnRisk = (c, f) => surfaceScore(c, f).lvl;
+C.forEach(c => {
+  const d = document.createElement('div'); d.className = 'ct'; d.id = 'ct-' + c.id;
+  d.style.cssText = `left:${c.x}px;top:${c.y}px;--c:var(${MODS[c.mod][1]})`;
+  const ext = c.fns.filter(f => f[1].startsWith('external')).length, worst = c.file ? Math.max(...c.fns.map(f => surfaceScore(c, f).score)) : 0;
+  const wl = worst >= 9 ? 'crit' : worst >= 7 ? 'high' : worst >= 4 ? 'med' : 'low';
+  d.innerHTML = `<div class="h">${logo(c.name) || '<i></i>'}${c.name}${c.file ? `<span class="risk r-${wl}">${wl}</span>` : ''}<small>${c.kind}</small></div>
+    <div class="sum"><span><b>${c.fns.length}</b> fns</span><span><b>${ext}</b> external</span>${c.file ? `<span>${c.file}</span>` : '<span>out of scope</span>'}</div>
+    <div class="fns">${c.fns.map((f, i) => {
+      const r = c.file && f[3] ? surfaceScore(c, f).lvl : null;
+      const body = c.file && f[3] ? (() => { const [s, e] = fnSpan(c.file, f[3]); return FILES[c.file].split('\n').slice(s+1, Math.min(e, s+3)).map(l => esc(l.trim())).join('\n'); })() : '';
+      return `<div class="fn" data-c="${c.id}" data-i="${i}"><div class="sig"><span class="vis">${f[1].startsWith('external') ? 'ext' : f[1].slice(0,4)}</span>${esc(f[0])}${r ? `<span class="risk r-${r}">${r}</span>` : ''}<em>${f[2]}</em></div>${body ? `<pre>${body}</pre>` : ''}</div>`; }).join('')}</div>`;
+  map.appendChild(d);
+});
+const frames = Object.entries(MODS).map(([k, [label, cv]]) => { const f = document.createElement('div'); f.className = 'frame'; f.style.setProperty('--c', `var(${cv})`); f.innerHTML = `<b>${label}</b>`; map.prepend(f); return [k, f]; });
+map.addEventListener('click', e => {
+  const fn = e.target.closest('.fn'); if (!fn || mapMoved) return;
+  document.querySelectorAll('.fn.sel').forEach(x => x.classList.remove('sel')); fn.classList.add('sel');
+  const c = byId[fn.dataset.c], f = c.fns[+fn.dataset.i];
+  openCode(c.file, f[3], `<b>${c.name}.${esc(f[0])}</b> · caller: ${f[2]}`);
+});
+function drawMap(){
+  // module frames hug their cards
+  frames.forEach(([k, f]) => { const cs = C.filter(c => c.mod === k).map(c => document.getElementById('ct-' + c.id));
+    const x0 = Math.min(...cs.map(c => c.offsetLeft)) - 22, y0 = Math.min(...cs.map(c => c.offsetTop)) - 30;
+    const x1 = Math.max(...cs.map(c => c.offsetLeft + c.offsetWidth)) + 22, y1 = Math.max(...cs.map(c => c.offsetTop + c.offsetHeight)) + 22;
+    Object.assign(f.style, {left:x0+'px', top:y0+'px', width:(x1-x0)+'px', height:(y1-y0)+'px'}); });
+  const box = id => { const d = document.getElementById('ct-' + id); return {x:d.offsetLeft, y:d.offsetTop, w:d.offsetWidth, h:d.offsetHeight}; };
+  const pairN = {};
+  medges.innerHTML = E.filter(e => showE.has(e[2])).map(([a, b, t, label]) => {
+    const A = box(a), B = box(b), k = (pairN[a+b] = (pairN[a+b] || 0) + 1) - 1, off = k * 16;
+    let d, lx, ly;
+    if (Math.abs(A.x - B.x) < 50) { const x = A.x + A.w/2 + off - 20, y1 = A.y + A.h, y2 = B.y; d = `M${x} ${y1} C${x} ${(y1+y2)/2} ${x} ${(y1+y2)/2} ${x} ${y2}`; lx = x + 8; ly = (y1+y2)/2; }
+    else { const x1 = A.x + A.w, y1 = A.y + 22 + off, x2 = B.x, y2 = B.y + 22 + off, m = (x1+x2)/2; d = `M${x1} ${y1} C${m} ${y1} ${m} ${y2} ${x2} ${y2}`; lx = m; ly = (y1+y2)/2 - 6; }
+    const anchor = Math.abs(A.x - B.x) < 50 ? 'start' : 'middle';
+    return `<path class="edge ${t}" d="${d}" marker-end="url(#ar-${t})"/><text class="elab" x="${lx}" y="${ly}" text-anchor="${anchor}">${label}</text>`;
+  }).join('') + `<defs>${Object.entries(ETYPES).map(([t,[,cv]]) => `<marker id="ar-${t}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(${cv})"/></marker>`).join('')}</defs>`;
+}
+document.getElementById('legend').innerHTML = Object.entries(ETYPES).map(([t,[l,cv]]) => `<span class="chipt" data-t="${t}" style="--c:var(${cv})"><i class="${t==='proxy'||t==='approve'?'d':''}"></i>${l}</span>`).join('');
+document.getElementById('legend').onclick = e => { const t = e.target.closest('[data-t]')?.dataset.t; if (!t) return; showE.has(t) ? showE.delete(t) : showE.add(t); e.target.closest('[data-t]').classList.toggle('off'); drawMap(); };
+const view = {k:.8, x:40, y:30};
+let lastZ = '';
+function applyView(){
+  map.style.transform = `translate(${view.x}px,${view.y}px) scale(${view.k})`;
+  mapvp.style.backgroundSize = `${22*view.k}px ${22*view.k}px`; mapvp.style.backgroundPosition = `${view.x}px ${view.y}px`;
+  const z = view.k < .85 ? 'z0' : view.k < 1.45 ? 'z1' : 'z2';
+  if (z !== lastZ) { map.className = z; lastZ = z; drawMap(); }
+  document.getElementById('zl').innerHTML = `Zoom ${Math.round(view.k*100)}% · showing <b>${{z0:'contracts & modules', z1:'functions', z2:'code'}[z]}</b>`;
+}
+function zoomAt(f, mx = mapvp.clientWidth/2, my = mapvp.clientHeight/2){
+  const k = Math.min(2.6, Math.max(.35, view.k * f));
+  view.x = mx - (mx - view.x) * k / view.k; view.y = my - (my - view.y) * k / view.k; view.k = k; applyView();
+}
+mapvp.addEventListener('wheel', e => { e.preventDefault(); const r = mapvp.getBoundingClientRect(); zoomAt(Math.exp(-e.deltaY*.0015), e.clientX-r.left, e.clientY-r.top); }, {passive:false});
+let mdrag = null, mapMoved = false;
+mapvp.addEventListener('pointerdown', e => { mdrag = [e.clientX, e.clientY, view.x, view.y]; mapMoved = false; });
+addEventListener('pointermove', e => { if (!mdrag) return; const dx = e.clientX-mdrag[0], dy = e.clientY-mdrag[1]; if (Math.abs(dx)+Math.abs(dy) > 4) { mapMoved = true; mapvp.classList.add('drag'); } view.x = mdrag[2]+dx; view.y = mdrag[3]+dy; applyView(); });
+addEventListener('pointerup', () => { mdrag = null; mapvp.classList.remove('drag'); setTimeout(() => mapMoved = false); });
+document.getElementById('zi').onclick = () => zoomAt(1.3); document.getElementById('zo').onclick = () => zoomAt(1/1.3);
+document.getElementById('zf').onclick = () => { view.k = Math.min(1, (mapvp.clientWidth - 60) / 1260, (mapvp.clientHeight - 60) / 760); view.x = 30; view.y = 40; applyView(); };
+
+// ===================== 2. attack surface =====================
+function surfaceScore(c, f){
+  const fl = f[4] || '', anyone = f[2] === 'anyone', priv = ['owner'].includes(f[2]);
+  const guard = /nonReentrant/.test(f[0]);
+  let s = 0;
+  if (anyone) s += 3; if (fl.includes('$')) s += 3; if (fl.includes('x')) s += 2; if (fl.includes('o')) s += 2; if (fl.includes('w')) s += 1;
+  if (fl.includes('x') && fl.includes('w') && !guard) s += 1;
+  if (priv && fl.includes('$')) s += 3;      // single key can move funds
+  if (priv && f[0].startsWith('upgradeTo')) s += 6; // single key can replace all code
+  if (priv && f[0].startsWith('setOracle')) s += 3;
+  const lvl = s >= 9 ? 'crit' : s >= 7 ? 'high' : s >= 4 ? 'med' : 'low';
+  return {score: s, lvl};
+}
+const NOTES = {
+  'deposit(uint256)':'Shares priced by spot oracle (F-02); unchecked transferFrom (F-03); 1:1 mint when empty (F-05).',
+  'withdraw(uint256)':'Pays out at spot price (F-02) and transfers before burning shares (F-01, CEI).',
+  'harvest()':'Anyone can push 100% of funds to the strategy; reported profit mints fees (F-06).',
+  'invest(uint256)':'No onlyVault — anyone can call; profit is hard-coded, not measured (F-07).',
+  'upgradeTo(address)':'Single EOA can replace the implementation — total control of funds, no timelock.',
+  'sweep(address)':'Owner can send the whole vault balance anywhere.',
+  'setOracle(IOracle)':'Owner can point pricing at any contract instantly.',
+  'getSpotPrice(address)':'Reads instantaneous reserves — manipulable within one transaction.',
+  'fallback()':'Forwards every call to the implementation via delegatecall.',
+  'work()':'Public trigger for harvest().', 'pause()':'Keeper-only circuit breaker; there is no unpause.',
+  'withdrawAll()':'Strategist-only; returns funds to vault.'};
+const ROWS = C.filter(c => c.file).flatMap(c => c.fns.filter(f => f[1].startsWith('external')).map(f => ({c, f, ...surfaceScore(c, f)})));
+const RC = {crit:'--crit', high:'--bad', med:'--warn', low:'--ok'};
+let sortKey = 'score', filter = 'all';
+function cellCaller(v){ return `<span class="cell ${v === 'anyone' ? 'h3' : v === 'owner' ? 'h2' : 'h1'}">${v}</span>`; }
+const yes = (on, lvl, txt) => `<span class="cell ${on ? 'h' + lvl : 'h0'}">${on ? txt : '—'}</span>`;
+function renderSurface(){
+  const rows = ROWS.filter(r => filter === 'all' || (filter === 'anyone' ? r.f[2] === 'anyone' : r.f[4].includes('$'))).sort((a, b) => sortKey === 'score' ? b.score - a.score : a.c.name.localeCompare(b.c.name));
+  document.getElementById('mx').innerHTML = `<thead><tr><th data-s="name">Function</th><th class="c">Who can call</th><th class="c">Writes state</th><th class="c">External call</th><th class="c">Moves funds</th><th class="c">Reentrancy guard</th><th class="c">Reads oracle</th><th data-s="score">Risk ▾</th><th>Why</th></tr></thead><tbody>` +
+    rows.map((r, i) => { const fl = r.f[4];
+      return `<tr data-i="${ROWS.indexOf(r)}"><td class="fnc">${r.c.name}.<b>${esc(r.f[0].split('(')[0])}</b><small>(${esc(r.f[0].split('(')[1])}</small></td>
+      <td>${cellCaller(r.f[2])}</td><td>${yes(fl.includes('w'), 1, 'writes')}</td><td>${yes(fl.includes('x'), 2, 'yes')}</td><td>${yes(fl.includes('$'), 3, 'moves $')}</td>
+      <td>${fl.includes('x') && fl.includes('w') ? '<span class="cell h3">missing</span>' : '<span class="cell h0">n/a</span>'}</td><td>${yes(fl.includes('o'), 4, 'spot ⚠')}</td>
+      <td><div class="score" style="--c:var(${RC[r.lvl]})"><div class="bar"><i style="width:${Math.min(100, r.score/12*100)}%"></i></div><span class="risk r-${r.lvl}">${r.lvl} · ${r.score}</span></div></td>
+      <td class="note">${NOTES[r.f[0]] || ''}</td></tr>`; }).join('') + '</tbody>';
+}
+document.getElementById('mx').onclick = e => {
+  const th = e.target.closest('th[data-s]'); if (th) { sortKey = th.dataset.s; return renderSurface(); }
+  const tr = e.target.closest('tr[data-i]'); if (!tr) return;
+  document.querySelectorAll('.mx tr.sel').forEach(x => x.classList.remove('sel')); tr.classList.add('sel');
+  const r = ROWS[+tr.dataset.i]; openCode(r.c.file, r.f[3], `<b>${r.c.name}.${esc(r.f[0])}</b> · risk <span class="risk r-${r.lvl}">${r.lvl} · ${r.score}</span>`, r.lvl === 'crit' || r.lvl === 'high');
+};
+document.getElementById('sfilter').onclick = e => { const f = e.target.dataset.f; if (!f) return; filter = f; document.querySelectorAll('#sfilter button').forEach(b => b.classList.toggle('on', b.dataset.f === f)); renderSurface(); };
+
+// ===================== 3. roles =====================
+const ROLES = [
+  {id:'owner', name:'Owner', sub:'single EOA · no timelock', c:'--bad'},
+  {id:'keeper', name:'Keeper', sub:'bot 0xk33p…', c:'--warn'},
+  {id:'strategist', name:'Strategist', sub:'EOA 0x5tr4…', c:'--warn'},
+  {id:'anyone', name:'Anyone', sub:'any address / contract', c:'--accent'},
+];
+const CAPS = [
+  {id:'upgrade', t:'Replace all contract code', fn:['proxy','upgradeTo(address)'], who:['owner'], sev:'crit'},
+  {id:'sweep', t:'Send entire vault balance anywhere', fn:['vault','sweep(address)'], who:['owner'], sev:'crit'},
+  {id:'oracle', t:'Change the price source', fn:['vault','setOracle(IOracle)'], who:['owner'], sev:'high'},
+  {id:'pause', t:'Freeze deposits & withdrawals (forever)', fn:['vault','pause()'], who:['keeper'], sev:'med'},
+  {id:'pull', t:'Pull strategy funds back to vault', fn:['strat','withdrawAll()'], who:['strategist'], sev:'low'},
+  {id:'harvest', t:'Move 100% of funds into strategy', fn:['vault','harvest()'], who:['anyone'], sev:'high'},
+  {id:'invest', t:'Call strategy.invest directly', fn:['strat','invest(uint256)'], who:['anyone'], sev:'high'},
+  {id:'dw', t:'Deposit / withdraw at spot price', fn:['vault','withdraw(uint256)'], who:['anyone'], sev:'high'},
+];
+const SEVC = {crit:'--crit', high:'--bad', med:'--warn', low:'--ok'};
+function drawRoles(){
+  const svg = document.getElementById('rolesvg'), W = svg.clientWidth || 700, rowH = 66, H = Math.max(ROLES.length, CAPS.length) * rowH + 40;
+  svg.setAttribute('height', H); svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const rx = 20, rw = 230, cx = W - 330, cw = 310;
+  const ry = i => 30 + i * (H - 60) / ROLES.length + 10, cy = i => 20 + i * rowH;
+  let s = '';
+  CAPS.forEach((cap, j) => cap.who.forEach(w => { const i = ROLES.findIndex(r => r.id === w), y1 = ry(i) + 26, y2 = cy(j) + 26, m = (rx + rw + cx) / 2;
+    const thick = cap.sev === 'crit' ? 5 : cap.sev === 'high' ? 3.5 : 2;
+    s += `<path d="M${rx+rw} ${y1} C${m} ${y1} ${m} ${y2} ${cx} ${y2}" fill="none" stroke="var(${SEVC[cap.sev]})" stroke-width="${thick}" stroke-opacity=".75"/>`; }));
+  ROLES.forEach((r, i) => { const y = ry(i);
+    s += `<g><rect x="${rx}" y="${y}" width="${rw}" height="52" rx="12" fill="var(--card)" stroke="var(${r.c})" stroke-width="1.5"/>
+      <circle cx="${rx+22}" cy="${y+26}" r="11" fill="var(${r.c})" fill-opacity=".25" stroke="var(${r.c})"/><text x="${rx+22}" y="${y+30}" text-anchor="middle" font-size="11" font-weight="700" fill="var(${r.c})">${r.name[0]}</text>
+      <text x="${rx+42}" y="${y+23}" font-size="13" font-weight="600" fill="var(--ink)">${r.name}</text><text x="${rx+42}" y="${y+40}" font-size="11" fill="var(--muted)">${r.sub}</text></g>`; });
+  CAPS.forEach((cap, j) => { const y = cy(j), f = byId[cap.fn[0]];
+    s += `<g style="cursor:pointer" data-cap="${j}"><rect x="${cx}" y="${y}" width="${cw}" height="52" rx="12" fill="var(--card)" stroke="#343a4c"/>
+      <rect x="${cx}" y="${y}" width="4" height="52" rx="2" fill="var(${SEVC[cap.sev]})"/>
+      <text x="${cx+16}" y="${y+22}" font-size="12.5" font-weight="600" fill="var(--ink)">${cap.t}</text>
+      <text x="${cx+16}" y="${y+39}" font-size="11" fill="var(--muted)" font-family="JetBrains Mono">${f.name}.${cap.fn[1]}</text>
+      <text x="${cx+cw-12}" y="${y+22}" font-size="10" font-weight="700" text-anchor="end" fill="var(${SEVC[cap.sev]})">${cap.sev.toUpperCase()}</text></g>`; });
+  svg.innerHTML = s;
+}
+document.getElementById('rolesvg').onclick = e => { const g = e.target.closest('[data-cap]'); if (!g) return; const cap = CAPS[+g.dataset.cap], c = byId[cap.fn[0]], f = c.fns.find(x => x[0] === cap.fn[1]); openCode(c.file, f[3], `<b>${cap.t}</b> · ${c.name}.${esc(f[0])}`, cap.sev === 'crit'); };
+document.getElementById('rolecards').innerHTML = `
+  <div class="card bad"><h4>Centralization risk <span class="risk r-crit" style="margin-left:auto">9.1 / 10</span></h4><div class="gauge"><i style="width:91%"></i></div>
+    <p>One externally-owned key can <b>upgrade the implementation</b>, <b>sweep all funds</b> and <b>swap the oracle</b> — instantly. A leaked key = total loss.</p></div>
+  <div class="card warn"><h4>Missing access control</h4><p><code>YieldStrategy.invest()</code> and <code>LuoraVault.harvest()</code> are callable by anyone. Expected: <code>onlyVault</code> / <code>onlyKeeper</code>.</p></div>
+  <div class="card warn"><h4>Irreversible keeper action</h4><p><code>pause()</code> has no <code>unpause()</code> — a compromised keeper can freeze all deposits permanently.</p></div>
+  <div class="card"><h4>Recommendation</h4><p>Move owner to a 3/5 multisig behind a 48h timelock; add <code>onlyVault</code> to <code>invest()</code>; restrict <code>harvest()</code> to the keeper.</p></div>`;
+
+// ===================== 4. trace =====================
+// [depth, type, contract, fn, args, ret, gas, file, anchor, flag]
+const TRACE = [
+  [0,'CALL','Exploit','attack','()','','1,284,913'],
+  [1,'CALL','AavePool','flashLoanSimple','(receiver=Exploit, USDC, 500,000e6)','','1,251,002'],
+  [2,'CALL','USDC','transfer','(Exploit, 500,000e6)','true','28,410'],
+  [2,'CALL','Exploit','executeOperation','(USDC, 500,000e6, premium=450e6)','true','1,190,334'],
+  [3,'CALL','UniswapV2Pair','swap','(0, 133.07e18, Exploit, "")','','92,118','','','w:reserves skewed · spot ×2.25'],
+  [3,'CALL','VaultProxy','withdraw','(shareAmount=10,000e6)','','161,207','VaultProxy.sol','fallback()'],
+  [4,'DELEGATECALL','LuoraVault','withdraw','(10,000e6)','','154,880','LuoraVault.sol','function withdraw'],
+  [5,'SLOAD','LuoraVault','shares[Exploit]','','10,000e6','2,100','LuoraVault.sol','require(shares[msg.sender]'],
+  [5,'STATICCALL','SpotOracle','getSpotPrice','(USDC)','2.2477e18','9,822','SpotOracle.sol','function getSpotPrice','b:F-02 manipulated price read'],
+  [6,'STATICCALL','UniswapV2Pair','getReserves','()','(1,500,000e6, 266.93e18)','2,504','SpotOracle.sol','pair.getReserves()'],
+  [5,'CALL','USDC','transfer','(Exploit, 22,477e6)','true','29,912','LuoraVault.sol','asset.transfer(msg.sender','b:F-01 paid before burn'],
+  [5,'SSTORE','LuoraVault','shares[Exploit]','10,000e6 → 0','','2,900','LuoraVault.sol','shares[msg.sender] -= shareAmount'],
+  [5,'SSTORE','LuoraVault','totalShares','30,000e6 → 20,000e6','','2,900','LuoraVault.sol','totalShares -= shareAmount'],
+  [3,'CALL','UniswapV2Pair','swap','(498,016e6, 0, Exploit, "")','','88,431','','','w:price restored'],
+  [3,'CALL','USDC','approve','(AavePool, 500,450e6)','true','24,312'],
+  [2,'CALL','USDC','transferFrom','(Exploit → AavePool, 500,450e6)','true','31,005'],
+  [1,'EVENT','AavePool','FlashLoan','(Exploit, USDC, 500,000e6, 450e6)','','—'],
+  [1,'CALL','USDC','transfer','(attacker EOA, 20,043e6)','true','29,880'],
+];
+const tshow = {SSTORE:true, SLOAD:true, EVENT:true};
+['S','L','E'].forEach(k => { const el = document.getElementById('tg' + k), t = {S:'SSTORE', L:'SLOAD', E:'EVENT'}[k];
+  el.style.setProperty('--c', 'var(--accent)'); el.innerHTML = '<i></i>' + el.textContent;
+  el.onclick = () => { tshow[t] = !tshow[t]; el.classList.toggle('off', !tshow[t]); renderTrace(); }; });
+function renderTrace(){
+  document.getElementById('trace').innerHTML = TRACE.map((r, i) => {
+    const [d, ty, c, f, a, ret, gas, , , flag] = r; if (tshow[ty] === false) return '';
+    const [fl, ft] = (flag || '').split(':');
+    return `<div class="trow ${fl === 'b' ? 'bad' : ''}" data-i="${i}"><span class="ix">${i}</span>${'<span class="ind"></span>'.repeat(d)}<span class="ty ${ty}">${ty}</span>
+      <span class="c">${logo(c)}${c}</span>.<span class="f">${f}</span><span class="a">${esc(a)}</span>${ret ? `<span>→</span><span class="ret">${esc(ret)}</span>` : ''}
+      ${ft ? `<span class="flag ${fl === 'w' ? 'w' : ''}">${ft}</span>` : ''}<span class="gas">${gas}</span></div>`; }).join('');
+}
+document.getElementById('trace').onclick = e => { const row = e.target.closest('.trow'); if (!row) return;
+  document.querySelectorAll('.trow.sel').forEach(x => x.classList.remove('sel')); row.classList.add('sel');
+  const r = TRACE[+row.dataset.i]; openCode(r[7], r[8], `<b>frame ${row.dataset.i}</b> · ${r[1]} ${r[2]}.${esc(r[3])}`, (r[9]||'').startsWith('b'), r[1] === 'DELEGATECALL'); };
+
+// ===================== 5. invariants =====================
+const STEPS = [
+  {n:'start', vault:30000, ts:30000, price:1.00},
+  {n:'flashLoan', vault:30000, ts:30000, price:1.00},
+  {n:'swap in', vault:30000, ts:30000, price:2.25, frame:4},
+  {n:'withdraw()', vault:30000, ts:30000, price:2.25, frame:6},
+  {n:'oracle read', vault:30000, ts:30000, price:2.25, frame:8},
+  {n:'transfer out', vault:7523, ts:30000, price:2.25, frame:10},
+  {n:'burn shares', vault:7523, ts:20000, price:2.25, frame:12},
+  {n:'swap back', vault:7523, ts:20000, price:1.00, frame:13},
+  {n:'repay', vault:7523, ts:20000, price:1.00, frame:15},
+];
+STEPS.forEach(s => s.back = s.vault / s.ts);
+const INVS = [
+  {id:'I1', name:'Solvency', expr:'vault.balance / totalShares ≥ 0.999', test:s => s.back >= .999, why:'Every share must stay fully backed by USDC. Breaks the instant funds leave before shares are burned.'},
+  {id:'I2', name:'Oracle sanity', expr:'|spot − TWAP| / TWAP ≤ 5%', test:s => Math.abs(s.price - 1) <= .05, why:'Spot price must not deviate from the time-weighted price. Breaks when the pool is skewed inside the tx.'},
+  {id:'I3', name:'Share accounting', expr:'Σ shares[u] == totalShares', test:() => true, why:'Sum of balances matches the total. Holds — the bug is in pricing, not bookkeeping.'},
+];
+function drawChart(){
+  const svg = document.getElementById('chart'), W = svg.clientWidth, H = 360, L = 52, R = 52, T = 20, B = 46;
+  const x = i => L + i * (W - L - R) / (STEPS.length - 1), yb = v => T + (1.2 - v) / 1.2 * (H - T - B), yp = v => T + (2.6 - v) / 2.6 * (H - T - B);
+  let s = '';
+  for (let v = 0; v <= 1.2001; v += .2) s += `<line x1="${L}" x2="${W-R}" y1="${yb(v)}" y2="${yb(v)}" stroke="#20242f"/><text x="${L-8}" y="${yb(v)+4}" text-anchor="end" font-size="10.5" fill="var(--muted)" font-family="JetBrains Mono">${v.toFixed(1)}</text>`;
+  for (let v = 0; v <= 2.5; v += .5) s += `<text x="${W-R+8}" y="${yp(v)+4}" font-size="10.5" fill="#c084fc" font-family="JetBrains Mono">$${v.toFixed(1)}</text>`;
+  // red band where any invariant is broken
+  STEPS.forEach((st, i) => { if (i && INVS.some(v => !v.test(st))) s += `<rect x="${x(i) - (W-L-R)/(STEPS.length-1)/2}" y="${T}" width="${(W-L-R)/(STEPS.length-1)}" height="${H-T-B}" fill="rgba(240,96,63,.07)"/>`; });
+  s += `<line x1="${L}" x2="${W-R}" y1="${yb(1)}" y2="${yb(1)}" stroke="var(--ok)" stroke-dasharray="4 4" stroke-opacity=".6"/><text x="${L+6}" y="${yb(1)-6}" font-size="10.5" fill="var(--ok)">I1 threshold 1.00</text>`;
+  s += `<path d="${STEPS.map((st,i) => `${i?'L':'M'}${x(i)} ${yp(st.price)}`).join('')}" fill="none" stroke="#c084fc" stroke-width="2" stroke-dasharray="6 4"/>`;
+  s += `<path d="${STEPS.map((st,i) => `${i?'L':'M'}${x(i)} ${yb(st.back)}`).join('')}" fill="none" stroke="var(--usdc)" stroke-width="3"/>`;
+  STEPS.forEach((st, i) => { const broken = !INVS[0].test(st);
+    s += `<circle cx="${x(i)}" cy="${yb(st.back)}" r="${broken ? 7 : 5}" fill="${broken ? 'var(--bad)' : 'var(--usdc)'}" stroke="var(--card)" stroke-width="2"/>`;
+    if (broken && INVS[0].test(STEPS[i-1])) s += `<circle cx="${x(i)}" cy="${yb(st.back)}" r="7" fill="none" stroke="var(--bad)" stroke-width="2"><animate attributeName="r" values="7;18" dur="1.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0" dur="1.4s" repeatCount="indefinite"/></circle>
+      <text x="${x(i)+12}" y="${yb(st.back)+4}" font-size="11.5" font-weight="700" fill="var(--bad)">I1 broken · 0.25 USDC / share</text>`;
+    s += `<text x="${x(i)}" y="${H-B+18}" text-anchor="middle" font-size="10.5" fill="var(--muted)">${st.n}</text><rect x="${x(i)-18}" y="${T}" width="36" height="${H-T-B}" fill="transparent" data-i="${i}"/>`; });
+  s += `<g font-size="11"><rect x="${L}" y="${H-14}" width="12" height="3" fill="var(--usdc)"/><text x="${L+18}" y="${H-9}" fill="var(--ink)">backing per share</text>
+    <rect x="${L+150}" y="${H-14}" width="12" height="3" fill="#c084fc"/><text x="${L+168}" y="${H-9}" fill="var(--ink)">oracle spot price</text></g>`;
+  svg.innerHTML = s;
+}
+const tt = document.getElementById('tt');
+document.getElementById('chart').addEventListener('mousemove', e => {
+  const i = e.target.dataset?.i; if (i == null) { tt.style.display = 'none'; return; }
+  const st = STEPS[+i], r = e.currentTarget.parentElement.getBoundingClientRect();
+  tt.style.display = 'block'; tt.style.left = (e.clientX - r.left + 14) + 'px'; tt.style.top = (e.clientY - r.top - 10) + 'px';
+  tt.innerHTML = `<b>step ${i} · ${st.n}</b><div><span>vault USDC</span><span>${st.vault.toLocaleString()}</span></div><div><span>totalShares</span><span>${st.ts.toLocaleString()}</span></div>
+    <div><span>backing</span><span style="color:${st.back < .999 ? 'var(--bad)' : 'var(--ok)'}">${st.back.toFixed(3)}</span></div><div><span>spot price</span><span>$${st.price.toFixed(2)}</span></div>
+    ${INVS.filter(v => !v.test(st)).map(v => `<div style="color:var(--bad)"><span>✕ ${v.id} ${v.name}</span><span></span></div>`).join('')}`;
+});
+document.getElementById('chart').addEventListener('mouseleave', () => tt.style.display = 'none');
+document.getElementById('chart').addEventListener('click', e => { const i = e.target.dataset?.i; if (i == null) return; const f = STEPS[+i].frame; if (f != null) { const r = TRACE[f]; openCode(r[7], r[8], `<b>step ${i} · ${STEPS[+i].n}</b> → trace frame ${f}`, true, false); } });
+document.getElementById('invs').innerHTML = INVS.map(v => { const first = STEPS.findIndex(st => !v.test(st));
+  return `<div class="inv ${first >= 0 ? 'bad' : ''}" data-f="${first >= 0 ? STEPS[first].frame : ''}"><h5>${v.id} · ${v.name}<span class="st ${first >= 0 ? 'bad' : 'ok'}">${first >= 0 ? 'BROKEN @ step ' + first : 'HOLDS'}</span></h5><code>${v.expr}</code><p>${v.why}</p>
+    <div class="steps">${STEPS.map((st,i) => `<span class="${v.test(st) ? '' : 'bad'}">${i}</span>`).join('')}</div></div>`; }).join('') +
+  `<div class="card"><h4>Turn this into a test</h4><p style="font-family:var(--mono);font-size:11.5px">function invariant_solvency() public {<br>&nbsp;&nbsp;assertGe(usdc.balanceOf(vault) * 1e18 / vault.totalShares(), 0.999e18);<br>}</p></div>`;
+document.getElementById('invs').onclick = e => { const c = e.target.closest('.inv'); if (!c || !c.dataset.f) return; const r = TRACE[+c.dataset.f]; openCode(r[7], r[8], `first violation → trace frame ${c.dataset.f}`, true, false); };
+
+// ===================== 6. fund flow =====================
+let fmode = 'net';
+const NET = { // losers → vault → winners (USDC value)
+  left:[['Whale depositors', 12477, '--bad'], ['Attacker’s 10k shares', 10000, '--muted']],
+  mid:['LuoraVault', 22477, '--accent'],
+  right:[['Attacker', 20043, '--crit'], ['Uniswap LPs', 1984, '--ext'], ['Aave flash fee', 450, '--usdc']],
+};
+const GROSS = [['Aave → Attacker','flash loan',500000],['Attacker → Uniswap','swap in',500000],['LuoraVault → Attacker','withdraw @ $2.25',22477],['Uniswap → Attacker','swap back',498016],['Attacker → Aave','repay + fee',500450],['Exploit → attacker EOA','profit',20043]];
+function drawFlow(){
+  const svg = document.getElementById('sankey'), W = svg.clientWidth, H = 420, nw = 16, scale = (H - 130) / 22477;
+  const colX = [190, W/2 - nw/2, W - 190];
+  let s = '';
+  if (fmode === 'net') {
+    const lay = (items, x) => { let y = 40; return items.map(([n, v, c]) => { const h = v * scale, o = {n, v, c, x, y, h}; y += h + 26; return o; }); };
+    const L = lay(NET.left, colX[0]), R = lay(NET.right, colX[2]), M = {n:NET.mid[0], v:NET.mid[1], c:NET.mid[2], x:colX[1], y:40 + 9, h:NET.mid[1]*scale};
+    let my = M.y; L.forEach(l => { s += band(l.x + nw, l.y, colX[1], my, l.h, l.c); my += l.h; });
+    my = M.y; R.forEach(r => { s += band(colX[1] + nw, my, r.x, r.y, r.h, r.c); my += r.h; });
+    [...L, M, ...R].forEach(o => { const right = o.x > W/2;
+      s += `<rect x="${o.x}" y="${o.y}" width="${nw}" height="${o.h}" rx="3" fill="var(${o.c})"/>
+        <text x="${right ? o.x + nw + 10 : o.x === colX[1] ? o.x + nw/2 : o.x - 10}" y="${o.y + o.h/2 - (o === M ? o.h/2 + 14 : 2)}" text-anchor="${right ? 'start' : o === M ? 'middle' : 'end'}">${o.n}</text>
+        <text class="v" x="${right ? o.x + nw + 10 : o.x === colX[1] ? o.x + nw/2 : o.x - 10}" y="${o.y + o.h/2 + (o === M ? -o.h/2 - 1 : 14)}" text-anchor="${right ? 'start' : o === M ? 'middle' : 'end'}">${o.v.toLocaleString()} USDC</text>`; });
+    s += `<text class="v" x="${colX[0]+nw/2}" y="${H-12}" text-anchor="middle">who lost value</text><text class="v" x="${colX[2]+nw/2}" y="${H-12}" text-anchor="middle">who gained it</text>`;
+    document.getElementById('gross').innerHTML = `<div class="card bad" style="margin-top:10px"><h4>Net result</h4><p>22,477 USDC left the vault. Attacker kept <b>20,043</b> (≈ +10,043 over the fair value of their shares). Whale depositors absorbed <b>−12,477</b>; each remaining share is backed by only 0.376 USDC.</p></div>`;
+  } else {
+    svg.innerHTML = ''; svg.style.height = '0px';
+    const max = Math.max(...GROSS.map(g => g[2]));
+    document.getElementById('gross').innerHTML = `<table class="tx">${GROSS.map(([p, w, v], i) => `<tr><td style="width:30px;color:var(--muted);font-family:var(--mono)">[${i+1}]</td><td style="width:240px">${p.replace(/\b(Aave|Uniswap)\b/g, m => logo(m) + ' ' + m)}</td><td style="width:150px;color:var(--muted)">${w}</td><td><div class="bar" style="width:${v/max*100}%"></div></td><td class="n">${v.toLocaleString()} USDC</td></tr>`).join('')}</table>
+      <div class="card" style="margin-top:12px"><h4>Why net view matters</h4><p>Gross volume is ~2M USDC, but almost all of it is the flash-loan round-trip. Only the 22,477 that left the vault is real damage — the net view shows exactly where it went.</p></div>`;
+    return;
+  }
+  svg.style.height = H + 'px'; svg.innerHTML = s;
+}
+function band(x1, y1, x2, y2, h, c){ const m = (x1 + x2) / 2;
+  return `<path d="M${x1} ${y1} C${m} ${y1} ${m} ${y2} ${x2} ${y2} L${x2} ${y2+h} C${m} ${y2+h} ${m} ${y1+h} ${x1} ${y1+h} Z" fill="var(${c})"/>`; }
+document.getElementById('fseg').onclick = e => { const m = e.target.dataset.m; if (!m) return; fmode = m; document.querySelectorAll('#fseg button').forEach(b => b.classList.toggle('on', b.dataset.m === m)); drawFlow(); };
+
+// ===================== boot =====================
+renderFile('LuoraVault.sol'); renderSurface(); renderTrace();
+document.fonts.ready.then(() => { document.getElementById('zf').click(); drawMap(); });
+addEventListener('resize', () => { drawChart(); drawFlow(); drawRoles(); });
+</script>
+</body>
+</html>

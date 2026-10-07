@@ -1,0 +1,81 @@
+"use client";
+
+import { KindIcon } from "@/components/ui";
+import { displayKind, type Frame, frameRows, human } from "@/features/trace";
+
+export const NODE_W = 320;
+/** Card height from its row count, so layout never has to measure the DOM. */
+export function nodeHeight(f: Frame): number {
+  const rows = frameRows(f).length;
+  return 58 + (rows ? rows * 29 + 10 : 0);
+}
+
+export function GraphNode({
+  frame,
+  x,
+  y,
+  order,
+  selected,
+  onSelect,
+}: {
+  frame: Frame;
+  x: number;
+  y: number;
+  order: number;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const kind = displayKind(frame);
+  const rows = frameRows(frame);
+  return (
+    <button
+      type="button"
+      data-no-pan
+      onClick={onSelect}
+      style={{
+        left: x,
+        top: y,
+        width: NODE_W,
+        animationDelay: `${Math.min(order * 30, 700)}ms`,
+      }}
+      className={`absolute animate-pop cursor-pointer rounded-3xl border border-trayline bg-card p-1.5 text-left font-mono text-xs shadow-sh2 transition-transform hover:-translate-y-0.5 ${
+        selected ? "ring-2 ring-accent" : frame.ok ? "" : "ring-2 ring-bad/60"
+      }`}
+    >
+      <div className="flex items-center gap-2 px-2 pt-2 pb-2.5">
+        <KindIcon kind={kind} size="lg" />
+        <div className="flex min-w-0 flex-col">
+          <b className="truncate font-semibold text-[13px]">
+            <span className="font-medium text-contract">{frame.to}</span>.
+            {frame.fn}
+          </b>
+          <span className="font-medium font-sans text-[11px] text-muted">
+            {kind.toLowerCase()}
+          </span>
+        </div>
+        {frame.gas != null && kind !== "EVENT" && (
+          <span className="ml-auto flex-none whitespace-nowrap rounded-full bg-soft px-2 py-0.5 text-[10.5px] text-dim">
+            {frame.gas.toLocaleString()} gas
+          </span>
+        )}
+      </div>
+      {rows.length > 0 && (
+        <div className="divide-y divide-trayline rounded-[18px] border border-trayline bg-tray py-0.5">
+          {rows.map((r) => (
+            <div
+              key={r.key}
+              className="flex gap-2.5 whitespace-nowrap px-3 py-1.5"
+            >
+              <span className="text-muted">{r.key}</span>
+              <span
+                className={`ml-auto truncate ${r.tone === "ok" ? "text-ok" : r.tone === "bad" ? "text-bad" : "text-ink"}`}
+              >
+                {r.tone === "bad" ? r.value : human(r.value)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </button>
+  );
+}

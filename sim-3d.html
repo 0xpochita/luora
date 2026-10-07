@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Luora Sec — Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#0e1016; --card:#161922; --ink:#e8e6f1; --muted:#8b8fa3; --line:#262a36; --soft:#1f2330;
+  --usdc:#3d8ee6; --actor:#a78bfa; --contract:#e8e6f1; --ext:#4f8df7; --int:#14b8c4; --store:#f59e0b; --dep:#22c55e;
+  --warn:#e8b339; --bad:#f0603f; --ok:#34c47c;
+  --mono:'JetBrains Mono',ui-monospace,monospace; --b:2.5px solid var(--ink);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 Inter,system-ui,sans-serif;overflow:hidden;display:flex;flex-direction:column}
+button,select{font:inherit;color:inherit}
+
+.pill{height:38px;padding:0 18px;border:var(--b);border-radius:999px;background:var(--card);font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;transition:transform .1s,background .15s}
+.pill:hover{background:var(--soft)}
+.pill:active{transform:translateY(1px)}
+.pill.dark,.pill.on{background:var(--ink);color:var(--bg)}
+.pill.dark:hover{background:#cfcde0}
+.pill.sm{height:32px;padding:0 13px;font-size:13px;border-width:2px}
+select.pill{appearance:none;padding-right:14px}
+
+.top{display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:var(--b);background:var(--card);flex:none}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;letter-spacing:-.02em;margin-right:8px}
+.mark{width:26px;height:26px;border:var(--b);border-radius:8px;background:conic-gradient(var(--usdc) 0 25%,var(--card) 0 50%,var(--usdc) 0 75%,var(--card) 0)}
+.tag{font-size:11px;font-weight:600;border:2px solid var(--ink);border-radius:999px;padding:1px 8px;letter-spacing:.04em}
+.scen{display:flex;gap:6px;flex-wrap:wrap}
+.spacer{flex:1}
+
+main{flex:1;min-height:0;display:grid;grid-template-columns:1fr minmax(380px,31%)}
+.editor{border-left:var(--b);background:#12141b;display:flex;flex-direction:column;min-height:0}
+.ed-head{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:2px solid var(--line);font:600 13px var(--mono)}
+.ed-head span{margin-left:auto;font:400 12px Inter;color:var(--muted)}
+.ed-head i{width:9px;height:9px;border-radius:50%;background:var(--usdc)}
+pre#code{margin:0;flex:1;overflow:auto;padding:8px 0 60px;font:12.5px/1.75 var(--mono);color:#d7d6e2}
+.l{display:block;position:relative;padding-right:16px;transition:background .2s}
+.ln{display:inline-block;width:46px;padding-right:14px;text-align:right;color:#4b5063;user-select:none}
+.l.cur{background:rgba(232,179,57,.16);box-shadow:inset 3px 0 var(--warn)}
+.l.cur.bad{background:rgba(240,96,63,.18);box-shadow:inset 3px 0 var(--bad)}
+.l.peek{background:rgba(79,141,247,.16);box-shadow:inset 3px 0 var(--ext)}
+.l.fd:before{content:"";position:absolute;left:7px;top:50%;margin-top:-4px;width:8px;height:8px;border-radius:50%;background:var(--bad)}
+.k{color:#ff9b6b}.t{color:#5fd0e0}.s{color:#a7d675}.c{color:#666b7e;font-style:italic}.num{color:#f0b85a}
+
+.right{display:grid;grid-template-rows:1fr 240px;min-height:0;min-width:0}
+#viewport{position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 30%,#171b27,var(--bg) 70%)}
+#viewport canvas{display:block}
+.labels{position:absolute;inset:0;pointer-events:none}
+
+/* asset labels: compact chip, expands when active / hovered */
+.lab{pointer-events:auto;cursor:pointer;background:rgba(18,21,30,.9);border:2px solid color-mix(in srgb,var(--c) 70%,#000);border-radius:12px;font:11.5px var(--mono);
+  box-shadow:0 10px 26px rgba(0,0,0,.45);backdrop-filter:blur(6px);transition:transform .25s cubic-bezier(.2,1.3,.4,1),border-color .2s,box-shadow .2s;transform:translateY(-6px)}
+.lh{display:flex;align-items:center;gap:7px;padding:6px 10px;font-weight:600;white-space:nowrap}
+.lh i{width:9px;height:9px;border-radius:3px;background:var(--c);flex:none}
+.lab:not(.open) .lh small{display:none}
+.lh small{font:600 9.5px Inter;letter-spacing:.06em;text-transform:uppercase;color:var(--c)}
+.lh .pv{margin-left:6px;color:#cfd3e6;font-weight:500}
+.lrows{display:none;border-top:1px solid #2a2f3e;padding:2px 0}
+.lab.open .lrows{display:block}
+.lab.open .pv{display:none}
+.lab.active{border-color:var(--c);box-shadow:0 0 0 4px color-mix(in srgb,var(--c) 30%,transparent),0 14px 30px rgba(0,0,0,.5);transform:translateY(-14px) scale(1.04)}
+.lab.bad{border-color:var(--bad);box-shadow:0 0 0 4px rgba(240,96,63,.3),0 14px 30px rgba(0,0,0,.5)}
+.row{display:flex;gap:10px;padding:3px 10px;white-space:nowrap;transition:background .3s}
+.row .key{color:#7cb2f0}
+.row .val{margin-left:auto}
+.row.warn .key,.row.warn .val{color:var(--warn)}
+.row.up{background:rgba(52,196,124,.18)}.row.down{background:rgba(240,96,63,.18)}
+.elab{font:500 11px Inter;color:#6f7489;white-space:nowrap;pointer-events:none}
+.elab.on{color:var(--ink)}
+.mlab{font:700 11px Inter;color:#fff;background:var(--usdc);border-radius:999px;padding:2px 8px;border:2px solid #07080c;white-space:nowrap;opacity:.85}
+.fdelta{font:700 12px Inter;padding:2px 8px;border-radius:999px;border:2px solid #07080c;background:var(--card);white-space:nowrap;animation:rise 1.6s forwards;pointer-events:none}
+.fdelta.up{color:var(--ok)}.fdelta.down{color:var(--bad)}
+@keyframes rise{0%{opacity:0;transform:translateY(10px)}15%{opacity:1;transform:none}75%{opacity:1}100%{opacity:0;transform:translateY(-26px)}}
+
+.bubble{position:absolute;left:0;top:0;pointer-events:none;font:700 12px Inter;color:#fff;background:var(--usdc);border:2px solid #07080c;border-radius:999px;padding:3px 10px;
+  transform:translate(-50%,-170%);opacity:0;transition:opacity .2s;white-space:nowrap;z-index:3}
+.toolbar{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:6px;padding:6px;background:var(--card);border:var(--b);border-radius:999px;z-index:4}
+.toolbar button{width:34px;height:34px;border:0;border-radius:50%;background:none;cursor:pointer;font-size:16px}
+.toolbar button:hover{background:var(--soft)}
+.legend{position:absolute;left:14px;top:14px;display:flex;gap:6px;flex-wrap:wrap;z-index:4}
+.legend span{font:600 11px Inter;border:2px solid var(--ink);border-radius:999px;padding:3px 10px 3px 8px;background:var(--card);display:flex;align-items:center;gap:6px}
+.legend span:before{content:"";width:8px;height:8px;border-radius:3px;background:var(--c)}
+.hint{position:absolute;right:14px;bottom:22px;font-size:12px;color:var(--muted);z-index:4}
+
+.dock{border-top:var(--b);background:var(--card);display:grid;grid-template-columns:minmax(300px,1fr) minmax(320px,1.15fr);min-height:0}
+.steps{overflow:auto;border-right:2px solid var(--line);padding:8px}
+.dock-h{display:flex;align-items:center;gap:8px;padding:4px 6px 8px;font-weight:700}
+.dock-h span{font-weight:500;color:var(--muted);font-size:12px;margin-left:auto}
+.st{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:10px;font-size:12.5px;color:#6d7084}
+.st.done{color:var(--ink)}
+.st.cur{background:var(--soft);color:var(--ink);font-weight:600}
+.st b{font:600 10px var(--mono);border:2px solid currentColor;border-radius:6px;padding:1px 5px;min-width:78px;text-align:center;flex:none}
+.st.bad b{color:var(--bad)}.st.warn b{color:var(--warn)}
+.st .n{width:18px;text-align:right;font:500 11px var(--mono);color:#555a6c;flex:none}
+.narr{overflow:auto;padding:14px 18px}
+.narr h3{margin:0 0 4px;font-size:15px}
+.narr .sub{color:var(--muted);font-size:12px;margin-bottom:10px;font-family:var(--mono)}
+.ai{border:2px solid var(--ink);border-radius:12px;padding:10px 12px;background:#1b1e2a;font-size:13px}
+.ai b{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px}
+.ai.bad{background:rgba(240,96,63,.1);border-color:var(--bad)}.ai.bad b{color:var(--bad)}
+.ai.warn{background:rgba(232,179,57,.1);border-color:var(--warn)}.ai.warn b{color:var(--warn)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{font:500 11.5px var(--mono);border:2px solid var(--ink);border-radius:999px;padding:2px 9px;background:var(--card)}
+.chip.up{border-color:var(--ok);color:var(--ok)}.chip.down{border-color:var(--bad);color:var(--bad)}
+table.bc{width:100%;border-collapse:collapse;margin-top:10px;font-size:12.5px}
+table.bc td{padding:6px 4px;border-top:1px solid var(--line)}
+table.bc td:last-child{text-align:right;font:600 12.5px var(--mono)}
+.pos{color:var(--ok)}.neg{color:var(--bad)}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="logo"><span class="mark"></span>Luora Sec <span class="tag">SIMULATOR</span></div>
+  <nav class="scen" id="scen"></nav>
+  <div class="spacer"></div>
+  <select class="pill sm" id="speed" title="Speed"><option value=".5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select>
+  <button class="pill sm" id="reset">↺ Reset</button>
+  <button class="pill sm" id="step">Step ›</button>
+  <button class="pill dark" id="run">▶ Run simulation</button>
+</header>
+
+<main>
+  <section class="right">
+    <div id="viewport">
+      <div class="bubble" id="bubble"></div>
+      <div class="legend" id="legend"></div>
+      <div class="hint">drag to orbit · scroll to zoom · click an asset to see its code</div>
+      <div class="toolbar"><button id="fit" title="Fit">⤢</button><button id="zout" title="Zoom out">−</button><button id="zin" title="Zoom in">+</button></div>
+    </div>
+    <div class="dock">
+      <div class="steps">
+        <div class="dock-h" id="scTitle"></div>
+        <div id="stepList"></div>
+      </div>
+      <div class="narr" id="narr"></div>
+    </div>
+  </section>
+  <section class="editor">
+    <div class="ed-head"><i></i>LuoraVault.sol <span id="edMeta"></span></div>
+    <pre id="code"></pre>
+  </section>
+</main>
+
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+// ---------------- source ----------------
+const SRC = `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import {IERC20} from "./IERC20.sol";
+import {IOracle} from "./IOracle.sol";
+import {IStrategy} from "./IStrategy.sol";
+
+/// @title LuoraVault — USDC yield vault (sample with planted bugs)
+contract LuoraVault {
+    address public owner;
+    IERC20 public asset;          // USDC
+    IOracle public oracle;        // spot price from a DEX pool
+    IStrategy public strategy;
+    uint256 public totalShares;
+    mapping(address => uint256) public shares;
+    bool public paused;
+    uint256 public feeBps = 50;
+
+    event Deposit(address indexed user, uint256 assets, uint256 shares);
+    event Withdraw(address indexed user, uint256 assets, uint256 shares);
+
+    modifier whenNotPaused() {
+        require(!paused, "paused");
+        _;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "!owner");
+        _;
+    }
+
+    constructor(IERC20 _asset, IOracle _oracle, IStrategy _strategy) {
+        owner = msg.sender;
+        asset = _asset;
+        oracle = _oracle;
+        strategy = _strategy;
+    }
+
+    function deposit(uint256 amount) external whenNotPaused {
+        uint256 minted = _computeShares(amount);
+        asset.transferFrom(msg.sender, address(this), amount);
+        shares[msg.sender] += minted;
+        totalShares += minted;
+        emit Deposit(msg.sender, amount, minted);
+    }
+
+    function withdraw(uint256 shareAmount) external whenNotPaused {
+        require(shares[msg.sender] >= shareAmount, "!shares");
+        uint256 value = shareAmount * _price() / 1e18;
+        asset.transfer(msg.sender, value);
+        shares[msg.sender] -= shareAmount;
+        totalShares -= shareAmount;
+        emit Withdraw(msg.sender, value, shareAmount);
+    }
+
+    function harvest() external {
+        uint256 bal = asset.balanceOf(address(this));
+        asset.transfer(address(strategy), bal);
+        uint256 profit = strategy.invest(bal);
+        _accrueFee(profit);
+    }
+
+    function setOracle(IOracle newOracle) external onlyOwner {
+        oracle = newOracle;
+    }
+
+    function _computeShares(uint256 amount) internal view returns (uint256) {
+        if (totalShares == 0) return amount;
+        return amount * 1e18 / _price();
+    }
+
+    function _price() internal view returns (uint256) {
+        return oracle.getSpotPrice(address(asset));
+    }
+
+    function _accrueFee(uint256 profit) internal {
+        uint256 fee = profit * feeBps / 10_000;
+        shares[owner] += fee;
+        totalShares += fee;
+    }
+}`;
+
+const LINES = SRC.split('\n');
+const lineOf = a => Math.max(0, LINES.findIndex(l => l.includes(a)));
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const KW = 'pragma|solidity|import|from|contract|function|modifier|event|emit|returns|return|require|if|external|internal|public|view|constructor|mapping|indexed';
+const TY = 'address|uint256|bool|IERC20|IOracle|IStrategy';
+const RE = new RegExp(`(\\/\\/.*$)|("[^"]*")|\\b(${KW})\\b|\\b(${TY})\\b|\\b(\\d[\\d_]*(?:e\\d+)?)\\b`,'g');
+const hl = l => esc(l).replace(RE,(m,c,s,k,t)=>`<span class="${c?'c':s?'s':k?'k':t?'t':'num'}">${m}</span>`);
+
+const FINDINGS = {'return oracle.getSpotPrice':'F-02 spot price oracle — manipulable with a flash loan',
+  'asset.transferFrom':'F-03 unchecked ERC20 return value', 'asset.transfer(msg.sender':'F-01 transfer before shares are burned (CEI)',
+  'if (totalShares == 0)':'F-05 first-depositor share inflation', 'function harvest':'F-06 no access control; strategy profit trusted'};
+const code = document.getElementById('code');
+const fdLines = new Map(Object.entries(FINDINGS).map(([a,t]) => [lineOf(a), t]));
+code.innerHTML = LINES.map((l,i) => `<span class="l${fdLines.has(i)?' fd':''}" ${fdLines.has(i)?`title="${fdLines.get(i)}"`:''}><span class="ln">${i+1}</span>${hl(l)||' '}</span>`).join('');
+document.getElementById('edMeta').textContent = `Solidity 0.8.20 · ${LINES.length} lines · ${fdLines.size} findings`;
+const lineEls = [...code.children];
+function markCode([anchor, n=1] = [], cls = 'cur', bad = false){
+  lineEls.forEach(e => e.classList.remove(cls, ...(cls === 'cur' ? ['bad'] : [])));
+  if (anchor == null) return;
+  const s = lineOf(anchor);
+  for (let i = s; i < s + n; i++) { lineEls[i].classList.add(cls); if (bad) lineEls[i].classList.add('bad'); }
+  code.scrollTo({top: lineEls[s].offsetTop - code.clientHeight/3, behavior:'smooth'});
+}
+
+// ---------------- nodes ----------------
+const KIND = {actor:['--actor','actor'], contract:['--contract','contract'], ext:['--ext','external fn'], int:['--int','internal fn'],
+  store:['--store','storage'], token:['--usdc','token'], dep:['--dep','external']};
+const NODES = [
+  {id:'alice', col:0, kind:'actor', title:'Alice', rows:[['type','EOA'],['USDC','@usdc.alice'],['shares','@shares.alice']]},
+  {id:'attacker', col:0, kind:'actor', title:'Attacker', rows:[['type','EOA'],['USDC','@usdc.attacker'],['WETH','@weth.attacker'],['shares','@shares.attacker']]},
+  {id:'vault', col:1, kind:'contract', title:'LuoraVault', find:'contract LuoraVault', rows:[['address','0x7a3f…c0de'],['USDC','@usdc.vault'],['totalShares','@totalShares']]},
+  {id:'deposit', col:2, kind:'ext', title:'deposit()', find:'function deposit', rows:[['visibility','external'],['modifier','whenNotPaused'],['moves','user → vault']]},
+  {id:'withdraw', col:2, kind:'ext', title:'withdraw()', find:'function withdraw', rows:[['visibility','external'],['modifier','whenNotPaused'],['⚠ order','transfer → burn']]},
+  {id:'harvest', col:2, kind:'ext', title:'harvest()', find:'function harvest', rows:[['visibility','external'],['⚠ modifier','none'],['moves','vault → strategy']]},
+  {id:'setOracle', col:2, kind:'ext', title:'setOracle()', find:'function setOracle', rows:[['visibility','external'],['modifier','onlyOwner']]},
+  {id:'_computeShares', col:3, kind:'int', title:'_computeShares()', find:'function _computeShares', rows:[['visibility','internal view'],['⚠ F-05','1:1 when empty']]},
+  {id:'_price', col:3, kind:'int', title:'_price()', find:'function _price', rows:[['source','getSpotPrice'],['⚠ F-02','spot price'],['reads','@price']]},
+  {id:'_accrueFee', col:3, kind:'int', title:'_accrueFee()', find:'function _accrueFee', rows:[['feeBps','50'],['mints to','owner']]},
+  {id:'storage', col:3, kind:'store', title:'storage', find:'address public owner', rows:[['totalShares','@totalShares'],['shares[Alice]','@shares.alice'],['shares[Bob]','@shares.bob'],['shares[Attacker]','@shares.attacker'],['shares[owner]','@shares.owner'],['paused','false']]},
+  {id:'usdc', col:4, kind:'token', title:'USDC', rows:[['Alice','@usdc.alice'],['Vault','@usdc.vault'],['Attacker','@usdc.attacker'],['Pool','@usdc.pool'],['Strategy','@usdc.strategy'],['Aave','@usdc.aave']]},
+  {id:'oracle', col:4, kind:'dep', title:'SpotOracle', rows:[['reads','Uniswap pool'],['USDC price','@price']]},
+  {id:'pool', col:4, kind:'dep', title:'Uniswap USDC/WETH', rows:[['USDC','@usdc.pool'],['WETH','@weth.pool']]},
+  {id:'strategy', col:4, kind:'dep', title:'Strategy', rows:[['USDC','@usdc.strategy'],['profit','@profit']]},
+  {id:'aave', col:4, kind:'dep', title:'Aave', rows:[['USDC','@usdc.aave'],['fee','0.09%']]},
+];
+const EDGES = [['alice','vault','calls'],['attacker','vault','calls'],
+  ['vault','deposit','external'],['vault','withdraw','external'],['vault','harvest','external'],['vault','setOracle','external'],
+  ['deposit','_computeShares','calls'],['withdraw','_price','calls'],['_computeShares','_price','calls'],['harvest','_accrueFee','calls'],
+  ['deposit','storage','writes'],['withdraw','storage','writes'],['_accrueFee','storage','writes'],
+  ['deposit','usdc','transferFrom'],['withdraw','usdc','transfer'],['harvest','usdc','transfer'],['harvest','strategy','invest()'],
+  ['_price','oracle','staticcall'],['oracle','pool','reads reserves'],['attacker','aave','flashLoan'],['attacker','pool','swap']];
+const byId = Object.fromEntries(NODES.map(n => [n.id, n]));
+const cssVar = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const BAD = cssVar('--bad');
+document.getElementById('legend').innerHTML = Object.values(KIND).map(([cv,l]) => `<span style="--c:var(${cv})">${l}</span>`).join('');
+
+// ---------------- three.js world ----------------
+const vp = document.getElementById('viewport');
+const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
+vp.prepend(renderer.domElement);
+const css = new CSS2DRenderer(); css.domElement.className = 'labels'; vp.appendChild(css.domElement);
+const scene = new THREE.Scene(); scene.fog = new THREE.Fog('#0e1016', 90, 200);
+const cam = new THREE.PerspectiveCamera(22, 1, .1, 600);
+cam.position.set(14, 30, 34);
+const controls = new OrbitControls(cam, renderer.domElement);
+controls.enableDamping = true; controls.maxPolarAngle = 1.3; controls.minDistance = 12; controls.maxDistance = 160;
+
+scene.add(new THREE.HemisphereLight('#b9c6ff', '#0b0d12', 1.1));
+const sun = new THREE.DirectionalLight('#ffffff', 2.4); sun.position.set(-14, 30, 18); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048); sun.shadow.radius = 4; sun.shadow.bias = -.0005;
+Object.assign(sun.shadow.camera, {left:-34, right:34, top:34, bottom:-34, near:1, far:100}); scene.add(sun);
+const rim = new THREE.DirectionalLight('#8b6cff', 1.1); rim.position.set(18, 10, -18); scene.add(rim);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(260, 260), new THREE.MeshStandardMaterial({color:'#11141c', roughness:1}));
+ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
+const grid = new THREE.GridHelper(260, 130, '#1e2333', '#171b27'); grid.position.y = .01; scene.add(grid);
+
+// primitive kit
+const V = (x=0,y=0,z=0) => new THREE.Vector3(x,y,z), UP = V(0,1,0);
+const M = (c, o={}) => new THREE.MeshStandardMaterial({color:c, roughness:.55, metalness:.15, ...o});
+const GLOW = (c, i=1.4) => M(c, {emissive:new THREE.Color(c), emissiveIntensity:i});
+const mesh = (g, m) => { const o = new THREE.Mesh(g, m); o.castShadow = o.receiveShadow = true; return o; };
+const rb = (w,h,d,m,r=.08) => mesh(new RoundedBoxGeometry(w,h,d,3,Math.min(r,w/2-.001,h/2-.001,d/2-.001)), m);
+const cyl = (a,b,h,m,s=28) => mesh(new THREE.CylinderGeometry(a,b,h,s), m);
+const sph = (r,m,s=24) => mesh(new THREE.SphereGeometry(r,s,s), m);
+const at = (o,x,y,z) => { o.position.set(x,y,z); return o; };
+const grp = (...k) => { const g = new THREE.Group(); k.forEach(o => g.add(o)); return g; };
+const BODY = M('#262b3a', {roughness:.45, metalness:.35}), DARK = M('#1a1e2b'), STEEL = M('#3b4358', {metalness:.7, roughness:.28});
+function textTex(t, bg, fg, w=512, h=256, size=64){
+  const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d');
+  x.fillStyle = bg; x.fillRect(0,0,w,h); x.fillStyle = fg; x.font = `600 ${size}px "JetBrains Mono", monospace`;
+  x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(t, w/2, h/2);
+  const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace; return tx;
+}
+// USDC coin (shared by the token stack and flying coins)
+function coinFace(){
+  const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d');
+  x.fillStyle = '#2775ca'; x.fillRect(0,0,256,256); x.strokeStyle = '#fff'; x.lineWidth = 12;
+  x.beginPath(); x.arc(128,128,86,Math.PI*.62,Math.PI*1.38); x.stroke();
+  x.beginPath(); x.arc(128,128,86,-Math.PI*.38,Math.PI*.38); x.stroke();
+  x.fillStyle = '#fff'; x.font = '700 120px Inter, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('$', 128, 136);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const coinMats = [M('#1b5aa3', {metalness:.7, roughness:.25}), new THREE.MeshStandardMaterial({map:coinFace(), metalness:.3, roughness:.35})];
+const coinGeo = new THREE.CylinderGeometry(1, 1, .18, 48);
+const coin = r => { const m = mesh(coinGeo, [coinMats[0], coinMats[1], coinMats[1]]); m.scale.set(r, r, r); return m; };
+
+// ---- 3D assets ----
+function pedestal(c){
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(1.72, .055, 8, 72), new THREE.MeshBasicMaterial({color:c, transparent:true, opacity:.55}));
+  ring.rotation.x = Math.PI/2; ring.position.y = .32; ring.userData.ring = true;
+  return grp(at(cyl(1.7, 1.85, .3, M('#1b1f2c', {metalness:.4, roughness:.4}), 48), 0, .15, 0), ring);
+}
+function person(c, evil){
+  const g = grp(at(cyl(.36,.5,1.1,M(evil ? '#2a2e3c' : c)),0,.55,0), at(sph(.33,M(evil ? '#151821' : '#f0c6a6')),0,1.42,0));
+  if (evil) { g.add(at(mesh(new THREE.ConeGeometry(.46,.8,20), M('#20232f')),0,1.62,-.04));
+    [-.12,.12].forEach(x => g.add(at(sph(.05, GLOW('#ff3b3b', 3)),x,1.42,.3))); }
+  else { const hair = at(sph(.35, M('#5b3a29')),0,1.55,-.06); hair.scale.set(1,.7,1); g.add(hair); }
+  const lap = grp(at(rb(.9,.06,.6,STEEL),0,0,0), at(rb(.9,.58,.05,STEEL),0,.3,-.28));
+  lap.add(at(new THREE.Mesh(new THREE.PlaneGeometry(.8,.48), GLOW(evil ? '#ff5544' : c, .9)),0,.3,-.25));
+  lap.position.set(0,.95,.62); lap.rotation.y = Math.PI; g.add(lap); return g;
+}
+function vaultSafe(c){
+  const g = grp(at(rb(2.3,2.1,1.9,STEEL,.16),0,1.05,0));
+  const door = grp(at(cyl(.82,.82,.14,M('#4a5470',{metalness:.8,roughness:.22}),48).rotateX(Math.PI/2),0,0,0),
+    at(mesh(new THREE.TorusGeometry(.55,.05,10,48), GLOW(c,.9)),0,0,.09));
+  [0,1,2].forEach(i => { const s = rb(1.0,.07,.07,DARK); s.position.z = .1; s.rotation.z = i*Math.PI/3; door.add(s); });
+  door.position.set(0,1.05,.98); door.userData.spin = .4; g.add(door);
+  g.add(at(rb(2.0,.06,.06,GLOW(c,1.2)),0,2.12,.88));
+  [-.85,.85].forEach(x => g.add(at(cyl(.12,.12,.3,DARK),x,.12,0)));
+  return g;
+}
+function kiosk(c, name){
+  const scr = new THREE.Mesh(new THREE.PlaneGeometry(1.05,.6), new THREE.MeshBasicMaterial({map:textTex(name,'#0c1220',c,512,256,name.length > 10 ? 52 : 64)}));
+  const head = grp(scr); head.position.set(0,1.55,.47); head.rotation.x = -.18;
+  return grp(at(rb(1.35,2.1,.95,BODY,.12),0,1.05,0), head, at(rb(.7,.05,.32,DARK),0,.98,.52), at(rb(.75,.06,.04,GLOW(c,1.6)),0,.66,.48),
+    at(rb(1.39,.1,.99,GLOW(c,.8),.04),0,2.1,0));
+}
+function gear(r, c){
+  const g = grp(at(cyl(r,r,.18,M(c,{metalness:.6,roughness:.3}),32).rotateX(Math.PI/2),0,0,0));
+  for (let i = 0; i < 10; i++) { const t = rb(.16,.22,.18,M(c,{metalness:.6,roughness:.3}),.03), a = i/10*Math.PI*2;
+    t.position.set(Math.cos(a)*(r+.06), Math.sin(a)*(r+.06), 0); t.rotation.z = a; g.add(t); }
+  return g;
+}
+function machine(kind, c){
+  const g = grp(at(rb(1.8,.9,1.3,BODY,.12),0,.45,0), at(rb(1.84,.08,1.34,GLOW(c,.7),.03),0,.92,0));
+  if (kind === 'gears') { const a = gear(.5,'#8d97b0'), b = gear(.32,c); a.position.set(-.3,1.55,.2); b.position.set(.45,1.32,.25);
+    a.userData.spin = .9; b.userData.spin = -1.4; g.add(a, b); }
+  if (kind === 'gauge') { const d = grp(at(cyl(.75,.75,.12,M('#0c1220'),48).rotateX(Math.PI/2),0,0,0),
+      at(mesh(new THREE.TorusGeometry(.75,.06,10,48,Math.PI), GLOW(c,1.2)),0,0,.07));
+    const needle = grp(at(rb(.06,.62,.04,GLOW('#ff5b47',1.8),.02),0,.28,.1)); needle.userData.needle = true; d.add(needle);
+    d.position.set(0,1.75,.1); g.add(at(cyl(.08,.08,.7,STEEL),0,1.2,.1), d); }
+  if (kind === 'press') { const p = grp(at(cyl(.12,.12,.9,STEEL),0,.45,0), at(cyl(.42,.42,.16,GLOW(c,.6)),0,0,0));
+    p.position.set(0,1.45,0); p.userData.press = true; g.add(at(rb(1.3,.12,.5,STEEL),0,2.05,0), p, at(coin(.32),0,1.05,0)); }
+  return g;
+}
+function rack(c){
+  const g = grp(at(rb(1.6,2.8,1.15,BODY,.12),0,1.4,0));
+  for (let i = 0; i < 7; i++) { g.add(at(rb(1.35,.3,.05,M('#323a50')),0,.35+i*.36,.58));
+    const led = at(sph(.045, GLOW(i % 3 ? c : '#34c47c', 2)),.55,.35+i*.36,.62); led.userData.led = i; g.add(led); }
+  return g;
+}
+function usdcStack(){
+  const g = new THREE.Group();
+  for (let i = 0; i < 9; i++) g.add(at(coin(.7),Math.sin(i)*.04,.12+i*.15,Math.cos(i*2)*.04));
+  const big = coin(.62); big.rotation.x = Math.PI/2; const holder = grp(big); holder.position.y = 2.6; holder.userData.spinY = 1.6; g.add(holder);
+  return g;
+}
+function tower(c){
+  const g = new THREE.Group();
+  [[-.5,-.5],[.5,-.5],[-.5,.5],[.5,.5]].forEach(([x,z]) => { const l = cyl(.06,.06,3,STEEL,8); l.position.set(x*.7,1.5,z*.7); l.rotation.set(-z*.18,0,x*.18); g.add(l); });
+  for (let y = .6; y < 3; y += .8) g.add(at(mesh(new THREE.TorusGeometry(.52 - y*.08,.035,6,4), STEEL),0,y,0).rotateX(Math.PI/2));
+  const dish = mesh(new THREE.SphereGeometry(.7,24,12,0,Math.PI*2,0,Math.PI/2.4), M('#d9deea',{side:THREE.DoubleSide}));
+  dish.position.set(0,3.2,.15); dish.rotation.x = -1.05; g.add(dish, at(cyl(.03,.03,.9,DARK,6),0,3.6,0));
+  const b = at(sph(.1, GLOW('#ff5b47', 3)),0,4.1,0); b.userData.blink = true; g.add(b);
+  return g;
+}
+function basin(){
+  const g = grp(at(rb(2.8,.8,2.2,BODY,.12),0,.4,0));
+  const liq = (c,x) => { const m = new THREE.Mesh(new THREE.BoxGeometry(1.15,1,1.8), GLOW(c,.5)); m.material.transparent = true; m.material.opacity = .9; m.position.x = x; return m; };
+  const u = liq('#3d8ee6',-.62), w = liq('#8b5cf6',.62); g.userData.liquid = {u, w}; g.add(u, w, at(rb(.06,.5,1.9,STEEL),0,.95,0));
+  return g;
+}
+function factory(c){
+  const g = grp(at(rb(2,1.3,1.5,BODY,.1),0,.65,0), at(rb(2.04,.1,1.54,GLOW(c,.7),.03),0,1.32,0), at(cyl(.2,.26,1.4,STEEL),.55,1.9,-.35));
+  for (let i = 0; i < 4; i++) { const s = sph(.2, new THREE.MeshStandardMaterial({color:'#9aa3b8', transparent:true, opacity:.5})); s.castShadow = false; s.userData.smoke = i; g.add(s); }
+  [-.5,0].forEach(x => g.add(at(rb(.4,.35,.04,GLOW('#ffd27a',.8)),x,.75,.76)));
+  return g;
+}
+function bank(c){
+  const g = grp(at(rb(2.4,.3,1.8,M('#2c3244')),0,.15,0), at(rb(2.5,.25,1.9,M('#2c3244')),0,1.55,0));
+  [-.85,-.3,.3,.85].forEach(x => g.add(at(cyl(.13,.15,1.1,M('#cfd4e3'),16),x,.85,.6)));
+  const roof = mesh(new THREE.ConeGeometry(1.6,.8,4), GLOW(c,.35)); roof.rotation.y = Math.PI/4; roof.scale.set(1,1,.75); roof.position.y = 2.05; g.add(roof);
+  return g;
+}
+const ASSET = {alice: c => person(c,false), attacker: c => person(c,true), vault: vaultSafe,
+  deposit: c => kiosk(c,'deposit()'), withdraw: c => kiosk(c,'withdraw()'), harvest: c => kiosk(c,'harvest()'), setOracle: c => kiosk(c,'setOracle()'),
+  _computeShares: c => machine('gears',c), _price: c => machine('gauge',c), _accrueFee: c => machine('press',c),
+  storage: rack, usdc: usdcStack, oracle: tower, pool: basin, strategy: factory, aave: bank};
+
+// build node objects + labels
+const obj = {}, binds = {}, nodeOfKey = {}, pickables = [];
+NODES.forEach(n => {
+  const cv = KIND[n.kind][0], c = n.id === 'attacker' ? cssVar('--bad') : cssVar(cv);
+  const model = ASSET[n.id](c); model.position.y = .3; model.scale.setScalar(1.25);
+  const ped = pedestal(c); ped.scale.setScalar(1.25);
+  const g = grp(ped, model); g.userData = {id:n.id, c, model, cur:0};
+  g.traverse(o => { if (o.isMesh) { o.userData.id = n.id; pickables.push(o); } });
+  g.scale.setScalar(.001); g.visible = false; scene.add(g); obj[n.id] = g;
+  const h = new THREE.Box3().setFromObject(model).getSize(V()).y;
+  const outer = document.createElement('div');
+  const firstBind = n.rows.find(([,v]) => v[0] === '@');
+  outer.innerHTML = `<div class="lab" style="--c:var(${n.id === 'attacker' ? '--bad' : cv})"><div class="lh"><i></i>${n.title}<small>${KIND[n.kind][1]}</small>${firstBind ? `<span class="pv" data-b="${firstBind[1].slice(1)}"></span>` : ''}</div>
+    <div class="lrows">${n.rows.map(([k,v]) => `<div class="row${k.startsWith('⚠')?' warn':''}"><span class="key">${k}</span><span class="val" ${v[0]==='@'?`data-b="${v.slice(1)}"`:''}>${v[0]==='@'?'':v}</span></div>`).join('')}</div></div>`;
+  outer.querySelectorAll('[data-b]').forEach(el => { (binds[el.dataset.b] ||= []).push(el); if (n.id !== 'usdc') (nodeOfKey[el.dataset.b] ||= new Set()).add(n.id); });
+  const lab = outer.firstElementChild;
+  lab.onclick = () => n.find && markCode([n.find, 1], 'peek');
+  lab.onpointerenter = () => lab.classList.add('open'); lab.onpointerleave = () => { if (!lab.classList.contains('active')) lab.classList.remove('open'); };
+  const lo = new CSS2DObject(outer); lo.position.y = h + .9; g.add(lo);
+  g.userData.lab = lab; g.userData.lo = lo; g.userData.top = h + .3;
+});
+
+// ---------------- layout (only what the scenario touches, columns left → right) ----------------
+const COLW = 10, ROWD = 7;
+let visible = new Set(), bounds = {min:V(), max:V()};
+function layout(ids){
+  visible = ids;
+  const cols = [0,1,2,3,4].map(c => NODES.filter(n => n.col === c && ids.has(n.id))).filter(c => c.length);
+  const W = (cols.length - 1) * COLW;
+  cols.forEach((c, i) => c.forEach((n, j) => { obj[n.id].userData.target = V(-W/2 + i*COLW, 0, (j - (c.length-1)/2) * ROWD); }));
+  const ts = [...ids].map(id => obj[id].userData.target);
+  bounds.min = V(Math.min(...ts.map(t => t.x)), 0, Math.min(...ts.map(t => t.z)));
+  bounds.max = V(Math.max(...ts.map(t => t.x)), 0, Math.max(...ts.map(t => t.z)));
+  let k = 0;
+  NODES.forEach(n => { const g = obj[n.id], on = ids.has(n.id);
+    if (on && !g.visible) { g.position.copy(g.userData.target); g.userData.popAt = performance.now() + (k++)*70; }
+    g.userData.on = on; if (on) g.visible = true;
+    g.userData.lo.visible = on; // CSS2DRenderer only checks the label object's own visibility
+  });
+}
+
+// edges: low arcs on the ground, only those the scenario uses
+const edgeG = new THREE.Group(); scene.add(edgeG);
+let edgeObjs = {};
+const lift = id => obj[id].userData.target.clone().add(V(0,.35,0));
+function arc(a, b, h){ const m = a.clone().lerp(b, .5); m.y += h; return new THREE.QuadraticBezierCurve3(a, m, b); }
+function drawEdges(){
+  edgeG.children.slice().forEach(o => { edgeG.remove(o); o.geometry?.dispose(); });
+  edgeObjs = {};
+  const used = new Set(SCEN[sc].steps.flatMap(s => s.edges || []));
+  EDGES.filter(([a,b]) => used.has(`${a}>${b}`)).forEach(([a,b,label]) => {
+    const curve = arc(lift(a), lift(b), 1.1 + lift(a).distanceTo(lift(b))*.06);
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 48, .05, 6), new THREE.MeshBasicMaterial({color:'#343a4f'}));
+    const el = document.createElement('div'); el.className = 'elab'; el.textContent = label;
+    const lo = new CSS2DObject(el); lo.position.copy(curve.getPoint(.5)).add(V(0,.35,0));
+    const pulses = [0,1,2].map(() => { const p = new THREE.Mesh(new THREE.SphereGeometry(.11,12,12), new THREE.MeshBasicMaterial({color:'#e8e6f1'})); p.visible = false; edgeG.add(p); return p; });
+    edgeG.add(tube, lo); edgeObjs[`${a}>${b}`] = {curve, tube, el, pulses, on:false};
+  });
+}
+
+// ---------------- camera ----------------
+let camAnim = null;
+function flyCam(target, pos){ camAnim = {ft: controls.target.clone(), tt: target, fp: cam.position.clone(), tp: pos, t0: performance.now()}; }
+function fit(){
+  const c = bounds.min.clone().lerp(bounds.max, .5), sx = bounds.max.x - bounds.min.x + 6, sz = bounds.max.z - bounds.min.z + 6;
+  const d = (Math.max(1.75 * sx / cam.aspect, 1.75 * sz, 18) + 2) * 1.55; // fov 22 ≈ 1.42× farther than fov 34
+  flyCam(c.clone().add(V(0,0,-1.6)), c.clone().add(V(0,0,-1.6)).add(V(0, 1.5, 1).normalize().multiplyScalar(d)));
+}
+const dolly = f => flyCam(controls.target.clone(), controls.target.clone().add(cam.position.clone().sub(controls.target).multiplyScalar(f)));
+document.getElementById('fit').onclick = fit;
+document.getElementById('zin').onclick = () => dolly(.8);
+document.getElementById('zout').onclick = () => dolly(1.25);
+function resize(){ const w = vp.clientWidth, h = vp.clientHeight; renderer.setSize(w, h); css.setSize(w, h); cam.aspect = w / h; cam.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(vp);
+
+// hover / click on assets
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+let hovered = null, downAt = null;
+function pick(e){ const r = renderer.domElement.getBoundingClientRect();
+  ndc.set((e.clientX-r.left)/r.width*2-1, -(e.clientY-r.top)/r.height*2+1); ray.setFromCamera(ndc, cam);
+  const hit = ray.intersectObjects(pickables.filter(m => obj[m.userData.id].userData.on), false)[0]; return hit?.object.userData.id; }
+renderer.domElement.addEventListener('pointermove', e => { const h = pick(e);
+  if (h === hovered) return;
+  if (hovered && !obj[hovered].userData.lab.classList.contains('active')) obj[hovered].userData.lab.classList.remove('open');
+  hovered = h; if (h) obj[h].userData.lab.classList.add('open'); renderer.domElement.style.cursor = h ? 'pointer' : 'grab'; });
+renderer.domElement.addEventListener('pointerdown', e => downAt = [e.clientX, e.clientY]);
+renderer.domElement.addEventListener('pointerup', e => { if (downAt && Math.hypot(e.clientX-downAt[0], e.clientY-downAt[1]) < 5) { const h = pick(e); if (h && byId[h].find) markCode([byId[h].find, 1], 'peek'); } downAt = null; });
+
+// ---------------- state ----------------
+const BASE = {'usdc.alice':5000,'usdc.attacker':0,'usdc.vault':30000,'usdc.pool':1000000,'usdc.strategy':0,'usdc.aave':2000000,
+  'weth.attacker':0,'weth.pool':400,'shares.alice':0,'shares.bob':20000,'shares.attacker':10000,'shares.owner':0,
+  'totalShares':30000,'price':1,'profit':0};
+let S = {}, INIT = {};
+const fmt = (k, v) => k === 'price' ? '$' + v.toFixed(2) : v.toLocaleString('en-US', {maximumFractionDigits: k.startsWith('weth') ? 2 : 0});
+const short = k => k.startsWith('usdc') ? 'USDC' : k.startsWith('weth') ? 'WETH' : k.startsWith('shares') ? 'shares' : k;
+function show(k){ (binds[k]||[]).forEach(el => el.textContent = fmt(k, S[k])); }
+function floatDelta(id, text, dir){
+  const el = document.createElement('div'); el.innerHTML = `<div class="fdelta ${dir}">${text}</div>`; // inner node animates; outer is positioned by CSS2DRenderer
+  const o = new CSS2DObject(el); o.position.y = obj[id].userData.top + 2.2; obj[id].add(o);
+  setTimeout(() => obj[id].remove(o), 1600);
+}
+function setVal(k, v){
+  const a = S[k]; S[k] = v; if (a === v) return show(k);
+  const dir = v > a ? 'up' : 'down';
+  (nodeOfKey[k]||[]).forEach(id => visible.has(id) && floatDelta(id, `${v>a?'+':'−'}${fmt(k, Math.abs(v-a))} ${short(k)}`, dir));
+  (binds[k]||[]).forEach(el => {
+    const row = el.closest('.row'); if (row) { row.classList.add(dir); setTimeout(() => row.classList.remove(dir), 900); }
+    const t0 = performance.now();
+    const tick = now => { const u = Math.min(1, (now - t0) / 650); el.textContent = fmt(k, a + (v - a) * (1 - Math.pow(1-u, 3))); if (u < 1) requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  });
+}
+
+// ---------------- coins: one at a time, arcing between assets ----------------
+const bubble = document.getElementById('bubble');
+const flights = [], trails = new THREE.Group(); scene.add(trails);
+let speed = 1;
+const topOf = id => obj[id].userData.target.clone().add(V(0, obj[id].userData.top * .75, 0));
+const coinArc = (from, to) => arc(topOf(from), topOf(to), 3 + topOf(from).distanceTo(topOf(to)) * .22);
+function fly(from, to, amount, tag){
+  return new Promise(res => {
+    const n = Math.min(6, Math.max(3, Math.round(Math.log10(amount)))), per = Math.floor(amount / n);
+    const coins = Array.from({length:n}, (_, i) => { const g = grp(coin(.42)); g.children[0].rotation.x = Math.PI/2; g.visible = false; scene.add(g);
+      return {g, delay: i*700/speed, amt: i === n-1 ? amount - per*(n-1) : per}; });
+    flights.push({from, to, tag, n, curve: coinArc(from, to), t0: performance.now(), dur: 1900/speed, coins, res});
+  });
+}
+function hop(id){ obj[id].userData.hopAt = performance.now(); }
+
+// ---------------- animation loop ----------------
+const clock = new THREE.Clock(), proj = V();
+renderer.setAnimationLoop(now => {
+  const t = clock.getElapsedTime();
+  if (camAnim) { const k = Math.min(1, (now - camAnim.t0) / 900), e = 1 - Math.pow(1-k, 3);
+    controls.target.lerpVectors(camAnim.ft, camAnim.tt, e); cam.position.lerpVectors(camAnim.fp, camAnim.tp, e); if (k === 1) camAnim = null; }
+  NODES.forEach((n, i) => {
+    const g = obj[n.id], u = g.userData;
+    if (!u.target) return;
+    g.position.x += (u.target.x - g.position.x) * .12; g.position.z += (u.target.z - g.position.z) * .12;
+    const want = u.on && now >= (u.popAt || 0) ? 1 : .001;
+    u.cur += (want - u.cur) * .14; g.scale.setScalar(Math.max(.001, u.cur));
+    if (!u.on && u.cur < .01) g.visible = false;
+    const hopK = u.hopAt ? Math.max(0, 1 - (now - u.hopAt) / 450) : 0;
+    u.model.position.y = .38 + (u.active ? .25 + Math.sin(t*3.2)*.12 : 0) + Math.sin((1-hopK)*Math.PI) * .45 * (hopK > 0);
+    g.traverse(o => {
+      if (o.userData.spin) o.rotation.z += o.userData.spin * .016;
+      if (o.userData.spinY) o.rotation.y += o.userData.spinY * .016;
+      if (o.userData.ring) { o.material.opacity = u.active ? .95 : .45; o.material.color.set(u.bad ? BAD : u.c); o.scale.setScalar(u.active ? 1 + Math.sin(t*4)*.03 : 1); }
+      if (o.userData.needle) o.rotation.z += ((Math.PI/2 - (S.price - .5) / 2.5 * Math.PI) - o.rotation.z) * .08;
+      if (o.userData.press) o.position.y = 1.45 + Math.abs(Math.sin(t*2.6)) * -.3;
+      if (o.userData.led !== undefined) o.material.emissiveIntensity = (Math.sin(t*5 + o.userData.led*1.7) > (u.active ? -.5 : .4)) ? 2.4 : .3;
+      if (o.userData.blink) o.material.emissiveIntensity = Math.sin(t*4) > 0 ? 3 : .4;
+      if (o.userData.smoke !== undefined) { const k = (t*.4 + o.userData.smoke/4) % 1; o.position.set(.55 + k*.3, 2.7 + k*1.4, -.35); o.scale.setScalar(.6 + k*1.6); o.material.opacity = .45*(1-k); }
+    });
+    if (u.model.userData.liquid) { const {u: lu, w} = u.model.userData.liquid, hu = .12 + .55 * Math.min(1.4, S['usdc.pool'] / 1e6) / 1.4, hw = .12 + .55 * Math.min(1.4, S['weth.pool'] / 400) / 1.4;
+      lu.scale.y += (hu - lu.scale.y) * .08; lu.position.y = .8 + lu.scale.y/2 - .3; w.scale.y += (hw - w.scale.y) * .08; w.position.y = .8 + w.scale.y/2 - .3; }
+  });
+  // flights
+  for (let i = flights.length - 1; i >= 0; i--) {
+    const f = flights[i]; let done = true, lead = null;
+    f.coins.forEach((c, j) => {
+      const u = Math.min(1, Math.max(0, (now - f.t0 - c.delay) / f.dur));
+      if (u > 0 && !c.left) { c.left = true; setVal('usdc.' + f.from, S['usdc.' + f.from] - c.amt); hop(f.from); }
+      if (u >= 1 && !c.landed) { c.landed = true; setVal('usdc.' + f.to, S['usdc.' + f.to] + c.amt); hop(f.to); if (visible.has('usdc')) hop('usdc'); }
+      if (u < 1) { done = false; if (u > 0 && !lead) lead = [c, j]; }
+      const e = u < .5 ? 2*u*u : 1 - Math.pow(-2*u+2, 2)/2;
+      c.g.position.copy(f.curve.getPoint(e)); c.g.visible = u > 0 && u < 1;
+      c.g.lookAt(cam.position); c.g.rotateY(Math.sin(u*9 + j) * .9); c.g.rotateX(Math.cos(u*7 + j) * .3);
+      c.g.scale.setScalar(1 + .5*Math.sin(Math.PI*u));
+    });
+    if (lead) { const [c, j] = lead; proj.copy(c.g.position).project(cam);
+      bubble.style.left = (proj.x+1)/2*vp.clientWidth + 'px'; bubble.style.top = (1-proj.y)/2*vp.clientHeight + 'px'; bubble.style.opacity = 1;
+      bubble.textContent = `${f.tag} coin ${j+1}/${f.n} · ${c.amt.toLocaleString('en-US')} USDC`; }
+    if (done) { f.coins.forEach(c => scene.remove(c.g)); flights.splice(i, 1); bubble.style.opacity = 0; f.res(); }
+  }
+  // pulses along active edges
+  Object.values(edgeObjs).forEach(e => e.pulses.forEach((p, k) => { p.visible = e.on; if (e.on) p.position.copy(e.curve.getPoint((t*.5 + k/3) % 1)); }));
+  controls.update();
+  renderer.render(scene, cam);
+  css.render(scene, cam);
+});
+
+// ---------------- scenarios ----------------
+// step: {kind, node, edges, code:[anchor,n], title, why, flag, transfer:{from,to,amt}, set:{k:v}}
+const SCEN = {
+  deposit: {label:'Deposit 1,000 USDC', init:{},
+    verdict:'Normal path. 1,000 USDC moved Alice → Vault and she got 1,000 shares priced at $1.00. But that price came from a spot oracle — run the Exploit scenario.',
+    steps:[
+    {kind:'CALL', node:'alice', edges:['alice>vault','vault>deposit'], code:['function deposit',1], title:'Alice → LuoraVault.deposit(1,000e6)',
+     why:'Entry point. Anyone can call this external function. Alice approved the vault for 1,000 USDC beforehand.'},
+    {kind:'CHECK', node:'deposit', code:['modifier whenNotPaused',4], title:'whenNotPaused → paused == false ✓',
+     why:'Modifier runs before the body. paused is never set anywhere in the contract, so this gate can never close.'},
+    {kind:'CALL', node:'_computeShares', edges:['deposit>_computeShares'], code:['function _computeShares',4], title:'_computeShares(1,000e6)',
+     why:'totalShares is 30,000 (not 0), so shares = amount × 1e18 / _price().'},
+    {kind:'STATICCALL', node:'oracle', edges:['_computeShares>_price','_price>oracle','oracle>pool'], code:['function _price',3], flag:'warn', title:'SpotOracle.getSpotPrice(USDC) → $1.00',
+     why:'Price is read from live Uniswap reserves. Fine right now, but anyone with a flash loan can move it inside one transaction (F-02).'},
+    {kind:'RETURN', node:'deposit', code:['uint256 minted',1], title:'minted = 1,000 shares', why:'1,000 × 1e18 / 1.00e18 = 1,000 shares.'},
+    {kind:'TRANSFER', node:'usdc', edges:['deposit>usdc'], code:['asset.transferFrom',1], flag:'warn', title:'USDC.transferFrom(Alice → Vault, 1,000)',
+     transfer:{from:'alice', to:'vault', amt:1000}, why:'Money moves: Alice → USDC ledger → Vault. The bool return value is ignored (F-03) — harmless for USDC, dangerous for tokens that return false.'},
+    {kind:'SSTORE', node:'storage', edges:['deposit>storage'], code:['shares[msg.sender] += minted',2], title:'shares[Alice] += 1,000 · totalShares += 1,000',
+     set:{'shares.alice':1000, 'totalShares':31000}, why:'State written after the transfer. Alice now owns 1,000 / 31,000 of the vault.'},
+    {kind:'EVENT', node:'vault', code:['emit Deposit(',1], title:'emit Deposit(Alice, 1,000, 1,000)', why:'Off-chain indexers and monitors pick this up.'},
+  ]},
+  withdraw: {label:'Withdraw 1,000 shares', init:{'usdc.alice':4000,'usdc.vault':31000,'shares.alice':1000,'totalShares':31000},
+    verdict:'Alice redeemed 1,000 shares for 1,000 USDC. Correct result — but USDC left the vault before her shares were burned (CEI violation).',
+    steps:[
+    {kind:'CALL', node:'alice', edges:['alice>vault','vault>withdraw'], code:['function withdraw',1], title:'Alice → LuoraVault.withdraw(1,000 shares)', why:'External entry point, gated by whenNotPaused.'},
+    {kind:'CHECK', node:'withdraw', code:['require(shares[msg.sender]',1], title:'require(shares[Alice] ≥ 1,000) ✓', why:'Alice holds exactly 1,000 shares.'},
+    {kind:'STATICCALL', node:'oracle', edges:['withdraw>_price','_price>oracle','oracle>pool'], code:['function _price',3], flag:'warn', title:'_price() → SpotOracle → $1.00', why:'Same spot oracle as deposit. Redemption value depends on a price anyone can push.'},
+    {kind:'RETURN', node:'withdraw', code:['uint256 value',1], title:'value = 1,000 × 1.00 = 1,000 USDC', why:'Shares × price.'},
+    {kind:'TRANSFER', node:'usdc', edges:['withdraw>usdc'], code:['asset.transfer(msg.sender',1], flag:'bad', title:'USDC.transfer(Vault → Alice, 1,000)',
+     transfer:{from:'vault', to:'alice', amt:1000}, why:'Funds leave BEFORE shares are burned (F-01). With a token that has transfer hooks (ERC777) the receiver could re-enter withdraw() here.'},
+    {kind:'SSTORE', node:'storage', edges:['withdraw>storage'], code:['shares[msg.sender] -= shareAmount',2], title:'shares[Alice] −= 1,000 · totalShares −= 1,000',
+     set:{'shares.alice':0, 'totalShares':30000}, why:'Effects happen last. Correct order: burn shares first, then transfer.'},
+    {kind:'EVENT', node:'vault', code:['emit Withdraw(',1], title:'emit Withdraw(Alice, 1,000, 1,000)', why:'Done.'},
+  ]},
+  harvest: {label:'Harvest to strategy', init:{},
+    verdict:'Anyone moved the entire vault balance into the strategy, and the strategy’s self-reported profit minted fee shares. No access control and no profit verification.',
+    steps:[
+    {kind:'CALL', node:'alice', edges:['alice>vault','vault>harvest'], code:['function harvest',1], flag:'warn', title:'Alice → LuoraVault.harvest()', why:'No modifier: any address can trigger this, any time (F-06).'},
+    {kind:'STATICCALL', node:'usdc', code:['uint256 bal',1], title:'USDC.balanceOf(Vault) → 30,000', why:'Reads the full vault balance.'},
+    {kind:'TRANSFER', node:'usdc', edges:['harvest>usdc'], code:['asset.transfer(address(strategy)',1], flag:'warn', title:'USDC.transfer(Vault → Strategy, 30,000)',
+     transfer:{from:'vault', to:'strategy', amt:30000}, why:'100% of user funds leave the vault in one call. If the strategy is compromised, everything is gone.'},
+    {kind:'CALL', node:'strategy', edges:['harvest>strategy'], code:['strategy.invest(bal)',1], flag:'warn', title:'Strategy.invest(30,000) → profit 600',
+     set:{'profit':600}, why:'The vault trusts whatever profit number the strategy returns.'},
+    {kind:'CALL', node:'_accrueFee', edges:['harvest>_accrueFee'], code:['function _accrueFee',5], title:'_accrueFee(600) → fee = 3 shares', why:'600 × 50 / 10,000 = 3.'},
+    {kind:'SSTORE', node:'storage', edges:['_accrueFee>storage'], code:['shares[owner] += fee',2], title:'shares[owner] += 3 · totalShares += 3',
+     set:{'shares.owner':3, 'totalShares':30003}, why:'Fee minted as shares, diluting depositors slightly.'},
+  ]},
+  exploit: {label:'⚠ Exploit: oracle manipulation', init:{},
+    verdict:'Attacker turned 10,000 shares into 25,000 USDC by pumping the spot price inside one transaction. Net profit +13,950 USDC; Bob’s 20,000 shares are now backed by only 5,000 USDC. Root cause: F-02 spot oracle.',
+    steps:[
+    {kind:'FLASHLOAN', node:'aave', edges:['attacker>aave'], title:'Attacker → Aave.flashLoan(500,000 USDC)', transfer:{from:'aave', to:'attacker', amt:500000},
+     why:'Free capital for one transaction. Must be repaid + 0.09% before the tx ends.'},
+    {kind:'SWAP', node:'pool', edges:['attacker>pool'], flag:'warn', title:'Attacker swaps 500,000 USDC → 199.9 WETH', transfer:{from:'attacker', to:'pool', amt:500000},
+     set:{'weth.pool':200.1, 'weth.attacker':199.9, 'price':2.5}, why:'Dumping USDC into the pool skews reserves. The spot price LuoraVault reads jumps from $1.00 to $2.50.'},
+    {kind:'CALL', node:'withdraw', edges:['attacker>vault','vault>withdraw'], code:['function withdraw',1], title:'Attacker → LuoraVault.withdraw(10,000 shares)', why:'Attacker already held 10,000 shares (worth 10,000 USDC at fair price).'},
+    {kind:'STATICCALL', node:'oracle', edges:['withdraw>_price','_price>oracle','oracle>pool'], code:['function _price',3], flag:'bad', title:'_price() → SpotOracle → $2.50 (manipulated)',
+     why:'F-02 triggered: the vault reads the pumped spot price. A TWAP or Chainlink feed would still say $1.00.'},
+    {kind:'RETURN', node:'withdraw', code:['uint256 value',1], flag:'bad', title:'value = 10,000 × 2.50 = 25,000 USDC', why:'2.5× the fair redemption value.'},
+    {kind:'TRANSFER', node:'usdc', edges:['withdraw>usdc'], code:['asset.transfer(msg.sender',1], flag:'bad', title:'USDC.transfer(Vault → Attacker, 25,000)',
+     transfer:{from:'vault', to:'attacker', amt:25000}, why:'25,000 of the vault’s 30,000 USDC leaves. Other depositors absorb the loss.'},
+    {kind:'SSTORE', node:'storage', edges:['withdraw>storage'], code:['shares[msg.sender] -= shareAmount',2], title:'shares[Attacker] −= 10,000 · totalShares −= 10,000',
+     set:{'shares.attacker':0, 'totalShares':20000}, why:'Only 10,000 shares burned for 25,000 USDC paid.'},
+    {kind:'SWAP', node:'pool', edges:['attacker>pool'], title:'Attacker swaps 199.9 WETH → 499,400 USDC', transfer:{from:'pool', to:'attacker', amt:499400},
+     set:{'weth.pool':400, 'weth.attacker':0, 'price':1}, why:'Price restored to $1.00. Round-trip slippage cost the attacker 600 USDC.'},
+    {kind:'REPAY', node:'aave', edges:['attacker>aave'], title:'Attacker repays Aave 500,450 USDC', transfer:{from:'attacker', to:'aave', amt:500450},
+     why:'Principal + 0.09% fee. Flash loan closed, transaction succeeds.'},
+  ]},
+};
+
+
+// ---------------- runner ----------------
+let sc = 'deposit', cur = -1, playing = false, busy = false, transferN = 0, gen = 0;
+const sleep = ms => new Promise(r => setTimeout(r, ms / speed));
+const runBtn = document.getElementById('run');
+const scenNav = document.getElementById('scen');
+scenNav.innerHTML = Object.entries(SCEN).map(([k,v]) => `<button class="pill sm" data-s="${k}">${v.label}</button>`).join('');
+scenNav.onclick = e => { const k = e.target.closest('button')?.dataset.s; if (k) load(k); };
+
+function load(k){
+  gen++; sc = k; playing = false; busy = false; cur = -1; transferN = 0;
+  flights.splice(0).forEach(f => f.coins.forEach(c => scene.remove(c.g))); bubble.style.opacity = 0;
+  trails.children.slice().forEach(o => trails.remove(o));
+  S = {...BASE, ...SCEN[k].init}; INIT = {...S};
+  Object.keys(S).forEach(show);
+  scenNav.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.s === k));
+  const ids = new Set(['vault', 'usdc']);
+  SCEN[k].steps.forEach(s => { ids.add(s.node); (s.edges||[]).forEach(e => e.split('>').forEach(x => ids.add(x)));
+    if (s.transfer) { ids.add(s.transfer.from); ids.add(s.transfer.to); } });
+  layout(ids); drawEdges(); fit();
+  activate(null); markCode(); markCode([], 'peek');
+  renderSteps(); narrate();
+  runBtn.textContent = '▶ Run simulation';
+}
+function renderSteps(){
+  const st = SCEN[sc].steps;
+  document.getElementById('scTitle').innerHTML = `${SCEN[sc].label}<span>${cur+1} / ${st.length} steps</span>`;
+  document.getElementById('stepList').innerHTML = st.map((s,i) =>
+    `<div class="st ${i<cur?'done':''} ${i===cur?'cur':''} ${i<=cur&&s.flag?s.flag:''}"><span class="n">${i+1}</span><b>${s.kind}</b>${s.title}</div>`).join('');
+  document.querySelector('.st.cur')?.scrollIntoView({block:'nearest'});
+}
+function activate(s){
+  NODES.forEach(n => { const u = obj[n.id].userData; u.active = false; u.bad = false; u.lab.classList.remove('active','bad','open'); });
+  Object.values(edgeObjs).forEach(e => { e.on = false; e.tube.material.color.set('#343a4f'); e.el.classList.remove('on'); });
+  if (!s) return;
+  const u = obj[s.node].userData; u.active = true; u.bad = s.flag === 'bad';
+  u.lab.classList.add('active', 'open'); if (u.bad) u.lab.classList.add('bad');
+  (s.edges||[]).forEach(id => { const e = edgeObjs[id]; if (e) { e.on = true; e.tube.material.color.set('#cfd3e6'); e.el.classList.add('on'); } });
+}
+function narrate(s, diffs = []){
+  const N = document.getElementById('narr');
+  if (!s) { N.innerHTML = `<h3>Ready to simulate</h3><div class="sub">${SCEN[sc].steps.length} steps · press Run or Step</div>
+    <div class="ai"><b>✦ Luora AI</b>Every contract, function and dependency is a 3D asset. Each step lights up the executing asset, highlights its code on the right, and moves real balances — USDC flies as coins, one at a time, from sender to receiver.</div>`; return; }
+  N.innerHTML = `<h3>${s.title}</h3><div class="sub">${s.kind}${s.code ? ' · L' + (lineOf(s.code[0])+1) : ''}</div>
+    <div class="ai ${s.flag||''}"><b>✦ Luora AI${s.flag==='bad'?' · vulnerability':s.flag==='warn'?' · watch out':''}</b>${s.why}</div>
+    <div class="chips">${diffs.map(([k,a,b]) => `<span class="chip ${b>a?'up':'down'}">${k}: ${fmt(k,a)} → ${fmt(k,b)}</span>`).join('')}</div>`;
+}
+function finish(){
+  const holders = [['Alice','usdc.alice'],['Attacker','usdc.attacker'],['LuoraVault','usdc.vault'],['Uniswap pool','usdc.pool'],['Strategy','usdc.strategy'],['Aave','usdc.aave']];
+  const rows = holders.map(([n,k]) => [n, S[k]-INIT[k]]).filter(([,d]) => d);
+  document.getElementById('narr').innerHTML = `<h3>Simulation complete</h3><div class="sub">balance changes · USDC</div>
+    <div class="ai ${sc==='exploit'?'bad':''}"><b>✦ Luora AI · verdict</b>${SCEN[sc].verdict}</div>
+    <table class="bc">${rows.map(([n,d]) => `<tr><td>${n}</td><td class="${d>0?'pos':'neg'}">${d>0?'+':'−'}${Math.abs(d).toLocaleString('en-US')}</td></tr>`).join('')}</table>`;
+  activate(null); playing = false; runBtn.textContent = '↻ Run again';
+}
+async function step(){
+  const st = SCEN[sc].steps, g = gen;
+  if (busy || cur >= st.length - 1) return false;
+  busy = true; cur++;
+  const s = st[cur], before = {...S};
+  renderSteps(); activate(s); markCode(s.code, 'cur', s.flag === 'bad'); narrate(s);
+  if (s.transfer) {
+    const {from, to, amt} = s.transfer, n = ++transferN, curve = coinArc(from, to);
+    trails.children.forEach(o => o.material && (o.material.opacity = .25));
+    const tr = new THREE.Mesh(new THREE.TubeGeometry(curve, 60, .04, 6), new THREE.MeshBasicMaterial({color:'#3d8ee6', transparent:true, opacity:.8}));
+    const el = document.createElement('div'); el.className = 'mlab'; el.textContent = `[${n}] ${amt.toLocaleString('en-US')} USDC`;
+    const lo = new CSS2DObject(el); lo.position.copy(curve.getPoint(.5)).add(V(0,.5,0));
+    trails.add(tr, lo);
+    await fly(from, to, amt, `[${n}]`);
+    if (g !== gen) return false;
+  }
+  await sleep(s.transfer ? 250 : 700); if (g !== gen) return false;
+  Object.entries(s.set||{}).forEach(([k,v]) => setVal(k, v));
+  narrate(s, Object.keys(S).filter(k => S[k] !== before[k]).map(k => [k, before[k], S[k]]));
+  await sleep(700); if (g !== gen) return false;
+  busy = false;
+  if (cur === st.length - 1) { await sleep(500); if (g === gen) finish(); }
+  return true;
+}
+async function play(){
+  if (cur >= SCEN[sc].steps.length - 1) load(sc);
+  playing = !playing;
+  runBtn.textContent = playing ? '❚❚ Pause' : '▶ Resume';
+  const g = gen;
+  while (playing && g === gen && await step()) await sleep(700);
+}
+runBtn.onclick = play;
+document.getElementById('step').onclick = () => { if (playing) { playing = false; runBtn.textContent = '▶ Resume'; } step(); };
+document.getElementById('reset').onclick = () => load(sc);
+document.getElementById('speed').onchange = e => speed = +e.target.value;
+
+// ---------------- boot ----------------
+resize(); load('deposit');
+Object.assign(window, {load, step, _dbg:{cam, controls, obj, bounds:()=>bounds}}); // handy from devtools
+</script>
+</body>
+</html>

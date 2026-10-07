@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Genie-inspired tokens: grey shell, white r-32 panels, tray → card nesting, pastel kind bubbles. */
+:root {
+  --shell: #f3f4f5;
+  --panel: #ffffff;
+  --tray: #f9fafb;
+  --trayline: #f0f1f3;
+  --card: #ffffff;
+  --ink: #181d27;
+  --muted: #717680;
+  --dim: #a4a7ae;
+  --line: #eef0f1;
+  --soft: #f6f7f8;
+  --guide: #e2e4e8;
+  --sel: #eef0f1;
+  --accent: #6d5efc;
+  --ok: #17a35f;
+  --bad: #e2492f;
+  --peach: #ffdccb;
+  --sky: #d3e8ff;
+  --mint: #d2f3e2;
+  --lilac: #e9e0ff;
+  --butter: #fff1bd;
+  --contract: #2f5ee8;
+  --sh1: 0 1px 2px rgba(113, 118, 128, 0.12);
+  --sh2: 0 1px 2px rgba(113, 118, 128, 0.1), 0 10px 28px rgba(16, 24, 40, 0.07);
+}
+
+.dark {
+  --shell: #0b0c10;
+  --panel: #121419;
+  --tray: #171a21;
+  --trayline: #20242d;
+  --card: #1c2029;
+  --ink: #eceef3;
+  --muted: #9097a6;
+  --dim: #5f6575;
+  --line: #252a34;
+  --soft: #20242d;
+  --guide: #2c313c;
+  --sel: #262b36;
+  --accent: #8b7dff;
+  --ok: #3fcf8e;
+  --bad: #f0603f;
+  --peach: #4a2d25;
+  --sky: #1c3352;
+  --mint: #173d2d;
+  --lilac: #2f2654;
+  --butter: #3f3517;
+  --contract: #8fb7ff;
+  --sh1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --sh2: 0 10px 28px rgba(0, 0, 0, 0.45);
+}
+
+@theme inline {
+  --color-shell: var(--shell);
+  --color-panel: var(--panel);
+  --color-tray: var(--tray);
+  --color-trayline: var(--trayline);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-dim: var(--dim);
+  --color-line: var(--line);
+  --color-soft: var(--soft);
+  --color-guide: var(--guide);
+  --color-sel: var(--sel);
+  --color-accent: var(--accent);
+  --color-ok: var(--ok);
+  --color-bad: var(--bad);
+  --color-peach: var(--peach);
+  --color-sky: var(--sky);
+  --color-mint: var(--mint);
+  --color-lilac: var(--lilac);
+  --color-butter: var(--butter);
+  --color-contract: var(--contract);
+  --shadow-sh1: var(--sh1);
+  --shadow-sh2: var(--sh2);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --animate-rise: rise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-pop: pop 0.45s cubic-bezier(0.2, 1.2, 0.4, 1) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(6px);
+  }
+}
+
+body {
+  background: var(--shell);
+  color: var(--ink);
+}
+
+/* indentation guides for the trace tree */
+.tree-guides {
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 13px,
+    var(--guide) 13px 14.5px,
+    transparent 14.5px 24px
+  );
+}
+
+.dot-grid {
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--guide) 80%, transparent) 1.2px,
+    transparent 1.2px
+  );
+}
+
+/* Solidity syntax colours */
+.tok-keyword {
+  color: #c2410c;
+}
+.tok-type {
+  color: #0e7490;
+}
+.tok-string {
+  color: #4d7c0f;
+}
+.tok-comment {
+  color: #a4a7ae;
+  font-style: italic;
+}
+.tok-number {
+  color: #b45309;
+}
+.dark .tok-keyword {
+  color: #ff9b6b;
+}
+.dark .tok-type {
+  color: #5fd0e0;
+}
+.dark .tok-string {
+  color: #a7d675;
+}
+.dark .tok-comment {
+  color: #666b7e;
+}
+.dark .tok-number {
+  color: #f0b85a;
+}
