@@ -2,6 +2,7 @@
 
 import { Panel } from "@/components/ui";
 import type { AtlasModel, CitySim } from "@/features/atlas";
+import { linesOf, pieceAtLine } from "@/features/atlas/utils/audit";
 import { STEP_VERB } from "@/features/atlas/utils/units";
 import { CodeView } from "../source/CodeView";
 
@@ -10,14 +11,16 @@ export function ContractSource({
   model,
   selected,
   sim,
+  onSelect,
 }: {
   model: AtlasModel;
   selected: string | null;
   sim: CitySim;
+  onSelect: (id: string | null) => void;
 }) {
   const p = selected ? model.byId[selected] : null;
   const start = p ? model.lineOf(p) : 0;
-  const lines = p ? Array.from({ length: p.n ?? 1 }, (_, i) => start + i) : [];
+  const lines = p ? linesOf(model, p) : [];
   const bad = model.findings.flatMap((f) =>
     (f.mark ?? [0]).map((m) => model.lineOf(f) + m),
   );
@@ -48,7 +51,7 @@ export function ContractSource({
           </>
         ) : (
           <span className="text-dim hud-label">
-            Select a building · red = finding
+            Select a building or click a line · red = finding
           </span>
         )}
       </p>
@@ -57,6 +60,10 @@ export function ContractSource({
         lines={lines}
         bad={bad}
         current={current}
+        onLine={(n) => {
+          const id = pieceAtLine(model, n);
+          if (id) onSelect(id);
+        }}
       />
     </Panel>
   );

@@ -16,6 +16,7 @@ export function CodeView({
   notes,
   bad = [],
   current,
+  onLine,
 }: {
   source: string;
   /** 0-based lines to highlight. */
@@ -26,6 +27,8 @@ export function CodeView({
   current?: number;
   /** 0-based line → tags shown at the end of the line. */
   notes?: Record<number, string[]>;
+  /** click on a line (0-based); lines become pointer targets when set */
+  onLine?: (n: number) => void;
 }) {
   const ref = useRef<HTMLPreElement>(null);
   // Lines/tokens are positional; give them stable ids up front.
@@ -54,13 +57,23 @@ export function CodeView({
   }, [first]);
 
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: pointer shortcut; keyboard users jump via quick search (/)
     <pre
       ref={ref}
-      className="relative flex-1 overflow-auto bg-tray py-2.5 pb-10 font-mono text-xs leading-[1.8]"
+      onClick={
+        onLine &&
+        ((e) => {
+          const n = (e.target as HTMLElement).closest<HTMLElement>("[data-n]")
+            ?.dataset.n;
+          if (n != null && !getSelection()?.toString()) onLine(Number(n));
+        })
+      }
+      className={`relative flex-1 overflow-auto bg-tray py-2.5 pb-10 font-mono text-xs leading-[1.8] ${onLine ? "[&>span]:cursor-pointer [&>span:hover]:bg-soft" : ""}`}
     >
       {lines.map((line) => (
         <span
           key={line.id}
+          data-n={line.n}
           className={`block pr-3.5 transition-colors ${
             line.n === current
               ? red.has(line.n)
