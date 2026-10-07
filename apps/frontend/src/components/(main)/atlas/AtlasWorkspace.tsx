@@ -8,17 +8,15 @@ import {
   createAtlasModel,
 } from "@/features/atlas";
 import { AtlasDashboard } from "./AtlasDashboard";
-import { AtlasStage } from "./AtlasStage";
 import { CityStage } from "./CityStage";
 import { ExplorerView } from "./ExplorerView";
 import { PieceInspector } from "./PieceInspector";
-import { TerminalView } from "./TerminalView";
 import "./atlas.css";
 
-/** Smart-contract visual: 3D layered atlas + terminal I/O HUD, sharing one selection. */
+/** Smart-contract visual: 3D city + radial explorer, sharing one selection. */
 export function AtlasWorkspace({ source }: { source: AtlasSource }) {
   const model = useMemo(() => createAtlasModel(source.data), [source.data]);
-  const [view, setView] = useState<AtlasView>("atlas");
+  const [view, setView] = useState<AtlasView>("city");
   const [selected, setSelected] = useState<string | null>(null);
 
   useEffect(() => {
@@ -36,10 +34,8 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
           value={view}
           onChange={setView}
           options={[
-            { value: "atlas", label: "Contract atlas" },
             { value: "city", label: "City" },
             { value: "explorer", label: "Explorer" },
-            { value: "terminal", label: "Terminal I/O" },
           ]}
         />
         <div className="ml-auto flex items-center gap-2 self-center">
@@ -60,18 +56,8 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
               onSelect={setSelected}
             />
           </section>
-        ) : view === "city" ? (
-          <CityStage model={model} selected={selected} onSelect={setSelected} />
         ) : (
-          <AtlasStage model={model} selected={selected} onSelect={setSelected}>
-            {view === "terminal" && (
-              <TerminalView
-                model={model}
-                selected={selected}
-                onSelect={setSelected}
-              />
-            )}
-          </AtlasStage>
+          <CityStage model={model} selected={selected} onSelect={setSelected} />
         )}
         <aside>
           {selected ? (
