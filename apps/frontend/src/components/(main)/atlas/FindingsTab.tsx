@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Chip, ToggleChip } from "@/components/ui";
+import { Button, Chip, ToggleChip } from "@/components/ui";
 import type {
   AtlasModel,
   FindingTool,
@@ -76,7 +76,7 @@ export function FindingsTab({
             onToggle={() => setTools(toggle(tools, t))}
           />
         ))}
-        <span className="mx-1 h-4 w-px bg-line" />
+        <span className="w-2" />
         {SEVERITIES.map((s) => (
           <ToggleChip
             key={s}
@@ -88,8 +88,8 @@ export function FindingsTab({
         <span className="ml-auto text-dim ui-label">
           {shown.length}/{all.length} shown · {triage.dismissed.size} dismissed
         </span>
-        <button
-          type="button"
+        <Button
+          size="sm"
           disabled={!confirmed}
           onClick={download}
           title={
@@ -97,12 +97,11 @@ export function FindingsTab({
               ? "Download confirmed findings as Markdown"
               : "Confirm findings in the inspector to include them"
           }
-          className="border border-line bg-tray px-3 py-1.5 text-muted transition-colors ui-label enabled:hover:border-accent enabled:hover:text-ink disabled:opacity-40"
         >
           Report · {confirmed} confirmed ↓
-        </button>
+        </Button>
       </div>
-      <div className="flex gap-2.5 overflow-x-auto pt-2.5 pb-1">
+      <div className="flex gap-2.5 overflow-x-auto pt-2.5 pb-2">
         {shown.map((f) => {
           const on = selected === f.id;
           const t = triage.get(f.id);
@@ -112,10 +111,10 @@ export function FindingsTab({
               type="button"
               key={f.id}
               onClick={() => onSelect(on ? null : f.id)}
-              className={`relative flex w-[300px] flex-none flex-col gap-1.5 border px-3 py-2.5 text-left transition-[colors,opacity] ${
+              className={`relative flex w-[300px] flex-none flex-col gap-1.5 rounded-card border px-3 py-2.5 text-left shadow-soft transition-[colors,opacity] ${
                 on
-                  ? "border-accent bg-panel"
-                  : "border-line bg-tray hover:border-edge"
+                  ? "border-border-strong bg-hover shadow-float"
+                  : "border-transparent bg-surface hover:bg-raised"
               } ${isDismissed(t) ? "opacity-40" : ""}`}
             >
               <span className="flex items-center gap-1.5">
@@ -132,15 +131,16 @@ export function FindingsTab({
                 </Chip>
                 {t.status !== "open" && (
                   <Chip
-                    tone={t.status === "confirmed" ? "solid" : "neutral"}
+                    tone={t.status === "confirmed" ? "bad" : "neutral"}
+                    dot={t.status === "confirmed"}
                     className="ml-auto"
                   >
                     {TRIAGE_LABEL[t.status]}
                   </Chip>
                 )}
               </span>
-              <span className="truncate font-mono text-[13px] text-ink">
-                <span className="text-muted">{f.name.slice(0, 4)}</span>{" "}
+              <span className="truncate text-[13px] text-fg">
+                <span className="font-mono text-dim">{f.name.slice(0, 4)}</span>{" "}
                 {titleOf(f)}
               </span>
               <span className="truncate font-mono text-dim text-xs">

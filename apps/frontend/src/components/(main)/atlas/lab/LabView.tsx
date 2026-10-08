@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { SegmentedControl } from "@/components/ui";
+import {
+  Button,
+  FloatingDock,
+  IconButton,
+  Input,
+  SegmentedControl,
+  Select,
+  Toolbar,
+} from "@/components/ui";
 import type { AtlasModel } from "@/features/atlas";
 import { useScenarios } from "@/features/atlas/hooks/useScenarios";
 import { foundryTest } from "@/features/atlas/utils/lab-foundry";
@@ -9,6 +17,7 @@ import {
   connect,
   contractGraph,
   type GNode,
+  KIND_COLOR,
   PORT_COLOR,
   type PortType,
   revertsOf,
@@ -50,7 +59,7 @@ const ICONS: Record<string, string> = {
   help: "M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.5",
 };
 const Icon = ({ d }: { d: string }) => (
-  <svg viewBox="0 0 24 24" aria-hidden="true">
+  <svg viewBox="0 0 24 24" aria-hidden="true" className="lab-ico">
     <path d={d} />
   </svg>
 );
@@ -65,7 +74,7 @@ const download = (name: string, text: string, type = "text/plain") => {
 };
 
 /**
- * Lab: ShaderLab-style node editor. Contract mode = the contract as read-only cards wired from
+ * Lab: node editor. Contract mode = the contract as read-only cards wired from
  * the atlas; Scenario mode = wire actors, amounts and calls into a test of intended behaviour,
  * replay it symbolically and export it as a Foundry test.
  */
@@ -93,7 +102,7 @@ export function LabView({
     at: number;
     id: string;
   } | null>(null);
-  const [note, setNote] = useState<string | null>(null);
+  const [note, setNote] = useState<{ text: string; ok: boolean } | null>(null);
   const store = useScenarios(model.contract, () =>
     templates(model).map((t) => t.build()),
   );
@@ -249,9 +258,9 @@ export function LabView({
     if (!sc) return;
     try {
       await navigator.clipboard.writeText(JSON.stringify(sc, null, 1));
-      setNote("Scenario JSON copied");
+      setNote({ text: "Scenario JSON copied", ok: true });
     } catch {
-      setNote("Clipboard blocked");
+      setNote({ text: "Clipboard blocked", ok: false });
     }
   };
   useEffect(() => {
@@ -392,51 +401,17 @@ export function LabView({
   };
 
   const tool = (k: string, title: string, on: () => void, active = false) => (
-    <button
-      type="button"
-      title={title}
-      aria-label={title}
-      aria-pressed={active}
-      onClick={on}
-    >
+    <IconButton label={title} active={active} onClick={on}>
       <Icon d={ICONS[k]} />
-    </button>
+    </IconButton>
   );
   const toggle = (p: Panel) => setPanel(panel === p ? null : p);
   const res = live?.res;
 
   return (
-    <div className="lab">
-      <nav className="lab-tools" aria-label="Lab tools">
-        {tool(
-          "add",
-          "Add node",
-          () => {
-            setMode("scenario");
-            toggle("add");
-          },
-          panel === "add",
-        )}
-        {tool(
-          "code",
-          "Generated Foundry test",
-          () => toggle("code"),
-          panel === "code",
-        )}
-        {tool(
-          "settings",
-          "Settings",
-          () => toggle("settings"),
-          panel === "settings",
-        )}
-        {tool("export", "Export .t.sol", exportTest)}
-        {tool("share", "Copy scenario JSON", share)}
-        <span className="grow" />
-        {tool("help", "Help", () => toggle("help"), panel === "help")}
-      </nav>
-
-      <div className="lab-main">
-        <div className="lab-top" data-no-pan>
+    <div className="lab-main">
+      <div data-no-pan className="absolute top-3 left-3 z-[4]">
+        <Toolbar>
           <SegmentedControl
             value={mode}
             onChange={(m) => {
@@ -456,10 +431,74 @@ export function LabView({
               },
             ]}
           />
-          {mode === "scenario" && sc && (
-            <>
-              <select
-                className="lab-sel"
+        </Toolbar>
+      </div>
+      <nav
+        data-no-pan
+        aria-label="Lab tools"
+        className="absolute top-[64px] left-3 z-[4]"
+      >
+        <Toolbar vertical>
+          {tool(
+            "add",
+            "Add node",
+            () => {
+              setMode("scenario");
+              toggle("add");
+            },
+            panel === "add",
+          )}
+          {tool(
+            "code",
+            "Generated Foundry test",
+            () => toggle("code"),
+            panel === "code",
+          )}
+          {tool(
+            "settings",
+            "Settings",
+            () => toggle("settings"),
+            panel === "settings",
+          )}
+          {tool("export", "Export .t.sol", exportTest)}
+          {tool("share", "Copy scenario JSON", share)}
+          {tool("help", "Help", () => toggle("help"), panel === "help")}
+        </Toolbar>
+      </nav>
+
+      <LabCanvas
+        nodes={graph.nodes}
+        wires={graph.wires}
+        editable={mode === "scenario"}
+        selected={card}
+        selWire={selWire}
+        hot={hot}
+        onSelect={pick}
+        onSelectWire={setSelWire}
+        onMove={move}
+        onConnect={mode === "scenario" ? wire : undefined}
+        onDisconnect={unwire}
+        runs={mode === "scenario" ? shown : undefined}
+        pulse={pulse}
+        widgets={widgets}
+        fitKey={`${mode}:${mode === "scenario" ? sc?.id : model.contract}`}
+      />
+
+      <p className="pointer-events-none absolute top-5 right-4 z-[3] m-0 max-w-[45%] text-right text-[12px] text-dim">
+        {mode === "contract"
+          ? "Read-only · drag cards, drag the background to pan, scroll to zoom"
+          : "Drag from a port to wire it · Delete removes the selection"}
+      </p>
+
+      {mode === "scenario" && sc && (
+        <div
+          data-no-pan
+          className="absolute bottom-3 left-1/2 z-[4] w-max max-w-[calc(100%-140px)] -translate-x-1/2"
+        >
+          <FloatingDock>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Select
+                className="max-w-[200px]"
                 value={sc.id}
                 onChange={(e) => store.select(e.target.value)}
                 aria-label="Scenario"
@@ -469,17 +508,17 @@ export function LabView({
                     {s.name}
                   </option>
                 ))}
-              </select>
-              <input
-                className="lab-name"
+              </Select>
+              <Input
+                className="w-[200px]"
                 value={sc.name}
                 aria-label="Scenario name"
                 onChange={(e) =>
                   edit((s) => ({ ...s, name: e.target.value }), true)
                 }
               />
-              <select
-                className="lab-sel"
+              <Select
+                className="max-w-[150px]"
                 value=""
                 aria-label="New from template"
                 onChange={(e) => {
@@ -497,234 +536,198 @@ export function LabView({
                   setRun(null);
                 }}
               >
-                <option value="">+ New…</option>
+                <option value="">New…</option>
                 <option value="blank">Blank scenario</option>
                 {templates(model).map((t) => (
                   <option key={t.name} value={t.name}>
                     Template · {t.name}
                   </option>
                 ))}
-              </select>
-            </>
-          )}
-          <span className="grow" />
-          {mode === "scenario" && (
-            <>
-              <button
-                type="button"
-                className="lab-btn run"
+              </Select>
+              <Button
+                variant="primary"
                 onClick={start}
-                disabled={!sc?.nodes.length}
+                disabled={!sc.nodes.length}
               >
                 ▶ Run
-              </button>
-              <button
-                type="button"
-                className="lab-btn"
-                onClick={exportTest}
-                disabled={!sc}
-              >
-                Export .t.sol ↓
-              </button>
-            </>
+              </Button>
+              <Button onClick={exportTest}>Export .t.sol ↓</Button>
+            </div>
+          </FloatingDock>
+        </div>
+      )}
+
+      {panel === "add" && (
+        <div className="lab-float lab-pop add" data-no-pan>
+          <h4>Add node</h4>
+          <button type="button" onClick={() => add("actor")}>
+            <i style={{ background: PORT_COLOR.actor }} /> Actor
+          </button>
+          <button type="button" onClick={() => add("const")}>
+            <i style={{ background: PORT_COLOR.amount }} /> Constant amount
+          </button>
+          {model.entry.map((fn) => (
+            <button type="button" key={fn} onClick={() => add("call", fn)}>
+              <i style={{ background: KIND_COLOR.call }} /> Call{" "}
+              {fnName(model.byId[fn])}
+              <em>{model.byId[fn]?.caller ?? "anyone"}</em>
+            </button>
+          ))}
+          <button type="button" onClick={() => add("expect")}>
+            <i style={{ background: PORT_COLOR.revert }} /> Expect revert
+          </button>
+          <button type="button" onClick={() => add("assert")}>
+            <i style={{ background: PORT_COLOR.bool }} /> Assert
+          </button>
+          <button type="button" onClick={() => add("snapshot")}>
+            <i style={{ background: PORT_COLOR.slot }} /> Snapshot
+          </button>
+        </div>
+      )}
+      {panel === "settings" && (
+        <div className="lab-float lab-pop" data-no-pan>
+          <h4>Settings</h4>
+          <label className="chk">
+            <input
+              type="checkbox"
+              checked={snap}
+              onChange={() => setSnap(!snap)}
+            />{" "}
+            Snap cards to grid
+          </label>
+          <button type="button" onClick={() => setMoved({})}>
+            Reset contract layout
+          </button>
+          {sc && (
+            <button
+              type="button"
+              className="bad"
+              onClick={() => store.remove(sc.id)}
+            >
+              Delete scenario “{sc.name}”
+            </button>
           )}
         </div>
-
-        <LabCanvas
-          nodes={graph.nodes}
-          wires={graph.wires}
-          editable={mode === "scenario"}
-          selected={card}
-          selWire={selWire}
-          hot={hot}
-          onSelect={pick}
-          onSelectWire={setSelWire}
-          onMove={move}
-          onConnect={mode === "scenario" ? wire : undefined}
-          onDisconnect={unwire}
-          runs={mode === "scenario" ? shown : undefined}
-          pulse={pulse}
-          widgets={widgets}
-          fitKey={`${mode}:${mode === "scenario" ? sc?.id : model.contract}`}
-        />
-
-        <p className="lab-hint">
-          {mode === "contract"
-            ? "Read-only · drag cards, drag background to pan, scroll to zoom · click a card to open it"
-            : "Drag from a socket to wire (types must match) · Delete removes the selection · ▶ Run replays it"}
-        </p>
-
-        {panel === "add" && (
-          <div className="lab-pop add" data-no-pan>
-            <h4>Add node</h4>
-            <button type="button" onClick={() => add("actor")}>
-              <i style={{ background: PORT_COLOR.actor }} /> Actor
-            </button>
-            <button type="button" onClick={() => add("const")}>
-              <i style={{ background: PORT_COLOR.amount }} /> Constant amount
-            </button>
-            {model.entry.map((fn) => (
-              <button type="button" key={fn} onClick={() => add("call", fn)}>
-                <i style={{ background: "#e0873a" }} /> Call{" "}
-                {fnName(model.byId[fn])}
-                <em>{model.byId[fn]?.caller ?? "anyone"}</em>
-              </button>
+      )}
+      {panel === "code" && test && (
+        <div className="lab-float lab-pop code" data-no-pan>
+          <h4>
+            {test.file}
+            <Button size="sm" onClick={exportTest}>
+              Download ↓
+            </Button>
+          </h4>
+          <p>
+            Run it: <code>node luora-scenario.mjs ~/Downloads/{test.file}</code>{" "}
+            in foundry/
+          </p>
+          <pre>{test.source}</pre>
+        </div>
+      )}
+      {panel === "help" && (
+        <div className="lab-float lab-pop help" data-no-pan>
+          <h4>Lab</h4>
+          <p>
+            Scenarios test intended behaviour: access control holds, accounting
+            stays consistent, pause works, funds round-trip. A failing assert is
+            a finding.
+          </p>
+          <ul className="legend">
+            {(Object.keys(PORT_COLOR) as PortType[]).map((t) => (
+              <li key={t}>
+                <i style={{ background: PORT_COLOR[t] }} />
+                {t === "actor"
+                  ? "actor / address"
+                  : t === "amount"
+                    ? "amount / uint"
+                    : t === "slot"
+                      ? "state slot"
+                      : t === "bool"
+                        ? "bool / assert"
+                        : t === "flow"
+                          ? "then (execution order)"
+                          : t}
+              </li>
             ))}
-            <button type="button" onClick={() => add("expect")}>
-              <i style={{ background: PORT_COLOR.revert }} /> Expect revert
-            </button>
-            <button type="button" onClick={() => add("assert")}>
-              <i style={{ background: PORT_COLOR.bool }} /> Assert
-            </button>
-            <button type="button" onClick={() => add("snapshot")}>
-              <i style={{ background: PORT_COLOR.slot }} /> Snapshot
-            </button>
-          </div>
-        )}
-        {panel === "settings" && (
-          <div className="lab-pop" data-no-pan>
-            <h4>Settings</h4>
-            <label className="chk">
-              <input
-                type="checkbox"
-                checked={snap}
-                onChange={() => setSnap(!snap)}
-              />{" "}
-              Snap cards to grid
-            </label>
-            <button type="button" onClick={() => setMoved({})}>
-              Reset contract layout
-            </button>
-            {sc && (
-              <button
-                type="button"
-                className="bad"
-                onClick={() => store.remove(sc.id)}
-              >
-                Delete scenario “{sc.name}”
-              </button>
-            )}
-          </div>
-        )}
-        {panel === "code" && test && (
-          <div className="lab-pop code" data-no-pan>
-            <h4>
-              {test.file}
-              <button type="button" onClick={exportTest}>
-                Download ↓
-              </button>
-            </h4>
-            <p>
-              Run it:{" "}
-              <code>node luora-scenario.mjs ~/Downloads/{test.file}</code> in
-              foundry/
-            </p>
-            <pre>{test.source}</pre>
-          </div>
-        )}
-        {panel === "help" && (
-          <div className="lab-pop help" data-no-pan>
-            <h4>Lab</h4>
-            <p>
-              Scenarios test intended behaviour: access control holds,
-              accounting stays consistent, pause works, funds round-trip. A
-              failing assert is a finding.
-            </p>
-            <ul className="legend">
-              {(Object.keys(PORT_COLOR) as PortType[]).map((t) => (
-                <li key={t}>
-                  <i style={{ borderColor: PORT_COLOR[t] }} />{" "}
-                  {t === "actor"
-                    ? "actor / address"
-                    : t === "amount"
-                      ? "amount / uint"
-                      : t === "slot"
-                        ? "state slot"
-                        : t === "bool"
-                          ? "bool / assert"
-                          : t === "flow"
-                            ? "then (execution order)"
-                            : t}
-                </li>
-              ))}
-            </ul>
-            <p className="dim">
-              / or ⌘K search · Esc clear · Delete remove · drag an input socket
-              to rewire
-            </p>
-          </div>
-        )}
+          </ul>
+          <p className="dim">
+            / or ⌘K search · Esc clears · Delete removes · drag a wired input to
+            rewire it
+          </p>
+        </div>
+      )}
 
-        {res && mode === "scenario" && (
-          <aside className="lab-run" data-no-pan>
-            <h4>
-              Run · {sc?.name}
-              <span>
-                {finished
-                  ? "done"
-                  : `${Math.min(live?.at ?? 0, res.order.length)}/${res.order.length}`}
-                <button
-                  type="button"
-                  className="x"
-                  aria-label="Close run"
-                  onClick={() => setRun(null)}
-                >
-                  ✕
-                </button>
-              </span>
-            </h4>
-            <ol>
-              {res.order.map((id, i) => {
-                const n = sc?.nodes.find((x) => x.id === id);
-                const r = shown[id];
-                const title =
-                  n?.kind === "call"
-                    ? `Call ${fnName(model.byId[n.fn] ?? ({ name: n.fn } as never))}`
-                    : n?.kind === "snapshot"
-                      ? "Snapshot"
-                      : "Assert";
-                return (
-                  <li key={id}>
-                    <button
-                      type="button"
-                      className={r ? r.status : "wait"}
-                      onClick={() => pick(id)}
-                    >
-                      <span>{String(i + 1).padStart(2, "0")}</span>
-                      <b>{title}</b>
-                      <em>{r ? r.head : "…"}</em>
-                    </button>
-                  </li>
-                );
-              })}
-            </ol>
-            {finished && (
-              <>
-                <p className={res.findings.length ? "bad" : "ok"}>
-                  {res.findings.length
-                    ? `▲ ${res.findings.length} finding${res.findings.length > 1 ? "s" : ""}`
-                    : Object.values(res.runs).some(
-                          (r) => r.status === "unknown",
-                        )
-                      ? "No failures · some checks need forge (symbolic values)"
-                      : "All checks hold"}
-                </p>
-                {res.findings.map((f) => (
-                  <div key={f.node + f.title} className="finding">
-                    <b>{f.title}</b>
-                    <span>{f.detail}</span>
-                    <span className="fix">Fix: {f.fix}</span>
-                  </div>
-                ))}
-                <button type="button" className="lab-btn" onClick={exportTest}>
-                  Export {test?.file} ↓
-                </button>
-              </>
-            )}
-          </aside>
-        )}
-        {note && <div className="lab-toast">{note}</div>}
-      </div>
+      {res && mode === "scenario" && (
+        <aside className="lab-float lab-run" data-no-pan>
+          <h4>
+            Run · {sc?.name}
+            <span>
+              {finished
+                ? "done"
+                : `${Math.min(live?.at ?? 0, res.order.length)}/${res.order.length}`}
+              <IconButton
+                size="sm"
+                label="Close run"
+                onClick={() => setRun(null)}
+              >
+                ✕
+              </IconButton>
+            </span>
+          </h4>
+          <ol>
+            {res.order.map((id, i) => {
+              const n = sc?.nodes.find((x) => x.id === id);
+              const r = shown[id];
+              const title =
+                n?.kind === "call"
+                  ? `Call ${fnName(model.byId[n.fn] ?? ({ name: n.fn } as never))}`
+                  : n?.kind === "snapshot"
+                    ? "Snapshot"
+                    : "Assert";
+              return (
+                <li key={id}>
+                  <button
+                    type="button"
+                    className={r ? r.status : "wait"}
+                    onClick={() => pick(id)}
+                  >
+                    <i />
+                    <span>{String(i + 1).padStart(2, "0")}</span>
+                    <b>{title}</b>
+                    <em>{r ? r.head : "…"}</em>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+          {finished && (
+            <>
+              <p>
+                {res.findings.length
+                  ? `${res.findings.length} finding${res.findings.length > 1 ? "s" : ""}`
+                  : Object.values(res.runs).some((r) => r.status === "unknown")
+                    ? "No failures · some checks need forge (symbolic values)"
+                    : "All checks hold"}
+              </p>
+              {res.findings.map((f) => (
+                <div key={f.node + f.title} className="finding">
+                  <b>{f.title}</b>
+                  <span>{f.detail}</span>
+                  <span className="fix">Fix: {f.fix}</span>
+                </div>
+              ))}
+              <Button size="sm" className="w-full" onClick={exportTest}>
+                Export {test?.file} ↓
+              </Button>
+            </>
+          )}
+        </aside>
+      )}
+      {note && (
+        <div className={`lab-float lab-toast ${note.ok ? "info" : ""}`}>
+          {note.text}
+        </div>
+      )}
     </div>
   );
 }

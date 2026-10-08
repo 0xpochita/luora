@@ -5,7 +5,7 @@ import { protocolOf } from "./protocols.ts";
 import { word } from "./step-lines.ts";
 
 /**
- * Lab node graph, ShaderLab style: cards with typed ports, wires between them. Pure logic only
+ * Lab node graph: cards with typed ports, wires between them. Pure logic only
  * (port typing, wire validation, socket positions, the read-only contract graph and its layout);
  * components/(main)/atlas/lab draws it.
  */
@@ -18,14 +18,15 @@ export type PortType =
   | "bool"
   | "revert"
   | "flow";
+/** Port dot colour (design tokens): yellow = caller / input, green = state, red = revert, violet = event. */
 export const PORT_COLOR: Record<PortType, string> = {
-  actor: "#3fd4f2",
-  amount: "#f4c542",
-  slot: "#2bc4a4",
-  event: "#a68bfa",
-  bool: "#f2f3f4",
-  revert: "#ff4545",
-  flow: "#8a8f96",
+  actor: "var(--yellow)",
+  amount: "var(--blue)",
+  slot: "var(--green)",
+  event: "var(--violet)",
+  bool: "var(--pink)",
+  revert: "var(--red)",
+  flow: "var(--muted)",
 };
 export type Port = { id: string; label: string; type: PortType };
 
@@ -40,18 +41,18 @@ export type NodeKind =
   | "expect"
   | "assert"
   | "snapshot";
-/** Title bar colour per card kind. */
+/** Status dot colour per card kind (shown before the title, above the card). */
 export const KIND_COLOR: Record<NodeKind, string> = {
-  entry: "#e0873a",
-  call: "#e0873a",
-  slot: "#1f9e86",
-  snapshot: "#1f9e86",
-  ext: "#3b8fd9",
-  event: "#7f62d9",
-  actor: "#2ba9c6",
-  const: "#c99a1e",
-  expect: "#c43c3c",
-  assert: "#8d9399",
+  entry: "var(--yellow)",
+  call: "var(--yellow)",
+  slot: "var(--green)",
+  snapshot: "var(--green)",
+  ext: "var(--blue)",
+  event: "var(--violet)",
+  actor: "var(--yellow)",
+  const: "var(--blue)",
+  expect: "var(--red)",
+  assert: "var(--muted)",
 };
 
 export type Badge = {
