@@ -4,10 +4,10 @@ import { type ReactNode, useEffect, useMemo, useRef } from "react";
 import { tokenize } from "@/features/trace";
 
 const NOTE_TONE: Record<string, string> = {
-  SLOAD: "border border-edge text-muted",
-  SSTORE: "border border-tick text-ink",
-  call: "bg-soft text-ink",
-  emit: "border border-dashed border-edge text-muted",
+  SLOAD: "bg-raised text-muted",
+  SSTORE: "bg-green/10 text-green",
+  call: "bg-blue/10 text-blue",
+  emit: "bg-violet/10 text-violet",
 };
 
 export function CodeView({
@@ -18,6 +18,7 @@ export function CodeView({
   current,
   gutter,
   onLine,
+  className = "",
 }: {
   source: string;
   /** 0-based lines to highlight. */
@@ -32,6 +33,7 @@ export function CodeView({
   gutter?: (line: number) => ReactNode;
   /** click on a line (0-based); lines become pointer targets when set */
   onLine?: (n: number) => void;
+  className?: string;
 }) {
   const ref = useRef<HTMLPreElement>(null);
   // Lines/tokens are positional; give them stable ids up front.
@@ -71,7 +73,7 @@ export function CodeView({
           if (n != null && !getSelection()?.toString()) onLine(Number(n));
         })
       }
-      className={`relative flex-1 overflow-auto bg-tray py-2.5 pb-10 font-mono text-xs leading-[1.8] ${onLine ? "[&>span]:cursor-pointer [&>span:hover]:bg-soft" : ""}`}
+      className={`relative flex-1 overflow-auto bg-inset py-2.5 pb-10 font-mono text-xs leading-[1.8] ${onLine ? "[&>span]:cursor-pointer [&>span:hover]:bg-hover" : ""} ${className}`}
     >
       {lines.map((line) => (
         <span
@@ -80,12 +82,12 @@ export function CodeView({
           className={`block pr-3.5 transition-colors ${
             line.n === current
               ? red.has(line.n)
-                ? "bg-bad/25 shadow-[inset_3px_0_var(--bad)]"
-                : "bg-accent/20 shadow-[inset_3px_0_var(--accent)]"
+                ? "bg-red/20 shadow-[inset_2px_0_var(--red)]"
+                : "bg-fg/12 shadow-[inset_2px_0_var(--fg)]"
               : red.has(line.n)
-                ? "bg-bad/12 shadow-[inset_2px_0_var(--bad)]"
+                ? "bg-red/10 shadow-[inset_2px_0_var(--red)]"
                 : on.has(line.n)
-                  ? "bg-accent/8 shadow-[inset_2px_0_var(--accent)]"
+                  ? "bg-fg/6 shadow-[inset_2px_0_var(--muted)]"
                   : ""
           }`}
         >
@@ -105,7 +107,7 @@ export function CodeView({
           {notes?.[line.n]?.map((tag) => (
             <span
               key={tag}
-              className={`ml-2 select-none px-1.5 py-px font-mono text-[9.5px] uppercase tracking-wider ${NOTE_TONE[tag] ?? "bg-soft"}`}
+              className={`ml-2 select-none rounded-chip px-1.5 py-px font-mono text-[10px] ${NOTE_TONE[tag] ?? "bg-raised text-muted"}`}
             >
               {tag}
             </span>

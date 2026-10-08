@@ -1,14 +1,26 @@
 "use client";
 
-import { KindIcon } from "@/components/ui";
+import { KindIcon, TONE_DOT, type Tone } from "@/components/ui";
 import { displayKind, type Frame, frameRows, human } from "@/features/trace";
 
-export const NODE_W = 320;
+export const NODE_W = 300;
+const TITLE_H = 24; // title row above the card
+const HEAD_H = 40; // kind row inside the card
+/** y of the ports / wire anchors, relative to the node top: centre of the kind row. */
+export const PORT_Y = TITLE_H + HEAD_H / 2;
+
 /** Card height from its row count, so layout never has to measure the DOM. */
 export function nodeHeight(f: Frame): number {
   const rows = frameRows(f).length;
-  return 58 + (rows ? rows * 29 + 10 : 0);
+  return TITLE_H + HEAD_H + (rows ? rows * 28 + 13 : 0);
 }
+
+const Port = ({ tone, side }: { tone: Tone; side: "l" | "r" }) => (
+  <span
+    className={`absolute size-2 rounded-full ring-2 ring-canvas ${TONE_DOT[tone]} ${side === "l" ? "-left-1" : "-right-1"}`}
+    style={{ top: HEAD_H / 2 - 4 }}
+  />
+);
 
 export function GraphNode({
   frame,
@@ -16,6 +28,7 @@ export function GraphNode({
   y,
   order,
   selected,
+  hasOut,
   dragging = false,
   onSelect,
   onDragStart,
@@ -25,66 +38,80 @@ export function GraphNode({
   y: number;
   order: number;
   selected: boolean;
+  /** draws the output port (node has children) */
+  hasOut: boolean;
   dragging?: boolean;
   onSelect: () => void;
   onDragStart?: (e: React.PointerEvent) => void;
 }) {
   const kind = displayKind(frame);
   const rows = frameRows(frame);
+  const status: Tone = !frame.ok ? "bad" : kind === "EVENT" ? "violet" : "ok";
   return (
     <button
       type="button"
       data-no-pan
       onClick={onSelect}
       onPointerDown={onDragStart}
+      aria-pressed={selected}
       style={{
         left: x,
         top: y,
         width: NODE_W,
         animationDelay: `${Math.min(order * 30, 700)}ms`,
       }}
-      className={`absolute animate-pop touch-none select-none border bg-panel ${dragging ? "z-10 cursor-grabbing shadow-[0_12px_32px_rgba(0,0,0,.6)]" : "cursor-grab"} p-1.5 text-left font-mono text-xs transition-colors ${
-        selected
-          ? "border-accent"
-          : frame.ok
-            ? "border-line hover:border-edge"
-            : "border-bad/70"
-      }`}
+      className={`group absolute flex animate-pop touch-none select-none flex-col text-left font-mono text-xs ${dragging ? "z-10 cursor-grabbing" : "cursor-grab"}`}
     >
-      <div className="flex items-center gap-2 px-2 pt-2 pb-2.5">
-        <KindIcon kind={kind} size="lg" />
-        <div className="flex min-w-0 flex-col">
-          <b className="truncate font-semibold text-[13px]">
-            <span className="font-normal text-muted">{frame.to}</span>.
-            {frame.fn}
-          </b>
-          <span className="text-[9.5px] text-dim ui-label">{kind}</span>
-        </div>
+      <span
+        className="flex items-center gap-2 px-1 text-[12.5px]"
+        style={{ height: TITLE_H }}
+      >
+        <span
+          className={`size-1.5 flex-none rounded-full ${TONE_DOT[status]}`}
+        />
+        <span className="truncate text-fg">
+          <span className="text-muted">{frame.to}</span>.{frame.fn}
+        </span>
         {frame.gas != null && kind !== "EVENT" && (
-          <span className="ml-auto flex-none whitespace-nowrap border border-line px-1.5 py-px text-[10px] text-dim">
+          <span className="ml-auto flex-none text-[11px] text-dim">
             {frame.gas.toLocaleString()} gas
           </span>
         )}
-      </div>
-      {rows.length > 0 && (
-        <div className="divide-y divide-line border border-line bg-tray py-0.5">
-          {rows.map((r) => (
-            <div
-              key={r.key}
-              className="flex gap-2.5 whitespace-nowrap px-3 py-1.5"
-            >
-              <span className="text-dim uppercase tracking-[0.1em]">
-                {r.key}
-              </span>
+      </span>
+      <span
+        className={`relative flex flex-col rounded-card border bg-surface transition-[border-color,box-shadow] ${
+          selected || dragging
+            ? "border-border-strong shadow-float"
+            : "border-border shadow-soft group-hover:border-border-strong"
+        }`}
+      >
+        <Port tone="warn" side="l" />
+        {hasOut && <Port tone={frame.ok ? "ok" : "bad"} side="r" />}
+        <span
+          className="flex items-center gap-2 px-2.5 font-sans text-[12.5px] text-muted"
+          style={{ height: HEAD_H }}
+        >
+          <KindIcon kind={kind} size="sm" />
+          {kind.toLowerCase()}
+        </span>
+        {rows.length > 0 && (
+          <span className="mx-[5px] mb-[5px] block rounded-inner bg-inset py-1">
+            {rows.map((r) => (
               <span
-                className={`ml-auto truncate ${r.tone === "ok" ? "text-ok" : r.tone === "bad" ? "text-bad" : "text-ink"}`}
+                key={r.key}
+                className="flex h-7 items-center gap-2.5 whitespace-nowrap px-2.5"
               >
-                {r.tone === "bad" ? r.value : human(r.value)}
+                <span className="text-dim">{r.key}</span>
+                <span
+                  className={`ml-auto truncate ${r.tone === "ok" ? "text-green" : r.tone === "bad" ? "text-red" : "text-fg"}`}
+                >
+                  {r.tone === "bad" ? r.value : human(r.value)}
+                </span>
               </span>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </span>
+        )}
+      </span>
     </button>
   );
 }

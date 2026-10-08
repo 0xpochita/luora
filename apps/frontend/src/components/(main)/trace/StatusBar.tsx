@@ -12,16 +12,16 @@ export function StatusBar({
 }) {
   const pass = test.status === "Success";
   return (
-    <div className="mb-3 flex flex-wrap items-center gap-2.5 border border-line bg-tray px-3 py-2 text-muted text-xs">
+    <div className="mb-3 flex flex-wrap items-center gap-2.5 rounded-tile bg-inset px-2 py-1.5 text-muted text-xs">
       <Chip tone={pass ? "ok" : "bad"} dot>
         {pass ? "Pass" : "Fail"}
       </Chip>
-      <code className="border border-line bg-card px-2 py-0.5 font-mono text-ink text-xs">
+      <code className="rounded-chip bg-raised px-2 py-1 font-mono text-fg text-xs">
         {command}
       </code>
       <span className="font-mono">{test.file}</span>
-      {test.reason && <span className="text-bad">{test.reason}</span>}
-      <span className="ml-auto ui-label text-dim">
+      {test.reason && <span className="text-red">{test.reason}</span>}
+      <span className="ml-auto pr-1 text-dim ui-label">
         Exported {new Date(exportedAt).toLocaleString()}
       </span>
     </div>

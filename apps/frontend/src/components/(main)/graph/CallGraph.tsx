@@ -10,10 +10,8 @@ import {
   layoutTree,
   usePanZoom,
 } from "@/features/trace";
-import { GraphNode, NODE_W, nodeHeight } from "./GraphNode";
+import { GraphNode, NODE_W, nodeHeight, PORT_Y } from "./GraphNode";
 import { ZoomControls } from "./ZoomControls";
-
-const ANCHOR = 28; // edge attaches at the card header
 
 export function CallGraph({
   frames,
@@ -61,9 +59,9 @@ export function CallGraph({
       p.node.children.map((c) => {
         const q = at.get(c.index);
         const x1 = p.x + NODE_W;
-        const y1 = p.y + ANCHOR;
+        const y1 = p.y + PORT_Y;
         const x2 = q?.x ?? 0;
-        const y2 = (q?.y ?? 0) + ANCHOR;
+        const y2 = (q?.y ?? 0) + PORT_Y;
         return {
           id: `${p.node.index}-${c.index}`,
           to: c.index,
@@ -126,9 +124,9 @@ export function CallGraph({
   return (
     <div
       ref={vp}
-      className="dot-grid relative h-full min-h-[440px] cursor-grab overflow-hidden border border-line bg-tray active:cursor-grabbing"
+      className="dot-grid relative h-full min-h-[440px] cursor-grab overflow-hidden rounded-inner active:cursor-grabbing"
       style={{
-        backgroundSize: `${24 * view.k}px ${24 * view.k}px`,
+        backgroundSize: `${22 * view.k}px ${22 * view.k}px`,
         backgroundPosition: `${view.x}px ${view.y}px`,
       }}
     >
@@ -148,37 +146,20 @@ export function CallGraph({
             const m = (e.x1 + e.x2) / 2;
             const on = e.to === selected;
             return (
-              <g key={e.id}>
-                <path
-                  d={`M${e.x1} ${e.y1} C${m} ${e.y1} ${m} ${e.y2} ${e.x2} ${e.y2}`}
-                  fill="none"
-                  className={on ? "stroke-accent" : "stroke-edge"}
-                  strokeWidth={on ? 1.6 : 1.2}
-                />
-                <rect
-                  x={e.x1 - 3.5}
-                  y={e.y1 - 3.5}
-                  width={7}
-                  height={7}
-                  className="fill-shell stroke-tick"
-                  strokeWidth={1.5}
-                />
-                <rect
-                  x={e.x2 - 3.5}
-                  y={e.y2 - 3.5}
-                  width={7}
-                  height={7}
-                  className="fill-shell stroke-tick"
-                  strokeWidth={1.5}
-                />
-              </g>
+              <path
+                key={e.id}
+                d={`M${e.x1} ${e.y1} C${m} ${e.y1} ${m} ${e.y2} ${e.x2} ${e.y2}`}
+                fill="none"
+                className={on ? "stroke-fg" : "stroke-[#3a3a40]"}
+                strokeWidth={on ? 1.5 : 1.2}
+              />
             );
           })}
         </svg>
         {edges.map((e) => (
           <span
             key={`l-${e.id}`}
-            className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap border border-line bg-shell px-1.5 py-px text-[9.5px] text-muted ui-label"
+            className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-chip bg-canvas px-1.5 py-px text-[11px] text-dim"
             style={{ left: (e.x1 + e.x2) / 2, top: (e.y1 + e.y2) / 2 }}
           >
             {e.label}
@@ -192,6 +173,7 @@ export function CallGraph({
             y={p.y}
             order={order}
             selected={selected === p.node.index}
+            hasOut={p.node.children.length > 0}
             dragging={dragId === p.node.index}
             onDragStart={startDrag(p.node.index)}
             onSelect={() => {
@@ -200,6 +182,12 @@ export function CallGraph({
           />
         ))}
       </div>
+      <span className="pointer-events-none absolute bottom-3 left-3.5 font-mono text-[12px] text-dim">
+        {placed.length} frames · {edges.length} calls
+      </span>
+      <span className="pointer-events-none absolute right-3.5 bottom-3 font-mono text-[12px] text-dim">
+        {Math.round(view.k * 100)}%
+      </span>
       <ZoomControls
         onIn={() => zoomAt(1.25)}
         onOut={() => zoomAt(0.8)}

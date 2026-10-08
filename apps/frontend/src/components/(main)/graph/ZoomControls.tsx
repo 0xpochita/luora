@@ -1,5 +1,7 @@
 "use client";
 
+import { IconButton, Toolbar } from "@/components/ui";
+
 export function ZoomControls({
   onIn,
   onOut,
@@ -12,37 +14,24 @@ export function ZoomControls({
   /** restore the auto layout after nodes were dragged */
   onReset?: () => void;
 }) {
-  const btn = "h-7 w-8 font-mono text-muted hover:bg-soft hover:text-ink";
   return (
-    <div
-      data-no-pan
-      className="absolute right-3 bottom-3 flex divide-x divide-line border border-edge bg-shell"
-    >
-      <button
-        type="button"
-        aria-label="Zoom out"
-        className={btn}
-        onClick={onOut}
-      >
-        −
-      </button>
-      <button type="button" aria-label="Fit" className={btn} onClick={onFit}>
-        ⤢
-      </button>
-      <button type="button" aria-label="Zoom in" className={btn} onClick={onIn}>
-        +
-      </button>
-      {onReset && (
-        <button
-          type="button"
-          aria-label="Reset layout"
-          title="Reset layout"
-          className={btn}
-          onClick={onReset}
-        >
-          ↺
-        </button>
-      )}
+    <div data-no-pan className="absolute top-1/2 right-3 -translate-y-1/2">
+      <Toolbar vertical>
+        <IconButton label="Zoom in" size="sm" onClick={onIn}>
+          +
+        </IconButton>
+        <IconButton label="Zoom out" size="sm" onClick={onOut}>
+          −
+        </IconButton>
+        <IconButton label="Fit" size="sm" onClick={onFit}>
+          ⤢
+        </IconButton>
+        {onReset && (
+          <IconButton label="Reset layout" size="sm" onClick={onReset}>
+            ↺
+          </IconButton>
+        )}
+      </Toolbar>
     </div>
   );
 }

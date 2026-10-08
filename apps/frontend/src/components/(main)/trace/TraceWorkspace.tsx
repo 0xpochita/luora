@@ -50,12 +50,10 @@ export function TraceWorkspace({ source }: { source: TraceSource }) {
     });
 
   if (!test)
-    return (
-      <p className="p-10 text-muted ui-label">No tests in luora-data.json.</p>
-    );
+    return <p className="p-10 text-muted">No tests in luora-data.json.</p>;
 
   return (
-    <div className="flex min-h-0 flex-1">
+    <div className="flex min-h-0 flex-1 gap-3 px-3 pb-3">
       <Sidebar>
         <TestList
           tests={data.tests}
@@ -66,7 +64,7 @@ export function TraceWorkspace({ source }: { source: TraceSource }) {
           }}
         />
       </Sidebar>
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col gap-3">
         <Topbar
           crumb={test.name}
           tests={data.tests.length}
@@ -74,8 +72,8 @@ export function TraceWorkspace({ source }: { source: TraceSource }) {
           forgeVersion={data.forgeVersion}
           origin={origin}
         />
-        <div className="flex min-h-0 flex-1">
-          <main className="flex min-w-0 flex-1 flex-col bg-panel">
+        <div className="flex min-h-0 flex-1 gap-3">
+          <main className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-soft">
             <TraceHeader
               title={test.name}
               mode={mode}
@@ -84,7 +82,7 @@ export function TraceWorkspace({ source }: { source: TraceSource }) {
               onToggle={toggle}
             />
             <div
-              className={`flex-1 overflow-auto p-5 ${mode === "graph" ? "flex flex-col" : ""}`}
+              className={`flex-1 overflow-auto px-5 pb-5 ${mode === "graph" ? "flex flex-col" : ""}`}
             >
               <StatusBar
                 test={test}

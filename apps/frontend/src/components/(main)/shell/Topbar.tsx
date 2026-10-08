@@ -14,14 +14,14 @@ export function Topbar({
   origin: "local" | "sample";
 }) {
   return (
-    <header className="flex h-10 flex-none items-center gap-2 border-line border-b px-4">
-      <nav className="flex min-w-0 items-center gap-2 text-dim ui-label">
+    <header className="flex h-8 flex-none items-center gap-2 px-1">
+      <nav className="flex min-w-0 items-center gap-2 text-[13px] text-dim">
         <span>Foundry</span>
         <span>/</span>
-        <span className="truncate text-ink">{crumb}</span>
+        <span className="truncate font-mono text-fg text-xs">{crumb}</span>
       </nav>
-      <div className="ml-auto flex items-center gap-2">
-        {origin === "sample" && <Chip>Sample data</Chip>}
+      <div className="ml-auto flex items-center gap-1.5">
+        {origin === "sample" && <Chip tone="warn">Sample data</Chip>}
         <Chip>Tests {tests}</Chip>
         <Chip>Sources {sources}</Chip>
         <Chip tone="ok" dot>

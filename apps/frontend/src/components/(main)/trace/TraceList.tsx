@@ -1,6 +1,5 @@
 "use client";
 
-import { Panel } from "@/components/ui";
 import { type DisplayKind, displayKind, type Frame } from "@/features/trace";
 import { TraceRow } from "./TraceRow";
 
@@ -20,8 +19,14 @@ export function TraceList({
     .map((frame, index) => ({ frame, index }))
     .filter(({ frame }) => !hidden.has(displayKind(frame)));
   return (
-    <Panel label="Frames" aside={`${visible.length} / ${frames.length}`}>
-      <div className="p-1.5">
+    <section>
+      <header className="flex items-center px-1 pb-1.5 text-[13px]">
+        <span className="text-fg">Frames</span>
+        <span className="ml-auto font-mono text-dim text-xs">
+          {visible.length} / {frames.length}
+        </span>
+      </header>
+      <div className="space-y-0.5">
         {visible.map(({ frame, index }, order) => (
           <TraceRow
             key={index}
@@ -34,6 +39,6 @@ export function TraceList({
           />
         ))}
       </div>
-    </Panel>
+    </section>
   );
 }
