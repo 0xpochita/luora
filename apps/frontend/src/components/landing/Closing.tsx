@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LogoMark } from "@/components/ui";
+import { CityHorizon } from "./CityHorizon";
 import { GitHubMark } from "./GitHubMark";
 import { DOCS, GITHUB } from "./Hero";
 import { Reveal } from "./motion";
@@ -249,16 +250,42 @@ export function Faq() {
   );
 }
 
-/** R8 (onorca.dev "Get Orca") + R2 (starburst) + R1 (beam): one closing card with the two actions. */
+/**
+ * R13 (ZERO) + R14 (SurveilTrack): the closing CTA and the footer share one full-bleed scene, a
+ * glowing horizon carrying a dark city. R2 starburst stays above the headline.
+ */
+export function Finale() {
+  return (
+    <section className="relative overflow-hidden bg-black">
+      <CityHorizon />
+      <div className="relative">
+        <FinalCta />
+        <Footer />
+      </div>
+    </section>
+  );
+}
+
+/** R8 (onorca.dev "Get Orca") + R2 (starburst): the two actions, no card, over the scene. */
 export function FinalCta() {
   return (
-    <section className="mx-auto max-w-[1240px] px-4 pb-24 md:px-6">
+    <div className="relative mx-auto max-w-[1240px] px-4 pt-28 pb-[clamp(200px,24vw,340px)] md:px-6 md:pt-36">
+      {/* R13: hairlines with '+' markers framing the headline */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-[46%] hidden md:block"
+      >
+        <span className="absolute left-0 h-px w-[18%] bg-gradient-to-r from-transparent to-white/20" />
+        <span className="absolute left-[18%] -mt-[4px] -ml-[4px] text-[10px] text-white/50 leading-none">
+          +
+        </span>
+        <span className="absolute right-0 h-px w-[18%] bg-gradient-to-l from-transparent to-white/20" />
+        <span className="absolute right-[18%] -mt-[4px] -mr-[4px] text-[10px] text-white/50 leading-none">
+          +
+        </span>
+      </div>
       <Reveal>
-        <div className="relative overflow-hidden rounded-[28px] border border-white/[.08] bg-[#0a0a0b] px-6 py-20 text-center md:py-28">
-          <div
-            aria-hidden="true"
-            className="lp-beam pointer-events-none absolute -top-10 left-1/2 h-[420px] w-[520px] -translate-x-1/2"
-          />
+        <div className="relative text-center">
           <svg
             aria-hidden="true"
             viewBox="-40 -40 80 80"
@@ -298,7 +325,7 @@ export function FinalCta() {
           </p>
         </div>
       </Reveal>
-    </section>
+    </div>
   );
 }
 
@@ -325,7 +352,7 @@ export function Footer() {
     },
   ];
   return (
-    <footer className="border-white/[.07] border-t">
+    <footer className="border-white/[.06] border-t bg-black/40 backdrop-blur-[2px]">
       <div className="mx-auto grid max-w-[1240px] gap-10 px-4 py-14 md:grid-cols-[2fr_1fr_1fr] md:px-6">
         <div>
           <span className="flex items-center gap-2.5">

@@ -3,8 +3,7 @@ import {
   Compare,
   Faq,
   Features,
-  FinalCta,
-  Footer,
+  Finale,
   Hero,
   Pillars,
   Proof,
@@ -33,8 +32,7 @@ export default async function Home() {
       <Compare />
       <Statement />
       <Faq />
-      <FinalCta />
-      <Footer />
+      <Finale />
     </main>
   );
 }

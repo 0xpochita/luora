@@ -21,6 +21,9 @@
  *  R5  pin/120823202500504610 ("Insights that actually — tell you something")
  *      → `Pillars` heading: one italic serif phrase (Instrument Serif, that phrase only);
  *   R12 QClay (pin 852728510751497559): dot-matrix panels, '+WORD+WORD' mono titles, dot compass,
+ *   R13 ZERO (user ref): full-bleed closing scene, glowing curved horizon, hairlines with '+' markers;
+ *   R14 SurveilTrack (user ref): that horizon is a dark city with lit roofs, windows, square markers
+ *      → `Finale` (CityHorizon.tsx + FinalCta + Footer).
  *      mono key-value footers → `Pillars` panels (Pillars.tsx), all drawn from the sample run.
  *        three cards in one rounded frame with monochrome isometric wireframes drawn in SVG.
  *  R6  brief: boutique cyber security statement (huge centred line on black, segmented pill)
@@ -53,7 +56,7 @@
  */
 
 export { Bento } from "./Bento";
-export { Compare, Faq, FinalCta, Footer, Statement } from "./Closing";
+export { Compare, Faq, FinalCta, Finale, Footer, Statement } from "./Closing";
 export { Proof } from "./Evidence";
 export { Features } from "./Features";
 export { Hero, WorksWith } from "./Hero";
