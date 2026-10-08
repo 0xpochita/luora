@@ -4,9 +4,9 @@ import { Tabs, ToggleChip } from "@/components/ui";
 import type { DisplayKind, TraceMode } from "@/features/trace";
 
 const FILTERS: { kind: DisplayKind; label: string }[] = [
-  { kind: "VM", label: "cheatcodes" },
-  { kind: "EVENT", label: "events" },
-  { kind: "STATICCALL", label: "view calls" },
+  { kind: "VM", label: "Cheatcodes" },
+  { kind: "EVENT", label: "Events" },
+  { kind: "STATICCALL", label: "View calls" },
 ];
 
 export function TraceHeader({
@@ -23,19 +23,26 @@ export function TraceHeader({
   onToggle: (k: DisplayKind) => void;
 }) {
   return (
-    <div className="border-line border-b px-5 pt-4">
-      <div className="flex items-end gap-3 pb-3">
-        <div className="min-w-0">
-          <p className="text-dim ui-label">Test / call trace</p>
-          <h1 className="mt-1 truncate font-mono font-semibold text-[20px] uppercase leading-tight tracking-[0.04em]">
-            {title}
-          </h1>
-          <p className="mt-1 text-muted text-xs">
-            Decoded call trace from your local{" "}
-            <code className="font-mono">forge test</code>. Click a frame to jump
-            to its source.
-          </p>
-        </div>
+    <div className="flex-none px-5 pt-4 pb-3">
+      <p className="text-dim ui-label">Test call trace</p>
+      <h1 className="mt-1 truncate font-medium font-mono text-[18px] text-fg leading-tight">
+        {title}
+      </h1>
+      <p className="mt-1 text-[13px] text-muted">
+        Decoded call trace from your local{" "}
+        <code className="font-mono text-xs">forge test</code>. Click a frame to
+        jump to its source.
+      </p>
+      <div className="mt-3 flex items-center gap-3">
+        <Tabs
+          value={mode}
+          onChange={onMode}
+          size="sm"
+          options={[
+            { value: "trace", label: "Trace" },
+            { value: "graph", label: "Graph" },
+          ]}
+        />
         <div className="ml-auto flex flex-none items-center gap-1.5">
           {FILTERS.map((f) => (
             <ToggleChip
@@ -47,15 +54,6 @@ export function TraceHeader({
           ))}
         </div>
       </div>
-      <Tabs
-        value={mode}
-        onChange={onMode}
-        className="pb-3"
-        options={[
-          { value: "trace", label: "Trace" },
-          { value: "graph", label: "Graph" },
-        ]}
-      />
     </div>
   );
 }

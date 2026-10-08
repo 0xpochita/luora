@@ -17,7 +17,7 @@ export function KindIcon({
     <span
       title={kind}
       className={`grid flex-none place-items-center rounded-[7px] font-mono ${dims} ${
-        kind === "REVERT" ? "bg-red/12 text-red" : "bg-raised text-tick"
+        kind === "REVERT" ? "bg-red/12 text-red" : "bg-raised text-muted"
       }`}
     >
       {KIND_ICON[kind]}

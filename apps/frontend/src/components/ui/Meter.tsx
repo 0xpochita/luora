@@ -1,7 +1,7 @@
 /** Rounded progress bar, 0–1. `tone` is a text colour class; the fill uses currentColor. */
 export function Meter({
   value,
-  tone = "text-tick",
+  tone = "text-muted",
   className = "w-16",
 }: {
   value: number;

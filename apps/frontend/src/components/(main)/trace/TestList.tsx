@@ -16,12 +16,12 @@ export function TestList({
     suites.set(t.suite, [...(suites.get(t.suite) ?? []), [t, i]]);
   }
   return (
-    <div>
+    <div className="space-y-3">
       {[...suites].map(([suite, items]) => (
-        <section key={suite}>
-          <h3 className="flex px-1 pt-3 pb-1.5 text-dim ui-label">
+        <section key={suite} className="space-y-0.5">
+          <h3 className="flex px-2.5 pb-1 text-dim ui-label">
             {suite}
-            <span className="ml-auto">{items.length}</span>
+            <span className="ml-auto font-mono">{items.length}</span>
           </h3>
           {items.map(([t, i]) => {
             const pass = t.status === "Success";
@@ -31,17 +31,18 @@ export function TestList({
                 key={`${t.suite}:${t.name}`}
                 type="button"
                 onClick={() => onSelect(i)}
-                className={`flex w-full items-center gap-2 border-l-2 px-2.5 py-1.5 text-left font-mono text-[12px] transition-colors ${
+                aria-current={on || undefined}
+                className={`flex h-8 w-full items-center gap-2.5 rounded-tile px-2.5 text-left font-mono text-[12px] transition-colors ${
                   on
-                    ? "border-accent bg-sel text-ink"
-                    : "border-transparent text-muted hover:bg-sel/60 hover:text-ink"
+                    ? "bg-raised text-fg"
+                    : "text-muted hover:bg-raised/60 hover:text-fg"
                 }`}
               >
                 <span
-                  className={`size-1.5 flex-none ${pass ? "bg-ok" : "bg-bad"}`}
+                  className={`size-1.5 flex-none rounded-full ${pass ? "bg-green" : "bg-red"}`}
                 />
                 <span className="truncate">{t.name}</span>
-                <small className="ml-auto text-dim ui-label">
+                <small className="ml-auto font-sans text-[11px] text-dim">
                   {testKind(t.kind)}
                 </small>
               </button>

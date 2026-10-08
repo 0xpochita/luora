@@ -23,13 +23,16 @@ export function TraceRow({
     <button
       type="button"
       onClick={onSelect}
+      aria-current={selected || undefined}
       style={{ animationDelay: `${Math.min(order * 35, 900)}ms` }}
-      className={`flex min-h-10 w-full animate-rise items-center gap-2.5 whitespace-nowrap border-l-2 py-1 pr-3 pl-1.5 text-left transition-colors ${
+      className={`flex min-h-10 w-full animate-rise items-center gap-2.5 whitespace-nowrap rounded-tile py-1 pr-3 pl-1.5 text-left transition-colors ${
         selected
-          ? "border-accent bg-sel"
+          ? frame.ok
+            ? "bg-hover"
+            : "bg-red/15"
           : frame.ok
-            ? "border-transparent hover:bg-soft"
-            : "border-bad bg-bad/7"
+            ? "hover:bg-raised"
+            : "bg-red/7 hover:bg-red/12"
       }`}
     >
       <span className="w-[22px] flex-none text-right font-mono text-[11px] text-dim">
@@ -43,23 +46,23 @@ export function TraceRow({
       <span className="font-mono text-[13px]">
         <span className="text-muted">{frame.to}</span>
         <span className="mx-px text-dim">.</span>
-        <span className="font-semibold">{frame.fn}</span>
+        <span className="font-medium text-fg">{frame.fn}</span>
       </span>
       <span className="flex min-w-0 gap-1.5 overflow-hidden">
         {splitArgs(frame.args).map(([k, v]) => (
           <span
             key={k}
-            className="whitespace-nowrap border border-line px-1.5 py-0.5 font-mono text-[11px]"
+            className="whitespace-nowrap rounded-chip bg-raised px-1.5 py-0.5 font-mono text-[11px] text-fg"
           >
-            <em className="mr-1.5 text-dim uppercase not-italic">{k}</em>
+            <em className="mr-1.5 text-dim not-italic">{k}</em>
             {v}
           </span>
         ))}
       </span>
       {frame.ret && (
         <span
-          className={`whitespace-nowrap border px-2 py-0.5 font-mono text-[11px] ${
-            frame.ok ? "border-ok/40 text-ok" : "border-bad/60 text-bad"
+          className={`whitespace-nowrap rounded-chip px-2 py-0.5 font-mono text-[11px] ${
+            frame.ok ? "bg-raised text-muted" : "bg-red/12 text-red"
           }`}
         >
           {frame.ok ? `→ ${human(frame.ret)}` : `✕ ${frame.ret}`}
