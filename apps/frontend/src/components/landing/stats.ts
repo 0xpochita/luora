@@ -18,7 +18,7 @@ import {
 } from "@/features/atlas/utils/lab-scenario";
 import { createAtlasModel } from "@/features/atlas/utils/model";
 import sample from "@/features/trace/fixtures/sample-trace.json";
-import type { Frame, LuoraData } from "@/features/trace/types";
+import type { Frame, LuoraData, TestResult } from "@/features/trace/types";
 
 type Run = LuoraData & { atlas?: AtlasData };
 
@@ -204,7 +204,7 @@ export async function demoAtlas(): Promise<AtlasData> {
 }
 
 /** The first decoded frames of one sample test (heavy per-line data dropped), for the Trace widget. */
-export async function traceFrames(): Promise<{
+export async function traceFrames(count = 5): Promise<{
   test: string;
   frames: Frame[];
 }> {
@@ -216,7 +216,9 @@ export async function traceFrames(): Promise<{
     data.tests[0];
   return {
     test: t.name,
-    frames: t.frames.slice(1, 6).map(({ lines: _l, storage: _s, ...f }) => f),
+    frames: t.frames
+      .slice(1, 1 + count)
+      .map(({ lines: _l, storage: _s, ...f }) => f),
   };
 }
 
@@ -277,4 +279,12 @@ export async function labDemo(): Promise<LabDemo | null> {
       ],
     },
   };
+}
+
+/** The forge tests of the sample run without their frames (TestList rows on the Run step). */
+export async function testRows(): Promise<TestResult[]> {
+  "use cache";
+  cacheLife("max");
+  const data = await readRun();
+  return data.tests.map((t) => ({ ...t, frames: [], transfers: [] }));
 }

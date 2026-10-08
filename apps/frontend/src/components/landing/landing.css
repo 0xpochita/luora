@@ -216,3 +216,56 @@
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
 }
+
+/* How Luora works (R22): faint hairline grid behind the frame; the lit plate and its note lift,
+   the steps column eases its rows. Reduced motion keeps the highlight, drops the movement. */
+.lp-frame {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 64px 64px;
+  background-position: -1px -1px;
+}
+.lp-plate {
+  transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.lp-plate[data-on] {
+  transform: translateY(-14px);
+}
+.lp-note {
+  margin-top: -14px;
+  transition: top 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.lp-steps {
+  transition: grid-template-rows 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.lp-fadein {
+  animation: lp-fade 0.5s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-plate,
+  .lp-steps,
+  .lp-note {
+    transition: none;
+  }
+  .lp-plate[data-on] {
+    transform: none;
+  }
+  .lp-note {
+    margin-top: 0;
+  }
+  .lp-fadein {
+    animation: none;
+  }
+}
+
+/* R26 hero close-up: the live app turned and tilted back, bleeding off the right and bottom;
+   only the far (bottom) edge fades. The stage spans the viewport so the mask never cuts a side. */
+.lp-closeup {
+  perspective: 2200px;
+  perspective-origin: 30% 0%;
+  mask-image: linear-gradient(to bottom, #000 72%, transparent);
+}
+.lp-tilt {
+  transform: rotateX(20deg) rotateZ(-6deg);
+}

@@ -23,8 +23,10 @@ import {
   type Port,
   portOf,
   portPos,
+  type Wire,
   wirePath,
 } from "@/features/atlas/utils/lab-graph";
+import type { Status } from "@/features/atlas/utils/lab-scenario";
 import { createAtlasModel } from "@/features/atlas/utils/model";
 import { displayKind, type Frame, human, splitArgs } from "@/features/trace";
 import type { LabDemo } from "./stats";
@@ -54,7 +56,7 @@ export function TraceWidget({
       aside="forge test -vvvv"
       className="w-full max-w-[560px]"
     >
-      <ol className="p-2">
+      <ol className="@container p-2">
         {frames.map((f, i) => {
           const kind = displayKind(f);
           const [arg] = splitArgs(f.args);
@@ -99,7 +101,7 @@ export function TraceWidget({
                 {f.gas != null && kind !== "EVENT" && (
                   <Meter
                     value={f.gas / maxGas}
-                    className="hidden w-12 md:block"
+                    className="hidden w-12 @[520px]:block"
                   />
                 )}
               </span>
@@ -111,7 +113,7 @@ export function TraceWidget({
   );
 }
 
-/** Lab: Actor → Call → Expect revert, laid out and run on the server (stats.ts `labDemo`). */
+/** Lab: Actor → Call → Expect revert, laid out and run on the server (stats.ts `labDemo`), shrunk to fit. */
 export function LabWidget({ nodes, wires, runs, fields }: LabDemo) {
   const W = Math.max(...nodes.map((n) => n.x + n.w));
   const box = useRef<HTMLDivElement>(null);
@@ -125,9 +127,47 @@ export function LabWidget({ nodes, wires, runs, fields }: LabDemo) {
     ro.observe(el);
     return () => ro.disconnect();
   }, [W]);
-  const byId = new Map(nodes.map((n) => [n.id, n]));
   const top = Math.min(...nodes.map((n) => n.y));
   const H = Math.max(...nodes.map((n) => n.y + nodeHeight(n))) - top;
+  return (
+    <div ref={box} className="w-full max-w-[560px]">
+      <div className="relative mx-auto" style={{ width: W * k, height: H * k }}>
+        <div
+          className="absolute top-0 left-0 origin-top-left"
+          style={{ width: W, height: H, transform: `scale(${k})` }}
+        >
+          <LabGraph nodes={nodes} wires={wires} runs={runs} fields={fields} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const STATUS_LABEL = {
+  pass: "Pass",
+  revert: "Revert",
+  fail: "Fail",
+  unknown: "?",
+} as const;
+
+/**
+ * The Lab canvas's card + wire markup (LabCanvas.tsx) without pan / zoom / editing, at 1:1 from the
+ * graph's top-left. Used by the Lab widget and the hero's Lab close-up (the app's contractGraph).
+ */
+export function LabGraph({
+  nodes,
+  wires,
+  runs = {},
+  fields = {},
+}: {
+  nodes: GNode[];
+  wires: Wire[];
+  runs?: Partial<Record<string, { status: Status; head: string }>>;
+  fields?: LabDemo["fields"];
+}) {
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  const left = Math.min(...nodes.map((n) => n.x));
+  const top = Math.min(...nodes.map((n) => n.y));
   const wired = (n: string, p: string, side: "in" | "out") =>
     wires.some((w) =>
       side === "in"
@@ -143,135 +183,152 @@ export function LabWidget({ nodes, wires, runs, fields }: LabDemo) {
     />
   );
   return (
-    <div ref={box} className="w-full max-w-[560px]">
-      <div className="relative mx-auto" style={{ width: W * k, height: H * k }}>
-        <div
-          className="absolute top-0 left-0 origin-top-left"
-          style={{ width: W, height: H, transform: `scale(${k})` }}
-        >
-          <svg
-            aria-hidden="true"
-            className="lab-wires"
-            style={{ top: -top, left: 0 }}
+    <div
+      className="absolute top-0 left-0"
+      style={{ transform: `translate(${-left}px, ${-top}px)` }}
+    >
+      <svg aria-hidden="true" className="lab-wires">
+        {wires.map((w) => {
+          const a = byId.get(w.from.node);
+          const b = byId.get(w.to.node);
+          if (!a || !b) return null;
+          const type = portOf(a, w.from.port, "out")?.type ?? "flow";
+          return (
+            <g
+              key={`${w.from.node}${w.from.port}${w.to.node}${w.to.port}`}
+              className={`wire ${type}`}
+            >
+              <path
+                className="vis"
+                d={wirePath(
+                  portPos(a, w.from.port, "out"),
+                  portPos(b, w.to.port, "in"),
+                )}
+              />
+            </g>
+          );
+        })}
+      </svg>
+      {nodes.map((n) => {
+        const r = runs[n.id];
+        const rows = Math.max(n.inputs.length, n.outputs.length);
+        return (
+          <div
+            key={n.id}
+            className={`lab-card ${n.kind} ${n.inputs.length && n.outputs.length ? "" : "solo"} ${r ? `run-${r.status}` : ""}`}
+            style={{
+              left: n.x,
+              top: n.y,
+              width: n.w,
+              height: nodeHeight(n),
+            }}
           >
-            {wires.map((w) => {
-              const a = byId.get(w.from.node);
-              const b = byId.get(w.to.node);
-              if (!a || !b) return null;
-              const type = portOf(a, w.from.port, "out")?.type ?? "flow";
-              return (
-                <g
-                  key={`${w.from.port}${w.to.node}`}
-                  className={`wire ${type}`}
+            <header className="!cursor-default">
+              {n.flow &&
+                sock(n, { id: "then", label: "then", type: "flow" }, "in")}
+              <span className="kdot" />
+              {n.logo && (
+                <span
+                  className="logo"
+                  style={{ backgroundImage: `url(${n.logo})` }}
+                />
+              )}
+              <b title={n.title}>{n.title}</b>
+              {n.badges?.map((b) => (
+                <span
+                  key={b.label}
+                  className={`badge ${b.tone}`}
+                  title={b.title}
                 >
-                  <path
-                    className="vis"
-                    d={wirePath(
-                      portPos(a, w.from.port, "out"),
-                      portPos(b, w.to.port, "in"),
-                    )}
-                  />
-                </g>
-              );
-            })}
-          </svg>
-          {nodes.map((n) => {
-            const r = runs[n.id];
-            const rows = Math.max(n.inputs.length, n.outputs.length);
-            return (
-              <div
-                key={n.id}
-                className={`lab-card ${n.kind} ${n.inputs.length && n.outputs.length ? "" : "solo"} ${r ? `run-${r.status}` : ""}`}
-                style={{
-                  left: n.x,
-                  top: n.y - top,
-                  width: n.w,
-                  height: nodeHeight(n),
-                }}
-              >
-                <header className="!cursor-default">
-                  {n.flow &&
-                    sock(n, { id: "then", label: "then", type: "flow" }, "in")}
-                  <span className="kdot" />
-                  <b title={n.title}>{n.title}</b>
-                  {r && (
-                    <span className={`badge st ${r.status}`} title={r.head}>
-                      <i />
-                      {r.status === "pass" ? "Pass" : "Revert"}
-                    </span>
-                  )}
-                  {n.flow &&
-                    sock(n, { id: "then", label: "then", type: "flow" }, "out")}
-                </header>
-                <div className="lab-body">
-                  <div className="lab-inner">
-                    <div className="kind">
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d={ICON_PATH[KIND_META[n.kind].icon]} />
-                      </svg>
-                      {KIND_META[n.kind].label}
-                    </div>
-                    {!!n.widgets && (
-                      <div>
-                        {fields[n.id]?.map((f) => (
-                          <div className="w" key={f.label}>
-                            <span>{f.label}</span>
-                            {f.select ? (
-                              <select
-                                defaultValue={f.value}
-                                tabIndex={-1}
-                                aria-label={f.label}
-                              >
-                                <option>{f.value}</option>
-                              </select>
-                            ) : (
-                              <input
-                                defaultValue={f.value}
-                                readOnly
-                                tabIndex={-1}
-                                aria-label={f.label}
-                              />
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {Array.from({ length: rows }, (_, i) => {
-                      const pi = n.inputs[i];
-                      const po = n.outputs[i];
-                      return (
-                        <div
-                          className="prow"
-                          key={`${pi?.id ?? ""}${po?.id ?? i}`}
-                        >
-                          {pi && (
-                            <span className="pin">
-                              {sock(n, pi, "in")}
-                              <em title={pi.label}>{pi.label}</em>
-                            </span>
-                          )}
-                          {po && (
-                            <span className="pout">
-                              <em title={po.label}>{po.label}</em>
-                              {sock(n, po, "out")}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <i />
+                  {b.label}
+                </span>
+              ))}
+              {r && (
+                <span className={`badge st ${r.status}`} title={r.head}>
+                  <i />
+                  {STATUS_LABEL[r.status]}
+                </span>
+              )}
+              {n.flow &&
+                sock(n, { id: "then", label: "then", type: "flow" }, "out")}
+            </header>
+            <div className="lab-body">
+              <div className="lab-inner">
+                <div className="kind">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d={ICON_PATH[KIND_META[n.kind].icon]} />
+                  </svg>
+                  {KIND_META[n.kind].label}
                 </div>
+                {!!n.widgets && (
+                  <div>
+                    {fields[n.id]?.map((f) => (
+                      <div className="w" key={f.label}>
+                        <span>{f.label}</span>
+                        {f.select ? (
+                          <select
+                            defaultValue={f.value}
+                            tabIndex={-1}
+                            aria-label={f.label}
+                          >
+                            <option>{f.value}</option>
+                          </select>
+                        ) : (
+                          <input
+                            defaultValue={f.value}
+                            readOnly
+                            tabIndex={-1}
+                            aria-label={f.label}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {Array.from({ length: rows }, (_, i) => {
+                  const pi = n.inputs[i];
+                  const po = n.outputs[i];
+                  return (
+                    <div className="prow" key={`${pi?.id ?? ""}${po?.id ?? i}`}>
+                      {pi && (
+                        <span className="pin">
+                          {sock(n, pi, "in")}
+                          <em title={pi.label}>{pi.label}</em>
+                        </span>
+                      )}
+                      {po && (
+                        <span className="pout">
+                          <em title={po.label}>{po.label}</em>
+                          {sock(n, po, "out")}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+                {n.rows?.map((t) => (
+                  <div className="trow" key={t} title={t}>
+                    {t}
+                  </div>
+                ))}
               </div>
-            );
-          })}
-        </div>
-      </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
 /** Findings: the app's tool / severity filter row over the first two finding cards (FindingsTab anatomy). */
-export function FindingsWidget({ atlas }: { atlas: AtlasData }) {
+export function FindingsWidget({
+  atlas,
+  cards = 2,
+}: {
+  atlas: AtlasData;
+  /** finding cards shown under the filters */
+  cards?: number;
+}) {
   const model = createAtlasModel(atlas);
   const all = model.findings;
   const present = TOOLS.filter((t) =>
@@ -316,7 +373,7 @@ export function FindingsWidget({ atlas }: { atlas: AtlasData }) {
         )}
       </div>
       <div className="m-2 mt-0 grid gap-2 rounded-inner border border-border bg-inner-grad p-2">
-        {shown.slice(0, 2).map((f) => {
+        {shown.slice(0, cards).map((f) => {
           const rs = reportsOf(f);
           return (
             <div
@@ -347,9 +404,9 @@ export function FindingsWidget({ atlas }: { atlas: AtlasData }) {
             </div>
           );
         })}
-        {shown.length > 2 && (
+        {shown.length > cards && (
           <span className="px-1 text-[12.5px] text-dim">
-            +{shown.length - 2} more in the app
+            +{shown.length - cards} more in the app
           </span>
         )}
         {!shown.length && (
@@ -363,11 +420,17 @@ export function FindingsWidget({ atlas }: { atlas: AtlasData }) {
 }
 
 /** Coverage: the app's own CoverageSummary card (test coverage + audit focus list). */
-export function CoverageWidget({ atlas }: { atlas: AtlasData }) {
+export function CoverageWidget({
+  atlas,
+  partly,
+}: {
+  atlas: AtlasData;
+  partly?: boolean;
+}) {
   const model = createAtlasModel(atlas);
   return (
-    <div className="w-full max-w-[440px]">
-      <CoverageSummary model={model} onSelect={() => {}} />
+    <div className="w-full max-w-[460px]">
+      <CoverageSummary model={model} onSelect={() => {}} partly={partly} />
     </div>
   );
 }

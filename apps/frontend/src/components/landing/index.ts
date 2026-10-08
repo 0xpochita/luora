@@ -62,9 +62,25 @@
  *        two cards, CoverageSummary — the app's own components / utils on the sample data,
  *        centred on the dot grid, nothing cut off.
  *
- * Product shots in public/landing/ are real captures of /trace and /atlas, never mock UI: hero-*.webp
- * are the bundled sample data (Playwright, content area only, 2×); b-*.webp are from a local
- * `node luora-export.mjs` run. Colour stays per DESIGN.md: grey/white,
+ * Fourth pass (2026-10-09, "feels like nothing changed": structural change), pins studied 2026-10-09:
+ *  R22 pin/774124931585644 (Valley Engine) — exploded iso stack of slab plates over dashed guides, the
+ *      active plate lit, a dashed leader with a square terminal out to a note with a vertical accent
+ *      bar on the column divider; numbered cells with small icons on the left; hairline grid frame
+ *      → `Features` is now 'How Luora works' (HowItWorks.tsx + IsoStack.tsx): sticky stage, four
+ *        scroll steps (Run / Trace / Lab / Findings & coverage), the open step lights its plate.
+ *  R23 pin/246501779599303620 (Dante) — tight vertical stack of rounded tiles with corner dots and
+ *      side vents, copy cells aligned left and right, small square markers on the dividers
+ *      → plate anatomy in IsoStack, the step cells and their divider markers.
+ *  R24 pin/152207662382464793 (TechCrunch layered stack) — a texture per layer, bullet labels on
+ *      short lines → each plate top drawn from the sample run, idle plates keep a '— • 0n' label.
+ *  R25 pin/700661654577045083 (S7 Interface Module 01) — huge index number → faint '01'..'04'.
+ *  R26 pin/3870349674475850 (Alfred workflow editor) — the product as a big, crisp, turned and
+ *      tilted close-up bleeding off the frame → `ProductTabs`: the app's own Lab contract graph,
+ *      TraceRow, FlowView, MapView and FindingsTab rendered live, no screenshots; R20's flat frame
+ *      and edge beam are gone.
+ *
+ * Product shots in public/landing/ (b-*.webp, Bento) are real captures of /trace and /atlas from a
+ * local `node luora-export.mjs` run, never mock UI; the hero and 'How Luora works' render the app live. Colour stays per DESIGN.md: grey/white,
  * red only on findings.
  */
 

@@ -1,59 +1,57 @@
 "use client";
 
-import Image from "next/image";
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { FindingsTab } from "@/components/(main)/atlas/FindingsTab";
+import { FlowView } from "@/components/(main)/atlas/flow/FlowView";
+import { MapView } from "@/components/(main)/atlas/map/MapView";
+import { TraceRow } from "@/components/(main)/trace/TraceRow";
+import { useStepSim, useTriage } from "@/features/atlas";
+import type { AtlasData } from "@/features/atlas/types";
+import { contractGraph } from "@/features/atlas/utils/lab-graph";
+import { createAtlasModel } from "@/features/atlas/utils/model";
+import type { Frame } from "@/features/trace";
+import { LabGraph } from "./FeatureWidgets";
 import { Window } from "./Window";
+import "@/components/(main)/atlas/atlas.css";
 
-const SHOTS = [
-  {
-    id: "lab",
-    route: "/atlas · Lab",
-    label: "Lab",
-    src: "/landing/hero-lab.webp",
-    alt: "Luora Lab: the LuoraVault contract graph with deposit and withdraw wired to storage slots and external contracts, forge coverage and the audit focus list on the right.",
-  },
-  {
-    id: "trace",
-    route: "/trace",
-    label: "Trace",
-    src: "/landing/hero-trace.webp",
-    alt: "Luora trace view of test_depositThenWithdraw with decoded frames and the contract source.",
-  },
-  {
-    id: "flow",
-    route: "/atlas · Flow",
-    label: "Flow",
-    src: "/landing/hero-flow.webp",
-    alt: "Flow view: every entry point of LuoraVault as a row of checks, reads, external calls and writes, with reverts and findings marked.",
-  },
-  {
-    id: "map",
-    route: "/atlas · Map",
-    label: "Map",
-    src: "/landing/hero-map.webp",
-    alt: "Map view: the contract hub with entry points, storage, external dependencies, events and the findings list.",
-  },
-  {
-    id: "findings",
-    route: "/atlas · Findings",
-    label: "Findings",
-    src: "/landing/hero-findings.webp",
-    alt: "Findings tray with tool and severity filters and finding cards, F-01 External call before state update open in the inspector next to its flagged source lines.",
-  },
-];
+const VIEWS = [
+  { id: "lab", route: "/atlas · Lab", label: "Lab" },
+  { id: "trace", route: "/trace", label: "Trace" },
+  { id: "flow", route: "/atlas · Flow", label: "Flow" },
+  { id: "map", route: "/atlas · Map", label: "Map" },
+  { id: "findings", route: "/atlas · Findings", label: "Findings" },
+] as const;
 const DWELL = 6000;
+/** the close-up's own size: big enough that the app runs at 1:1 and bleeds off the frame */
+const WORLD = { w: 1440, h: 900 };
 
 /**
  * R8 (onorca.dev hero): one pill row of views over the real app, auto-advancing with a progress
  * bar in the active pill; hovering or focusing a pill pauses it, reduced motion turns auto-advance off.
- * R20 frame + beam, R16 window chrome (see below). Captures: the app's content area only (no app
- * header or sub-tabs), sample data, 1280×720 CSS px at 2× (Playwright), public/landing/hero-*.webp.
+ *
+ * R26 (pin 3870349674475850, Alfred workflow editor): the product as a large, crisp close-up,
+ * turned and tilted in perspective, running off the right and bottom edges with only the far
+ * (bottom) edge fading out. Every view is the app's own component rendered live on the sample
+ * data, at 1:1 (never an image): Lab = the contract graph (contractGraph → LabGraph), Trace = TraceRow,
+ * Flow = FlowView, Map = MapView, Findings = FindingsTab. The close-up is a picture of the app, so
+ * it takes no pointer input (pan / zoom canvases would otherwise eat the page scroll).
+ * Crossfade without ghosting: the outgoing view is gone (200ms) before the incoming one starts.
  */
-export function ProductTabs() {
+export function ProductTabs({
+  atlas,
+  frames,
+}: {
+  atlas: AtlasData;
+  frames: Frame[];
+}) {
   const [at, setAt] = useState(0);
   const [paused, setPaused] = useState(false);
   const [auto, setAuto] = useState(false);
-  const shot = SHOTS[at];
+  const model = useMemo(() => createAtlasModel(atlas), [atlas]);
+  const graph = useMemo(() => contractGraph(model), [model]);
+  const sim = useStepSim(model, null);
+  const triage = useTriage(model.contract);
+  const view = VIEWS[at];
 
   useEffect(() => {
     setAuto(!matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -61,18 +59,78 @@ export function ProductTabs() {
   // biome-ignore lint/correctness/useExhaustiveDependencies: `at` restarts the dwell after every switch
   useEffect(() => {
     if (!auto || paused) return;
-    const t = setTimeout(() => setAt((i) => (i + 1) % SHOTS.length), DWELL);
+    const t = setTimeout(() => setAt((i) => (i + 1) % VIEWS.length), DWELL);
     return () => clearTimeout(t);
   }, [at, auto, paused]);
+
+  const maxGas = Math.max(1, ...frames.map((f) => f.gas ?? 0));
+  const none = () => {};
+  const content: Record<(typeof VIEWS)[number]["id"], ReactNode> = {
+    lab: (
+      <div className="dot-grid absolute inset-0">
+        <div className="absolute top-14 left-16">
+          <LabGraph nodes={graph.nodes} wires={graph.wires} />
+        </div>
+      </div>
+    ),
+    trace: (
+      <div className="dot-grid absolute inset-0 p-10">
+        <div className="w-[820px] rounded-card border border-border bg-card-grad p-2 shadow-soft">
+          {frames.map((f, i) => (
+            <TraceRow
+              key={`${i}${f.fn}`}
+              index={i}
+              frame={f}
+              maxGas={maxGas}
+              order={i}
+              selected={i === 1}
+              onSelect={none}
+            />
+          ))}
+        </div>
+      </div>
+    ),
+    flow: (
+      <div className="atlas absolute inset-0">
+        <section className="stage h-full">
+          <FlowView model={model} selected={null} onSelect={none} sim={sim} />
+        </section>
+      </div>
+    ),
+    map: (
+      <div className="atlas absolute inset-0">
+        <section className="stage h-full">
+          <MapView
+            model={model}
+            selected={null}
+            onSelect={none}
+            triage={triage}
+          />
+        </section>
+      </div>
+    ),
+    findings: (
+      <div className="dot-grid absolute inset-0 p-10">
+        <div className="w-[880px]">
+          <FindingsTab
+            model={model}
+            triage={triage}
+            selected={model.findings[0]?.id ?? null}
+            onSelect={none}
+          />
+        </div>
+      </div>
+    ),
+  };
 
   return (
     <div className="flex w-full flex-col items-center">
       <div
         role="tablist"
         aria-label="Luora views"
-        className="relative z-10 mb-6 flex max-w-full gap-0.5 overflow-x-auto rounded-full border border-white/[.08] bg-[#0b0b0c]/90 p-1"
+        className="relative z-10 mb-8 flex max-w-full gap-0.5 overflow-x-auto rounded-full border border-white/[.08] bg-[#0b0b0c]/90 p-1"
       >
-        {SHOTS.map((s, i) => (
+        {VIEWS.map((s, i) => (
           <button
             key={s.id}
             type="button"
@@ -105,49 +163,40 @@ export function ProductTabs() {
           </button>
         ))}
       </div>
-      {/* R20 (pin 672232681926990953, Echo): the UI sits crisp and flat under the headline; one soft
-          monochrome beam comes down from the upper right and lights a short stretch of its top edge */}
-      <div id="lp-shot" role="tabpanel" className="relative w-full">
+      {/* R26: the stage clips only its bottom (the far edge, faded); the right edge runs off the page */}
+      <div
+        id="lp-shot"
+        role="tabpanel"
+        aria-label={`${view.label}: the ${view.label} view of the sample LuoraVault audit, live`}
+        className="lp-closeup pointer-events-none relative -mt-32 h-[560px] w-screen flex-none select-none md:h-[820px]"
+      >
         <div
-          aria-hidden="true"
-          className="pointer-events-none absolute right-[16%] bottom-full h-[260px] w-[80px] origin-bottom rotate-[28deg] bg-[linear-gradient(to_bottom,transparent,rgba(255,255,255,.28))] blur-[14px]"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-6 right-[8%] z-10 h-12 w-[34%] rounded-full bg-white/[.09] blur-2xl"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-px right-[10%] z-10 h-px w-[30%] bg-[linear-gradient(to_right,transparent,rgba(255,255,255,.85),transparent)]"
-        />
-        {/* R16: one window chrome; the open view is the window's tab. Subtle bottom fade only. */}
-        <Window
-          tab={shot.label}
-          aside={shot.route}
-          className="text-left [mask-image:linear-gradient(to_bottom,#000_80%,rgba(0,0,0,.3))]"
+          className="lp-tilt absolute top-[190px] left-4 origin-top-left md:left-[calc(50%-580px)]"
+          style={{ width: WORLD.w, height: WORLD.h }}
         >
-          {/* every capture is 2320×1305 (16:9), so switching never changes the frame size */}
-          <div className="relative aspect-[16/9] w-full bg-canvas">
-            {SHOTS.map((s, i) => (
-              <Image
-                key={s.id}
-                src={s.src}
-                alt={s.alt}
-                fill
-                sizes="(min-width: 1200px) 1160px, 100vw"
-                loading={i === 0 ? "eager" : "lazy"}
-                fetchPriority={i === 0 ? "high" : "auto"}
-                aria-hidden={i !== at}
-                // no ghosting: the outgoing view is gone (200ms) before the incoming one starts
-                className={`object-cover transition-opacity ease-out motion-reduce:transition-none ${
-                  i === at
-                    ? "opacity-100 delay-200 duration-300"
-                    : "opacity-0 duration-200"
-                }`}
-              />
-            ))}
-          </div>
-        </Window>
+          <Window
+            tab={view.label}
+            aside={view.route}
+            className="flex h-full flex-col text-left"
+          >
+            <div className="relative min-h-0 flex-1 bg-canvas">
+              {VIEWS.map((s, i) => (
+                <div
+                  key={s.id}
+                  inert
+                  aria-hidden={i !== at}
+                  className={`absolute inset-0 transition-opacity ease-out motion-reduce:transition-none ${
+                    i === at
+                      ? "opacity-100 delay-200 duration-300"
+                      : "opacity-0 duration-200"
+                  }`}
+                >
+                  {content[s.id]}
+                </div>
+              ))}
+            </div>
+          </Window>
+        </div>
       </div>
     </div>
   );

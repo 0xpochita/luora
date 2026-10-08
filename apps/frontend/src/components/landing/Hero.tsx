@@ -5,6 +5,7 @@ import { ICON_PATH, type IconKey } from "@/features/atlas/utils/icons";
 import { GitHubMark } from "./GitHubMark";
 import { LogoLoop } from "./LogoLoop";
 import { ProductTabs } from "./ProductTabs";
+import { demoAtlas, traceFrames } from "./stats";
 
 export const GITHUB = "https://github.com/0xpochita/luora";
 export const DOCS = `${GITHUB}#readme`;
@@ -13,7 +14,7 @@ export const DOCS = `${GITHUB}#readme`;
 export function Nav() {
   const items = [
     { label: "Product", href: "#product", on: true },
-    { label: "How it works", href: "#how" },
+    { label: "How it works", href: "#how-it-works" },
     { label: "Docs", href: DOCS },
     { label: "GitHub", href: GITHUB },
   ];
@@ -300,7 +301,13 @@ function Terminal({ log }: { log: string[] }) {
   );
 }
 
-/** R2 + R1 + R3 + R7 + R8, see index.ts. */
+/** The hero close-up's data: the audited contract and the first frames of one test. */
+async function Product() {
+  const [atlas, trace] = await Promise.all([demoAtlas(), traceFrames(14)]);
+  return <ProductTabs atlas={atlas} frames={trace.frames} />;
+}
+
+/** R2 + R1 + R3 + R26 + R8, see index.ts. */
 export function Hero({ log }: { log: string[] }) {
   return (
     <header className="relative overflow-hidden bg-black">
@@ -355,9 +362,9 @@ export function Hero({ log }: { log: string[] }) {
 
         <Terminal log={log} />
 
-        {/* R20 + R16 + R8: the real app, flat and crisp in a window, switching views like onorca.dev */}
-        <div className="relative mt-10 w-full max-w-[1160px] md:mt-12">
-          <ProductTabs />
+        {/* R26 + R16 + R8: the live app as a tilted close-up, switching views like onorca.dev */}
+        <div id="product" className="relative mt-10 w-full md:mt-12">
+          <Product />
         </div>
       </div>
 

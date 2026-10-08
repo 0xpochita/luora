@@ -12,9 +12,12 @@ import { unitCode } from "@/features/atlas/utils/units";
 export function CoverageSummary({
   model,
   onSelect,
+  partly = true,
 }: {
   model: AtlasModel;
   onSelect: (id: string) => void;
+  /** list the partly tested entry points under the untested ones */
+  partly?: boolean;
 }) {
   const cov = model.coverage;
   if (!cov) return null;
@@ -87,7 +90,7 @@ export function CoverageSummary({
           )}
         </div>
         {untested.length > 0 && <ul>{untested.map((x) => item(x, true))}</ul>}
-        {gaps.length > 0 && (
+        {partly && gaps.length > 0 && (
           <>
             <p className="px-2.5 pt-1.5 text-[12.5px] text-dim">
               Partly tested
