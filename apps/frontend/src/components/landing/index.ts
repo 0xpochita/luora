@@ -37,10 +37,8 @@
  *      real-UI capability cards, a comparison table, FAQ, closing CTA card, column footer
  *      → `ProductTabs` (Lab / Trace / Flow / Map / Findings), hero `Terminal` (the real export
  *        output, typed in), `Bento`, `Compare`, `Faq`, `FinalCta`, `Footer`.
- *  R9  pin/218917231886234195 (Nrok cybersecurity) — stats as dark cards with a corner glow, a giant
- *      faint wordmark behind → `Proof` (count-up numbers, "luora" wordmark).
- *  R10 pin/1135470124853809702 (Bento social proof) — two-tone heading card + stat cards + chips
- *      card → `Proof` layout (heading card, stat cards, toolchain chips; no fake quote or rating).
+ *  (R9 Nrok / R10 bento proof drove the old stats section; replaced at the user's request by `Ask`:
+ *      R4 copy + real UI, R15 ComfyUI-style glassy prompt dock, answers from the app's aiAnswer.)
  *  R11 pin/15270086238695547 ("Burn out less, build with smart code") — mixed 3+2 bento with mini UI
  *      in each card → `Bento` grid rhythm.
  *  R12 pin/15270086238695545 ("Scale from a startup…") — bold lead + muted continuation captions
@@ -55,9 +53,9 @@
  * red only on findings.
  */
 
+export { Ask } from "./Ask";
 export { Bento } from "./Bento";
 export { Compare, Faq, FinalCta, Finale, Footer, Statement } from "./Closing";
-export { Proof } from "./Evidence";
 export { Features } from "./Features";
 export { Hero, WorksWith } from "./Hero";
 export { Pillars } from "./Pillars";

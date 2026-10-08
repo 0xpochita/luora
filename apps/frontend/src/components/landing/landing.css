@@ -216,3 +216,9 @@
     animation: none;
   }
 }
+
+/* Ask demo: thin scrollbar for long answers */
+.lp-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}

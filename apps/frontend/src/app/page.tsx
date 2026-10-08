@@ -1,4 +1,5 @@
 import {
+  Ask,
   Bento,
   Compare,
   Faq,
@@ -6,7 +7,6 @@ import {
   Finale,
   Hero,
   Pillars,
-  Proof,
   Statement,
   WorksWith,
 } from "@/components/landing";
@@ -28,7 +28,7 @@ export default async function Home() {
       <Features />
       <Bento />
       <Pillars />
-      <Proof />
+      <Ask />
       <Compare />
       <Statement />
       <Faq />

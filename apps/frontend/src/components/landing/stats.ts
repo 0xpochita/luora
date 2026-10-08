@@ -177,3 +177,15 @@ export async function pillarData(): Promise<PillarData> {
     contract: atlas.contract,
   };
 }
+
+/** The audited contract's atlas (local export, else the bundled sample), for the Ask demo. */
+export async function demoAtlas(): Promise<AtlasData> {
+  "use cache";
+  cacheLife("max");
+  try {
+    const data = JSON.parse(await readFile(LUORA_DATA_PATH, "utf8"));
+    return data.atlas ?? SAMPLE_ATLAS;
+  } catch {
+    return SAMPLE_ATLAS;
+  }
+}
