@@ -75,12 +75,13 @@ export function CommandCard({
   const byKey = Object.fromEntries(cmds.map((c) => [c.key.toLowerCase(), c]));
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement | null;
+      const t = e.target;
       if (
         e.metaKey ||
         e.ctrlKey ||
         e.altKey ||
-        t?.closest("input, select, textarea, [contenteditable]")
+        (t instanceof Element &&
+          t.closest("input, select, textarea, [contenteditable]"))
       )
         return;
       const c = byKey[e.key.toLowerCase()];

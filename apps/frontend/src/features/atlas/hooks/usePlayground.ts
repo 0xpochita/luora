@@ -120,6 +120,7 @@ export function usePlayground(
     setArmed(false);
     setPending(null);
     setDrag(null);
+    setTraceTest(null);
     if (sim.entry) sim.reset();
   }
 
