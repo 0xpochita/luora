@@ -1,4 +1,4 @@
-import { Meter, Panel } from "@/components/ui";
+import { Chip, Meter, Panel } from "@/components/ui";
 import type { AtlasModel } from "@/features/atlas";
 import {
   coverageFocus,
@@ -29,17 +29,21 @@ export function CoverageSummary({
       <button
         type="button"
         onClick={() => onSelect(x.id)}
-        className="grid w-full grid-cols-[52px_1fr_auto] items-baseline gap-2 border-line border-b px-3 py-1.5 text-left transition-colors last:border-b-0 hover:bg-soft"
+        className="grid w-full grid-cols-[44px_1fr_auto] items-baseline gap-2 rounded-tile px-2.5 py-1.5 text-left transition-colors hover:bg-hover"
       >
-        <span className={`font-mono text-xs ${bad ? "text-bad" : "text-ink"}`}>
+        <span
+          className={`font-mono text-xs ${bad ? "text-red" : "text-muted"}`}
+        >
           {unitCode(model, x.id)}
         </span>
-        <span className="truncate font-mono text-xs">
-          {model.byId[x.id]?.name}
-          <span className="ml-2 text-dim">{x.why}</span>
+        <span className="truncate">
+          <span className="font-mono text-fg text-xs">
+            {model.byId[x.id]?.name}
+          </span>
+          <span className="ml-2 text-[12px] text-dim">{x.why}</span>
         </span>
         <span
-          className={`font-mono text-xs ${bad ? "text-bad" : "text-muted"}`}
+          className={`font-mono text-xs ${bad ? "text-red" : "text-muted"}`}
         >
           {pctLabel(x.cov.pct)}
         </span>
@@ -47,40 +51,59 @@ export function CoverageSummary({
     </li>
   );
   return (
-    <Panel label="Test coverage" aside={cov.tool}>
-      {rows.map(([k, c]) => (
-        <div
-          key={k}
-          className="grid grid-cols-[1fr_60px_auto] items-center gap-3 border-line border-b px-3 py-2"
-        >
-          <span className="text-muted ui-label">{k}</span>
-          <Meter
-            value={ratio(c)}
-            tone={ratio(c) < 1 ? "text-tick" : "text-ok"}
-            className="w-full"
-          />
-          <span className="font-mono text-xs">
-            {pctLabel(ratio(c))}{" "}
-            <span className="text-dim">
-              {c.hit}/{c.found}
+    <Panel
+      label="Test coverage"
+      dot={untested.length ? "bad" : "ok"}
+      aside={cov.tool}
+    >
+      <div className="grid gap-2.5 px-3.5 pt-1 pb-3">
+        {rows.map(([k, c]) => (
+          <div
+            key={k}
+            className="grid grid-cols-[72px_1fr_auto] items-center gap-3"
+          >
+            <span className="text-[12px] text-muted">{k}</span>
+            <Meter
+              value={ratio(c)}
+              tone={
+                ratio(c) >= 1
+                  ? "text-green"
+                  : ratio(c) >= 0.8
+                    ? "text-fg/70"
+                    : "text-yellow"
+              }
+              className="w-full"
+            />
+            <span className="w-[92px] text-right font-mono text-xs">
+              {pctLabel(ratio(c))}{" "}
+              <span className="text-dim">
+                {c.hit}/{c.found}
+              </span>
             </span>
-          </span>
+          </div>
+        ))}
+      </div>
+      <div className="m-[5px] mt-0 flex flex-col gap-1 rounded-inner bg-inset p-1.5">
+        <div className="px-1 pt-0.5 pb-1">
+          {untested.length ? (
+            <Chip tone="bad" dot>
+              Audit focus · {untested.length} state-changing entr
+              {untested.length > 1 ? "ies" : "y"} untested
+            </Chip>
+          ) : (
+            <Chip tone="ok" dot>
+              Every state-changing entry point runs under the tests
+            </Chip>
+          )}
         </div>
-      ))}
-      <p
-        className={`px-3 pt-2.5 pb-1 ui-label ${untested.length ? "text-bad" : "text-ok"}`}
-      >
-        {untested.length
-          ? `▲ Audit focus · ${untested.length} state-changing entr${untested.length > 1 ? "ies" : "y"} untested`
-          : "Every state-changing entry point runs under the tests"}
-      </p>
-      <ul>{untested.map((x) => item(x, true))}</ul>
-      {gaps.length > 0 && (
-        <>
-          <p className="px-3 pt-2.5 pb-1 text-dim ui-label">Partly tested</p>
-          <ul>{gaps.map((x) => item(x, false))}</ul>
-        </>
-      )}
+        {untested.length > 0 && <ul>{untested.map((x) => item(x, true))}</ul>}
+        {gaps.length > 0 && (
+          <>
+            <p className="px-2.5 pt-1.5 text-[12px] text-dim">Partly tested</p>
+            <ul>{gaps.map((x) => item(x, false))}</ul>
+          </>
+        )}
+      </div>
     </Panel>
   );
 }
