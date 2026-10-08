@@ -71,6 +71,7 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
             onSelect={setSelected}
             sim={sim}
             triage={triage}
+            calls={source.calls}
           />
         )}
         <aside>

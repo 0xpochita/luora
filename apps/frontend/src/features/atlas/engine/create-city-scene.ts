@@ -13,7 +13,12 @@ import { addFindingMarkers, declutter, type Label } from "./city-labels";
 import { addBase, addStatusLamp, BASE, machineGeometry } from "./endfield";
 import { addBeacon } from "./factory";
 import { type CityOverlay, createCoverageOverlay } from "./overlays/coverage";
+import { createFogOverlay } from "./overlays/fog";
 import { createPlanView } from "./plan-view";
+import {
+  createPlaygroundLayer,
+  type PlaygroundLayer,
+} from "./playground-layer";
 
 /** `plan` = 2D top-down orthographic map */
 export type CityZoom = "city" | "district" | "street" | "plan";
@@ -23,6 +28,16 @@ export type CitySimFrame = {
   steps: Step[];
   step: number;
   late: boolean[];
+  /** per-step caption replacing the raw source line (playground: amount filled in) */
+  captions?: string[];
+};
+/** Building footprint on the ground plane, for the minimap. */
+export type CityLot = {
+  id: string;
+  x: number;
+  z: number;
+  w: number;
+  d: number;
 };
 export type CityScene = {
   select: (id: string | null) => void;
@@ -33,6 +48,19 @@ export type CityScene = {
   setOverlay: (o: CityOverlay | null) => void;
   /** audit mode: filler city flattened to faint tiles, decoration off, only contract pieces + links */
   setAudit: (on: boolean) => void;
+  /** building under a screen point (client coordinates) */
+  pickAt: (x: number, y: number) => string | null;
+  /** hover changes and pointer moves over the canvas; null id = nothing / pointer left */
+  onHover: (
+    fn: ((id: string | null, x: number, y: number) => void) | null,
+  ) => void;
+  /** orbit / pan off while the token is dragged */
+  setDragging: (on: boolean) => void;
+  playground: PlaygroundLayer;
+  layout: () => CityLot[];
+  /** ground point the camera looks at */
+  viewAt: () => { x: number; z: number };
+  panTo: (x: number, z: number) => void;
   dispose: () => void;
 };
 
@@ -414,6 +442,7 @@ export function createCityScene(
     (f.edges.material as THREE.LineBasicMaterial).color.set("#2c2f34");
   }
   const coverage = createCoverageOverlay(scene, model, blds);
+  const fog = createFogOverlay(scene, model, blds);
 
   // ---- routes between connected buildings, along the street grid ----
   const routeG = new THREE.Group();
@@ -468,6 +497,7 @@ export function createCityScene(
     len: number;
     line: number;
     late: boolean;
+    cap?: string;
   };
   const tex = new THREE.TextureLoader().load("/logos/usdc.png");
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -482,6 +512,13 @@ export function createCityScene(
   token.renderOrder = 10;
   token.visible = false;
   scene.add(token);
+  const pg = createPlaygroundLayer({
+    scene,
+    blds,
+    pylon: (id) => base.pylon(id),
+    token,
+    size: TOKEN,
+  });
   const legOf = (entry: string, id: string) =>
     base.leg(entry, id) ??
     (blds.has(entry) && blds.has(id)
@@ -610,7 +647,7 @@ export function createCityScene(
       capKey = key;
       const p = model.byId[s.id];
       capHead.textContent = `${String(s.i + 1).padStart(2, "0")} ${STEP_VERB[s.k]} · ${p?.name ?? s.id}${s.late ? " · AFTER CALL" : ""}`;
-      capCode.textContent = `L${s.line + 1}  ${model.lines[s.line]?.trim() ?? ""}`;
+      capCode.textContent = `L${s.line + 1}  ${s.cap ?? model.lines[s.line]?.trim() ?? ""}`;
       capEl.classList.toggle("late", s.late);
     }
     cap.position.set(x, top + 2.8, z);
@@ -698,6 +735,7 @@ export function createCityScene(
           len: path.getLength(),
           line: model.stepLines(sim.entry)[i],
           late: sim.late[i],
+          cap: sim.captions?.[i],
         },
         t0: performance.now(),
       };
@@ -755,7 +793,7 @@ export function createCityScene(
   // ---- picking ----
   const ray = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
-  const pick = (ev: PointerEvent) => {
+  const pick = (ev: { clientX: number; clientY: number }) => {
     const r = renderer.domElement.getBoundingClientRect();
     ndc.set(
       ((ev.clientX - r.left) / r.width) * 2 - 1,
@@ -768,13 +806,17 @@ export function createCityScene(
     );
   };
   let down: [number, number] | null = null;
+  let hoverFn: ((id: string | null, x: number, y: number) => void) | null =
+    null;
   const onMove = (ev: PointerEvent) => {
     const h = pick(ev);
     if (h !== hovered) {
       hovered = h;
       refresh();
     }
+    hoverFn?.(h, ev.clientX, ev.clientY);
   };
+  const onLeave = () => hoverFn?.(null, 0, 0);
   const onDown = (ev: PointerEvent) => {
     down = [ev.clientX, ev.clientY];
   };
@@ -786,6 +828,7 @@ export function createCityScene(
   renderer.domElement.addEventListener("pointermove", onMove);
   renderer.domElement.addEventListener("pointerdown", onDown);
   renderer.domElement.addEventListener("pointerup", onUp);
+  renderer.domElement.addEventListener("pointerleave", onLeave);
 
   // ---- camera ----
   type Anim = {
@@ -886,7 +929,11 @@ export function createCityScene(
       if (k === 1) anim = null;
     }
     base.update(t);
-    if (simLeg) {
+    fog.update(t);
+    if (pg.owns()) {
+      idle();
+      pg.drive(t);
+    } else if (simLeg) {
       // sim: ride the current step's belt, then keep processing until the next step
       const ms = performance.now() - simLeg.t0;
       token.visible = true;
@@ -895,6 +942,7 @@ export function createCityScene(
         process(simLeg.stop, still ? 0.5 : ((ms - 500) / 1000 / PROC) % 1);
     } else if (!simG.children.length) walk(t);
     else idle();
+    pg.follow(t);
     ctl.update();
     renderer.render(scene, cam);
     css2.render(scene, cam);
@@ -941,6 +989,7 @@ export function createCityScene(
     },
     setOverlay(o) {
       coverage.setVisible(o === "coverage");
+      fog.setVisible(o === "coverage");
       refresh();
     },
     setAudit(on) {
@@ -960,12 +1009,35 @@ export function createCityScene(
       }
       refresh();
     },
+    pickAt(x, y) {
+      const r = renderer.domElement.getBoundingClientRect();
+      const inside = x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+      return inside ? pick({ clientX: x, clientY: y }) : null;
+    },
+    onHover(fn) {
+      hoverFn = fn;
+    },
+    setDragging(on) {
+      ctl.enabled = !on;
+    },
+    playground: pg,
+    layout: () =>
+      [...blds].map(([id, b]) => {
+        const [w, d] = footprint(b.piece as Piece);
+        return { id, x: b.mesh.position.x, z: b.mesh.position.z, w, d };
+      }),
+    viewAt: () => ({ x: ctl.target.x, z: ctl.target.z }),
+    panTo(x, z) {
+      const at = V(x, 0, z);
+      fly(cam.position.clone().add(at).sub(ctl.target), at);
+    },
     dispose() {
       renderer.setAnimationLoop(null);
       ro.disconnect();
       renderer.domElement.removeEventListener("pointermove", onMove);
       renderer.domElement.removeEventListener("pointerdown", onDown);
       renderer.domElement.removeEventListener("pointerup", onUp);
+      renderer.domElement.removeEventListener("pointerleave", onLeave);
       controls.dispose();
       plan.controls.dispose();
       scene.traverse((o) => {

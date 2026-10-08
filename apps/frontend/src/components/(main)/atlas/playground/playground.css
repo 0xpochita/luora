@@ -1,0 +1,127 @@
+/* USDC playground HUD (RTS style, monochrome). Scoped under .atlas like atlas.css. */
+.atlas .pg-token {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--edge);
+  background: var(--tray);
+  touch-action: none;
+  cursor: grab;
+}
+.atlas .pg-token:hover,
+.atlas .pg-token:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+.atlas .pg-token.armed {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 2px var(--shell),
+    0 0 0 3px var(--accent);
+}
+.atlas .pg-coin {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: url(/logos/usdc.png) center / cover;
+  filter: grayscale(0.2);
+}
+/* token deployed in the city: the dock keeps an empty slot */
+.atlas .pg-token.out .pg-coin {
+  opacity: 0.25;
+  filter: grayscale(1);
+}
+.atlas .pg-token.armed .pg-coin {
+  opacity: 1;
+  filter: none;
+}
+.atlas .pg-hint {
+  max-width: 120px;
+  font-size: 9.5px;
+}
+
+.atlas .pg-cmd button {
+  position: relative;
+  display: grid;
+  align-content: end;
+  justify-items: start;
+  width: 64px;
+  height: 64px;
+  padding: 5px;
+  border: 1px solid var(--line);
+  background: var(--tray);
+  color: var(--muted);
+  text-align: left;
+}
+.atlas .pg-cmd button .hud-label {
+  font-size: 9px;
+}
+.atlas .pg-cmd button small {
+  max-width: 100%;
+  overflow: hidden;
+  font: 9px var(--font-geist-mono);
+  color: var(--dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.atlas .pg-cmd kbd {
+  position: absolute;
+  top: 3px;
+  right: 4px;
+  font: 600 10px var(--font-geist-mono);
+  color: var(--ink);
+}
+.atlas .pg-cmd button:enabled:hover {
+  border-color: var(--edge);
+  color: var(--ink);
+}
+.atlas .pg-cmd button.on {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+.atlas .pg-cmd button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.atlas .pg-result {
+  pointer-events: none;
+}
+.atlas .pg-result > section {
+  pointer-events: auto;
+  min-height: 0;
+  max-height: 100%;
+}
+.atlas .pg-result > section > div {
+  overflow: auto;
+}
+.atlas .pg-link {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  width: 100%;
+  padding: 3px 6px;
+  border: 1px solid var(--line);
+  background: var(--tray);
+  font: 11px var(--font-geist-mono);
+  color: var(--ink);
+  text-align: left;
+}
+.atlas .pg-link:hover,
+.atlas .pg-link.on {
+  border-color: var(--accent);
+}
+.atlas .pg-link.bad {
+  justify-content: space-between;
+  color: var(--bad);
+}
+
+/* access control stopped the call: a PASS, shown green */
+.atlas .cproc.pass {
+  border-color: var(--ok);
+}
+.atlas .cproc.pass b {
+  color: var(--ok);
+}

@@ -1,3 +1,5 @@
+import type { TraceCall } from "./utils/playground";
+
 export type SystemKey =
   | "entry"
   | "access"
@@ -120,7 +122,12 @@ export type AtlasCoverage = {
   >;
 };
 
-export type AtlasSource = { data: AtlasData; origin: "local" | "sample" };
+export type AtlasSource = {
+  data: AtlasData;
+  origin: "local" | "sample";
+  /** calls the forge tests made into the contract (luora-data.json `tests`), for the playground */
+  calls?: TraceCall[];
+};
 
 export type AtlasView = "city" | "explorer";
 export type AiQuestion = "explain" | "risks" | "test";

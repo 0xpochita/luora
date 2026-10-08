@@ -19,12 +19,15 @@ import type {
   CityScene,
   CityZoom,
 } from "@/features/atlas/engine/create-city-scene";
+import { usePlayground } from "@/features/atlas/hooks/usePlayground";
 import { pctLabel, pieceCoverage } from "@/features/atlas/utils/coverage";
+import type { TraceCall } from "@/features/atlas/utils/playground";
 import { protocolOf } from "@/features/atlas/utils/protocols";
 import { STEP_VERB, unitCode, unitStatus } from "@/features/atlas/utils/units";
 import { CityLegend } from "./CityLegend";
 import { FindingsTab } from "./FindingsTab";
 import { PieceIcon } from "./PieceIcon";
+import { CityPlayground } from "./playground/CityPlayground";
 
 type UnitTab = "entry" | "storage" | "external" | "findings";
 const UNIT_TABS: { value: UnitTab; label: string; sys: SystemKey[] }[] = [
@@ -47,17 +50,24 @@ export function CityStage({
   onSelect,
   sim,
   triage,
+  calls = [],
 }: {
   model: AtlasModel;
   selected: string | null;
   onSelect: (id: string | null) => void;
   sim: CitySim;
   triage: TriageState;
+  /** forge test calls into the contract, for the playground's trace values */
+  calls?: TraceCall[];
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const scene = useRef<CityScene | null>(null);
-  const pick = useRef(onSelect);
-  pick.current = onSelect;
+  const [ready, setReady] = useState(false);
+  const pg = usePlayground(model, calls, selected, onSelect, sim);
+  // with the token picked, a building click / unit card Enter drops it there
+  const choose = (id: string | null) => (pg.armed ? pg.drop(id) : onSelect(id));
+  const pick = useRef(choose);
+  pick.current = choose;
   const [zoom, setZoom] = useState<CityZoom>("city");
   const [audit, setAudit] = useState(true);
   const view = useRef({ zoom, audit });
@@ -83,12 +93,14 @@ export function CityStage({
         scene.current.setOverlay(covOn.current ? "coverage" : null);
         scene.current.setAudit(view.current.audit);
         scene.current.setZoom(view.current.zoom);
+        setReady(true);
       },
     );
     return () => {
       alive = false;
       scene.current?.dispose();
       scene.current = null;
+      setReady(false);
     };
   }, [model]);
 
@@ -103,9 +115,12 @@ export function CityStage({
   useEffect(() => scene.current?.setOverlay(cov ? "coverage" : null), [cov]);
   useEffect(() => scene.current?.setAudit(audit), [audit]);
   const { entry, steps, step, late } = sim;
+  const { captions } = pg;
   useEffect(() => {
-    scene.current?.setSim(entry ? { entry, steps, step, late } : null);
-  }, [entry, steps, step, late]);
+    scene.current?.setSim(
+      entry ? { entry, steps, step, late, captions } : null,
+    );
+  }, [entry, steps, step, late, captions]);
 
   const sys = UNIT_TABS.find((t) => t.value === tab)?.sys ?? [];
   const covOf = (id: string) => pieceCoverage(model, id);
@@ -119,7 +134,7 @@ export function CityStage({
   return (
     <section className="stage city flex flex-col">
       <div ref={ref} className="relative min-h-0 flex-1">
-        <div className="absolute top-3 left-1/2 z-[3] flex -translate-x-1/2 items-center gap-2">
+        <div className="absolute top-16 left-1/2 z-[3] flex -translate-x-1/2 items-center gap-2">
           <SegmentedControl
             value={zoom}
             onChange={setZoom}
@@ -155,12 +170,21 @@ export function CityStage({
             )}
           </div>
         )}
-        {sim.entry && (
+        {sim.entry && !pg.stopped && (
           <div className="absolute top-14 left-3 z-[3] w-[300px]">
             <SimPanel model={model} sim={sim} />
           </div>
         )}
-        <div className="pointer-events-none absolute bottom-3 left-3 z-[3] text-dim hud-label">
+        <CityPlayground
+          model={model}
+          pg={pg}
+          scene={scene}
+          ready={ready}
+          sim={sim}
+          selected={selected}
+          onSelect={onSelect}
+        />
+        <div className="pointer-events-none absolute bottom-[92px] left-3 z-[3] text-dim hud-label">
           {zoom === "plan" ? "Drag to pan" : "Drag to orbit"} · scroll to zoom ·
           click a building · / search · Esc clear
         </div>
@@ -203,7 +227,9 @@ export function CityStage({
                 <button
                   type="button"
                   key={p.id}
-                  onClick={() => onSelect(on ? null : p.id)}
+                  onClick={() =>
+                    pg.armed ? pg.drop(p.id) : onSelect(on ? null : p.id)
+                  }
                   className={`relative flex flex-none items-center gap-2.5 border px-3 py-2.5 transition-colors ${
                     on
                       ? "border-accent bg-panel"

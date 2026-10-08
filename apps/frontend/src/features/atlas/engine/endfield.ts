@@ -180,6 +180,8 @@ export type Base = {
     entry: string,
     target: string,
   ) => THREE.CurvePath<THREE.Vector3> | undefined;
+  /** relay pylon head powering a role-gated entry (where an unauthorised call is stopped) */
+  pylon: (entry: string) => THREE.Vector3 | undefined;
 };
 
 /**
@@ -401,6 +403,7 @@ export function addBase(
       ),
     );
   }
+  const pylons = new Map<string, THREE.Vector3>();
   for (const id of model.entry) {
     const p = model.byId[id];
     const src = p?.caller && p.caller !== "anyone" ? nodes.get(p.caller) : null;
@@ -417,6 +420,7 @@ export function addBase(
       nodeMat,
     );
     head.position.set(mid.x, 5.1, mid.z);
+    pylons.set(id, head.position);
     g.add(mast, arm, head);
     g.add(
       new THREE.Line(
@@ -432,6 +436,7 @@ export function addBase(
 
   return {
     leg: (entry, target) => legs.get(`${entry}>${target}`),
+    pylon: (entry) => pylons.get(entry),
     update: (t) => {
       if (STILL) return;
       coreLightMat.opacity = 0.45 + 0.55 * Math.max(0, Math.sin(t * 1.6)) ** 3;

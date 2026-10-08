@@ -10,7 +10,7 @@ const RISK_LABEL = {
   info: "Info",
 } as const;
 
-const CHECKLIST: Record<SystemKey, string[]> = {
+export const CHECKLIST: Record<SystemKey, string[]> = {
   entry: [
     "Who can call it? (anyone / owner / keeper)",
     "Does it make external calls before updating state (CEI)?",
