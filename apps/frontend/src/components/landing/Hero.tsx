@@ -1,7 +1,9 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { LogoMark } from "@/components/ui";
 import { ICON_PATH, type IconKey } from "@/features/atlas/utils/icons";
 import { GitHubMark } from "./GitHubMark";
+import { LogoLoop } from "./LogoLoop";
 import { ProductTabs } from "./ProductTabs";
 
 export const GITHUB = "https://github.com/0xpochita/luora";
@@ -372,30 +374,142 @@ export function Hero({ log }: { log: string[] }) {
 }
 
 /** R3: the logo strip under the hero — only what Luora really reads, as plain wordmarks. */
+/** simple-icons paths (CC0) for the two marks that ship as SVG */
+const SOLIDITY =
+  "M4.409 6.608L7.981.255l3.572 6.353H4.409zM8.411 0l3.569 6.348L15.552 0H8.411zm4.036 17.392l3.572 6.354 3.575-6.354h-7.147zm-.608-10.284h-7.43l3.715 6.605 3.715-6.605zm.428-.25h7.428L15.982.255l-3.715 6.603zM15.589 24l-3.569-6.349L8.448 24h7.141zm-3.856-6.858H4.306l3.712 6.603 3.715-6.603zm.428-.25h7.433l-3.718-6.605-3.715 6.605z";
+const ETHEREUM =
+  "M11.944 17.97L4.58 13.62 11.943 24l7.37-10.38-7.372 4.35h.003zM12.056 0L4.69 12.223l7.365 4.354 7.365-4.35L12.056 0z";
+
+function Mark({ children, label }: { children: ReactNode; label: string }) {
+  return (
+    <span className="flex items-center gap-2.5 text-white/55 transition-colors hover:text-white">
+      {children}
+      <span className="font-medium text-[18px] tracking-[-0.01em]">
+        {label}
+      </span>
+    </span>
+  );
+}
+
+/** a PNG logo shown as a monochrome mark: `invert` for black-on-white art, `silhouette` for transparent colour art,
+ *  `mono` for colour art on an opaque white background (it turns black and melts into the page) */
+function Png({
+  src,
+  alt,
+  mode,
+  h,
+}: {
+  src: string;
+  alt: string;
+  mode: "invert" | "silhouette" | "mono";
+  h: number;
+}) {
+  return (
+    // biome-ignore lint/performance/noImgElement: tiny static logos inside a CSS marquee
+    <img
+      src={src}
+      alt={alt}
+      style={{ height: h }}
+      className={`w-auto opacity-60 transition-opacity hover:opacity-100 ${mode === "invert" ? "invert" : mode === "mono" ? "grayscale invert" : "brightness-0 invert"}`}
+    />
+  );
+}
+
+/**
+ * R3 logo strip, made a marquee with React Bits LogoLoop. Only tools Luora really reads:
+ * official marks from each project (foundry-rs org avatar, crytic/slither logo.png,
+ * Cyfrin/aderyn logo) and simple-icons for Solidity / Ethereum, all shown monochrome.
+ */
 export function WorksWith() {
-  const tools = [
-    { name: "Foundry" },
-    { name: "forge coverage", mono: true },
-    { name: "Slither" },
-    { name: "Aderyn" },
-    { name: "Solidity" },
+  const logos = [
+    {
+      node: (
+        <Mark label="Foundry">
+          <Png src="/logos/tools/foundry.png" alt="" mode="invert" h={28} />
+        </Mark>
+      ),
+      title: "Foundry",
+      href: "https://getfoundry.sh",
+    },
+    {
+      node: (
+        <Mark label="Solidity">
+          <svg
+            viewBox="0 0 24 24"
+            className="size-6"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path d={SOLIDITY} />
+          </svg>
+        </Mark>
+      ),
+      title: "Solidity",
+      href: "https://soliditylang.org",
+    },
+    {
+      node: (
+        <Png
+          src="/logos/tools/slither.png"
+          alt="Slither"
+          mode="silhouette"
+          h={48}
+        />
+      ),
+      title: "Slither",
+      href: "https://github.com/crytic/slither",
+    },
+    {
+      node: (
+        <Png src="/logos/tools/aderyn.png" alt="Aderyn" mode="mono" h={30} />
+      ),
+      title: "Aderyn",
+      href: "https://github.com/Cyfrin/aderyn",
+    },
+    {
+      node: (
+        <Mark label="Ethereum">
+          <svg
+            viewBox="0 0 24 24"
+            className="size-6"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path d={ETHEREUM} />
+          </svg>
+        </Mark>
+      ),
+      title: "Ethereum",
+      href: "https://ethereum.org",
+    },
+    {
+      node: (
+        <span className="font-mono text-[15px] text-white/50">
+          forge coverage
+        </span>
+      ),
+      title: "forge coverage",
+    },
   ];
   return (
     <section
       id="works-with"
-      className="mx-auto flex max-w-[1240px] flex-col items-center gap-6 px-4 pt-4 pb-24 md:flex-row md:justify-between md:px-6"
+      className="mx-auto flex max-w-[1240px] flex-col items-center gap-6 px-4 pt-4 pb-24 md:flex-row md:gap-10 md:px-6"
     >
-      <p className="text-[13px] text-dim">Works with</p>
-      <ul className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 md:gap-x-14">
-        {tools.map((t) => (
-          <li
-            key={t.name}
-            className={`text-white/40 ${t.mono ? "font-mono text-[15px]" : "font-medium text-[19px] tracking-[-0.01em]"}`}
-          >
-            {t.name}
-          </li>
-        ))}
-      </ul>
+      <p className="shrink-0 text-[13px] text-dim">Works with</p>
+      <div className="relative h-[40px] w-full min-w-0 flex-1 overflow-hidden">
+        <LogoLoop
+          logos={logos}
+          speed={60}
+          direction="left"
+          logoHeight={34}
+          gap={64}
+          pauseOnHover
+          fadeOut
+          fadeOutColor="#000000"
+          ariaLabel="Tools Luora works with"
+        />
+      </div>
     </section>
   );
 }

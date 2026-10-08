@@ -35,5 +35,13 @@
         "organizeImports": "on"
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["src/components/landing/LogoLoop.tsx"],
+      "linter": {
+        "enabled": false
+      }
+    }
+  ]
 }
