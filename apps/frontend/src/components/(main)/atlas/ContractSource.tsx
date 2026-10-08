@@ -40,14 +40,14 @@ export function ContractSource({
           <span className="inline-flex w-[64px] select-none text-[10px]">
             <span
               title={hits == null ? undefined : `Ran ${hits}× under the tests`}
-              className={`w-[36px] pr-1.5 text-right ${hits === 0 ? "bg-bad/20 text-bad" : "text-dim"}`}
+              className={`w-[36px] pr-1.5 text-right ${hits === 0 ? "text-red" : "text-dim/80"}`}
             >
               {hits == null ? "" : hits ? hitLabel(hits) : "0"}
             </span>
             {taken < br.length && (
               <span
                 title={`${br.length - taken} of ${br.length} branches never taken`}
-                className="pl-1 text-bad"
+                className="pl-1 text-red/80"
               >
                 ◆{taken}/{br.length}
               </span>
@@ -56,31 +56,42 @@ export function ContractSource({
         );
       }
     : undefined;
+  const range = p
+    ? `L${start + 1}–${start + (p.n ?? 1)}`
+    : current != null
+      ? `L${current + 1}`
+      : null;
 
   return (
     <Panel
       label="Source"
-      aside={model.file.split("/").pop()}
-      className="h-[52vh] min-h-[280px] flex-none"
+      dot={current != null ? "violet" : "neutral"}
+      aside={
+        <span className="font-mono">
+          {model.file.split("/").pop()}
+          {range && <span className="ml-2 text-muted">{range}</span>}
+        </span>
+      }
+      inset
+      className="h-[52vh] min-h-[280px] flex-none [&>div]:overflow-hidden"
     >
-      <p className="truncate border-line border-b px-3 py-2 font-mono text-muted text-xs">
+      <p className="truncate px-3 pt-2.5 pb-1 text-[12px] text-muted">
         {current != null && t ? (
           <>
-            <b className={sim.late[at] ? "text-bad" : "text-ink"}>
-              Step {String(at + 1).padStart(2, "0")} · {k && STEP_VERB[k]}{" "}
+            <span className={sim.late[at] ? "text-red" : "text-violet"}>
+              Step <span className="font-mono">{at + 1}</span>
+            </span>{" "}
+            · <span className="lowercase">{k && STEP_VERB[k]}</span>{" "}
+            <span className="font-mono text-fg">
               {model.byId[t]?.name ?? t}
-            </b>
-            {` · L${current + 1}`}
+            </span>
           </>
         ) : p ? (
-          <>
-            <b className="font-semibold text-ink">{p.name}</b>
-            {` · L${start + 1}–${start + (p.n ?? 1)}`}
-          </>
+          <span className="font-mono text-fg">{p.name}</span>
         ) : (
-          <span className="text-dim ui-label">
-            Select a building or click a line · red = finding
-            {cov && " · gutter = test hits"}
+          <span className="text-dim">
+            Select a piece or click a line · red lines are findings
+            {cov && " · gutter shows test hits"}
           </span>
         )}
       </p>

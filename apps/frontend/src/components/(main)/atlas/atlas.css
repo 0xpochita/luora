@@ -24,106 +24,34 @@
     var(--shell);
 }
 
-/* right panel */
+/* right panel: a column of floating cards on the dot-grid canvas (no tray) */
 .atlas aside {
-  background: var(--tray);
-  border-left: 1px solid var(--line);
   overflow: auto;
-  padding: 12px;
+  padding: 0 12px 12px 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
+.atlas aside > * {
+  flex: none;
+}
+/* small close tile (also used by the Lab run card) */
 .atlas .x {
-  border: 1px solid var(--line);
-  background: none;
-  padding: 1px 6px;
-  letter-spacing: 0.1em;
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 7px;
+  background: var(--raised);
+  color: var(--muted);
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 .atlas .x:hover {
-  border-color: var(--accent);
-  color: var(--ink);
-}
-.atlas .ins h2 {
-  margin: 0 0 10px;
-  font: 600 16px var(--font-geist-mono);
-  word-break: break-all;
-}
-.atlas .ins p {
-  margin: 0 0 10px;
-  color: #c3c7cc;
-}
-.atlas .badges,
-.atlas .conns,
-.atlas .qs {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-bottom: 10px;
-}
-.atlas .qs {
-  margin: 12px 12px 0;
-}
-.atlas .conn,
-.atlas .q {
-  border: 1px solid var(--line);
-  background: var(--card);
-  font: 500 10.5px var(--font-geist-mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 4px 8px;
-  color: var(--muted);
-}
-.atlas .conn::before {
-  content: "";
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  margin-right: 6px;
-  background: var(--c);
-}
-.atlas .conn:hover,
-.atlas .q:hover {
-  border-color: var(--accent);
-  color: var(--ink);
-}
-.atlas pre.code {
-  margin: 0;
-  background: var(--shell);
-  border: 1px solid var(--line);
-  padding: 8px 0;
-  font: 11.5px / 1.7 var(--font-geist-mono);
-  color: #cdd0d4;
-  overflow: auto;
-  max-height: 230px;
-}
-.atlas .cl {
-  display: block;
-  padding-right: 10px;
-}
-.atlas .cl .n {
-  display: inline-block;
-  width: 34px;
-  padding-right: 10px;
-  text-align: right;
-  color: var(--dim);
-}
-.atlas .cl.hl {
-  background: rgba(255, 255, 255, 0.07);
-  box-shadow: inset 2px 0 var(--accent);
-}
-.atlas .cl.mk {
-  background: color-mix(in srgb, var(--bad) 14%, transparent);
-  box-shadow: inset 2px 0 var(--bad);
-}
-.atlas .msg {
-  margin: 12px;
-  white-space: pre-wrap;
-  font-size: 12px;
-  color: #d3d6d9;
-  background: var(--shell);
-  border: 1px solid var(--line);
-  padding: 8px 10px;
+  background: var(--hover);
+  color: var(--fg);
 }
 /* code-meaning glyph: square marker with a monochrome stroke icon */
 .atlas .picon {

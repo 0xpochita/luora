@@ -1,6 +1,12 @@
 import type { ButtonHTMLAttributes } from "react";
 import { tile } from "./tile";
 
+const SIZES = {
+  xs: "size-6 text-[12px]",
+  sm: "size-8 text-[14px]",
+  md: "size-9 text-[16px]",
+} as const;
+
 /** Rounded-square icon tile; `active` turns it solid white. Always pass a `label` (aria + tooltip). */
 export function IconButton({
   label,
@@ -12,7 +18,7 @@ export function IconButton({
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   label: string;
   active?: boolean;
-  size?: "sm" | "md";
+  size?: "xs" | "sm" | "md";
 }) {
   return (
     <button
@@ -20,7 +26,7 @@ export function IconButton({
       aria-label={label}
       title={label}
       aria-pressed={active}
-      className={`${tile(active)} ${size === "sm" ? "size-8 text-[14px]" : "size-9 text-[16px]"} ${className}`}
+      className={`${tile(active)} ${SIZES[size]} ${className}`}
       {...props}
     />
   );

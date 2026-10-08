@@ -2,7 +2,7 @@ export { Button } from "./Button";
 export { Chip } from "./Chip";
 export { FloatingDock } from "./FloatingDock";
 export { IconButton } from "./IconButton";
-export { Input, Select } from "./Input";
+export { Input, Select, Textarea } from "./Input";
 export { KindIcon } from "./KindIcon";
 export { KV } from "./KV";
 export { LogoMark } from "./LogoMark";
