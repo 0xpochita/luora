@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Input } from "@/components/ui";
 import { type AtlasModel, SYSTEMS } from "@/features/atlas";
 import { SEVERITY } from "@/features/atlas/utils/audit";
 import { unitCode } from "@/features/atlas/utils/units";
@@ -74,7 +75,7 @@ export function QuickSearch({
         else if (e.key === "Escape") e.stopPropagation(); // closes search, keeps the selection
       }}
     >
-      <input
+      <Input
         autoFocus
         value={q}
         onChange={(e) => {
@@ -83,8 +84,9 @@ export function QuickSearch({
         }}
         placeholder="Jump to function, slot, call, event, finding…"
         aria-label="Search pieces"
+        className="w-full"
       />
-      <ul>
+      <ul className="mt-1.5 flex max-h-[50vh] flex-col gap-0.5 overflow-auto">
         {hits.map((h, i) => (
           <li key={h.p.id}>
             <button
@@ -92,16 +94,26 @@ export function QuickSearch({
               aria-current={i === at}
               onMouseEnter={() => setAt(i)}
               onClick={() => pick(h.p.id)}
-              className={h.p.sys === "vulns" ? "bad" : ""}
+              className={`grid w-full grid-cols-[18px_56px_1fr_auto] items-center gap-2.5 rounded-tile px-2.5 py-1.5 text-left text-[13px] transition-colors ${
+                i === at ? "bg-hover text-fg" : "text-muted"
+              }`}
             >
               <PieceIcon piece={h.p} />
-              <span className="code">{h.code}</span>
-              <span className="truncate">{h.text}</span>
-              <span className="sys">{SYSTEMS[h.p.sys].label}</span>
+              <span className="font-mono text-[12px] text-fg">{h.code}</span>
+              <span
+                className={`truncate ${h.p.sys === "vulns" ? "text-red" : ""}`}
+              >
+                {h.text}
+              </span>
+              <span className="text-[12px] text-dim">
+                {SYSTEMS[h.p.sys].label}
+              </span>
             </button>
           </li>
         ))}
-        {!hits.length && <li className="none">No match</li>}
+        {!hits.length && (
+          <li className="px-2.5 py-1.5 text-[13px] text-dim">No match</li>
+        )}
       </ul>
     </dialog>
   );

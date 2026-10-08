@@ -24,6 +24,7 @@ import {
   mapLayout,
 } from "@/features/atlas/utils/map-layout";
 import { usePanZoom } from "@/features/trace/hooks/usePanZoom";
+import { ZoomToolbar } from "../ZoomToolbar";
 import "./map.css";
 
 const CATS: MapCat[] = [
@@ -50,7 +51,10 @@ const KIND_CAT: Record<FlowNode["kind"], MapCat | null> = {
   c: "external",
   e: "events",
 };
-const KIND_TAG = { gate: "GATE", r: "READ", w: "WRITE", c: "CALL", e: "EMIT" };
+const KIND_TAG = { gate: "Gate", r: "Read", w: "Write", c: "Call", e: "Emit" };
+/** Panel cards start below their title row; wires land on the card edge this far down. */
+const CARD_Y = 22;
+const PORT_Y = CARD_Y + 15;
 
 const clip = (s: string, n: number) =>
   s.length > n ? `${s.slice(0, n - 1)}…` : s;
@@ -73,6 +77,42 @@ function Icon({
       className="am-ico"
     />
   );
+}
+
+/**
+ * Orthogonal `M x y H x V y` wire → smooth path with rounded corners. The last `tail` points
+ * move down by `dy` so the wire lands on the card edge instead of the title row above it.
+ */
+function smooth(d: string, dy: number, tail: number, R = 12) {
+  const tok = d.match(/[MHV]|-?[\d.]+/g) ?? [];
+  const pts: [number, number][] = [];
+  for (let i = 0; i < tok.length; ) {
+    const c = tok[i++];
+    const [x, y] = pts.at(-1) ?? [0, 0];
+    if (c === "M") pts.push([+tok[i++], +tok[i++]]);
+    else if (c === "H") pts.push([+tok[i++], y]);
+    else if (c === "V") pts.push([x, +tok[i++]]);
+  }
+  for (const p of pts.slice(-tail)) p[1] += dy;
+  let out = `M${pts[0][0]} ${pts[0][1]}`;
+  for (let i = 1; i < pts.length - 1; i++) {
+    const [a, b, c] = [pts[i - 1], pts[i], pts[i + 1]];
+    const l1 = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const l2 = Math.hypot(c[0] - b[0], c[1] - b[1]);
+    const r = Math.min(R, l1 / 2, l2 / 2);
+    if (!r) continue;
+    const p = [
+      b[0] - ((b[0] - a[0]) / l1) * r,
+      b[1] - ((b[1] - a[1]) / l1) * r,
+    ];
+    const q = [
+      b[0] + ((c[0] - b[0]) / l2) * r,
+      b[1] + ((c[1] - b[1]) / l2) * r,
+    ];
+    out += `L${p[0]} ${p[1]}Q${b[0]} ${b[1]} ${q[0]} ${q[1]}`;
+  }
+  const [lx, ly] = pts[pts.length - 1];
+  return `${out}L${lx} ${ly}`;
 }
 
 /** Clickable SVG group that selects a piece. */
@@ -162,22 +202,19 @@ export function MapView({
   const covLines = model.coverage
     ? pctLabel(ratio(model.coverage.lines))
     : null;
-  const hubC = L.hub.x + L.hub.w / 2;
+  const sideOf = (key: string) => L.ports.find((q) => q.key === key)?.side;
 
   return (
-    <div className="amap" ref={ref}>
+    <div
+      className="amap dot-grid"
+      ref={ref}
+      style={{
+        backgroundSize: `${22 * view.k}px ${22 * view.k}px`,
+        backgroundPosition: `${view.x}px ${view.y}px`,
+      }}
+    >
       <svg role="img" aria-label="Contract system map">
         <defs>
-          <radialGradient id="am-vignette">
-            <stop offset="0" stopColor="#1c1d22" stopOpacity="1" />
-            <stop offset=".6" stopColor="#121316" stopOpacity=".6" />
-            <stop offset="1" stopColor="#0a0b0c" stopOpacity="0" />
-          </radialGradient>
-          <radialGradient id="am-glow">
-            <stop offset="0" stopColor="#ffffff" stopOpacity=".95" />
-            <stop offset=".4" stopColor="#d9a441" stopOpacity=".45" />
-            <stop offset="1" stopColor="#d9a441" stopOpacity="0" />
-          </radialGradient>
           {[...CATS, "late" as const].map((c) => (
             <marker
               key={c}
@@ -189,33 +226,23 @@ export function MapView({
               markerHeight="6"
               orient="auto"
             >
-              <path d="M0 0L8 4L0 8Z" className={`am-c-${c}`} fill="var(--c)" />
+              <path
+                d="M0 0L8 4L0 8Z"
+                fill={c === "late" ? "var(--red)" : "#3a3a40"}
+              />
             </marker>
           ))}
         </defs>
         <g
           transform={`translate(${view.x} ${view.y}) scale(${view.k}) translate(${ox} 0)`}
         >
-          <ellipse
-            cx={hubC}
-            cy={L.hub.y + L.hub.h / 2}
-            rx={L.w * 0.55}
-            ry={L.h * 0.55}
-            fill="url(#am-vignette)"
-          />
-
           {/* emblem + title */}
-          <circle
-            cx={L.emblem.x}
-            cy={L.emblem.y}
-            r={34}
-            fill="url(#am-glow)"
-            className="am-pulse"
-          />
-          <circle
-            cx={L.emblem.x}
-            cy={L.emblem.y}
-            r={17}
+          <rect
+            x={L.emblem.x - 18}
+            y={L.emblem.y - 18}
+            width={36}
+            height={36}
+            rx={11}
             className="am-emblem"
           />
           <Icon k="grid" x={L.emblem.x - 8} y={L.emblem.y - 8} size={16} />
@@ -248,18 +275,18 @@ export function MapView({
             <rect
               width={L.deploy.w}
               height={L.deploy.h}
-              rx={5}
+              rx={14}
               className="am-deploy"
             />
-            <text x={10} y={18} className="am-dtitle">
-              DEPLOY
+            <text x={12} y={19} className="am-dtitle">
+              Deploy
             </text>
-            <text x={62} y={18} className="am-meta">
+            <text x={62} y={19} className="am-meta">
               {L.deploy.label} · runs once
             </text>
             <text
-              x={L.deploy.w - 10}
-              y={18}
+              x={L.deploy.w - 12}
+              y={19}
               className="am-meta"
               textAnchor="end"
             >
@@ -278,7 +305,7 @@ export function MapView({
               <rect
                 width={c.w}
                 height={c.h}
-                rx={2}
+                rx={6}
                 className={`am-chip ${c.imm ? "imm" : ""}`}
               />
               <text x={7} y={11} className="am-chiptx">
@@ -288,34 +315,39 @@ export function MapView({
           ))}
 
           {/* wires (behind hub + panels) */}
-          {L.wires.map((w) => (
-            <path
-              key={w.key}
-              d={w.d}
-              className={`am-wire am-c-${w.cat} ${lit(w.key) ? "lit" : ""}`}
-            />
-          ))}
+          {L.wires.map((w) => {
+            const side = sideOf(w.key);
+            return (
+              <path
+                key={w.key}
+                d={smooth(
+                  w.d,
+                  side === "bottom" ? CARD_Y : PORT_Y - 15,
+                  side === "bottom" ? 1 : 2,
+                )}
+                className={`am-wire am-c-${w.cat} ${lit(w.key) ? "lit" : ""}`}
+              />
+            );
+          })}
 
           {/* hub column */}
           <g transform={`translate(${L.hub.x} ${L.hub.y})`}>
-            <path
-              d={`M0 0H${L.hub.w - 14}L${L.hub.w} 14V${L.hub.h}H0Z`}
-              className="am-hub"
-            />
-            <line
-              x1={L.hub.w / 2}
-              y1={L.hub.head - 8}
-              x2={L.hub.w / 2}
-              y2={L.hub.h - 30}
-              className="am-spine"
+            <rect width={L.hub.w} height={L.hub.h} rx={16} className="am-hub" />
+            <rect
+              x={5}
+              y={5}
+              width={L.hub.w - 10}
+              height={L.hub.head - 26}
+              rx={11}
+              className="am-inset"
             />
             <text
               x={L.hub.w / 2}
-              y={22}
+              y={24}
               className="am-meta"
               textAnchor="middle"
             >
-              CONTRACT · HUB
+              Contract hub
             </text>
             <text
               x={L.hub.w / 2}
@@ -331,9 +363,15 @@ export function MapView({
               className="am-meta"
               textAnchor="middle"
             >
-              {model.entry.length} ENTRY ·{" "}
-              {model.pieces.filter((p) => p.sys === "storage").length} SLOTS ·{" "}
-              {model.pieces.filter((p) => p.sys === "calls").length} CALLS
+              <tspan className="am-n">{model.entry.length}</tspan> entry ·{" "}
+              <tspan className="am-n">
+                {model.pieces.filter((p) => p.sys === "storage").length}
+              </tspan>{" "}
+              slots ·{" "}
+              <tspan className="am-n">
+                {model.pieces.filter((p) => p.sys === "calls").length}
+              </tspan>{" "}
+              calls
             </text>
             <text
               x={L.hub.w / 2}
@@ -341,11 +379,17 @@ export function MapView({
               className="am-meta"
               textAnchor="middle"
             >
-              RISK {model.riskScore().toFixed(1)}
-              {covLines && ` · LINES COVERED ${covLines}`}
+              Risk{" "}
+              <tspan className="am-n">{model.riskScore().toFixed(1)}</tspan>
+              {covLines && (
+                <>
+                  {" "}
+                  · lines covered <tspan className="am-n">{covLines}</tspan>
+                </>
+              )}
             </text>
             <text x={14} y={L.hub.head - 6} className="am-side">
-              ◂ USER STATE-CHANGING
+              ◂ User, state-changing
             </text>
             <text
               x={L.hub.w - 14}
@@ -353,7 +397,7 @@ export function MapView({
               className="am-side"
               textAnchor="end"
             >
-              ADMIN · VIEW ▸
+              Admin · view ▸
             </text>
           </g>
           {L.ports.map((p) => {
@@ -371,9 +415,9 @@ export function MapView({
                     className="am-port-b"
                     textAnchor="middle"
                   >
-                    {p.label.toUpperCase()}
+                    {p.label}
                   </text>
-                  <circle cx={p.x} cy={p.y} r={3.5} className="am-dot" />
+                  <circle cx={p.x} cy={p.y} r={4} className="am-dot" />
                 </g>
               );
             const left = p.side === "left";
@@ -395,9 +439,10 @@ export function MapView({
                     y={p.y - 13}
                     width={L.hub.w / 2}
                     height={28}
+                    rx={8}
                     className="am-porthit"
                   />
-                  <circle cx={p.x} cy={p.y} r={3.5} className="am-dot" />
+                  <circle cx={p.x} cy={p.y} r={4} className="am-dot" />
                   <Icon
                     k={p.icon}
                     x={left ? tx : tx - 12}
@@ -411,7 +456,7 @@ export function MapView({
                     textAnchor={left ? "start" : "end"}
                   >
                     {clip(p.label, 17)}
-                    {bad && <tspan className="am-warn"> ▲</tspan>}
+                    {bad && <tspan className="am-warn"> ●</tspan>}
                   </text>
                   <text
                     x={left ? tx + 17 : tx - 17}
@@ -427,258 +472,270 @@ export function MapView({
           })}
 
           {/* panels */}
-          {L.panels.map((p) => (
-            <g
-              key={p.key}
-              transform={`translate(${p.x} ${p.y})`}
-              className={`am-panel am-c-${p.cat} ${lit(p.key) ? "lit" : ""}`}
-              onPointerEnter={() => setHover(p.key)}
-              onPointerLeave={() => setHover(null)}
-            >
-              <rect width={p.w} height={p.h} rx={7} className="am-box" />
-              <rect x={0} y={7} width={3} height={16} className="am-bar" />
-              <Hit
-                id={p.select}
-                onSelect={select}
-                label={p.title}
-                className={selected === p.select ? "on" : ""}
+          {L.panels.map((p) => {
+            const side = sideOf(p.key);
+            const port =
+              side === "bottom"
+                ? [40, CARD_Y]
+                : [side === "left" ? p.w : 0, PORT_Y];
+            return (
+              <g
+                key={p.key}
+                transform={`translate(${p.x} ${p.y})`}
+                className={`am-panel am-c-${p.cat} ${lit(p.key) ? "lit" : ""}`}
+                onPointerEnter={() => setHover(p.key)}
+                onPointerLeave={() => setHover(null)}
               >
                 <rect
-                  x={0}
-                  y={0}
+                  y={CARD_Y}
                   width={p.w}
-                  height={26}
-                  className="am-titlehit"
+                  height={p.h - CARD_Y}
+                  rx={16}
+                  className="am-box"
                 />
-                <Icon k={p.icon} x={12} y={9} size={12} />
-                <text x={30} y={19} className="am-ptitle">
-                  {p.title}
-                </text>
-                {p.badge && (
-                  <text
-                    x={36 + p.title.length * 6.6}
-                    y={19}
-                    className={`am-badge ${p.badge === "anyone" ? "" : "priv"}`}
-                  >
-                    {p.badge}
-                  </text>
-                )}
-                {p.cat === "findings" && (
-                  <text
-                    x={p.w - 10}
-                    y={19}
-                    className="am-meta"
-                    textAnchor="end"
-                  >
-                    {p.rows.length} · SEVERITY ▾
-                  </text>
-                )}
-              </Hit>
-              {p.findings.slice(0, p.tagsShown).map((f, i, all) => (
+                <rect
+                  x={5}
+                  y={CARD_Y + 5}
+                  width={p.w - 10}
+                  height={p.h - CARD_Y - 10}
+                  rx={11}
+                  className="am-inset"
+                />
+                <circle cx={port[0]} cy={port[1]} r={4} className="am-dot" />
                 <Hit
-                  key={f}
-                  id={f}
+                  id={p.select}
                   onSelect={select}
-                  label={model.byId[f]?.name ?? f}
-                  className={selected === f ? "on" : ""}
-                  transform={`translate(${p.w - 10 - (all.length - i) * 38 - (p.findings.length > p.tagsShown ? 26 : 0)} 7)`}
+                  label={p.title}
+                  className={selected === p.select ? "on" : ""}
                 >
                   <rect
-                    width={34}
-                    height={14}
-                    rx={2}
-                    className={`am-tag sev-${model.byId[f]?.risk ?? "low"}`}
+                    x={-4}
+                    y={0}
+                    width={p.w + 8}
+                    height={CARD_Y - 2}
+                    rx={8}
+                    className="am-titlehit"
                   />
-                  <text
-                    x={17}
-                    y={10.5}
-                    className="am-tagtx"
-                    textAnchor="middle"
-                  >
-                    {code(f)}
-                  </text>
-                </Hit>
-              ))}
-              {p.findings.length > p.tagsShown && (
-                <text x={p.w - 10} y={18} className="am-more" textAnchor="end">
-                  +{p.findings.length - p.tagsShown}
-                </text>
-              )}
-
-              {p.edges.map((e, i) => (
-                <path
-                  // biome-ignore lint/suspicious/noArrayIndexKey: edges are positional
-                  key={i}
-                  d={e.d}
-                  className={`am-edge ${e.late ? "late am-c-late" : ""}`}
-                  markerEnd={
-                    e.arrow
-                      ? `url(#am-arrow-${e.late ? "late" : p.cat})`
-                      : undefined
-                  }
-                />
-              ))}
-              {p.nodes.map((n) => {
-                const kc = KIND_CAT[n.kind] ?? p.cat;
-                return (
-                  <Hit
-                    key={`${n.kind}-${n.id}`}
-                    id={n.id}
-                    onSelect={select}
-                    label={`${KIND_TAG[n.kind]} ${n.label}`}
-                    className={`am-c-${kc} ${selected === n.id ? "on" : ""}`}
-                    transform={`translate(${n.x} ${n.y})`}
-                  >
-                    <title>{`${KIND_TAG[n.kind]} ${n.label}${n.late ? " · written after external call" : ""}`}</title>
-                    <rect
-                      width={n.w}
-                      height={n.h}
-                      rx={3}
-                      className={`am-node k-${n.kind} ${n.late ? "late" : ""} ${n.ghost ? "ghost" : ""}`}
-                    />
-                    {n.logo ? (
-                      <image href={n.logo} x={4} y={4} width={12} height={12} />
-                    ) : (
-                      <text x={5} y={13.5} className="am-kind">
-                        {KIND_TAG[n.kind][0]}
-                      </text>
+                  <circle cx={6} cy={10} r={3} className="am-sdot" />
+                  <text x={16} y={14} className="am-ptitle">
+                    {p.title}
+                    {p.badge && (
+                      <tspan
+                        dx={6}
+                        className={`am-badge ${p.badge === "anyone" ? "" : "priv"}`}
+                      >
+                        {p.badge}
+                      </tspan>
                     )}
-                    <text x={19} y={13.5} className="am-nodetx">
-                      {clip(n.label, 13)}
+                  </text>
+                  {p.cat === "findings" && (
+                    <text
+                      x={p.w - 4}
+                      y={14}
+                      className="am-meta"
+                      textAnchor="end"
+                    >
+                      {p.rows.length} by severity
+                    </text>
+                  )}
+                </Hit>
+                {p.findings.slice(0, p.tagsShown).map((f, i, all) => (
+                  <Hit
+                    key={f}
+                    id={f}
+                    onSelect={select}
+                    label={model.byId[f]?.name ?? f}
+                    className={selected === f ? "on" : ""}
+                    transform={`translate(${p.w - 4 - (all.length - i) * 38 - (p.findings.length > p.tagsShown ? 26 : 0)} 2)`}
+                  >
+                    <rect
+                      width={34}
+                      height={15}
+                      rx={6}
+                      className={`am-tag sev-${model.byId[f]?.risk ?? "low"}`}
+                    />
+                    <text
+                      x={17}
+                      y={11}
+                      className="am-tagtx"
+                      textAnchor="middle"
+                    >
+                      {code(f)}
                     </text>
                   </Hit>
-                );
-              })}
+                ))}
+                {p.findings.length > p.tagsShown && (
+                  <text x={p.w - 4} y={14} className="am-more" textAnchor="end">
+                    +{p.findings.length - p.tagsShown}
+                  </text>
+                )}
 
-              {p.rows.map((r) => {
-                if (r.head)
+                {p.edges.map((e, i) => (
+                  <path
+                    // biome-ignore lint/suspicious/noArrayIndexKey: edges are positional
+                    key={i}
+                    d={e.d}
+                    className={`am-edge ${e.late ? "late am-c-late" : ""}`}
+                    markerEnd={
+                      e.arrow
+                        ? `url(#am-arrow-${e.late ? "late" : p.cat})`
+                        : undefined
+                    }
+                  />
+                ))}
+                {p.nodes.map((n) => {
+                  const kc = KIND_CAT[n.kind] ?? p.cat;
                   return (
-                    <g
-                      key={`h-${r.label}`}
+                    <Hit
+                      key={`${n.kind}-${n.id}`}
+                      id={n.id}
+                      onSelect={select}
+                      label={`${KIND_TAG[n.kind]} ${n.label}`}
+                      className={`am-c-${kc} ${selected === n.id ? "on" : ""}`}
+                      transform={`translate(${n.x} ${n.y})`}
+                    >
+                      <title>{`${KIND_TAG[n.kind]} ${n.label}${n.late ? " · written after external call" : ""}`}</title>
+                      <rect
+                        width={n.w}
+                        height={n.h}
+                        rx={7}
+                        className={`am-node k-${n.kind} ${n.late ? "late" : ""} ${n.ghost ? "ghost" : ""}`}
+                      />
+                      {n.logo ? (
+                        <image
+                          href={n.logo}
+                          x={4}
+                          y={4}
+                          width={12}
+                          height={12}
+                        />
+                      ) : (
+                        <text x={5} y={13.5} className="am-kind">
+                          {KIND_TAG[n.kind][0]}
+                        </text>
+                      )}
+                      <text x={19} y={13.5} className="am-nodetx">
+                        {clip(n.label, 13)}
+                      </text>
+                    </Hit>
+                  );
+                })}
+
+                {p.rows.map((r) => {
+                  if (r.head)
+                    return (
+                      <g
+                        key={`h-${r.label}`}
+                        transform={`translate(${r.x} ${r.y})`}
+                      >
+                        <text x={12} y={11} className="am-rowhead">
+                          {r.label}
+                        </text>
+                        <text
+                          x={r.w - 12}
+                          y={11}
+                          className="am-rowhead"
+                          textAnchor="end"
+                        >
+                          {r.meta}
+                        </text>
+                      </g>
+                    );
+                  const status =
+                    r.risk && r.id ? triage.get(r.id).status : null;
+                  return (
+                    <Hit
+                      key={`${r.id}-${r.label}`}
+                      id={r.id}
+                      onSelect={select}
+                      label={r.label}
+                      className={selected === r.id ? "on" : ""}
                       transform={`translate(${r.x} ${r.y})`}
                     >
-                      <text x={12} y={11} className="am-rowhead">
-                        {r.label.toUpperCase()}
+                      <rect
+                        x={4}
+                        y={0}
+                        width={r.w - 8}
+                        height={16}
+                        rx={5}
+                        className="am-rowhit"
+                      />
+                      {r.risk ? (
+                        <>
+                          <rect
+                            x={10}
+                            y={3}
+                            width={34}
+                            height={11}
+                            rx={4}
+                            className={`am-tag sev-${r.risk}`}
+                          />
+                          <text
+                            x={27}
+                            y={11.5}
+                            className="am-tagtx"
+                            textAnchor="middle"
+                          >
+                            {SEVERITY[r.risk]}
+                          </text>
+                        </>
+                      ) : r.logo ? (
+                        <image
+                          href={r.logo}
+                          x={12}
+                          y={2}
+                          width={12}
+                          height={12}
+                        />
+                      ) : (
+                        r.icon && <Icon k={r.icon} x={12} y={2} size={12} />
+                      )}
+                      <text
+                        x={r.risk ? 50 : 30}
+                        y={12}
+                        className={`am-rowtx ${status === "false-positive" || status === "duplicate" ? "dismissed" : ""}`}
+                      >
+                        {clip(
+                          r.risk && r.id ? `${code(r.id)} ${r.label}` : r.label,
+                          r.risk ? 30 : 20,
+                        )}
                       </text>
                       <text
                         x={r.w - 12}
-                        y={11}
-                        className="am-rowhead"
+                        y={12}
+                        className="am-rowmeta"
                         textAnchor="end"
                       >
-                        {r.meta.toUpperCase()}
+                        {r.risk
+                          ? `${TOOL_LABEL[r.meta as keyof typeof TOOL_LABEL] ?? r.meta} · ${status ? TRIAGE_LABEL[status] : ""}`
+                          : clip(r.meta, Math.floor((r.w - 170) / 5.4))}
                       </text>
-                    </g>
+                    </Hit>
                   );
-                const status = r.risk && r.id ? triage.get(r.id).status : null;
-                return (
-                  <Hit
-                    key={`${r.id}-${r.label}`}
-                    id={r.id}
-                    onSelect={select}
-                    label={r.label}
-                    className={selected === r.id ? "on" : ""}
-                    transform={`translate(${r.x} ${r.y})`}
-                  >
-                    <rect
-                      x={4}
-                      y={0}
-                      width={r.w - 8}
-                      height={16}
-                      className="am-rowhit"
-                    />
-                    {r.risk ? (
-                      <>
-                        <rect
-                          x={10}
-                          y={3}
-                          width={34}
-                          height={11}
-                          rx={2}
-                          className={`am-tag sev-${r.risk}`}
-                        />
-                        <text
-                          x={27}
-                          y={11.5}
-                          className="am-tagtx"
-                          textAnchor="middle"
-                        >
-                          {SEVERITY[r.risk]}
-                        </text>
-                      </>
-                    ) : r.logo ? (
-                      <image
-                        href={r.logo}
-                        x={12}
-                        y={2}
-                        width={12}
-                        height={12}
-                      />
-                    ) : (
-                      r.icon && <Icon k={r.icon} x={12} y={2} size={12} />
-                    )}
-                    <text
-                      x={r.risk ? 50 : 30}
-                      y={12}
-                      className={`am-rowtx ${status === "false-positive" || status === "duplicate" ? "dismissed" : ""}`}
-                    >
-                      {clip(
-                        r.risk && r.id ? `${code(r.id)} ${r.label}` : r.label,
-                        r.risk ? 30 : 20,
-                      )}
-                    </text>
-                    <text
-                      x={r.w - 12}
-                      y={12}
-                      className="am-rowmeta"
-                      textAnchor="end"
-                    >
-                      {r.risk
-                        ? `${TOOL_LABEL[r.meta as keyof typeof TOOL_LABEL] ?? r.meta} · ${status ? TRIAGE_LABEL[status] : ""}`
-                        : clip(r.meta, Math.floor((r.w - 170) / 5.4))}
-                    </text>
-                  </Hit>
-                );
-              })}
+                })}
 
-              {p.footer && (
-                <g transform={`translate(0 ${p.h - 20})`}>
-                  <line
-                    x1={8}
-                    x2={p.w - 8}
-                    y1={0}
-                    y2={0}
-                    className="am-footline"
-                  />
-                  <text
-                    x={12}
-                    y={13}
-                    className={`am-foot ${p.footerBad ? "gap" : ""}`}
-                  >
-                    {p.footer}
-                  </text>
-                </g>
-              )}
-            </g>
-          ))}
+                {p.footer && (
+                  <g transform={`translate(0 ${p.h - 20})`}>
+                    <text
+                      x={12}
+                      y={13}
+                      className={`am-foot ${p.footerBad ? "gap" : ""}`}
+                    >
+                      {p.footer}
+                    </text>
+                  </g>
+                )}
+              </g>
+            );
+          })}
         </g>
       </svg>
 
-      <div className="am-ctl" data-no-pan>
-        <button type="button" onClick={() => zoomAt(1.2)} aria-label="Zoom in">
-          +
-        </button>
-        <button
-          type="button"
-          onClick={() => zoomAt(1 / 1.2)}
-          aria-label="Zoom out"
-        >
-          −
-        </button>
-        <button type="button" onClick={fitAll}>
-          FIT
-        </button>
-      </div>
+      <ZoomToolbar
+        onIn={() => zoomAt(1.2)}
+        onOut={() => zoomAt(1 / 1.2)}
+        onFit={fitAll}
+      />
       <div className="am-legend" data-no-pan>
         {CATS.map((c) => (
           <span key={c} className={`am-c-${c}`}>
@@ -687,10 +744,10 @@ export function MapView({
           </span>
         ))}
         <span className="am-c-late">
-          <i className="arrow" />
+          <i />
           Write after ext. call
         </span>
-        <span className="note">GATE → READ → CALL → WRITE → EMIT</span>
+        <span className="note">Gate → read → call → write → emit</span>
       </div>
     </div>
   );
