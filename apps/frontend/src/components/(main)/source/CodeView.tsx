@@ -83,7 +83,7 @@ export function CodeView({
             line.n === current
               ? red.has(line.n)
                 ? "bg-red/20 shadow-[inset_2px_0_var(--red)]"
-                : "bg-fg/12 shadow-[inset_2px_0_var(--fg)]"
+                : "bg-violet/15 shadow-[inset_2px_0_var(--violet)]"
               : red.has(line.n)
                 ? "bg-red/10 shadow-[inset_2px_0_var(--red)]"
                 : on.has(line.n)

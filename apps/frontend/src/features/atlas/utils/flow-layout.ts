@@ -16,8 +16,8 @@ export const FLOW = {
   /** revert circle centre below the lane's node row */
   drop: 64,
   badge: 9,
-  legendW: 640,
-  legendH: 128,
+  /** minimum canvas width past nodeX, so the event / finding strips don't wrap too early */
+  minW: 640,
 } as const;
 
 export type FlowKind = "entry" | "access" | Step[0] | "ret";
@@ -66,8 +66,6 @@ export type FlowLane = {
 };
 export type FlowDot = { id: string; x: number; y: number; lanes: string[] };
 export type FlowLayout = {
-  /** legend box, top right of the trunk, above the first lane */
-  legend: { x: number; y: number };
   deploy: { id: string | null; x: number; y: number; writes: string[] };
   idle: { x: number; y: number; roles: string[] };
   lanes: FlowLane[];
@@ -286,7 +284,7 @@ export function flowLayout(m: Model): FlowLayout {
   );
 
   // bottom strips: events (with the lanes that emit them) and findings, worst first, wrapped
-  const W = Math.max(nodeX + FLOW.legendW, ...lanes.map((l) => l.end)) + pad;
+  const W = Math.max(nodeX + FLOW.minW, ...lanes.map((l) => l.end)) + pad;
   const perRow = Math.max(1, Math.floor((W - nodeX) / dx));
   const strip = (
     ids: string[],
@@ -331,7 +329,6 @@ export function flowLayout(m: Model): FlowLayout {
     y: Math.round(o.y),
   });
   return {
-    legend: { x: nodeX, y: pad },
     deploy: { id: ctor?.id ?? null, x: trunkX, y: deployY, writes },
     idle: { x: trunkX, y: idleY, roles },
     lanes: lanes.map((l) => ({

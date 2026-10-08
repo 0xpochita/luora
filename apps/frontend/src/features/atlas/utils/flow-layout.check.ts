@@ -214,9 +214,6 @@ for (let i = 0; i < circles.length; i++)
       `overlap ${i} ${j}`,
     );
   }
-// legend sits above the first lane and inside the canvas
-assert.ok(L.legend.y + FLOW.legendH <= L.lanes[0].y);
-assert.ok(L.legend.x + FLOW.legendW <= L.w);
 // lanes stack without overlap, everything inside the canvas
 for (let i = 1; i < L.lanes.length; i++)
   assert.ok(L.lanes[i].y >= L.lanes[i - 1].y + L.lanes[i - 1].h);
