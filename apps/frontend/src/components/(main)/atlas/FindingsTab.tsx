@@ -113,8 +113,8 @@ export function FindingsTab({
               onClick={() => onSelect(on ? null : f.id)}
               className={`relative flex w-[300px] flex-none flex-col gap-1.5 rounded-card border px-3 py-2.5 text-left shadow-soft transition-[colors,opacity] ${
                 on
-                  ? "border-border-strong bg-hover shadow-float"
-                  : "border-transparent bg-surface hover:bg-raised"
+                  ? "border-border-strong bg-card-grad shadow-float"
+                  : "border-border bg-card-grad hover:border-border-strong"
               } ${isDismissed(t) ? "opacity-40" : ""}`}
             >
               <span className="flex items-center gap-1.5">

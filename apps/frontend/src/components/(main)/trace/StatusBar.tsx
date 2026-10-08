@@ -12,7 +12,7 @@ export function StatusBar({
 }) {
   const pass = test.status === "Success";
   return (
-    <div className="mb-3 flex flex-wrap items-center gap-2.5 rounded-tile bg-inset px-2 py-1.5 text-muted text-xs">
+    <div className="mb-3 flex flex-wrap items-center gap-2.5 rounded-tile bg-inset px-2 py-1.5 text-[12.5px] text-muted">
       <Chip tone={pass ? "ok" : "bad"} dot>
         {pass ? "Pass" : "Fail"}
       </Chip>

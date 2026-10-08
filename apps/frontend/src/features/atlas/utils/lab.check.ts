@@ -4,8 +4,10 @@ import { readFileSync } from "node:fs";
 import type { Piece, Step } from "../types";
 import { foundryTest, type LabModel, solAmount } from "./lab-foundry.ts";
 import {
+  COL,
   connect,
   contractGraph,
+  GAP,
   nodeHeight,
   portPos,
   revertsOf,
@@ -257,8 +259,16 @@ assert.ok(
 for (const kind of ["entry", "slot"] as const) {
   const col = g.nodes.filter((n) => n.kind === kind).sort((a, b) => a.y - b.y);
   for (const [i, n] of col.slice(1).entries())
-    assert.ok(n.y >= col[i].y + nodeHeight(col[i]), `${n.id} overlaps`);
+    assert.ok(n.y >= col[i].y + nodeHeight(col[i]) + GAP, `${n.id} too close`);
 }
+// every slot sits in the slots column; columns leave ≥160px for the wires to curve
+assert.ok(
+  g.nodes.filter((n) => n.kind === "slot").every((n) => n.x === COL.slot),
+);
+const right = (k: string) =>
+  Math.max(...g.nodes.filter((n) => n.kind === k).map((n) => n.x + n.w));
+assert.ok(COL.slot - right("entry") >= 160);
+assert.ok(COL.side - right("slot") >= 160);
 // targets sit near the functions that write them
 const ys = Object.fromEntries(g.nodes.map((n) => [n.id, n.y]));
 assert.ok(ys.shares < ys.oracle, "deposit/withdraw slots above setOracle's");

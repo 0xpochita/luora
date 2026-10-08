@@ -1,8 +1,9 @@
-/* Lab node editor (DESIGN.md "Node card anatomy"): title + status dot above each card, surface card
-   with a nested inset inner card, round port dots on the card edge, thin grey bezier wires.
-   Geometry must match HEADER / WIDGET / ROW in utils/lab-graph.ts: the 28px header = 23px title
-   row + 5px outer inset, then widget rows (26px) and port / text rows (20px), 8px bottom pad
-   (3px inner + 5px outer). */
+/* Lab node editor (DESIGN.md "Node card anatomy"): "● Title" + badges above each card, graphite
+   gradient outer card with a nested inner card, a monochrome kind row (icon + label), 32px port
+   rows with 7px semantic dots, 1px grey bezier wires.
+   Geometry must match utils/lab-graph.ts: TITLE 22 + 10 gap, outer inset 8, inner padding 16,
+   kind row 22, widgets 44 (36px control), port rows 32, text rows 24. Borders are inset
+   box-shadows so they never shift the content (port dots sit at PORT_X = 8 + 16 + 3.5). */
 .lab-main {
   position: relative;
   flex: 1;
@@ -14,21 +15,53 @@
 .lab-ico {
   width: 17px;
   height: 17px;
+  flex: none;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+.lab-ico.sm {
+  width: 15px;
+  height: 15px;
+  color: var(--muted);
+}
 
-/* canvas — the dot grid itself comes from the dot-grid utility */
+/* status corner under the canvas (bottom-left): hints never sit on top of cards */
+.lab-status {
+  flex: none;
+  margin: 0;
+  padding: 6px 16px 8px;
+  font-size: 12.5px;
+  color: var(--dim);
+  pointer-events: none;
+}
+
+/* canvas + its own right gutter for the zoom stack, so cards never render under it */
+.lab-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.lab-gutter {
+  flex: none;
+  width: 68px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  padding-bottom: 16px;
+}
 .lab-canvas {
   position: relative;
   flex: 1;
+  min-width: 0;
   min-height: 0;
   overflow: hidden;
   cursor: grab;
   touch-action: none;
+  border-radius: var(--radius-card);
 }
 .lab-canvas:active {
   cursor: grabbing;
@@ -39,7 +72,7 @@
   transform-origin: 0 0;
 }
 
-/* wires: grey by default, the selected path takes its port colour (or fg for the picked wire) */
+/* wires: 1px grey; lit / picked / pulsing = near-white. No colour. */
 .lab-wires {
   position: absolute;
   overflow: visible;
@@ -48,22 +81,29 @@
 }
 .lab-wires .vis {
   fill: none;
-  stroke: #3a3a40;
-  stroke-width: 1.5;
-  transition: stroke 0.15s;
+  stroke: var(--wire);
+  stroke-opacity: 0.55;
+  stroke-width: 1;
+  transition:
+    stroke 0.15s,
+    stroke-opacity 0.15s;
 }
 .lab-wires .wire.flow .vis {
-  stroke-dasharray: 5 4;
+  stroke-dasharray: 4 4;
 }
-.lab-wires .wire.lit .vis {
-  stroke: var(--c);
+.lab-wires .wire.revert .vis {
+  stroke: var(--red);
+  stroke-opacity: 0.7;
 }
+.lab-wires .wire.lit .vis,
 .lab-wires .wire.picked .vis {
-  stroke: var(--fg);
+  stroke: var(--wire-on);
+  stroke-opacity: 1;
 }
 .lab-wires .wire.pulse .vis {
-  stroke: var(--c);
-  stroke-dasharray: 8 6;
+  stroke: var(--wire-on);
+  stroke-opacity: 1;
+  stroke-dasharray: 6 5;
   animation: lab-flow 0.5s linear infinite;
 }
 .lab-wires .hit {
@@ -75,12 +115,12 @@
 }
 .lab-wires .wire.drag {
   fill: none;
-  stroke-width: 1.5;
-  stroke-dasharray: 5 4;
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
 }
 @keyframes lab-flow {
   to {
-    stroke-dashoffset: -14;
+    stroke-dashoffset: -11;
   }
 }
 
@@ -89,19 +129,21 @@
   position: absolute;
   display: flex;
   flex-direction: column;
-  color: var(--muted);
-  font: 12px / 20px var(--font-outfit);
+  color: var(--body);
+  font: 13px / 1.5 var(--font-outfit);
   cursor: default;
   user-select: none;
 }
+/* title row above the card: white dot + title left, badges right (8px apart) */
 .lab-card header {
   position: relative;
   flex: none;
   display: flex;
   align-items: center;
-  gap: 6px;
-  height: 23px;
-  padding: 0 4px 3px;
+  gap: 8px;
+  height: 22px;
+  margin-bottom: 10px;
+  padding: 0 6px;
   color: var(--fg);
   cursor: move;
 }
@@ -110,7 +152,7 @@
   height: 6px;
   flex: none;
   border-radius: 50%;
-  background: var(--c);
+  background: var(--fg);
 }
 .lab-card header b {
   flex: 1;
@@ -118,114 +160,158 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 400;
-  font-size: 12.5px;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: -0.01em;
 }
 .lab-card .logo {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   flex: none;
   border-radius: 50%;
   background: var(--raised) center / contain no-repeat;
 }
-/* corner stats: dim mono numbers, tone chips for findings / run status */
+/* badges: graphite pill, the semantic colour lives only on its dot */
 .lab-card .badge {
   flex: none;
-  height: 16px;
-  padding: 0 5px;
-  border-radius: 6px;
-  font: 10.5px / 16px var(--font-geist-mono);
-  color: var(--dim);
-}
-.lab-card .badge.bad,
-.lab-card .badge.st.fail,
-.lab-card .badge.st.revert {
-  background: color-mix(in srgb, var(--red) 12%, transparent);
-  color: var(--red);
-}
-.lab-card .badge.warn {
-  background: color-mix(in srgb, var(--yellow) 10%, transparent);
-  color: var(--yellow);
-}
-.lab-card .badge.ok,
-.lab-card .badge.st.pass {
-  background: color-mix(in srgb, var(--green) 10%, transparent);
-  color: var(--green);
-}
-.lab-card .badge.st.unknown {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 8px;
   background: var(--raised);
+  box-shadow: inset 0 0 0 1px var(--border);
+  font: 12px / 20px var(--font-geist-mono);
+  color: var(--text);
+}
+.lab-card .badge i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--dim);
+}
+.lab-card .badge.dim {
   color: var(--muted);
+}
+.lab-card .badge.bad i,
+.lab-card .badge.st.fail i,
+.lab-card .badge.st.revert i {
+  background: var(--red);
+}
+.lab-card .badge.warn i {
+  background: var(--yellow);
+}
+.lab-card .badge.ok i,
+.lab-card .badge.st.pass i {
+  background: var(--green);
+}
+.lab-card .badge.st {
+  font-family: var(--font-outfit);
 }
 
 .lab-card .lab-body {
   flex: 1;
   display: flex;
-  padding: 5px;
-  border-radius: 16px;
-  background: var(--surface);
+  padding: 8px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, var(--card-top), var(--card-bot));
   box-shadow:
     inset 0 0 0 1px var(--border),
-    var(--shadow-soft);
+    0 10px 30px rgba(0, 0, 0, 0.45);
   transition: box-shadow 0.15s;
 }
 .lab-card .lab-inner {
   flex: 1;
   min-width: 0;
-  padding-bottom: 3px;
-  border-radius: 11px;
-  background: var(--inset);
+  padding: 16px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--inner-top), var(--inner-bot));
+  box-shadow: inset 0 0 0 1px var(--border);
 }
-.lab-card.hot .lab-body {
+.lab-card.hot .lab-body,
+.lab-card.sel .lab-body {
   box-shadow:
     inset 0 0 0 1px var(--border-strong),
-    var(--shadow-float);
+    0 14px 40px rgba(0, 0, 0, 0.55);
+}
+.lab-card.running .lab-body {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.4),
+    0 14px 40px rgba(0, 0, 0, 0.55);
 }
 .lab-card.run-pass .lab-body {
   box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--green) 45%, transparent),
-    var(--shadow-soft);
+    inset 0 0 0 1px color-mix(in srgb, var(--green) 40%, transparent),
+    0 10px 30px rgba(0, 0, 0, 0.45);
 }
 .lab-card.run-fail .lab-body,
 .lab-card.run-revert .lab-body {
   box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--red) 55%, transparent),
-    var(--shadow-soft);
-}
-.lab-card.running .lab-body {
-  box-shadow:
-    inset 0 0 0 1px var(--violet),
-    var(--shadow-float);
-}
-.lab-card.sel .lab-body {
-  box-shadow: var(--shadow-float);
+    inset 0 0 0 1px color-mix(in srgb, var(--red) 50%, transparent),
+    0 10px 30px rgba(0, 0, 0, 0.45);
 }
 
-.lab-card .widgets {
-  padding: 0 7px;
-}
-.lab-card .w {
+/* inner header: monochrome kind icon + label — kinds are never colour-coded */
+.lab-card .kind {
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 26px;
+  height: 22px;
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--text);
+}
+.lab-card .kind svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* widgets: label left, dark inset control right (36px tall) */
+.lab-card .w {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
 }
 .lab-card .w span {
-  width: 44px;
+  width: 52px;
   flex: none;
-  color: var(--dim);
+  font-size: 13px;
+  color: var(--muted);
 }
 .lab-card .w input,
 .lab-card .w select {
   flex: 1;
   min-width: 0;
-  height: 21px;
-  padding: 0 7px;
-  background: var(--raised);
-  border: 1px solid transparent;
-  border-radius: 7px;
-  color: var(--fg);
-  font: 11px var(--font-geist-mono);
+  height: 36px;
+  padding: 0 12px;
+  background-color: var(--inset);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: #f0f0f2;
+  font: 13px var(--font-outfit);
   transition: border-color 0.15s;
+}
+.lab-card .w input {
+  background-color: var(--field);
+  border-radius: 12px;
+}
+.lab-card .w input::placeholder {
+  color: var(--dim);
+}
+.lab-card .w select {
+  appearance: none;
+  padding-right: 30px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%239b9ba1' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
 }
 .lab-card .w input:hover,
 .lab-card .w select:hover {
@@ -234,34 +320,39 @@
 .lab-card .w input:focus,
 .lab-card .w select:focus {
   outline: none;
-  border-color: color-mix(in srgb, var(--violet) 50%, transparent);
+  border-color: rgba(255, 255, 255, 0.28);
 }
 
+/* port rows: inputs and outputs in two separate columns, 24px apart */
 .lab-card .prow {
-  position: relative;
-  display: flex;
-  height: 20px;
-  padding: 0 7px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 24px;
+  height: 32px;
+  align-items: center;
+}
+.lab-card.solo .prow {
+  grid-template-columns: minmax(0, 1fr);
 }
 .lab-card .pin,
 .lab-card .pout {
-  position: relative;
   display: flex;
+  align-items: center;
+  gap: 12px;
   min-width: 0;
-  max-width: 60%;
   white-space: nowrap;
+  font-size: 12.5px;
+  color: var(--port);
 }
 .lab-card .pin {
-  flex: 1;
+  grid-column: 1;
 }
 .lab-card .pout {
-  margin-left: auto;
+  grid-column: 2;
   justify-content: flex-end;
-  color: var(--fg);
 }
-.lab-card .pin:only-child,
-.lab-card .pout:only-child {
-  max-width: 100%;
+.lab-card.solo .pout {
+  grid-column: 1;
 }
 .lab-card .pin em,
 .lab-card .pout em {
@@ -272,36 +363,36 @@
   font-style: normal;
 }
 .lab-card .trow {
-  height: 20px;
-  padding: 0 7px;
+  height: 24px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--dim);
+  font-size: 13px;
+  line-height: 24px;
+  color: var(--body);
 }
 
-/* port dots sit on the outer card edge: 5px inset + 7px row pad + 4px half dot */
+/* port dots: 7px, the only colour on a card; hollow until wired */
 .lab-card .sock {
-  position: absolute;
-  top: 50%;
-  width: 8px;
-  height: 8px;
-  margin-top: -4px;
+  position: relative;
+  flex: none;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: var(--surface);
+  background: transparent;
   box-shadow: inset 0 0 0 1.5px var(--c);
   cursor: crosshair;
   z-index: 2;
   transition: transform 0.12s;
 }
+.lab-card .sock::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border-radius: 50%;
+}
 .lab-card .sock.on {
   background: var(--c);
-}
-.lab-card .pin .sock {
-  left: -16px;
-}
-.lab-card .pout .sock {
-  right: -16px;
 }
 .lab-card .sock:hover,
 .lab-card .sock.ok {
@@ -311,37 +402,40 @@
   --c: var(--red);
   transform: scale(1.5);
 }
-/* execution order ("then") dots on the title row, level with portPos(…, "then") = HEADER / 2 */
+/* execution order ("then") dots on the title row, level with portPos(…, "then") = TITLE / 2 */
 .lab-card header .sock.flow {
-  top: 14px;
+  position: absolute;
+  top: 7.5px;
 }
 .lab-card header .sock.flow.in {
-  left: -4px;
+  left: -3.5px;
 }
 .lab-card header .sock.flow.out {
-  right: -4px;
+  right: -3.5px;
 }
 
 /* symbolic run result, hanging under the card */
 .lab-result {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 10px);
   left: 0;
   right: 0;
   display: grid;
-  padding: 6px 10px;
-  border-radius: 11px;
-  background: var(--surface);
-  box-shadow: var(--shadow-soft);
-  font: 11px / 16px var(--font-geist-mono);
-  color: var(--muted);
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--card-top), var(--card-bot));
+  box-shadow:
+    inset 0 0 0 1px var(--border),
+    0 10px 30px rgba(0, 0, 0, 0.45);
+  font: 12px / 18px var(--font-geist-mono);
+  color: var(--body);
   pointer-events: none;
 }
 .lab-result b {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font: 12px / 18px var(--font-outfit);
+  gap: 8px;
+  font: 500 13px / 20px var(--font-outfit);
   color: var(--fg);
 }
 .lab-result b::before {
@@ -368,12 +462,11 @@
 .lab-float {
   position: absolute;
   z-index: 5;
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  border-radius: 18px;
+  background: linear-gradient(180deg, var(--card-top), var(--card-bot));
   box-shadow:
     inset 0 0 0 1px var(--border),
-    var(--shadow-float);
-  backdrop-filter: blur(12px);
+    0 14px 40px rgba(0, 0, 0, 0.55);
   font-size: 13px;
   color: var(--muted);
 }
@@ -400,8 +493,8 @@
 }
 
 .lab-pop {
-  top: 64px;
-  left: 68px;
+  top: 82px;
+  left: 84px;
   width: 270px;
   max-height: calc(100% - 140px);
   overflow: auto;
@@ -416,8 +509,8 @@
   gap: 8px;
   margin: 0;
   padding: 4px 6px 8px;
-  font-weight: 400;
-  font-size: 13px;
+  font-weight: 500;
+  font-size: 14px;
   color: var(--fg);
 }
 .lab-pop > button,
@@ -428,7 +521,7 @@
   min-height: 32px;
   padding: 0 8px;
   text-align: left;
-  border-radius: 11px;
+  border-radius: 10px;
   transition: background-color 0.15s;
 }
 .lab-pop > button:hover {
@@ -463,9 +556,10 @@
   margin: 0;
   padding: 12px;
   overflow: auto;
-  border-radius: 11px;
-  background: var(--inset);
-  font: 11px / 1.55 var(--font-geist-mono);
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--inner-top), var(--inner-bot));
+  box-shadow: inset 0 0 0 1px var(--border);
+  font: 12px / 1.55 var(--font-geist-mono);
   color: var(--fg);
 }
 .lab-pop.code p {
@@ -505,8 +599,8 @@
 /* run report */
 .lab-run {
   z-index: 4;
-  top: 64px;
-  right: 64px;
+  top: 16px;
+  right: 84px;
   width: 330px;
   max-height: calc(100% - 180px);
   overflow: auto;
@@ -519,8 +613,8 @@
   gap: 8px;
   margin: 0;
   padding: 4px 6px 8px;
-  font-weight: 400;
-  font-size: 13px;
+  font-weight: 500;
+  font-size: 14px;
   color: var(--fg);
 }
 .lab-run h4 span {
@@ -546,7 +640,7 @@
   min-height: 32px;
   padding: 0 10px;
   text-align: left;
-  border-radius: 11px;
+  border-radius: 10px;
   background: var(--raised);
   font-size: 12.5px;
   transition: background-color 0.15s;
@@ -568,7 +662,7 @@
   background: var(--red);
 }
 .lab-run li button span {
-  font: 11px var(--font-geist-mono);
+  font: 12px var(--font-geist-mono);
   color: var(--dim);
 }
 .lab-run li button b {
@@ -577,7 +671,7 @@
   white-space: nowrap;
 }
 .lab-run li button em {
-  font: 11px var(--font-geist-mono);
+  font: 12px var(--font-geist-mono);
   color: var(--muted);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -592,9 +686,10 @@
   gap: 3px;
   margin-bottom: 6px;
   padding: 8px 10px;
-  border-radius: 11px;
-  background: color-mix(in srgb, var(--red) 8%, var(--raised));
-  font-size: 12.5px;
+  border-radius: 10px;
+  background: var(--raised);
+  box-shadow: inset 0 0 0 1px var(--border);
+  font-size: 13px;
 }
 .lab-run .finding b {
   display: flex;

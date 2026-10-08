@@ -14,7 +14,7 @@ function Block({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-inner bg-inset p-1.5">
+    <section className="rounded-inner border border-border bg-inner-grad p-1.5">
       <header className="flex items-center px-2 pt-1 pb-1.5 text-[13px] text-fg">
         {label}
         <span className="ml-auto font-mono text-dim text-xs">{count}</span>

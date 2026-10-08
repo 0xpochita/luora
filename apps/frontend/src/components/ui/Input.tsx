@@ -5,13 +5,18 @@ import type {
 } from "react";
 
 const FIELD =
-  "h-9 rounded-tile border border-border bg-inset px-3 text-[14px] text-fg outline-none transition-colors placeholder:text-dim hover:border-border-strong focus:border-violet/50 focus:ring-2 focus:ring-violet/20";
+  "h-9 border border-border px-3 text-[13px] text-[#f0f0f2] outline-none transition-colors placeholder:text-dim hover:border-border-strong focus:border-white/25";
 
 export function Input({
   className = "",
   ...props
 }: InputHTMLAttributes<HTMLInputElement>) {
-  return <input className={`${FIELD} ${className}`} {...props} />;
+  return (
+    <input
+      className={`${FIELD} rounded-inner bg-field ${className}`}
+      {...props}
+    />
+  );
 }
 
 export function Select({
@@ -20,7 +25,7 @@ export function Select({
 }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <select
-      className={`${FIELD} cursor-pointer pr-8 ${className}`}
+      className={`${FIELD} select-caret cursor-pointer rounded-tile bg-inset pr-8 ${className}`}
       {...props}
     />
   );
@@ -32,7 +37,7 @@ export function Textarea({
 }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <textarea
-      className={`${FIELD} h-auto resize-y py-2 ${className}`}
+      className={`${FIELD} h-auto resize-y rounded-inner bg-field py-2 ${className}`}
       {...props}
     />
   );

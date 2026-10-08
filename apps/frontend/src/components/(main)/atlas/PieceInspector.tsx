@@ -6,7 +6,6 @@ import {
   type AiQuestion,
   type AtlasModel,
   aiAnswer,
-  colorOf,
   RISK_LABEL,
   SYSTEMS,
   type TriageState,
@@ -72,7 +71,7 @@ export function PieceInspector({
           </IconButton>
         }
       >
-        <div className="flex flex-col gap-3 px-3.5 pt-1 pb-1.5">
+        <div className="flex flex-col gap-3 px-4 pt-1 pb-2">
           <h2 className="flex items-center gap-2 break-all font-medium font-mono text-[15px] text-fg">
             {proto && (
               <span
@@ -92,7 +91,11 @@ export function PieceInspector({
                   Caller <span className="font-mono">{p.caller}</span>
                 </Chip>
               )}
-              {proto && <Chip tone="info">Integration · {proto.name}</Chip>}
+              {proto && (
+                <Chip tone="info" dot>
+                  Integration · {proto.name}
+                </Chip>
+              )}
               {findings.map((f) => (
                 <Chip key={f.id} dot tone="bad">
                   <span className="font-mono">{f.name.slice(0, 4)}</span> ·{" "}
@@ -102,7 +105,7 @@ export function PieceInspector({
             </div>
           )}
           {cov && (
-            <p className="text-[12px] text-muted">
+            <p className="text-[12.5px] text-muted">
               <span
                 className={
                   cov.state === "untested"
@@ -131,13 +134,13 @@ export function PieceInspector({
               )}
             </p>
           )}
-          <p className="whitespace-pre-line text-fg/80 leading-relaxed">
+          <p className="whitespace-pre-line text-[13px] text-body leading-normal">
             {p.desc}
           </p>
         </div>
         {conns.length > 0 && (
-          <div className="m-[5px] rounded-inner bg-inset p-1.5">
-            <p className="px-2 pt-1 pb-1 text-[12px] text-dim">
+          <div className="m-2 rounded-inner border border-border bg-inner-grad p-1.5">
+            <p className="px-2 pt-1 pb-1 text-[12.5px] text-dim">
               Connections · <span className="font-mono">{conns.length}</span>
             </p>
             {conns.map((c) => (
@@ -148,13 +151,12 @@ export function PieceInspector({
                 className="flex w-full items-center gap-2.5 rounded-tile px-2 py-1.5 text-left transition-colors hover:bg-raised"
               >
                 <span
-                  className="size-2 flex-none rounded-full"
-                  style={{ background: colorOf(byId[c]) }}
+                  className={`size-1.5 flex-none rounded-full ${byId[c].sys === "vulns" ? "bg-red" : "bg-port"}`}
                 />
                 <span className="truncate font-mono text-fg/90 text-xs">
                   {byId[c].name}
                 </span>
-                <span className="ml-auto text-[12px] text-dim">
+                <span className="ml-auto text-[12.5px] text-dim">
                   {SYSTEMS[byId[c].sys].label}
                 </span>
               </button>
@@ -166,10 +168,10 @@ export function PieceInspector({
         <FindingTriage model={model} finding={p} triage={triage} />
       )}
       <Panel label="What to check" aside={SYSTEMS[p.sys].label} inset>
-        <ul className="grid gap-0.5 p-1.5">
+        <ul className="grid gap-0.5 p-1.5 text-[13px]">
           {CHECKLIST[p.sys].map((x) => (
             <li key={x}>
-              <label className="flex cursor-pointer items-start gap-2.5 rounded-tile px-2 py-1.5 text-muted transition-colors hover:bg-raised has-checked:text-dim has-checked:line-through">
+              <label className="flex cursor-pointer items-start gap-2.5 rounded-tile px-2 py-1.5 text-body transition-colors hover:bg-raised has-checked:text-dim has-checked:line-through">
                 <input
                   type="checkbox"
                   className="mt-0.5 size-3.5 flex-none cursor-pointer appearance-none rounded-full border border-border-strong bg-raised transition-colors checked:border-green checked:bg-green/80"
@@ -180,8 +182,8 @@ export function PieceInspector({
           ))}
         </ul>
       </Panel>
-      <Panel label="Luora AI" dot="violet" aside="Demo · mock" glow>
-        <div className="flex flex-wrap gap-1.5 px-3.5 pt-1 pb-3">
+      <Panel label="Luora AI" aside="Demo · mock">
+        <div className="flex flex-wrap gap-1.5 px-4 pt-1 pb-3">
           {QUESTIONS.map(({ q, label }) => (
             <Button key={q} size="sm" onClick={() => ask(q)}>
               {label}
@@ -189,7 +191,7 @@ export function PieceInspector({
           ))}
         </div>
         {answer && (
-          <div className="m-[5px] mt-0 whitespace-pre-wrap rounded-inner bg-inset px-3 py-2.5 text-[12.5px] text-fg/85 leading-relaxed">
+          <div className="m-2 mt-0 whitespace-pre-wrap rounded-inner border border-border bg-inner-grad px-3 py-2.5 text-[13px] text-body leading-normal">
             {answer}
           </div>
         )}

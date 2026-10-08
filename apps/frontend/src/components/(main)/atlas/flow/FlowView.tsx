@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { IconButton, Panel, Toolbar } from "@/components/ui";
+import { CardGradients, IconButton, Panel, Toolbar } from "@/components/ui";
 import {
   type AtlasModel,
   ICON_PATH,
@@ -192,6 +192,7 @@ export function FlowView({
           aria-label={`${model.contract} execution flow`}
           className={hover ? "fl-hovering" : ""}
         >
+          <CardGradients />
           <defs>
             <marker
               id="fl-arrow"
@@ -281,7 +282,7 @@ export function FlowView({
                   y={lane.y - LANE_IN}
                   width={lane.end - labelX + LANE_IN + 20}
                   height={lane.h}
-                  rx={16}
+                  rx={18}
                   className="fl-lanecard"
                 />
                 <line
@@ -310,7 +311,7 @@ export function FlowView({
                     <rect
                       width={labelW}
                       height={52}
-                      rx={11}
+                      rx={12}
                       className="fl-label"
                     />
                     <text x={10} y={15} className="fl-code">
@@ -724,19 +725,24 @@ export function FlowView({
   );
 }
 
-const SWATCH: [FlowKind | "revert" | "late" | "untested", string][] = [
-  ["entry", "Entry point"],
-  ["access", "Access check"],
-  ["r", "Read slot"],
-  ["c", "External call"],
-  ["w", "Write slot"],
-  ["e", "Emit event"],
-  ["revert", "Can revert here"],
-  ["late", "Write after call (CEI)"],
-  ["untested", "Never ran in tests"],
+const SWATCH: [
+  FlowKind | "revert" | "late" | "untested" | "done",
+  string,
+  IconKey | null,
+][] = [
+  ["entry", "Entry point", "in"],
+  ["access", "Access check", "lock"],
+  ["r", "Read slot", "cylinder"],
+  ["c", "External call", "plug"],
+  ["w", "Write slot (brighter ring)", "cylinder"],
+  ["e", "Emit event", "waves"],
+  ["revert", "Can revert here", null],
+  ["late", "Write after call (CEI)", "cylinder"],
+  ["untested", "Never ran in tests", "fn"],
+  ["done", "Ran in this replay", "fn"],
 ];
 
-/** Small swatch for the legend: a node disc / ring in a 16px box. */
+/** Small swatch for the legend: a node disc / ring in a 16px box (gradients come from the flow SVG). */
 function Swatch({ children }: { children: ReactNode }) {
   return (
     <svg viewBox="-9 -9 18 18" className="size-4 flex-none" aria-hidden="true">
@@ -745,29 +751,30 @@ function Swatch({ children }: { children: ReactNode }) {
   );
 }
 
-/** Colour / ring key, opened from the toolbar's legend tile. */
+/** Icon / ring key, opened from the toolbar's legend tile. */
 function Legend({ coverage }: { coverage: boolean }) {
   const items = SWATCH.filter(([k]) => coverage || k !== "untested");
   return (
     <Panel label="Legend" inset className="w-[380px] shadow-float">
-      <ul className="grid grid-cols-2 gap-x-4 gap-y-2 p-3 text-[12px] text-muted">
-        {items.map(([k, label]) => (
+      <ul className="grid grid-cols-2 gap-x-4 gap-y-2 p-3 text-[12.5px] text-port">
+        {items.map(([k, label, icon]) => (
           <li key={k} className="flex items-center gap-2">
             <Swatch>
               {k === "revert" ? (
-                <circle r={7} className="fl-rdisc" />
-              ) : k === "late" ? (
-                <g className="fl-node w">
-                  <circle r={8} className="fl-late" />
-                  <circle r={5.5} className="fl-disc" />
-                </g>
+                <>
+                  <circle r={7} className="fl-rdisc" />
+                  <path d="M-3 -3l6 6M3 -3l-6 6" className="fl-rx" />
+                </>
               ) : (
-                <g className={`fl-node ${k === "untested" ? "r" : k}`}>
+                <g
+                  className={`fl-node ${k === "late" ? "w" : k} ${k === "done" ? "done" : ""}`}
+                >
+                  {k === "late" && <circle r={8.5} className="fl-late" />}
                   <circle
-                    r={7}
+                    r={k === "late" ? 6.5 : 8}
                     className={`fl-disc ${k === "untested" ? "untested" : ""}`}
                   />
-                  {k === "access" && <circle r={4} className="fl-ring2" />}
+                  {icon && <Icon k={icon} size={9} />}
                 </g>
               )}
             </Swatch>
@@ -776,14 +783,19 @@ function Legend({ coverage }: { coverage: boolean }) {
         ))}
         <li className="flex items-center gap-2">
           <Swatch>
-            <circle r={7} className="fl-fdisc" />
+            <g className="fl-finding">
+              <circle r={8} className="fl-fdisc" />
+              <Icon k="warn" size={9} />
+            </g>
           </Swatch>
           Finding (H/M/L)
         </li>
       </ul>
-      <p className="px-3 pb-3 text-[12px] text-dim">
-        Click a node for its source line, double-click to open it. ▶ on a lane
-        replays it; hover a lane to focus it.
+      <p className="px-3 pb-3 text-[12.5px] text-dim">
+        Steps are monochrome: icon + caption tell the kind. Red = finding /
+        revert, green = ran, yellow dashed = untested. Click a node for its
+        source line, double-click to open it. ▶ on a lane replays it; hover a
+        lane to focus it.
       </p>
     </Panel>
   );

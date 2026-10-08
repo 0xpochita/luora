@@ -21,7 +21,11 @@ export function Topbar({
         <span className="truncate font-mono text-fg text-xs">{crumb}</span>
       </nav>
       <div className="ml-auto flex items-center gap-1.5">
-        {origin === "sample" && <Chip tone="warn">Sample data</Chip>}
+        {origin === "sample" && (
+          <Chip tone="warn" dot>
+            Sample data
+          </Chip>
+        )}
         <Chip>Tests {tests}</Chip>
         <Chip>Sources {sources}</Chip>
         <Chip tone="ok" dot>

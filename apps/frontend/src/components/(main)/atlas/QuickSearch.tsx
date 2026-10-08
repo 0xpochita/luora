@@ -105,7 +105,7 @@ export function QuickSearch({
               >
                 {h.text}
               </span>
-              <span className="text-[12px] text-dim">
+              <span className="text-[12.5px] text-dim">
                 {SYSTEMS[h.p.sys].label}
               </span>
             </button>

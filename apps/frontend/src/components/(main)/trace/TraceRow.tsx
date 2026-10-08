@@ -26,13 +26,7 @@ export function TraceRow({
       aria-current={selected || undefined}
       style={{ animationDelay: `${Math.min(order * 35, 900)}ms` }}
       className={`flex min-h-10 w-full animate-rise items-center gap-2.5 whitespace-nowrap rounded-tile py-1 pr-3 pl-1.5 text-left transition-colors ${
-        selected
-          ? frame.ok
-            ? "bg-hover"
-            : "bg-red/15"
-          : frame.ok
-            ? "hover:bg-raised"
-            : "bg-red/7 hover:bg-red/12"
+        selected ? "bg-hover" : "hover:bg-raised"
       }`}
     >
       <span className="w-[22px] flex-none text-right font-mono text-[11px] text-dim">
@@ -62,7 +56,7 @@ export function TraceRow({
       {frame.ret && (
         <span
           className={`whitespace-nowrap rounded-chip px-2 py-0.5 font-mono text-[11px] ${
-            frame.ok ? "bg-raised text-muted" : "bg-red/12 text-red"
+            frame.ok ? "bg-raised text-muted" : "bg-raised text-red"
           }`}
         >
           {frame.ok ? `→ ${human(frame.ret)}` : `✕ ${frame.ret}`}

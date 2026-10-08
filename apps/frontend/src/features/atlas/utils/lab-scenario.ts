@@ -173,7 +173,7 @@ export function scenarioCard(m: PlayModel, n: ScNode): GNode {
     id: n.id,
     x: n.x,
     y: n.y,
-    w: 220,
+    w: 300,
     inputs: [] as Port[],
     outputs: [] as Port[],
   };
@@ -183,7 +183,7 @@ export function scenarioCard(m: PlayModel, n: ScNode): GNode {
         ...base,
         kind: "actor",
         title: `Actor · ${n.label}`,
-        w: 200,
+        w: 290,
         widgets: 3,
         outputs: [{ id: "addr", label: "address", type: "actor" }],
       };
@@ -192,7 +192,7 @@ export function scenarioCard(m: PlayModel, n: ScNode): GNode {
         ...base,
         kind: "const",
         title: "Amount",
-        w: 180,
+        w: 260,
         widgets: 1,
         outputs: [{ id: "value", label: "USDC", type: "amount" }],
       };
@@ -205,7 +205,7 @@ export function scenarioCard(m: PlayModel, n: ScNode): GNode {
         ...base,
         kind: "call",
         title: `Call ${m.byId[n.fn] ? fnName(m.byId[n.fn]) : n.fn}`,
-        w: 240,
+        w: 360,
         flow: true,
         inputs: ports.inputs,
         outputs: ports.outputs.filter((p) => !p.id.startsWith("c:")),
@@ -218,7 +218,7 @@ export function scenarioCard(m: PlayModel, n: ScNode): GNode {
         ...base,
         kind: "expect",
         title: "Expect revert",
-        w: 200,
+        w: 290,
         widgets: 1,
         inputs: [{ id: "call", label: "revert", type: "revert" }],
         outputs: [{ id: "held", label: "held", type: "bool" }],
@@ -228,7 +228,7 @@ export function scenarioCard(m: PlayModel, n: ScNode): GNode {
         ...base,
         kind: "assert",
         title: "Assert",
-        w: 240,
+        w: 320,
         flow: true,
         widgets: 1,
         inputs:
@@ -245,7 +245,7 @@ export function scenarioCard(m: PlayModel, n: ScNode): GNode {
         ...base,
         kind: "snapshot",
         title: "Snapshot",
-        w: 210,
+        w: 300,
         flow: true,
         widgets: 1,
         inputs: [
@@ -957,13 +957,16 @@ const entryLike = (m: PlayModel, re: RegExp) =>
 
 export type Template = { name: string; build: () => Scenario };
 
+const SPREAD = { x: 1.6, y: 2 } as const;
+
 /** Ready-made scenarios, only where the contract has the pieces they need. */
 export function templates(m: PlayModel): Template[] {
   const out: Template[] = [];
+  // positions below are on a compact grid; spread them to the card geometry in lab-graph.ts
   const mk = (name: string, nodes: ScNode[], wires: Wire[]): Scenario => ({
     id: newId("sc"),
     name,
-    nodes,
+    nodes: nodes.map((n) => ({ ...n, x: n.x * SPREAD.x, y: n.y * SPREAD.y })),
     wires,
   });
   const actor = (

@@ -1,43 +1,57 @@
 @import "tailwindcss";
 
-/* Luora soft dark UI. Rules live in apps/frontend/DESIGN.md — read it before styling anything.
-   Near-black dot-grid canvas, floating rounded surfaces, white = primary/active,
-   colour only for dots and status (red = findings / reverts / bad). */
+/* Luora monochrome node-editor UI. Rules live in apps/frontend/DESIGN.md — read it before styling.
+   Near-black dot-grid canvas, graphite gradient cards, white = primary/active,
+   colour only as tiny semantic dots: red = finding / revert / bad, green = pass / ok,
+   yellow = amount / warning, blue = external / address. No coloured headers, bars or wires. */
 :root {
-  --canvas: #0d0d0f;
-  --dot: #2a2a2f;
-  --surface: #17171a;
-  --raised: #1e1e22;
-  --hover: #26262b;
-  --inset: #121214;
-  --border: rgba(255, 255, 255, 0.06);
-  --border-strong: rgba(255, 255, 255, 0.11);
-  --fg: #ececee;
-  --muted: #8e8e96;
-  --dim: #5d5d65;
+  --canvas: #0e0e10;
+  --dot: #232327;
+  /* cards: outer graphite gradient, nested inner card a touch darker */
+  --card-top: #2b2b2f;
+  --card-bot: #1e1e21;
+  --inner-top: #262629;
+  --inner-bot: #1b1b1e;
+  --surface: #1e1e21;
+  --raised: #252528;
+  --hover: #2e2e33;
+  --inset: #1c1c1f;
+  --field: #1a1a1d;
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.13);
+  /* text ramp */
+  --fg: #e6e6e8;
+  --text: #dcdcde;
+  --body: #b9b9be;
+  --port: #a3a3a9;
+  --muted: #9b9ba1;
+  --dim: #6f6f76;
   --primary: #f4f4f5;
-  --primary-fg: #0d0d0f;
+  --primary-fg: #0e0e10;
+  /* wires */
+  --wire: #7d7d84;
+  --wire-on: #f4f4f5;
+  /* semantic dots — the only colour in the UI */
   --green: #4ade80;
   --yellow: #facc15;
   --red: #f87171;
   --blue: #60a5fa;
-  --violet: #a78bfa;
+  /* the one accent action (Run) and soft glow behind a selected / running card */
+  --mint: #86efac;
   --pink: #f472b6;
-  --glow: linear-gradient(135deg, var(--violet), var(--pink));
 
-  /* legacy names: feature screens still use these until their area is restyled.
-     New code uses the names above; delete an alias once nothing references it. */
+  /* legacy names, still referenced by a few screens */
   --shell: var(--canvas);
   --panel: var(--surface);
   --tray: var(--inset);
   --card: var(--raised);
   --ink: var(--fg);
-  --line: #222226;
-  --edge: #2e2e34;
-  --tick: #9a9aa2;
+  --line: #2a2a2e;
+  --edge: #34343a;
+  --tick: var(--muted);
   --soft: var(--hover);
-  --guide: #232327;
-  --sel: #222226;
+  --guide: #242428;
+  --sel: #252528;
   --accent: var(--primary);
   --ok: var(--green);
   --bad: var(--red);
@@ -51,19 +65,23 @@
   --color-raised: var(--raised);
   --color-hover: var(--hover);
   --color-inset: var(--inset);
+  --color-field: var(--field);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
   --color-fg: var(--fg);
+  --color-text: var(--text);
+  --color-body: var(--body);
+  --color-port: var(--port);
   --color-muted: var(--muted);
   --color-dim: var(--dim);
   --color-primary: var(--primary);
   --color-primary-fg: var(--primary-fg);
+  --color-wire: var(--wire);
   --color-green: var(--green);
   --color-yellow: var(--yellow);
   --color-red: var(--red);
   --color-blue: var(--blue);
-  --color-violet: var(--violet);
-  --color-pink: var(--pink);
+  --color-mint: var(--mint);
 
   --color-shell: var(--shell);
   --color-panel: var(--panel);
@@ -80,15 +98,21 @@
   --color-ok: var(--ok);
   --color-bad: var(--bad);
 
-  /* radius scale: chip 8 · tile (buttons, icon tiles) 11 · card (cards, panels, toolbars) 16.
-     Nested inner card = card − inset: 16 − 5 = inner 11. */
+  /* radius scale: chip 8 · tile (controls, buttons) 10 · inner card 12 · card 18.
+     Inner card sits 8px inside the outer card. */
   --radius-chip: 8px;
-  --radius-tile: 11px;
-  --radius-card: 16px;
-  --radius-inner: 11px;
+  --radius-tile: 10px;
+  --radius-inner: 12px;
+  --radius-card: 18px;
 
-  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 14px rgba(0, 0, 0, 0.22);
-  --shadow-float: 0 2px 6px rgba(0, 0, 0, 0.35), 0 12px 32px rgba(0, 0, 0, 0.4);
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --shadow-float: 0 14px 40px rgba(0, 0, 0, 0.55);
+
+  /* type scale: 12.5 · 13 · 14 · 15, weights 400 / 500 only */
+  --text-ui-xs: 12.5px;
+  --text-ui-sm: 13px;
+  --text-ui-md: 14px;
+  --text-ui-lg: 15px;
 
   --font-sans: var(--font-outfit);
   --font-mono: var(--font-geist-mono);
@@ -106,9 +130,29 @@
 /* small sentence-case label (section titles, table heads, hints). Never uppercase. */
 @utility ui-label {
   font-family: var(--font-outfit);
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 400;
   letter-spacing: 0;
+}
+
+/* graphite gradient fills: outer card and the nested inner card */
+@utility bg-card-grad {
+  background: linear-gradient(180deg, var(--card-top) 0%, var(--card-bot) 100%);
+}
+@utility bg-inner-grad {
+  background: linear-gradient(
+    180deg,
+    var(--inner-top) 0%,
+    var(--inner-bot) 100%
+  );
+}
+
+/* ▾ caret on native selects (dark inset tile) */
+@utility select-caret {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%239b9ba1' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
 }
 
 /* faint dot grid; pan/zoom canvases override background-size/position inline */
@@ -118,25 +162,24 @@
   background-size: 22px 22px;
 }
 
-/* violet→pink gradient border for focused / primary floating cards; needs a rounded box */
-@utility glow-border {
+/* very soft pink/blue glow behind the top edge of the ONE selected / running card */
+@utility glow-top {
   position: relative;
   &::before {
     content: "";
     position: absolute;
-    inset: 0;
-    padding: 1px;
-    border-radius: inherit;
+    z-index: -1;
+    left: 12%;
+    right: 12%;
+    top: -10px;
+    height: 46px;
+    border-radius: 999px;
     background: linear-gradient(
-      135deg,
-      rgba(167, 139, 250, 0.7),
-      rgba(244, 114, 182, 0.45) 45%,
-      rgba(255, 255, 255, 0.06) 75%
+      90deg,
+      rgba(244, 114, 182, 0.35),
+      rgba(96, 165, 250, 0.35)
     );
-    mask:
-      linear-gradient(#000 0 0) content-box,
-      linear-gradient(#000 0 0);
-    mask-composite: exclude;
+    filter: blur(22px);
     pointer-events: none;
   }
 }
@@ -159,7 +202,7 @@ body {
 /* Solidity syntax — greyscale, keywords bright, comments dim */
 .tok-keyword {
   color: #ffffff;
-  font-weight: 600;
+  font-weight: 500;
 }
 .tok-type {
   color: #c4c8cd;

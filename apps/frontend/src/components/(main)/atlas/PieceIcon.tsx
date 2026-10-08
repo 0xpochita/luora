@@ -7,7 +7,7 @@ export function PieceIcon({ piece }: { piece: Piece }) {
     <span
       title={key}
       className={`grid size-6 flex-none place-items-center rounded-[7px] ${
-        piece.sys === "vulns" ? "bg-red/12 text-red" : "bg-raised text-muted"
+        piece.sys === "vulns" ? "bg-raised text-red" : "bg-raised text-port"
       }`}
     >
       <svg

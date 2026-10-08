@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CardGradients } from "@/components/ui";
 import type { AtlasModel, SystemKey } from "@/features/atlas";
 import { unitCode, unitStatus } from "@/features/atlas/utils/units";
 
@@ -18,11 +19,10 @@ const HUBS: Hub[] = [
 const W = 1200;
 const H = 760;
 const CARD = { x: 70, w: 220, row: 26 };
-const HUB = { x: 400, w: 210, h: 36, gap: 2 };
+const HUB = { x: 400, w: 210, h: 34, gap: 2 };
 const FAN = { x: 770, bulge: 140, step: 56, pad: 70, w: 230 }; // leaves on a right-bulging arc
-const WIRE = "#3a3a40";
 
-/** Port dot colour for a leaf: red = finding / missing, yellow = gated caller, green = clear. */
+/** Port dot colour for a leaf (the only colour here): red = finding / missing, yellow = gated caller, green = clear. */
 const PORT = {
   finding: "var(--red)",
   missing: "var(--red)",
@@ -48,7 +48,7 @@ export function ExplorerView({
   const hub = hubs.find((h) => h.key === hubKey) ?? hubs[0];
   const inner = hubs.length * HUB.h + (hubs.length - 1) * HUB.gap + 8;
   const hubTop = H / 2 - (inner + 10) / 2;
-  const hubY = (i: number) => hubTop + 9 + i * (HUB.h + HUB.gap);
+  const hubY = (i: number) => hubTop + 12 + i * (HUB.h + HUB.gap);
   const hi = Math.max(0, hubs.indexOf(hub));
   const hy = hubY(hi) + HUB.h / 2;
   const n = hub?.items.length ?? 0;
@@ -67,7 +67,7 @@ export function ExplorerView({
     ["Risk", model.riskScore().toFixed(1)],
     ["Pieces", String(model.pieces.length)],
   ];
-  const cardH = rows.length * CARD.row + 18;
+  const cardH = rows.length * CARD.row + 24;
   const cardY = H / 2 - cardH / 2;
   const cx = CARD.x + CARD.w;
 
@@ -79,25 +79,26 @@ export function ExplorerView({
         role="img"
         aria-label="Contract explorer"
       >
-        {/* contract card: title + dot above, rows in the nested inner card */}
+        <CardGradients />
+        {/* contract card: white dot + title above, rows in the nested inner card */}
         <g transform={`translate(${CARD.x} ${cardY})`}>
-          <circle cx={6} cy={-12} r={3} fill="var(--violet)" />
-          <text x={16} y={-8} className="ex-title">
+          <circle cx={6} cy={-13} r={3} fill="var(--fg)" />
+          <text x={16} y={-8.5} className="ex-title">
             {model.contract}
           </text>
-          <rect width={CARD.w} height={cardH} rx={16} className="ex-card" />
+          <rect width={CARD.w} height={cardH} rx={18} className="ex-card" />
           <rect
-            x={5}
-            y={5}
-            width={CARD.w - 10}
-            height={cardH - 10}
-            rx={11}
+            x={8}
+            y={8}
+            width={CARD.w - 16}
+            height={cardH - 16}
+            rx={12}
             className="ex-inset"
           />
           {rows.map(([k, v], i) => (
-            <g key={k} transform={`translate(16 ${9 + i * CARD.row + 17})`}>
+            <g key={k} transform={`translate(20 ${12 + i * CARD.row + 17})`}>
               <text className="ex-k">{k}</text>
-              <text x={CARD.w - 32} className="ex-v" textAnchor="end">
+              <text x={CARD.w - 40} className="ex-v" textAnchor="end">
                 {v}
               </text>
             </g>
@@ -112,32 +113,31 @@ export function ExplorerView({
             <path
               key={`c-${h.key}`}
               d={`M${cx} ${H / 2} C${cx + 60} ${H / 2} ${HUB.x - 60} ${y} ${HUB.x} ${y}`}
-              fill="none"
-              stroke={on ? "var(--fg)" : WIRE}
-              strokeWidth={on ? 1.5 : 1}
+              className={`ex-wire ${on ? "on" : ""}`}
             />
           );
         })}
-        <circle cx={cx} cy={H / 2} r={4} className="ex-port" />
+        <circle cx={cx} cy={H / 2} r={3.5} className="ex-port" />
 
         {/* layer card */}
-        <text x={HUB.x + 4} y={hubTop - 8} className="ex-title">
+        <circle cx={HUB.x + 6} cy={hubTop - 13} r={3} fill="var(--fg)" />
+        <text x={HUB.x + 16} y={hubTop - 8.5} className="ex-title">
           Layers
         </text>
         <rect
           x={HUB.x}
           y={hubTop}
           width={HUB.w}
-          height={inner + 10}
-          rx={16}
+          height={inner + 16}
+          rx={18}
           className="ex-card"
         />
         <rect
-          x={HUB.x + 5}
-          y={hubTop + 5}
-          width={HUB.w - 10}
+          x={HUB.x + 8}
+          y={hubTop + 8}
+          width={HUB.w - 16}
           height={inner}
-          rx={11}
+          rx={12}
           className="ex-inset"
         />
         {hubs.map((h, i) => {
@@ -159,37 +159,37 @@ export function ExplorerView({
               onKeyDown={(e) => e.key === "Enter" && setHubKey(h.key)}
             >
               <rect
-                x={9}
-                width={HUB.w - 18}
+                x={12}
+                width={HUB.w - 24}
                 height={HUB.h}
                 rx={8}
                 className="ex-row"
               />
-              <text x={20} y={HUB.h / 2 + 4.5} className="ex-lbl">
+              <text x={24} y={HUB.h / 2 + 4.5} className="ex-lbl">
                 {h.label}
               </text>
               {bad > 0 && h.key !== "vulns" && (
                 <>
                   <circle
-                    cx={HUB.w - 64}
+                    cx={HUB.w - 68}
                     cy={HUB.h / 2}
                     r={3}
                     fill="var(--red)"
                   />
-                  <text x={HUB.w - 56} y={HUB.h / 2 + 4} className="ex-num bad">
+                  <text x={HUB.w - 60} y={HUB.h / 2 + 4} className="ex-num bad">
                     {bad}
                   </text>
                 </>
               )}
               <text
-                x={HUB.w - 20}
+                x={HUB.w - 24}
                 y={HUB.h / 2 + 4}
                 className={`ex-num ${h.key === "vulns" ? "bad" : ""}`}
                 textAnchor="end"
               >
                 {h.items.length}
               </text>
-              <circle cx={0} cy={HUB.h / 2} r={4} className="ex-port" />
+              <circle cx={0} cy={HUB.h / 2} r={3.5} className="ex-port" />
             </g>
           );
         })}
@@ -205,7 +205,7 @@ export function ExplorerView({
               style={{ animationDelay: `${i * 40}ms` }}
             />
           ))}
-          <circle cx={hx} cy={hy} r={4} fill="var(--fg)" />
+          <circle cx={hx} cy={hy} r={3.5} fill="var(--wire-on)" />
           {leaves.map(({ p, x, y }, i) => {
             const st = p.sys === "vulns" ? "finding" : unitStatus(model, p.id);
             const on = selected === p.id;
@@ -228,10 +228,10 @@ export function ExplorerView({
                   y={-leafH / 2}
                   width={FAN.w}
                   height={leafH}
-                  rx={10}
+                  rx={12}
                   className="ex-leafbox"
                 />
-                <circle r={4} fill={PORT[st]} className="ex-dot" />
+                <circle r={3.5} fill={PORT[st]} className="ex-dot" />
                 <text x={14} y={4.5} className="ex-name">
                   {p.name.length > max
                     ? `${p.name.slice(0, max - 1)}…`

@@ -108,5 +108,5 @@ export function usePanZoom(
     [ref],
   );
 
-  return { view, zoomAt, fit, moved };
+  return { view, setView, zoomAt, fit, moved };
 }

@@ -26,7 +26,7 @@ export function Tabs<T extends string>({
           title={o.title}
           aria-selected={o.value === value}
           onClick={() => onChange(o.value)}
-          className={`${tile(o.value === value)} ${size === "sm" ? "h-7 px-2.5 text-[12.5px]" : "h-9 px-4 text-[14px]"}`}
+          className={`${tile(o.value === value)} ${size === "sm" ? "h-7 px-2.5 text-[12.5px]" : "h-9 px-4 text-[13px]"}`}
         >
           {o.label}
         </button>

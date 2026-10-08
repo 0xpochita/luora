@@ -19,7 +19,7 @@ export const COLORS = {
   state: "#9ca0a6",
   access: "#dfe1e3",
   events: "#a9adb2",
-  vulns: "#ff4545",
+  vulns: "#f87171",
 } as const;
 export const SYS_COLOR: Record<SystemKey, keyof typeof COLORS> = {
   entry: "entry",

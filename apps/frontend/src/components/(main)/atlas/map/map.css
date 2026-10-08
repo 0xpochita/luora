@@ -1,16 +1,16 @@
-/* Map tab: system map on the dot-grid canvas. Category = port colour (DESIGN.md):
-   yellow = caller / user entry, muted = admin / view, green = state, blue = external,
-   violet = events, red = findings only. */
+/* Map tab: system map on the dot-grid canvas, monochrome (DESIGN.md). Categories are told apart
+   by icon + label; the port dot is the only colour: blue = external / address, red = findings and
+   the write-after-external-call path. Everything else is grey. */
 .atlas .amap {
   position: absolute;
   inset: 0;
   overflow: hidden;
   cursor: grab;
-  --c-user: var(--yellow);
-  --c-admin: var(--muted);
-  --c-storage: var(--green);
+  --c-user: var(--port);
+  --c-admin: var(--port);
+  --c-storage: var(--port);
   --c-external: var(--blue);
-  --c-events: var(--violet);
+  --c-events: var(--port);
   --c-findings: var(--red);
 }
 .atlas .amap:active {
@@ -48,7 +48,11 @@
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
-  color: var(--c, var(--muted));
+  color: var(--muted);
+}
+.atlas .am-c-findings .am-ico,
+.atlas .am-c-late .am-ico {
+  color: var(--red);
 }
 .atlas .am-hit {
   cursor: pointer;
@@ -60,9 +64,9 @@
 
 /* emblem, title, deploy, trunk */
 .atlas .am-emblem {
-  fill: var(--surface);
+  fill: url(#g-card);
   stroke: var(--border);
-  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.22));
+  filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.45));
 }
 .atlas .am-emblem + .am-ico {
   color: var(--fg);
@@ -76,19 +80,19 @@
 .atlas .am-side,
 .atlas .am-rowhead {
   fill: var(--dim);
-  font-size: 11px;
+  font-size: 11.5px;
 }
 .atlas .am-sub {
   font-family: var(--font-geist-mono);
 }
 .atlas .am-meta {
   fill: var(--muted);
-  font-size: 11.5px;
+  font-size: 12px;
 }
 .atlas .am-deploy {
-  fill: var(--surface);
+  fill: url(#g-card);
   stroke: var(--border);
-  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.22));
+  filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.45));
   transition: stroke 0.15s;
 }
 .atlas .am-hit:hover .am-deploy,
@@ -97,52 +101,52 @@
 }
 .atlas .am-dtitle {
   fill: var(--fg);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
 }
 .atlas .am-chip {
-  fill: color-mix(in srgb, var(--c) 10%, var(--raised));
+  fill: var(--raised);
+  stroke: var(--border);
 }
 .atlas .am-chip.imm {
-  fill: var(--raised);
+  fill: var(--inset);
 }
 .atlas .am-hit:hover .am-chip,
 .atlas .am-hit.on .am-chip {
-  fill: color-mix(in srgb, var(--c) 20%, var(--raised));
+  fill: var(--hover);
+  stroke: var(--border-strong);
 }
 .atlas .am-chiptx {
-  fill: var(--c);
+  fill: var(--body);
   font-family: var(--font-geist-mono);
   font-size: 9.5px;
 }
 .atlas .am-trunk {
   fill: none;
-  stroke: #3a3a40;
-  stroke-width: 1.5;
+  stroke: var(--wire);
+  stroke-width: 1;
 }
 
-/* wires: thin grey, lit in the port colour */
+/* wires: 1px grey; lit = white */
 .atlas .am-wire {
   fill: none;
-  stroke: #3a3a40;
-  stroke-width: 1.2;
-  transition:
-    stroke 0.15s,
-    stroke-width 0.15s;
+  stroke: var(--wire);
+  stroke-width: 1;
+  transition: stroke 0.15s;
 }
 .atlas .am-wire.lit {
-  stroke: var(--c);
-  stroke-width: 1.5;
+  stroke: var(--wire-on);
 }
 
 /* hub */
 .atlas .am-hub {
-  fill: var(--surface);
+  fill: url(#g-card);
   stroke: var(--border);
-  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.22));
+  filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.45));
 }
 .atlas .am-inset {
-  fill: var(--inset);
+  fill: url(#g-inner);
+  stroke: var(--border);
 }
 .atlas .am-hubname {
   fill: var(--fg);
@@ -154,7 +158,7 @@
   fill: var(--c);
 }
 .atlas .am-dot {
-  stroke: var(--canvas);
+  stroke: var(--card-bot);
   stroke-width: 2;
 }
 .atlas .am-porthit {
@@ -168,30 +172,31 @@
   fill: var(--hover);
 }
 .atlas .am-port {
-  fill: var(--fg);
-  font-size: 12px;
+  fill: var(--text);
+  font-size: 12.5px;
 }
 .atlas .am-warn {
   fill: var(--red);
   font-size: 9px;
 }
 .atlas .am-port-b {
-  fill: var(--muted);
-  font-size: 11px;
+  fill: var(--port);
+  font-size: 12px;
 }
 .atlas .am-badge {
   fill: var(--dim);
-  font-size: 10.5px;
+  font-size: 11px;
 }
+/* gated caller (owner, keeper…): brighter text, not a colour */
 .atlas .am-badge.priv {
-  fill: var(--yellow);
+  fill: var(--body);
 }
 
 /* panels: title + dot above a rounded card, rows in the nested inner card */
 .atlas .am-box {
-  fill: var(--surface);
+  fill: url(#g-card);
   stroke: var(--border);
-  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.22));
+  filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.45));
   transition: stroke 0.15s;
 }
 .atlas .am-panel.lit .am-box {
@@ -211,18 +216,19 @@
 }
 .atlas .am-ptitle {
   fill: var(--fg);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 500;
 }
+.atlas .am-sdot {
+  fill: var(--fg);
+}
+.atlas .am-c-findings .am-sdot {
+  fill: var(--red);
+}
+/* severity tags: dark pill, red text for high / med (findings are the only red) */
 .atlas .am-tag {
-  fill: color-mix(in srgb, var(--red) 18%, var(--raised));
-}
-.atlas .am-tag.sev-med {
-  fill: color-mix(in srgb, var(--red) 10%, var(--raised));
-}
-.atlas .am-tag.sev-low,
-.atlas .am-tag.sev-info {
   fill: var(--raised);
+  stroke: var(--border);
 }
 .atlas .am-tagtx {
   fill: var(--red);
@@ -234,10 +240,7 @@
   fill: var(--muted);
 }
 .atlas .am-hit.on .am-tag {
-  fill: var(--red);
-}
-.atlas .am-hit.on .am-tagtx {
-  fill: var(--canvas);
+  stroke: var(--red);
 }
 .atlas .am-more {
   fill: var(--red);
@@ -248,25 +251,22 @@
 /* flow nodes inside a panel */
 .atlas .am-edge {
   fill: none;
-  stroke: #3a3a40;
+  stroke: var(--wire);
   stroke-width: 1;
 }
 .atlas .am-edge.late {
   stroke: var(--red);
-  stroke-width: 1.4;
+  stroke-opacity: 0.7;
 }
 .atlas .am-node {
   fill: var(--raised);
-  stroke: transparent;
+  stroke: var(--border);
   transition:
     fill 0.15s,
     stroke 0.15s;
 }
-.atlas .am-node.k-w {
-  fill: color-mix(in srgb, var(--c) 10%, var(--raised));
-}
 .atlas .am-node.late {
-  stroke: var(--red);
+  stroke: color-mix(in srgb, var(--red) 70%, transparent);
 }
 .atlas .am-node.ghost {
   fill: none;
@@ -285,7 +285,7 @@
   stroke: var(--red);
 }
 .atlas .am-kind {
-  fill: var(--c);
+  fill: var(--muted);
   font-size: 9px;
   font-weight: 500;
 }
@@ -296,7 +296,7 @@
 
 /* list rows */
 .atlas .am-rowtx {
-  fill: var(--fg);
+  fill: var(--body);
   font-size: 10.5px;
 }
 .atlas .am-rowtx.dismissed {
@@ -312,7 +312,7 @@
   font-size: 10.5px;
 }
 .atlas .am-foot.gap {
-  fill: var(--yellow);
+  fill: var(--text);
 }
 
 /* legend: small dim corner text */
@@ -339,4 +339,10 @@
   height: 7px;
   border-radius: 50%;
   background: var(--c);
+}
+.atlas .am-legend i.line {
+  width: 14px;
+  height: 1px;
+  border-radius: 0;
+  opacity: 0.7;
 }

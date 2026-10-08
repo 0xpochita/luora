@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { CardGradients } from "@/components/ui";
 import {
   type AtlasModel,
   ICON_PATH,
@@ -27,23 +28,8 @@ import { usePanZoom } from "@/features/trace/hooks/usePanZoom";
 import { ZoomToolbar } from "../ZoomToolbar";
 import "./map.css";
 
-const CATS: MapCat[] = [
-  "user",
-  "admin",
-  "storage",
-  "external",
-  "events",
-  "findings",
-];
-const CAT_LABEL: Record<MapCat, string> = {
-  user: "User entry",
-  admin: "Admin / view",
-  storage: "Storage",
-  external: "External",
-  events: "Events",
-  findings: "Findings",
-};
-/** Flow node kind → the category colour it borrows (a read / write is storage, a call is external…). */
+/** Flow node kind → the category it belongs to (a read / write is storage, a call is external…).
+ *  Categories are monochrome; only external (blue) and findings (red) light a dot. */
 const KIND_CAT: Record<FlowNode["kind"], MapCat | null> = {
   gate: null,
   r: "storage",
@@ -214,8 +200,9 @@ export function MapView({
       }}
     >
       <svg role="img" aria-label="Contract system map">
+        <CardGradients />
         <defs>
-          {[...CATS, "late" as const].map((c) => (
+          {(["wire", "late"] as const).map((c) => (
             <marker
               key={c}
               id={`am-arrow-${c}`}
@@ -228,7 +215,7 @@ export function MapView({
             >
               <path
                 d="M0 0L8 4L0 8Z"
-                fill={c === "late" ? "var(--red)" : "#3a3a40"}
+                fill={c === "late" ? "var(--red)" : "var(--wire)"}
               />
             </marker>
           ))}
@@ -242,7 +229,7 @@ export function MapView({
             y={L.emblem.y - 18}
             width={36}
             height={36}
-            rx={11}
+            rx={10}
             className="am-emblem"
           />
           <Icon k="grid" x={L.emblem.x - 8} y={L.emblem.y - 8} size={16} />
@@ -332,13 +319,13 @@ export function MapView({
 
           {/* hub column */}
           <g transform={`translate(${L.hub.x} ${L.hub.y})`}>
-            <rect width={L.hub.w} height={L.hub.h} rx={16} className="am-hub" />
+            <rect width={L.hub.w} height={L.hub.h} rx={18} className="am-hub" />
             <rect
-              x={5}
-              y={5}
-              width={L.hub.w - 10}
-              height={L.hub.head - 26}
-              rx={11}
+              x={6}
+              y={6}
+              width={L.hub.w - 12}
+              height={L.hub.head - 28}
+              rx={12}
               className="am-inset"
             />
             <text
@@ -417,7 +404,7 @@ export function MapView({
                   >
                     {p.label}
                   </text>
-                  <circle cx={p.x} cy={p.y} r={4} className="am-dot" />
+                  <circle cx={p.x} cy={p.y} r={3.5} className="am-dot" />
                 </g>
               );
             const left = p.side === "left";
@@ -442,7 +429,7 @@ export function MapView({
                     rx={8}
                     className="am-porthit"
                   />
-                  <circle cx={p.x} cy={p.y} r={4} className="am-dot" />
+                  <circle cx={p.x} cy={p.y} r={3.5} className="am-dot" />
                   <Icon
                     k={p.icon}
                     x={left ? tx : tx - 12}
@@ -490,18 +477,18 @@ export function MapView({
                   y={CARD_Y}
                   width={p.w}
                   height={p.h - CARD_Y}
-                  rx={16}
+                  rx={18}
                   className="am-box"
                 />
                 <rect
-                  x={5}
-                  y={CARD_Y + 5}
-                  width={p.w - 10}
-                  height={p.h - CARD_Y - 10}
-                  rx={11}
+                  x={6}
+                  y={CARD_Y + 6}
+                  width={p.w - 12}
+                  height={p.h - CARD_Y - 12}
+                  rx={12}
                   className="am-inset"
                 />
-                <circle cx={port[0]} cy={port[1]} r={4} className="am-dot" />
+                <circle cx={port[0]} cy={port[1]} r={3.5} className="am-dot" />
                 <Hit
                   id={p.select}
                   onSelect={select}
@@ -578,7 +565,7 @@ export function MapView({
                     className={`am-edge ${e.late ? "late am-c-late" : ""}`}
                     markerEnd={
                       e.arrow
-                        ? `url(#am-arrow-${e.late ? "late" : p.cat})`
+                        ? `url(#am-arrow-${e.late ? "late" : "wire"})`
                         : undefined
                     }
                   />
@@ -737,14 +724,16 @@ export function MapView({
         onFit={fitAll}
       />
       <div className="am-legend" data-no-pan>
-        {CATS.map((c) => (
-          <span key={c} className={`am-c-${c}`}>
-            <i />
-            {CAT_LABEL[c]}
-          </span>
-        ))}
-        <span className="am-c-late">
+        <span className="am-c-external">
           <i />
+          External / address
+        </span>
+        <span className="am-c-findings">
+          <i />
+          Finding
+        </span>
+        <span className="am-c-late">
+          <i className="line" />
           Write after ext. call
         </span>
         <span className="note">Gate → read → call → write → emit</span>

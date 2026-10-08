@@ -49,7 +49,7 @@ export function SourcePanel({
         source={sources[file] ?? ""}
         lines={spanLines(span, file)}
         notes={span?.notes?.[file]}
-        className="mx-[5px] mb-[5px] rounded-inner"
+        className="mx-2 mb-2 rounded-inner border border-border"
       />
     </Panel>
   );
