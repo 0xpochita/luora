@@ -49,7 +49,7 @@ export function UnitTray({
     units.sort((a, b) => (covOf(a.id)?.pct ?? 1) - (covOf(b.id)?.pct ?? 1));
 
   return (
-    <div className="relative z-[3] flex-none border-line border-t bg-shell/95 px-3 pt-2 pb-3">
+    <div className="relative z-[3] flex-none px-3 pt-1 pb-3">
       <div className="flex items-end gap-2">
         <Tabs
           size="sm"
@@ -75,7 +75,7 @@ export function UnitTray({
           onSelect={onSelect}
         />
       ) : (
-        <div className="flex gap-2.5 overflow-x-auto pt-3 pb-1">
+        <div className="flex gap-2.5 overflow-x-auto pt-3 pb-2">
           {units.map((p) => {
             const st =
               p.sys === "vulns"
@@ -89,10 +89,10 @@ export function UnitTray({
                 type="button"
                 key={p.id}
                 onClick={() => onSelect(on ? null : p.id)}
-                className={`relative flex flex-none items-center gap-2.5 border px-3 py-2.5 transition-colors ${
+                className={`relative flex flex-none items-center gap-2.5 rounded-card border py-2 pr-3 pl-2 shadow-soft transition-colors ${
                   on
-                    ? "border-accent bg-panel"
-                    : "border-line bg-tray hover:border-edge"
+                    ? "border-border-strong bg-hover shadow-float"
+                    : "border-transparent bg-surface hover:bg-raised"
                 }`}
               >
                 <PieceIcon piece={p} />
@@ -108,23 +108,21 @@ export function UnitTray({
                     style={{ backgroundImage: `url(${proto.logo})` }}
                   />
                 )}
-                <span className="font-mono text-[13px] text-ink">
+                <span className="font-mono text-[13px] text-fg">
                   {unitCode(model, p.id)}
                 </span>
-                <span className="max-w-[160px] truncate font-mono text-muted text-xs">
+                <span className="max-w-[160px] truncate text-[13px] text-muted">
                   {p.name}
                 </span>
                 {c && (
                   <span
                     title={`Coverage: ${c.lines.hit}/${c.lines.found} lines, ${c.branches.hit}/${c.branches.found} branches`}
-                    className={`font-mono text-xs ${c.state === "untested" ? "text-bad" : c.state === "covered" ? "text-ok" : "text-muted"}`}
+                    className={`font-mono text-xs ${c.state === "untested" ? "text-yellow" : c.state === "covered" ? "text-green" : "text-dim"}`}
                   >
                     {pctLabel(c.pct)}
                   </span>
                 )}
-                <span className="border border-line px-1 text-dim text-xs">
-                  ↗
-                </span>
+                <span className="text-dim text-xs">↗</span>
               </button>
             );
           })}
