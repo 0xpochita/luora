@@ -1,0 +1,194 @@
+/* Landing-only motion. Two moves: the beam drifts (R1), node lines draw in (R3). Nothing else animates. */
+.lp-beam {
+  background: radial-gradient(
+    50% 100% at 50% 0%,
+    rgba(255, 255, 255, 0.16) 0%,
+    rgba(255, 255, 255, 0.05) 45%,
+    transparent 100%
+  );
+  filter: blur(18px);
+  animation: lp-drift 14s ease-in-out infinite alternate;
+}
+.lp-beam-core {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.5),
+    rgba(255, 255, 255, 0.06) 70%,
+    transparent
+  );
+  filter: blur(6px);
+  animation: lp-drift 14s ease-in-out infinite alternate;
+}
+@keyframes lp-drift {
+  from {
+    transform: translateX(-18px);
+    opacity: 0.75;
+  }
+  to {
+    transform: translateX(18px);
+    opacity: 1;
+  }
+}
+
+.lp-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: lp-draw 1.6s cubic-bezier(0.65, 0, 0.35, 1) 0.3s forwards;
+}
+@keyframes lp-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.lp-fade {
+  opacity: 0;
+  animation: lp-fade 0.6s ease-out 1.2s forwards;
+}
+@keyframes lp-fade {
+  to {
+    opacity: 1;
+  }
+}
+
+/* R7: the product tilted back in perspective, fading into the black below it */
+.lp-tilt {
+  transform: perspective(2400px) rotateX(16deg);
+  transform-origin: 50% 0;
+}
+
+/* hero headline: words rise out of a blur, one after another (--i = word index) */
+.lp-word {
+  display: inline-block;
+  opacity: 0;
+  filter: blur(10px);
+  transform: translateY(14px);
+  animation: lp-word 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  animation-delay: calc(0.08s * var(--i, 0));
+}
+@keyframes lp-word {
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+  }
+}
+
+/* starburst breathes; the sweep rotates (statement radar) */
+.lp-breathe {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: lp-breathe 5s ease-in-out infinite;
+}
+@keyframes lp-breathe {
+  50% {
+    transform: scale(0.88) rotate(22.5deg);
+    opacity: 0.7;
+  }
+}
+.lp-sweep {
+  transform-origin: 50% 50%;
+  animation: lp-spin 9s linear infinite;
+}
+@keyframes lp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.lp-blip {
+  animation: lp-blip 3s ease-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes lp-blip {
+  0% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  70%,
+  100% {
+    transform: scale(3.2);
+    opacity: 0;
+  }
+}
+
+/* terminal lines in the hero type themselves in (--n = characters, --d = start delay) */
+.lp-type {
+  display: block;
+  width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  animation: lp-type calc(var(--n) * 0.025s) steps(var(--n)) forwards;
+  animation-delay: var(--d);
+}
+@keyframes lp-type {
+  to {
+    width: calc(var(--n) * 1ch);
+  }
+}
+.lp-caret {
+  animation: lp-caret 1s steps(1) infinite;
+}
+@keyframes lp-caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* tab progress (R8 hero switcher) */
+.lp-progress {
+  transform-origin: 0 50%;
+  animation: lp-progress var(--t) linear forwards;
+}
+@keyframes lp-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* scroll reveal: Reveal sets data-in once the block enters the viewport */
+.lp-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.8s ease,
+    transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: var(--delay, 0s);
+}
+.lp-reveal[data-in] {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-beam,
+  .lp-beam-core,
+  .lp-draw,
+  .lp-fade,
+  .lp-word,
+  .lp-breathe,
+  .lp-sweep,
+  .lp-progress,
+  .lp-caret {
+    animation: none;
+    stroke-dashoffset: 0;
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+  .lp-type {
+    animation: none;
+    width: auto;
+  }
+  .lp-blip,
+  .lp-packet {
+    display: none;
+  }
+  .lp-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
