@@ -47,9 +47,9 @@ export function FindingTriage({
       dot={STATUS_DOT[t.status]}
       aside={TRIAGE_LABEL[t.status]}
     >
-      <div className="m-[5px] mt-0 rounded-inner bg-inset px-3 py-2">
+      <div className="m-2 mt-0 rounded-inner border border-border bg-inner-grad px-3 py-2">
         <table className="w-full text-xs">
-          <thead className="text-left text-[12px] text-dim">
+          <thead className="text-left text-[12.5px] text-dim">
             <tr>
               <th className="pr-2 pb-1.5 font-normal">Tool</th>
               <th className="pr-2 pb-1.5 font-normal">Detector</th>
@@ -69,7 +69,7 @@ export function FindingTriage({
                       href={r.ref}
                       target="_blank"
                       rel="noreferrer"
-                      className="underline decoration-border-strong underline-offset-2 hover:decoration-violet"
+                      className="underline decoration-border-strong underline-offset-2 hover:decoration-fg"
                     >
                       {r.detector}
                     </a>
@@ -90,8 +90,8 @@ export function FindingTriage({
           </tbody>
         </table>
       </div>
-      <div className="flex flex-col gap-3 px-3.5 pt-1.5 pb-3.5">
-        <p className="text-[12px] text-muted">
+      <div className="flex flex-col gap-3 px-4 pt-1.5 pb-4">
+        <p className="text-[12.5px] text-muted">
           Affected{" "}
           <span className="font-mono text-fg/80">
             {model.file}:{lineRanges(lines)}

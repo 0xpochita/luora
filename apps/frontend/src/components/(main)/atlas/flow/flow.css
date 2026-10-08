@@ -1,12 +1,9 @@
-/* Flow tab: swimlanes as rounded lane cards on the dot-grid canvas. Step colours are the port
-   colours from DESIGN.md (read blue, call yellow, write green, event violet); red stays for
-   findings / reverts. */
+/* Flow tab: swimlanes as graphite lane cards on the dot-grid canvas (DESIGN.md). Steps are
+   monochrome: the kind (read / call / write / event / access / return) is told by icon + caption.
+   Colour only on rings: red = finding / revert / CEI, green = done in a replay,
+   yellow dashed = never ran in tests. */
 .atlas .flow {
-  --fl-read: var(--blue);
-  --fl-call: var(--yellow);
-  --fl-write: var(--green);
-  --fl-event: var(--violet);
-  --fl-wire: #3a3a40;
+  --fl-wire: var(--wire);
   position: relative;
   height: 100%;
   overflow: hidden;
@@ -25,12 +22,11 @@
 
 .flow .fl-wire {
   stroke: var(--fl-wire);
-  stroke-width: 1.2;
+  stroke-width: 1;
   fill: none;
 }
 .flow .fl-wire.lit {
-  stroke: var(--fg);
-  stroke-width: 1.5;
+  stroke: var(--wire-on);
 }
 .flow .fl-arrowhead {
   fill: var(--fl-wire);
@@ -42,13 +38,13 @@
 }
 
 .flow .fl-head {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   fill: var(--fg);
 }
 .flow .fl-cap {
-  font-size: 11px;
-  fill: var(--muted);
+  font-size: 12.5px;
+  fill: var(--port);
 }
 .flow .fl-ncap,
 .flow .fl-line,
@@ -58,7 +54,7 @@
 }
 .flow .fl-ncap {
   font-size: 9.5px;
-  fill: var(--muted);
+  fill: var(--port);
 }
 .flow .fl-line {
   font-size: 8.5px;
@@ -67,17 +63,18 @@
 
 /* lane card + the label's nested inner card */
 .flow .fl-lanecard {
-  fill: var(--surface);
+  fill: url(#g-card);
   stroke: var(--border);
-  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.22));
+  filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.45));
   transition: stroke 0.15s;
 }
 .flow .fl-lane.on .fl-lanecard {
   stroke: var(--border-strong);
-  filter: drop-shadow(0 12px 32px rgba(0, 0, 0, 0.4));
+  filter: drop-shadow(0 14px 40px rgba(0, 0, 0, 0.55));
 }
 .flow .fl-label {
-  fill: var(--inset);
+  fill: url(#g-inner);
+  stroke: var(--border);
 }
 .flow .fl-code {
   font-size: 9.5px;
@@ -85,14 +82,14 @@
 }
 .flow .fl-sig {
   font-size: 12px;
-  fill: var(--fg);
+  fill: var(--text);
 }
 .flow .fl-badge {
   font-size: 11px;
   fill: var(--dim);
 }
 .flow .fl-badge.gated {
-  fill: var(--yellow);
+  fill: var(--fg);
 }
 .flow .fl-play {
   cursor: pointer;
@@ -128,38 +125,23 @@
   opacity: 0.3;
 }
 
-/* nodes: round tiles, port colour on the ring + icon */
+/* nodes: graphite discs with a monochrome icon; the kind is the icon + caption, not a colour */
 .flow .fl-node {
-  --c: var(--muted);
   cursor: pointer;
   outline: none;
 }
-.flow .fl-node.entry {
-  --c: var(--fg);
-}
-.flow .fl-node.access,
-.flow .fl-node.ret {
-  --c: var(--muted);
-}
-.flow .fl-node.r {
-  --c: var(--fl-read);
-}
-.flow .fl-node.c {
-  --c: var(--fl-call);
-}
-.flow .fl-node.w {
-  --c: var(--fl-write);
-}
-.flow .fl-node.e {
-  --c: var(--fl-event);
-}
 .flow .fl-disc {
-  fill: var(--raised);
-  stroke: color-mix(in srgb, var(--c) 45%, transparent);
-  stroke-width: 1.2;
+  fill: url(#g-inner);
+  stroke: var(--border-strong);
+  stroke-width: 1;
   transition:
     fill 0.15s,
     stroke 0.15s;
+}
+/* writes change state: a slightly brighter ring than reads */
+.flow .fl-node.w .fl-disc,
+.flow .fl-node.entry .fl-disc {
+  stroke: #55555c;
 }
 .flow .fl-disc.idle,
 .flow .fl-node.ret .fl-disc {
@@ -167,18 +149,17 @@
   stroke-dasharray: 3 3;
 }
 .flow .fl-disc.untested {
-  fill: var(--inset);
   stroke: var(--yellow);
   stroke-dasharray: 3 2.5;
 }
 .flow .fl-ring2 {
   fill: none;
-  stroke: color-mix(in srgb, var(--c) 45%, transparent);
+  stroke: var(--border-strong);
   stroke-width: 1;
 }
 .flow .fl-icon {
   fill: none;
-  stroke: var(--c);
+  stroke: var(--text);
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -186,10 +167,10 @@
 .flow .fl-node:hover .fl-disc,
 .flow .fl-node:focus-visible .fl-disc {
   fill: var(--hover);
-  stroke: var(--c);
+  stroke: var(--wire);
 }
 .flow .fl-node.sel .fl-disc {
-  stroke: var(--fg);
+  stroke: var(--wire-on);
   stroke-width: 1.5;
   filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.5));
 }
@@ -197,17 +178,19 @@
 .flow .fl-node.sel .fl-cap {
   fill: var(--fg);
 }
+/* replay: steps already run get a green (ok) ring, the running one a white ring + soft glow */
 .flow .fl-node.done .fl-disc {
-  fill: color-mix(in srgb, var(--c) 14%, var(--raised));
+  stroke: color-mix(in srgb, var(--green) 70%, transparent);
 }
 .flow .fl-halo {
-  fill: color-mix(in srgb, var(--c) 14%, transparent);
+  fill: rgba(255, 255, 255, 0.07);
+  filter: blur(4px);
   animation: fl-pulse 1.3s ease-in-out infinite;
 }
 .flow .fl-node.now .fl-disc {
-  stroke: var(--c);
-  stroke-width: 2;
-  fill: color-mix(in srgb, var(--c) 22%, var(--raised));
+  stroke: var(--wire-on);
+  stroke-width: 1.5;
+  fill: var(--hover);
 }
 .flow .fl-node.now .fl-ncap {
   fill: var(--fg);
@@ -217,7 +200,8 @@
 .flow .fl-late {
   fill: none;
   stroke: var(--red);
-  stroke-width: 1.5;
+  stroke-opacity: 0.7;
+  stroke-width: 1;
 }
 .flow .fl-tag {
   fill: var(--red);
@@ -235,15 +219,15 @@
 .flow .fl-rwire {
   fill: none;
   stroke: var(--red);
-  stroke-opacity: 0.45;
+  stroke-opacity: 0.7;
   stroke-dasharray: 3 3;
 }
 .flow .fl-rdot {
   fill: var(--red);
 }
 .flow .fl-rdisc {
-  fill: color-mix(in srgb, var(--red) 12%, var(--raised));
-  stroke: color-mix(in srgb, var(--red) 55%, transparent);
+  fill: url(#g-inner);
+  stroke: color-mix(in srgb, var(--red) 70%, transparent);
 }
 .flow .fl-rx {
   stroke: var(--red);
@@ -268,17 +252,21 @@
   font-size: 9px;
   fill: var(--canvas);
 }
-.flow .fl-fbadge.med circle,
-.flow .fl-finding.med .fl-fdisc {
+.flow .fl-fbadge.med circle {
   fill-opacity: 0.7;
 }
-.flow .fl-fbadge.low circle,
-.flow .fl-finding.low .fl-fdisc {
+.flow .fl-fbadge.low circle {
   fill-opacity: 0.4;
 }
-.flow .fl-fbadge.info circle,
-.flow .fl-finding.info .fl-fdisc {
+.flow .fl-fbadge.info circle {
   fill-opacity: 0.2;
+}
+.flow .fl-finding.med .fl-fdisc {
+  stroke-opacity: 0.7;
+}
+.flow .fl-finding.low .fl-fdisc,
+.flow .fl-finding.info .fl-fdisc {
+  stroke-opacity: 0.45;
 }
 .flow .fl-fbadge.sel circle,
 .flow .fl-fbadge:hover circle {
@@ -286,17 +274,18 @@
   stroke-width: 1.5;
 }
 .flow .fl-fdisc {
-  fill: var(--red);
+  fill: url(#g-inner);
   stroke: var(--red);
 }
 .flow .fl-finding .fl-icon {
-  stroke: var(--fg);
+  stroke: var(--red);
 }
 .flow .fl-finding.sel .fl-fdisc,
 .flow .fl-finding.hot .fl-fdisc,
 .flow .fl-finding:hover .fl-fdisc {
-  stroke: var(--fg);
-  stroke-width: 2;
+  stroke: var(--wire-on);
+  stroke-opacity: 1;
+  stroke-width: 1.5;
 }
 .flow .fl-tool {
   fill: var(--raised);

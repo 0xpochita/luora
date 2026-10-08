@@ -46,7 +46,7 @@ export function GraphNode({
 }) {
   const kind = displayKind(frame);
   const rows = frameRows(frame);
-  const status: Tone = !frame.ok ? "bad" : kind === "EVENT" ? "violet" : "ok";
+  const status: Tone = !frame.ok ? "bad" : kind === "EVENT" ? "neutral" : "ok";
   return (
     <button
       type="button"
@@ -73,19 +73,19 @@ export function GraphNode({
           <span className="text-muted">{frame.to}</span>.{frame.fn}
         </span>
         {frame.gas != null && kind !== "EVENT" && (
-          <span className="ml-auto flex-none text-[11px] text-dim">
+          <span className="ml-auto flex-none text-[11.5px] text-dim">
             {frame.gas.toLocaleString()} gas
           </span>
         )}
       </span>
       <span
-        className={`relative flex flex-col rounded-card border bg-surface transition-[border-color,box-shadow] ${
+        className={`relative flex flex-col rounded-card border bg-card-grad transition-[border-color,box-shadow] ${
           selected || dragging
             ? "border-border-strong shadow-float"
             : "border-border shadow-soft group-hover:border-border-strong"
         }`}
       >
-        <Port tone="warn" side="l" />
+        <Port tone="neutral" side="l" />
         {hasOut && <Port tone={frame.ok ? "ok" : "bad"} side="r" />}
         <span
           className="flex items-center gap-2 px-2.5 font-sans text-[12.5px] text-muted"
@@ -95,7 +95,7 @@ export function GraphNode({
           {kind.toLowerCase()}
         </span>
         {rows.length > 0 && (
-          <span className="mx-[5px] mb-[5px] block rounded-inner bg-inset py-1">
+          <span className="mx-2 mb-2 block rounded-inner border border-border bg-inner-grad py-1">
             {rows.map((r) => (
               <span
                 key={r.key}

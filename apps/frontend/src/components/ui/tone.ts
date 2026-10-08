@@ -1,11 +1,10 @@
-/** Status tones → dot colour. red = findings / reverts / bad, green = pass. */
+/** Status tones → dot colour. red = finding / revert / bad, green = pass, yellow = warning, blue = external. */
 export const TONE_DOT = {
   neutral: "bg-dim",
   ok: "bg-green",
   bad: "bg-red",
   warn: "bg-yellow",
   info: "bg-blue",
-  violet: "bg-violet",
   solid: "bg-primary-fg",
 } as const;
 

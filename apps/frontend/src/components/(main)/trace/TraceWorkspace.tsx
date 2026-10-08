@@ -73,7 +73,7 @@ export function TraceWorkspace({ source }: { source: TraceSource }) {
           origin={origin}
         />
         <div className="flex min-h-0 flex-1 gap-3">
-          <main className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-soft">
+          <main className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-card border border-border bg-card-grad shadow-soft">
             <TraceHeader
               title={test.name}
               mode={mode}

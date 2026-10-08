@@ -1,6 +1,7 @@
 /** Suspense fallback while the server reads luora-data.json. */
 export function TraceSkeleton() {
-  const card = "animate-pulse rounded-card bg-surface shadow-soft";
+  const card =
+    "animate-pulse rounded-card border border-border bg-card-grad shadow-soft";
   return (
     <div className="flex min-h-0 flex-1 gap-3 px-3 pb-3">
       <div className={`w-[272px] flex-none space-y-2 p-2.5 ${card}`}>

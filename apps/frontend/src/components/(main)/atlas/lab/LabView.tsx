@@ -12,12 +12,13 @@ import {
 } from "@/components/ui";
 import type { AtlasModel } from "@/features/atlas";
 import { useScenarios } from "@/features/atlas/hooks/useScenarios";
+import { ICON_PATH } from "@/features/atlas/utils/icons";
 import { foundryTest } from "@/features/atlas/utils/lab-foundry";
 import {
   connect,
   contractGraph,
   type GNode,
-  KIND_COLOR,
+  KIND_META,
   PORT_COLOR,
   type PortType,
   revertsOf,
@@ -61,6 +62,12 @@ const ICONS: Record<string, string> = {
 const Icon = ({ d }: { d: string }) => (
   <svg viewBox="0 0 24 24" aria-hidden="true" className="lab-ico">
     <path d={d} />
+  </svg>
+);
+
+const KindIco = ({ kind }: { kind: keyof typeof KIND_META }) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className="lab-ico sm">
+    <path d={ICON_PATH[KIND_META[kind].icon]} />
   </svg>
 );
 
@@ -410,7 +417,10 @@ export function LabView({
 
   return (
     <div className="lab-main">
-      <div data-no-pan className="absolute top-3 left-3 z-[4]">
+      <div
+        data-no-pan
+        className="lab-chrome absolute top-4 left-4 z-[4] flex flex-col items-start gap-4"
+      >
         <Toolbar>
           <SegmentedControl
             value={mode}
@@ -432,39 +442,35 @@ export function LabView({
             ]}
           />
         </Toolbar>
+        <nav aria-label="Lab tools">
+          <Toolbar vertical>
+            {tool(
+              "add",
+              "Add node",
+              () => {
+                setMode("scenario");
+                toggle("add");
+              },
+              panel === "add",
+            )}
+            {tool(
+              "code",
+              "Generated Foundry test",
+              () => toggle("code"),
+              panel === "code",
+            )}
+            {tool(
+              "settings",
+              "Settings",
+              () => toggle("settings"),
+              panel === "settings",
+            )}
+            {tool("export", "Export .t.sol", exportTest)}
+            {tool("share", "Copy scenario JSON", share)}
+            {tool("help", "Help", () => toggle("help"), panel === "help")}
+          </Toolbar>
+        </nav>
       </div>
-      <nav
-        data-no-pan
-        aria-label="Lab tools"
-        className="absolute top-[64px] left-3 z-[4]"
-      >
-        <Toolbar vertical>
-          {tool(
-            "add",
-            "Add node",
-            () => {
-              setMode("scenario");
-              toggle("add");
-            },
-            panel === "add",
-          )}
-          {tool(
-            "code",
-            "Generated Foundry test",
-            () => toggle("code"),
-            panel === "code",
-          )}
-          {tool(
-            "settings",
-            "Settings",
-            () => toggle("settings"),
-            panel === "settings",
-          )}
-          {tool("export", "Export .t.sol", exportTest)}
-          {tool("share", "Copy scenario JSON", share)}
-          {tool("help", "Help", () => toggle("help"), panel === "help")}
-        </Toolbar>
-      </nav>
 
       <LabCanvas
         nodes={graph.nodes}
@@ -483,8 +489,7 @@ export function LabView({
         widgets={widgets}
         fitKey={`${mode}:${mode === "scenario" ? sc?.id : model.contract}`}
       />
-
-      <p className="pointer-events-none absolute top-5 right-4 z-[3] m-0 max-w-[45%] text-right text-[12px] text-dim">
+      <p className="lab-status">
         {mode === "contract"
           ? "Read-only · drag cards, drag the background to pan, scroll to zoom"
           : "Drag from a port to wire it · Delete removes the selection"}
@@ -493,7 +498,7 @@ export function LabView({
       {mode === "scenario" && sc && (
         <div
           data-no-pan
-          className="absolute bottom-3 left-1/2 z-[4] w-max max-w-[calc(100%-140px)] -translate-x-1/2"
+          className="absolute bottom-[44px] left-1/2 z-[4] w-max max-w-[calc(100%-140px)] -translate-x-1/2"
         >
           <FloatingDock>
             <div className="flex flex-wrap items-center gap-1.5">
@@ -545,11 +550,18 @@ export function LabView({
                 ))}
               </Select>
               <Button
-                variant="primary"
+                variant="accent"
                 onClick={start}
                 disabled={!sc.nodes.length}
               >
-                ▶ Run
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  className="size-3.5 fill-current"
+                >
+                  <path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8zM19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z" />
+                </svg>
+                Run
               </Button>
               <Button onClick={exportTest}>Export .t.sol ↓</Button>
             </div>
@@ -560,28 +572,33 @@ export function LabView({
       {panel === "add" && (
         <div className="lab-float lab-pop add" data-no-pan>
           <h4>Add node</h4>
-          <button type="button" onClick={() => add("actor")}>
-            <i style={{ background: PORT_COLOR.actor }} /> Actor
-          </button>
-          <button type="button" onClick={() => add("const")}>
-            <i style={{ background: PORT_COLOR.amount }} /> Constant amount
-          </button>
+          {(
+            [
+              ["actor", "Actor"],
+              ["const", "Constant amount"],
+            ] as const
+          ).map(([k, label]) => (
+            <button type="button" key={k} onClick={() => add(k)}>
+              <KindIco kind={k} /> {label}
+            </button>
+          ))}
           {model.entry.map((fn) => (
             <button type="button" key={fn} onClick={() => add("call", fn)}>
-              <i style={{ background: KIND_COLOR.call }} /> Call{" "}
-              {fnName(model.byId[fn])}
+              <KindIco kind="call" /> Call {fnName(model.byId[fn])}
               <em>{model.byId[fn]?.caller ?? "anyone"}</em>
             </button>
           ))}
-          <button type="button" onClick={() => add("expect")}>
-            <i style={{ background: PORT_COLOR.revert }} /> Expect revert
-          </button>
-          <button type="button" onClick={() => add("assert")}>
-            <i style={{ background: PORT_COLOR.bool }} /> Assert
-          </button>
-          <button type="button" onClick={() => add("snapshot")}>
-            <i style={{ background: PORT_COLOR.slot }} /> Snapshot
-          </button>
+          {(
+            [
+              ["expect", "Expect revert"],
+              ["assert", "Assert"],
+              ["snapshot", "Snapshot"],
+            ] as const
+          ).map(([k, label]) => (
+            <button type="button" key={k} onClick={() => add(k)}>
+              <KindIco kind={k} /> {label}
+            </button>
+          ))}
         </div>
       )}
       {panel === "settings" && (

@@ -1,5 +1,6 @@
 import type { Piece, Risk } from "../types";
 import { pctLabel, pieceCoverage } from "./coverage.ts";
+import type { IconKey } from "./icons.ts";
 import { type PlayModel, paramsOf } from "./playground.ts";
 import { protocolOf } from "./protocols.ts";
 import { word } from "./step-lines.ts";
@@ -18,15 +19,19 @@ export type PortType =
   | "bool"
   | "revert"
   | "flow";
-/** Port dot colour (design tokens): yellow = caller / input, green = state, red = revert, violet = event. */
+/**
+ * Port dot colour — the only colour on a card, used semantically (DESIGN.md): blue = address /
+ * external, yellow = amount, green = pass / bool check, red = revert. State, events and execution
+ * order stay monochrome; the card's icon + label says what it is.
+ */
 export const PORT_COLOR: Record<PortType, string> = {
-  actor: "var(--yellow)",
-  amount: "var(--blue)",
-  slot: "var(--green)",
-  event: "var(--violet)",
-  bool: "var(--pink)",
+  actor: "var(--blue)",
+  amount: "var(--yellow)",
+  slot: "var(--port)",
+  event: "var(--port)",
+  bool: "var(--green)",
   revert: "var(--red)",
-  flow: "var(--muted)",
+  flow: "var(--dim)",
 };
 export type Port = { id: string; label: string; type: PortType };
 
@@ -41,18 +46,18 @@ export type NodeKind =
   | "expect"
   | "assert"
   | "snapshot";
-/** Status dot colour per card kind (shown before the title, above the card). */
-export const KIND_COLOR: Record<NodeKind, string> = {
-  entry: "var(--yellow)",
-  call: "var(--yellow)",
-  slot: "var(--green)",
-  snapshot: "var(--green)",
-  ext: "var(--blue)",
-  event: "var(--violet)",
-  actor: "var(--yellow)",
-  const: "var(--blue)",
-  expect: "var(--red)",
-  assert: "var(--muted)",
+/** Monochrome icon + label per card kind (inner header row); kinds are never told apart by colour. */
+export const KIND_META: Record<NodeKind, { label: string; icon: IconKey }> = {
+  entry: { label: "Function", icon: "in" },
+  call: { label: "Call", icon: "in" },
+  slot: { label: "Storage slot", icon: "cylinder" },
+  snapshot: { label: "Snapshot", icon: "grid" },
+  ext: { label: "External contract", icon: "plug" },
+  event: { label: "Event", icon: "antenna" },
+  actor: { label: "Actor", icon: "user" },
+  const: { label: "Amount", icon: "coin" },
+  expect: { label: "Expect revert", icon: "warn" },
+  assert: { label: "Assert", icon: "check" },
 };
 
 export type Badge = {
@@ -83,23 +88,37 @@ export type GNode = {
 export type End = { node: string; port: string };
 export type Wire = { from: End; to: End };
 
-export const HEADER = 28;
-export const ROW = 20;
-export const WIDGET = 26;
-const PAD = 8;
+/*
+ * Card geometry (lab.css must match): title row above the card, 10px gap, outer card with an 8px
+ * inset, inner card with 16px padding holding the kind row, widgets (36px control + 8px), 32px port
+ * rows and 24px text rows. Port dots (7px) sit just inside the inner padding, 12px before their label.
+ */
+export const TITLE = 22;
+const TITLE_GAP = 10;
+const OUTER = 8;
+const PAD = 16;
+const KIND_ROW = 22;
+export const HEADER = TITLE + TITLE_GAP + OUTER + PAD + KIND_ROW;
+export const ROW = 32;
+export const TEXT_ROW = 24;
+export const WIDGET = 44;
+const FOOT = PAD + OUTER;
+/** distance from the card edge to a port dot's centre */
+export const PORT_X = OUTER + PAD + 3.5;
 export const THEN: Port = { id: "then", label: "then", type: "flow" };
 
 export const nodeHeight = (n: GNode) =>
   HEADER +
   (n.widgets ?? 0) * WIDGET +
   Math.max(n.inputs.length, n.outputs.length) * ROW +
-  (n.rows?.length ?? 0) * ROW +
-  PAD;
+  (n.rows?.length ?? 0) * TEXT_ROW +
+  FOOT;
 
-/** Canvas position of a socket: inputs on the left edge, outputs on the right, `then` on the title bar. */
+/** Canvas position of a socket: inputs inside the left edge, outputs inside the right, `then` on the title row. */
 export function portPos(n: GNode, port: string, side: "in" | "out") {
-  const x = side === "in" ? n.x : n.x + n.w;
-  if (port === "then") return { x, y: n.y + HEADER / 2 };
+  if (port === "then")
+    return { x: side === "in" ? n.x : n.x + n.w, y: n.y + TITLE / 2 };
+  const x = side === "in" ? n.x + PORT_X : n.x + n.w - PORT_X;
   const i = (side === "in" ? n.inputs : n.outputs).findIndex(
     (p) => p.id === port,
   );
@@ -302,8 +321,16 @@ export function entryPorts(m: PlayModel, fn: string) {
   return { inputs, outputs };
 }
 
-const COL = { entry: 0, slot: 340, side: 610 } as const;
-const GAP = 18;
+/** card widths and column x: 160px between columns so wires have room to curve */
+const W = { entry: 360, target: 270 } as const;
+const COL_GAP = 160;
+export const COL = {
+  entry: 0,
+  slot: W.entry + COL_GAP,
+  side: W.entry + COL_GAP + W.target + COL_GAP,
+} as const;
+/** vertical gap from the bottom of one card to the title row of the next */
+export const GAP = 44;
 
 /**
  * Read-only contract graph: one card per entry function (caller + typed args in; returns, slots
@@ -341,7 +368,7 @@ export function contractGraph(m: PlayModel): { nodes: GNode[]; wires: Wire[] } {
       title: p.name.replace("()", ""),
       x: COL.entry,
       y,
-      w: 250,
+      w: W.entry,
       inputs,
       outputs,
       piece: fn,
@@ -380,7 +407,7 @@ export function contractGraph(m: PlayModel): { nodes: GNode[]; wires: Wire[] } {
       piece: p.id,
       badges: fb ? [fb] : [],
       outputs: [],
-      w: 210,
+      w: W.target,
       x: 0,
       y: 0,
     };

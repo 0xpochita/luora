@@ -1,4 +1,5 @@
 export { Button } from "./Button";
+export { CardGradients } from "./CardGradients";
 export { Chip } from "./Chip";
 export { FloatingDock } from "./FloatingDock";
 export { IconButton } from "./IconButton";

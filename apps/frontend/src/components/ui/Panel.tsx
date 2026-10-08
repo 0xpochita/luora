@@ -2,9 +2,10 @@ import type { ReactNode } from "react";
 import { TONE_DOT, type Tone } from "./tone";
 
 /**
- * Rounded dark card. `label` + `aside` make a soft header row inside the card;
- * `titleAbove` moves that row above the card (node-card anatomy); `inset` wraps the body
- * in a nested inner card (5px in, radius 16 − 5 = 11); `glow` adds the violet→pink border.
+ * Graphite gradient card. `label` + `aside` make the title row: inside the card by default,
+ * above it with `titleAbove` (node-card anatomy: "● Title"). `inset` wraps the body in the
+ * nested inner card (8px in, radius 12); `glow` adds the soft pink/blue glow behind the top edge —
+ * only for the one selected / running card. The title dot is white unless a semantic `dot` tone is given.
  */
 export function Panel({
   label,
@@ -27,25 +28,27 @@ export function Panel({
 }) {
   const header = label != null && (
     <header
-      className={`flex items-center gap-2 text-[13px] text-muted ${titleAbove ? "px-1 pb-1.5" : "px-3.5 pt-3 pb-2"}`}
+      className={`flex items-center gap-2 text-[14px] ${titleAbove ? "px-1 pb-2.5" : "px-4 pt-3.5 pb-2.5"}`}
     >
-      {dot && <span className={`size-1.5 rounded-full ${TONE_DOT[dot]}`} />}
-      <span className="truncate text-fg">{label}</span>
+      <span
+        className={`size-1.5 flex-none rounded-full ${dot && dot !== "neutral" ? TONE_DOT[dot] : "bg-fg"}`}
+      />
+      <span className="truncate font-medium text-fg">{label}</span>
       {aside != null && (
-        <span className="ml-auto whitespace-nowrap text-[12px] text-dim">
+        <span className="ml-auto whitespace-nowrap text-[12.5px] text-dim">
           {aside}
         </span>
       )}
     </header>
   );
   const body = inset ? (
-    <div className="m-[5px] flex min-h-0 flex-1 flex-col rounded-inner bg-inset">
+    <div className="m-2 flex min-h-0 flex-1 flex-col rounded-inner border border-border bg-inner-grad">
       {children}
     </div>
   ) : (
     children
   );
-  const card = `flex min-h-0 flex-col rounded-card border border-border bg-surface shadow-soft ${glow ? "glow-border" : ""}`;
+  const card = `flex min-h-0 flex-col rounded-card border border-border bg-card-grad shadow-soft ${glow ? "glow-top" : ""}`;
 
   if (titleAbove)
     return (

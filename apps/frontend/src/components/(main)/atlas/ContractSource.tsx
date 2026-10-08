@@ -37,7 +37,7 @@ export function ContractSource({
         const br = cov.branchHits[n] ?? [];
         const taken = br.filter((b) => b != null && b > 0).length;
         return (
-          <span className="inline-flex w-[64px] select-none text-[10px]">
+          <span className="inline-flex w-[64px] select-none text-[10.5px]">
             <span
               title={hits == null ? undefined : `Ran ${hits}× under the tests`}
               className={`w-[36px] pr-1.5 text-right ${hits === 0 ? "text-red" : "text-dim/80"}`}
@@ -65,7 +65,7 @@ export function ContractSource({
   return (
     <Panel
       label="Source"
-      dot={current != null ? "violet" : "neutral"}
+      dot={current != null && sim.late[at] ? "bad" : "neutral"}
       aside={
         <span className="font-mono">
           {model.file.split("/").pop()}
@@ -75,10 +75,10 @@ export function ContractSource({
       inset
       className="h-[52vh] min-h-[280px] flex-none [&>div]:overflow-hidden"
     >
-      <p className="truncate px-3 pt-2.5 pb-1 text-[12px] text-muted">
+      <p className="truncate px-3 pt-2.5 pb-1 text-[12.5px] text-muted">
         {current != null && t ? (
           <>
-            <span className={sim.late[at] ? "text-red" : "text-violet"}>
+            <span className={sim.late[at] ? "text-red" : "text-fg"}>
               Step <span className="font-mono">{at + 1}</span>
             </span>{" "}
             · <span className="lowercase">{k && STEP_VERB[k]}</span>{" "}

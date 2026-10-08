@@ -91,8 +91,8 @@ export function UnitTray({
                 onClick={() => onSelect(on ? null : p.id)}
                 className={`relative flex flex-none items-center gap-2.5 rounded-card border py-2 pr-3 pl-2 shadow-soft transition-colors ${
                   on
-                    ? "border-border-strong bg-hover shadow-float"
-                    : "border-transparent bg-surface hover:bg-raised"
+                    ? "border-border-strong bg-card-grad shadow-float"
+                    : "border-border bg-card-grad hover:border-border-strong"
                 }`}
               >
                 <PieceIcon piece={p} />
@@ -111,13 +111,13 @@ export function UnitTray({
                 <span className="font-mono text-[13px] text-fg">
                   {unitCode(model, p.id)}
                 </span>
-                <span className="max-w-[160px] truncate text-[13px] text-muted">
+                <span className="max-w-[160px] truncate text-[13px] text-body">
                   {p.name}
                 </span>
                 {c && (
                   <span
                     title={`Coverage: ${c.lines.hit}/${c.lines.found} lines, ${c.branches.hit}/${c.branches.found} branches`}
-                    className={`font-mono text-xs ${c.state === "untested" ? "text-yellow" : c.state === "covered" ? "text-green" : "text-dim"}`}
+                    className={`font-mono text-xs ${c.state === "untested" ? "text-red" : c.state === "covered" ? "text-green" : "text-dim"}`}
                   >
                     {pctLabel(c.pct)}
                   </span>

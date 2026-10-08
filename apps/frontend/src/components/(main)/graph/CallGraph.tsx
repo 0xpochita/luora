@@ -150,8 +150,8 @@ export function CallGraph({
                 key={e.id}
                 d={`M${e.x1} ${e.y1} C${m} ${e.y1} ${m} ${e.y2} ${e.x2} ${e.y2}`}
                 fill="none"
-                className={on ? "stroke-fg" : "stroke-[#3a3a40]"}
-                strokeWidth={on ? 1.5 : 1.2}
+                className={on ? "stroke-fg" : "stroke-wire"}
+                strokeWidth={1}
               />
             );
           })}

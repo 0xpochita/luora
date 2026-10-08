@@ -19,6 +19,8 @@ export const ICON_PATH = {
     "M10 12a2 2 0 1 0 4 0a2 2 0 1 0-4 0M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2",
   warn: "M12 3L2 21h20zM12 10v5M12 17.5v.5",
   fn: "M8 4H5v16h3M16 4h3v16h-3",
+  user: "M8 8a4 4 0 1 0 8 0a4 4 0 1 0-8 0M4 21c0-4 4-6 8-6s8 2 8 6",
+  check: "M5 12l5 5L20 7",
 } as const;
 export type IconKey = keyof typeof ICON_PATH;
 

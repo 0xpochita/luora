@@ -14,7 +14,7 @@ export function Toolbar({
     <div
       role="toolbar"
       aria-orientation={vertical ? "vertical" : "horizontal"}
-      className={`flex gap-1.5 rounded-card border border-border bg-surface/90 p-1.5 shadow-float backdrop-blur-md ${vertical ? "flex-col" : "items-center"} ${className}`}
+      className={`flex gap-1.5 rounded-card border border-border bg-card-grad p-1.5 shadow-soft ${vertical ? "flex-col" : "items-center"} ${className}`}
     >
       {children}
     </div>

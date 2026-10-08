@@ -5,9 +5,9 @@ import { tokenize } from "@/features/trace";
 
 const NOTE_TONE: Record<string, string> = {
   SLOAD: "bg-raised text-muted",
-  SSTORE: "bg-green/10 text-green",
-  call: "bg-blue/10 text-blue",
-  emit: "bg-violet/10 text-violet",
+  SSTORE: "bg-raised text-muted",
+  call: "bg-raised text-muted",
+  emit: "bg-raised text-muted",
 };
 
 export function CodeView({
@@ -73,7 +73,7 @@ export function CodeView({
           if (n != null && !getSelection()?.toString()) onLine(Number(n));
         })
       }
-      className={`relative flex-1 overflow-auto bg-inset py-2.5 pb-10 font-mono text-xs leading-[1.8] ${onLine ? "[&>span]:cursor-pointer [&>span:hover]:bg-hover" : ""} ${className}`}
+      className={`relative flex-1 overflow-auto bg-inner-grad py-2.5 pb-10 font-mono text-xs leading-[1.8] ${onLine ? "[&>span]:cursor-pointer [&>span:hover]:bg-hover" : ""} ${className}`}
     >
       {lines.map((line) => (
         <span
