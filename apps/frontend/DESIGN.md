@@ -34,9 +34,7 @@ Use the Tailwind names (`bg-surface`, `text-muted` …), or `var(--surface)` in 
 
 Status tones (the `Tone` type in `components/ui/tone.ts`): `neutral`, `ok`, `bad`, `warn`, `info`, `violet`, `solid`.
 
-**Legacy aliases.** `shell panel tray card ink line edge tick soft guide sel accent ok bad` still exist and point
-at the new palette, so un-migrated screens keep rendering. When you restyle an area, switch it to the new names.
-Once nothing references an alias any more, delete it from `globals.css`.
+The old HUD names (`shell panel tray card ink line edge tick soft guide sel accent ok bad`) are gone. Don't reintroduce them.
 
 ## Radius
 
@@ -74,9 +72,9 @@ For nested shapes, inner radius = outer radius − inset. Never put a sharp corn
 - **Tabs / TileGroup**: separate tiles with a `gap-1.5`, no container, no underline, no folder tabs. Use them for route nav (Trace / Atlas), sub-views (Lab / Explorer / Map / Flow) and file tabs (`size="sm"`).
 - **SegmentedControl**: a compact choice inside one `inset` tray. The active segment is a white tile.
 - **Button**: `primary` (white, at most **one per area**: the action that matters most, like "Share" in the reference), `secondary` (dark grey, the default), and `ghost`.
-- **IconButton**: a rounded square (32/36px). `active` makes it white. Always pass `label` (used for aria-label and title).
+- **IconButton**: a rounded square (24/32/36px, `size` xs / sm / md; dims when `disabled`). `active` makes it white. Always pass `label` (used for aria-label and title).
 - **Chip**: a soft pill on a tinted fill, with an optional tone `dot`. **ToggleChip**: a filter pill. When on, the dot is lit and the text is bright.
-- **Input / Select**: `inset` fill, tile radius, violet focus ring.
+- **Input / Select / Textarea**: `inset` fill, tile radius, violet focus ring.
 - **Tooltip**: CSS hover/focus bubble (`side` top / bottom / left / right).
 - **KV**: sans key on the left, mono value on the right. **Meter**: rounded track with a `bg-current` fill (pass the colour via `tone`).
 

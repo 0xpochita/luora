@@ -25,22 +25,6 @@
   --pink: #f472b6;
   --glow: linear-gradient(135deg, var(--violet), var(--pink));
 
-  /* legacy names: feature screens still use these until their area is restyled.
-     New code uses the names above; delete an alias once nothing references it. */
-  --shell: var(--canvas);
-  --panel: var(--surface);
-  --tray: var(--inset);
-  --card: var(--raised);
-  --ink: var(--fg);
-  --line: #222226;
-  --edge: #2e2e34;
-  --tick: #9a9aa2;
-  --soft: var(--hover);
-  --guide: #232327;
-  --sel: #222226;
-  --accent: var(--primary);
-  --ok: var(--green);
-  --bad: var(--red);
   color-scheme: dark;
 }
 
@@ -64,21 +48,6 @@
   --color-blue: var(--blue);
   --color-violet: var(--violet);
   --color-pink: var(--pink);
-
-  --color-shell: var(--shell);
-  --color-panel: var(--panel);
-  --color-tray: var(--tray);
-  --color-card: var(--card);
-  --color-ink: var(--ink);
-  --color-line: var(--line);
-  --color-edge: var(--edge);
-  --color-tick: var(--tick);
-  --color-soft: var(--soft);
-  --color-guide: var(--guide);
-  --color-sel: var(--sel);
-  --color-accent: var(--accent);
-  --color-ok: var(--ok);
-  --color-bad: var(--bad);
 
   /* radius scale: chip 8 · tile (buttons, icon tiles) 11 · card (cards, panels, toolbars) 16.
      Nested inner card = card − inset: 16 − 5 = inner 11. */
@@ -151,7 +120,7 @@ body {
   background: repeating-linear-gradient(
     90deg,
     transparent 0 13px,
-    var(--guide) 13px 14px,
+    var(--raised) 13px 14px,
     transparent 14px 24px
   );
 }

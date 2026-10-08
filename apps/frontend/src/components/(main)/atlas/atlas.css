@@ -19,9 +19,6 @@
 .atlas .stage {
   position: relative;
   overflow: hidden;
-  background:
-    radial-gradient(800px 560px at 45% 45%, #141518, transparent 70%),
-    var(--shell);
 }
 
 /* right panel: a column of floating cards on the dot-grid canvas (no tray) */
@@ -53,34 +50,6 @@
   background: var(--hover);
   color: var(--fg);
 }
-/* code-meaning glyph: square marker with a monochrome stroke icon */
-.atlas .picon {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 18px;
-  height: 18px;
-  border: 1.5px solid var(--ink);
-  background: var(--shell);
-  color: var(--ink);
-}
-.atlas .picon svg {
-  width: 12px;
-  height: 12px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: square;
-}
-.atlas .picon {
-  border-width: 1px;
-  border-color: var(--edge);
-  color: var(--tick);
-}
-.atlas .picon.vulns {
-  border-color: var(--bad);
-  color: var(--bad);
-}
 /* recognised protocol: its logo replaces the square */
 .atlas .plogo {
   flex: none;
@@ -88,8 +57,8 @@
   height: 16px;
   border-radius: 50%;
   box-shadow:
-    0 0 0 1.5px var(--shell),
-    0 0 0 2.5px var(--line);
+    0 0 0 1.5px var(--surface),
+    0 0 0 2.5px var(--border-strong);
 }
 .atlas .plogo {
   display: inline-block;
