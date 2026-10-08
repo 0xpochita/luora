@@ -1,42 +1,17 @@
-/* Lab — ShaderLab-style node editor: near-black canvas, dark grey cards with a coloured title bar,
-   typed round sockets, bezier wires coloured by port type. Card geometry (28px header, 26px widget
-   rows, 20px port rows, 8px bottom pad) must match HEADER / WIDGET / ROW in utils/lab-graph.ts. */
-.lab {
+/* Lab node editor (DESIGN.md "Node card anatomy"): title + status dot above each card, surface card
+   with a nested inset inner card, round port dots on the card edge, thin grey bezier wires.
+   Geometry must match HEADER / WIDGET / ROW in utils/lab-graph.ts: the 28px header = 23px title
+   row + 5px outer inset, then widget rows (26px) and port / text rows (20px), 8px bottom pad
+   (3px inner + 5px outer). */
+.lab-main {
   position: relative;
-  display: grid;
-  grid-template-columns: 40px 1fr;
   flex: 1;
+  min-width: 0;
   min-height: 0;
-  background: #0b0b0c;
-}
-
-/* thin vertical icon toolbar */
-.lab-tools {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 8px 0;
-  background: #121315;
-  border-right: 1px solid #1f2124;
 }
-.lab-tools .grow {
-  flex: 1;
-}
-.lab-tools button {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 4px;
-  color: #8a8f96;
-}
-.lab-tools button:hover,
-.lab-tools button[aria-pressed="true"] {
-  background: #23252a;
-  color: #f2f3f4;
-}
-.lab-tools svg {
+.lab-ico {
   width: 17px;
   height: 17px;
   fill: none;
@@ -46,67 +21,7 @@
   stroke-linejoin: round;
 }
 
-.lab-main {
-  position: relative;
-  min-width: 0;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-.lab-top {
-  position: absolute;
-  z-index: 4;
-  top: 10px;
-  left: 12px;
-  right: 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  pointer-events: none;
-}
-.lab-top > * {
-  pointer-events: auto;
-}
-.lab-top .grow {
-  flex: 1;
-  pointer-events: none;
-}
-.lab-sel,
-.lab-name {
-  height: 30px;
-  max-width: 260px;
-  background: #16171a;
-  border: 1px solid #2a2c31;
-  color: var(--ink);
-  font: 12px var(--font-geist-mono);
-  padding: 0 8px;
-}
-.lab-name {
-  width: 240px;
-}
-.lab-btn {
-  height: 30px;
-  padding: 0 12px;
-  border: 1px solid #2f3237;
-  background: #1a1b1e;
-  color: var(--ink);
-  font: 500 11px var(--font-geist-mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.lab-btn:hover:not(:disabled) {
-  border-color: #f2f3f4;
-}
-.lab-btn:disabled {
-  opacity: 0.4;
-}
-.lab-btn.run {
-  background: #2bc4a4;
-  border-color: #2bc4a4;
-  color: #06120f;
-}
-
-/* canvas */
+/* canvas — the dot grid itself comes from the dot-grid utility */
 .lab-canvas {
   position: relative;
   flex: 1;
@@ -114,8 +29,6 @@
   overflow: hidden;
   cursor: grab;
   touch-action: none;
-  background-color: #0b0b0c;
-  background-image: radial-gradient(#23252a 1px, transparent 1.2px);
 }
 .lab-canvas:active {
   cursor: grabbing;
@@ -125,6 +38,8 @@
   inset: 0 auto auto 0;
   transform-origin: 0 0;
 }
+
+/* wires: grey by default, the selected path takes its port colour (or fg for the picked wire) */
 .lab-wires {
   position: absolute;
   overflow: visible;
@@ -133,20 +48,22 @@
 }
 .lab-wires .vis {
   fill: none;
-  stroke-width: 2;
-  opacity: 0.75;
+  stroke: #3a3a40;
+  stroke-width: 1.5;
+  transition: stroke 0.15s;
 }
 .lab-wires .wire.flow .vis {
-  stroke-dasharray: 6 4;
+  stroke-dasharray: 5 4;
 }
 .lab-wires .wire.lit .vis {
-  stroke-width: 3;
-  opacity: 1;
+  stroke: var(--c);
+}
+.lab-wires .wire.picked .vis {
+  stroke: var(--fg);
 }
 .lab-wires .wire.pulse .vis {
-  stroke-width: 3.5;
-  opacity: 1;
-  stroke-dasharray: 10 8;
+  stroke: var(--c);
+  stroke-dasharray: 8 6;
   animation: lab-flow 0.5s linear infinite;
 }
 .lab-wires .hit {
@@ -158,62 +75,42 @@
 }
 .lab-wires .wire.drag {
   fill: none;
-  stroke-width: 2.5;
+  stroke-width: 1.5;
   stroke-dasharray: 5 4;
 }
 @keyframes lab-flow {
   to {
-    stroke-dashoffset: -18;
+    stroke-dashoffset: -14;
   }
 }
 
 /* cards */
 .lab-card {
   position: absolute;
-  box-sizing: border-box;
-  background: #26282c;
-  border: 1px solid #36393e;
-  border-radius: 5px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
-  color: #c9ccd0;
-  font: 11px / 20px var(--font-geist-mono);
+  display: flex;
+  flex-direction: column;
+  color: var(--muted);
+  font: 12px / 20px var(--font-outfit);
   cursor: default;
   user-select: none;
 }
-.lab-card.sel {
-  border-color: #f2f3f4;
-  box-shadow:
-    0 0 0 1px #f2f3f4,
-    0 6px 18px rgba(0, 0, 0, 0.45);
-}
-.lab-card.hot {
-  border-color: #f4c542;
-  box-shadow:
-    0 0 0 1px #f4c542,
-    0 0 24px rgba(244, 197, 66, 0.25);
-}
-.lab-card.running {
-  box-shadow:
-    0 0 0 2px #2bc4a4,
-    0 0 28px rgba(43, 196, 164, 0.35);
-}
-.lab-card.run-pass {
-  border-color: #3ddc84;
-}
-.lab-card.run-fail,
-.lab-card.run-revert {
-  border-color: #ff4545;
-}
 .lab-card header {
   position: relative;
+  flex: none;
   display: flex;
   align-items: center;
   gap: 6px;
-  height: 28px;
-  padding: 0 12px;
-  border-radius: 4px 4px 0 0;
-  color: #fff;
+  height: 23px;
+  padding: 0 4px 3px;
+  color: var(--fg);
   cursor: move;
+}
+.lab-card header .kdot {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--c);
 }
 .lab-card header b {
   flex: 1;
@@ -221,52 +118,90 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font: 600 12px var(--font-geist-mono);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+  font-weight: 400;
+  font-size: 12.5px;
 }
 .lab-card .logo {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   flex: none;
   border-radius: 50%;
-  background: #fff center / contain no-repeat;
-  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.35);
+  background: var(--raised) center / contain no-repeat;
 }
+/* corner stats: dim mono numbers, tone chips for findings / run status */
 .lab-card .badge {
   flex: none;
-  padding: 0 5px;
   height: 16px;
-  line-height: 16px;
-  border-radius: 3px;
-  font-size: 10px;
-  font-weight: 600;
-  background: rgba(0, 0, 0, 0.45);
-  color: #e8eaec;
+  padding: 0 5px;
+  border-radius: 6px;
+  font: 10.5px / 16px var(--font-geist-mono);
+  color: var(--dim);
 }
-.lab-card .badge.bad {
-  background: #ff4545;
-  color: #fff;
+.lab-card .badge.bad,
+.lab-card .badge.st.fail,
+.lab-card .badge.st.revert {
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+  color: var(--red);
 }
 .lab-card .badge.warn {
-  background: #f4c542;
-  color: #1a1400;
+  background: color-mix(in srgb, var(--yellow) 10%, transparent);
+  color: var(--yellow);
 }
 .lab-card .badge.ok,
 .lab-card .badge.st.pass {
-  background: #3ddc84;
-  color: #04170c;
-}
-.lab-card .badge.st.fail,
-.lab-card .badge.st.revert {
-  background: #ff4545;
-  color: #fff;
+  background: color-mix(in srgb, var(--green) 10%, transparent);
+  color: var(--green);
 }
 .lab-card .badge.st.unknown {
-  background: #565b62;
+  background: var(--raised);
+  color: var(--muted);
+}
+
+.lab-card .lab-body {
+  flex: 1;
+  display: flex;
+  padding: 5px;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow:
+    inset 0 0 0 1px var(--border),
+    var(--shadow-soft);
+  transition: box-shadow 0.15s;
+}
+.lab-card .lab-inner {
+  flex: 1;
+  min-width: 0;
+  padding-bottom: 3px;
+  border-radius: 11px;
+  background: var(--inset);
+}
+.lab-card.hot .lab-body {
+  box-shadow:
+    inset 0 0 0 1px var(--border-strong),
+    var(--shadow-float);
+}
+.lab-card.run-pass .lab-body {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--green) 45%, transparent),
+    var(--shadow-soft);
+}
+.lab-card.run-fail .lab-body,
+.lab-card.run-revert .lab-body {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--red) 55%, transparent),
+    var(--shadow-soft);
+}
+.lab-card.running .lab-body {
+  box-shadow:
+    inset 0 0 0 1px var(--violet),
+    var(--shadow-float);
+}
+.lab-card.sel .lab-body {
+  box-shadow: var(--shadow-float);
 }
 
 .lab-card .widgets {
-  padding: 0 10px;
+  padding: 0 7px;
 }
 .lab-card .w {
   display: flex;
@@ -277,50 +212,55 @@
 .lab-card .w span {
   width: 44px;
   flex: none;
-  color: #8a8f96;
+  color: var(--dim);
 }
 .lab-card .w input,
 .lab-card .w select {
   flex: 1;
   min-width: 0;
-  height: 20px;
-  padding: 0 6px;
-  background: #17181b;
-  border: 1px solid #3a3d42;
-  border-radius: 3px;
-  color: #f2f3f4;
+  height: 21px;
+  padding: 0 7px;
+  background: var(--raised);
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--fg);
   font: 11px var(--font-geist-mono);
+  transition: border-color 0.15s;
+}
+.lab-card .w input:hover,
+.lab-card .w select:hover {
+  border-color: var(--border-strong);
 }
 .lab-card .w input:focus,
 .lab-card .w select:focus {
   outline: none;
-  border-color: #3fd4f2;
+  border-color: color-mix(in srgb, var(--violet) 50%, transparent);
 }
 
 .lab-card .prow {
   position: relative;
   display: flex;
   height: 20px;
-  padding: 0 12px;
+  padding: 0 7px;
 }
 .lab-card .pin,
 .lab-card .pout {
   position: relative;
+  display: flex;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-width: 60%;
   white-space: nowrap;
 }
 .lab-card .pin {
   flex: 1;
-  overflow: visible;
-  display: flex;
 }
-.lab-card .pin,
 .lab-card .pout {
-  max-width: 60%;
+  margin-left: auto;
+  justify-content: flex-end;
+  color: var(--fg);
 }
-.lab-card .pin:only-child {
+.lab-card .pin:only-child,
+.lab-card .pout:only-child {
   max-width: 100%;
 }
 .lab-card .pin em,
@@ -331,106 +271,92 @@
   text-overflow: ellipsis;
   font-style: normal;
 }
-.lab-card .pout {
-  margin-left: auto;
-  overflow: visible;
-  display: flex;
-  justify-content: flex-end;
-}
-.lab-card .pout:only-child {
-  max-width: 100%;
-}
 .lab-card .trow {
   height: 20px;
-  padding: 0 12px;
+  padding: 0 7px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #7d8288;
+  color: var(--dim);
 }
 
-/* sockets: hollow ring in the port colour, filled once wired */
+/* port dots sit on the outer card edge: 5px inset + 7px row pad + 4px half dot */
 .lab-card .sock {
   position: absolute;
   top: 50%;
-  width: 11px;
-  height: 11px;
-  margin-top: -5.5px;
-  border: 2px solid var(--c);
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
   border-radius: 50%;
-  background: #1a1b1e;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1.5px var(--c);
   cursor: crosshair;
   z-index: 2;
+  transition: transform 0.12s;
 }
 .lab-card .sock.on {
   background: var(--c);
 }
 .lab-card .pin .sock {
-  left: -18px;
+  left: -16px;
 }
 .lab-card .pout .sock {
-  right: -18px;
+  right: -16px;
 }
 .lab-card .sock:hover,
 .lab-card .sock.ok {
-  transform: scale(1.35);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 35%, transparent);
+  transform: scale(1.5);
 }
 .lab-card .sock.bad {
-  border-color: #ff4545;
-  transform: scale(1.35);
+  --c: var(--red);
+  transform: scale(1.5);
 }
-/* execution order: grey arrow sockets on the title bar */
+/* execution order ("then") dots on the title row, level with portPos(…, "then") = HEADER / 2 */
 .lab-card header .sock.flow {
-  width: 0;
-  height: 0;
-  margin-top: -6px;
-  border: 6px solid transparent;
-  border-left: 9px solid #8a8f96;
-  border-radius: 0;
-  background: none;
+  top: 14px;
 }
 .lab-card header .sock.flow.in {
-  left: -6px;
+  left: -4px;
 }
 .lab-card header .sock.flow.out {
-  right: -15px;
-}
-.lab-card header .sock.flow.on {
-  border-left-color: #d6d8db;
-  background: none;
+  right: -4px;
 }
 
 /* symbolic run result, hanging under the card */
 .lab-result {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 8px);
   left: 0;
   right: 0;
   display: grid;
-  padding: 4px 8px;
-  background: rgba(14, 15, 17, 0.94);
-  border: 1px solid #2a2c31;
-  border-left: 2px solid #565b62;
-  border-radius: 3px;
-  font: 10.5px / 15px var(--font-geist-mono);
-  color: #9ba0a6;
+  padding: 6px 10px;
+  border-radius: 11px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  font: 11px / 16px var(--font-geist-mono);
+  color: var(--muted);
   pointer-events: none;
 }
 .lab-result b {
-  font-weight: 600;
-  color: #e8eaec;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: 12px / 18px var(--font-outfit);
+  color: var(--fg);
 }
-.lab-result.pass {
-  border-left-color: #3ddc84;
+.lab-result b::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--dim);
 }
-.lab-result.fail,
-.lab-result.revert {
-  border-left-color: #ff4545;
+.lab-result.pass b::before {
+  background: var(--green);
 }
-.lab-result.fail b,
-.lab-result.revert b {
-  color: #ff8585;
+.lab-result.fail b::before,
+.lab-result.revert b::before {
+  background: var(--red);
 }
 .lab-result span {
   overflow: hidden;
@@ -438,247 +364,253 @@
   white-space: nowrap;
 }
 
-.lab-zoom {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  z-index: 3;
-  display: flex;
-  border: 1px solid #2a2c31;
-  background: #141518;
-}
-.lab-zoom button {
-  min-width: 30px;
-  height: 26px;
-  padding: 0 8px;
-  color: #9ba0a6;
-  font: 12px var(--font-geist-mono);
-}
-.lab-zoom button:hover {
-  color: #fff;
-  background: #23252a;
-}
-.lab-hint {
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
-  z-index: 3;
-  margin: 0;
-  color: #565b62;
-  font: 10.5px var(--font-geist-mono);
-  pointer-events: none;
-}
-.lab-toast {
-  position: absolute;
-  left: 50%;
-  bottom: 44px;
-  z-index: 6;
-  transform: translateX(-50%);
-  padding: 6px 12px;
-  background: #1d1f22;
-  border: 1px solid #ff4545;
-  color: #ffd6d6;
-  font: 11px var(--font-geist-mono);
-}
-
-/* popovers next to the toolbar */
-.lab-pop {
+/* floating cards: popovers, run report, toast */
+.lab-float {
   position: absolute;
   z-index: 5;
-  top: 50px;
-  left: 8px;
-  width: 260px;
-  max-height: calc(100% - 70px);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  box-shadow:
+    inset 0 0 0 1px var(--border),
+    var(--shadow-float);
+  backdrop-filter: blur(12px);
+  font-size: 13px;
+  color: var(--muted);
+}
+.lab-toast {
+  left: 50%;
+  bottom: 100px;
+  z-index: 6;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  color: var(--fg);
+}
+.lab-toast::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--red);
+}
+.lab-toast.info::before {
+  background: var(--green);
+}
+
+.lab-pop {
+  top: 64px;
+  left: 68px;
+  width: 270px;
+  max-height: calc(100% - 140px);
   overflow: auto;
   display: grid;
   gap: 2px;
   padding: 8px;
-  background: #16171a;
-  border: 1px solid #2a2c31;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-  font: 12px var(--font-geist-mono);
-  color: #c9ccd0;
 }
 .lab-pop h4 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 0 0 6px;
-  font: 500 10.5px var(--font-geist-mono);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #8a8f96;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 6px 8px;
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--fg);
 }
-.lab-pop button {
+.lab-pop > button,
+.lab-pop .chk {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 5px 6px;
+  gap: 10px;
+  min-height: 32px;
+  padding: 0 8px;
   text-align: left;
-  border-radius: 3px;
+  border-radius: 11px;
+  transition: background-color 0.15s;
 }
-.lab-pop button:hover {
-  background: #23252a;
-  color: #fff;
+.lab-pop > button:hover {
+  background: var(--hover);
+  color: var(--fg);
 }
 .lab-pop button i {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   flex: none;
 }
 .lab-pop button em {
   margin-left: auto;
   font-style: normal;
-  color: #565b62;
+  font-size: 12px;
+  color: var(--dim);
 }
 .lab-pop button.bad {
-  color: #ff8585;
+  color: var(--red);
 }
-.lab-pop .chk {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 6px;
+.lab-pop .chk input {
+  accent-color: var(--primary);
 }
 .lab-pop.code {
-  width: min(640px, calc(100% - 20px));
+  width: min(640px, calc(100% - 90px));
+}
+.lab-pop.code h4 {
+  font: 12px var(--font-geist-mono);
 }
 .lab-pop.code pre {
   margin: 0;
-  padding: 10px;
+  padding: 12px;
   overflow: auto;
-  background: #0b0b0c;
-  border: 1px solid #23252a;
-  font-size: 11px;
-  line-height: 1.5;
-  color: #d3d6d9;
+  border-radius: 11px;
+  background: var(--inset);
+  font: 11px / 1.55 var(--font-geist-mono);
+  color: var(--fg);
 }
 .lab-pop.code p {
-  margin: 0 0 6px;
-  color: #8a8f96;
-  font-size: 11px;
+  margin: 0 6px 8px;
+  font-size: 12px;
 }
 .lab-pop.code code {
-  color: #f4c542;
+  font-family: var(--font-geist-mono);
+  color: var(--fg);
 }
 .lab-pop.help {
   width: 320px;
 }
 .lab-pop.help p {
-  margin: 0 0 8px;
+  margin: 0 6px 10px;
   line-height: 1.5;
 }
 .lab-pop .dim {
-  color: #565b62;
-  font-size: 11px;
+  color: var(--dim);
+  font-size: 12px;
 }
 .lab-pop .legend {
+  display: grid;
+  gap: 6px;
+  margin: 0 6px 10px;
+  padding: 0;
+  list-style: none;
+}
+.lab-pop .legend i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 50%;
+}
+
+/* run report */
+.lab-run {
+  z-index: 4;
+  top: 64px;
+  right: 64px;
+  width: 330px;
+  max-height: calc(100% - 180px);
+  overflow: auto;
+  padding: 8px;
+}
+.lab-run h4 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 6px 8px;
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--fg);
+}
+.lab-run h4 span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: 12px var(--font-geist-mono);
+  color: var(--dim);
+}
+.lab-run ol {
   display: grid;
   gap: 4px;
   margin: 0 0 8px;
   padding: 0;
   list-style: none;
 }
-.lab-pop .legend i {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  margin-right: 6px;
-  border: 2px solid;
-  border-radius: 50%;
-  vertical-align: -1px;
-}
-
-/* run report */
-.lab-run {
-  position: absolute;
-  z-index: 4;
-  top: 50px;
-  right: 12px;
-  width: 330px;
-  max-height: calc(100% - 100px);
-  overflow: auto;
-  padding: 10px;
-  background: rgba(18, 19, 21, 0.96);
-  border: 1px solid #2a2c31;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-  font: 11px var(--font-geist-mono);
-  color: #c9ccd0;
-}
-.lab-run h4 {
-  display: flex;
-  justify-content: space-between;
-  margin: 0 0 8px;
-  font: 500 10.5px var(--font-geist-mono);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #8a8f96;
-}
-.lab-run h4 .x {
-  margin-left: 8px;
-  color: #8a8f96;
-}
-.lab-run h4 .x:hover {
-  color: #fff;
-}
-.lab-run ol {
-  display: grid;
-  gap: 2px;
-  margin: 0 0 8px;
-  padding: 0;
-  list-style: none;
-}
 .lab-run li button {
   display: grid;
-  grid-template-columns: 20px 92px 1fr;
-  gap: 6px;
+  grid-template-columns: 8px 20px auto 1fr;
+  align-items: center;
+  gap: 8px;
   width: 100%;
-  padding: 4px 6px;
+  min-height: 32px;
+  padding: 0 10px;
   text-align: left;
-  border-left: 2px solid #3a3d42;
-  background: #191a1d;
+  border-radius: 11px;
+  background: var(--raised);
+  font-size: 12.5px;
+  transition: background-color 0.15s;
 }
 .lab-run li button:hover {
-  background: #202226;
+  background: var(--hover);
 }
-.lab-run li button.pass {
-  border-left-color: #3ddc84;
+.lab-run li button i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--dim);
 }
-.lab-run li button.fail,
-.lab-run li button.revert {
-  border-left-color: #ff4545;
+.lab-run li button.pass i {
+  background: var(--green);
+}
+.lab-run li button.fail i,
+.lab-run li button.revert i {
+  background: var(--red);
 }
 .lab-run li button span {
-  color: #565b62;
+  font: 11px var(--font-geist-mono);
+  color: var(--dim);
+}
+.lab-run li button b {
+  font-weight: 400;
+  color: var(--fg);
+  white-space: nowrap;
 }
 .lab-run li button em {
-  font-style: normal;
-  color: #9ba0a6;
+  font: 11px var(--font-geist-mono);
+  color: var(--muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .lab-run p {
-  margin: 4px 0 8px;
-}
-.lab-run p.ok {
-  color: #3ddc84;
-}
-.lab-run p.bad {
-  color: #ff6b6b;
+  margin: 4px 6px 8px;
+  color: var(--fg);
 }
 .lab-run .finding {
   display: grid;
-  gap: 2px;
-  margin-bottom: 8px;
-  padding: 6px 8px;
-  border-left: 2px solid #ff4545;
-  background: #1d1415;
+  gap: 3px;
+  margin-bottom: 6px;
+  padding: 8px 10px;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--red) 8%, var(--raised));
+  font-size: 12.5px;
 }
 .lab-run .finding b {
-  color: #ffd6d6;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 400;
+  color: var(--fg);
+}
+.lab-run .finding b::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--red);
 }
 .lab-run .finding .fix {
-  color: #9be7c0;
+  color: var(--fg);
 }

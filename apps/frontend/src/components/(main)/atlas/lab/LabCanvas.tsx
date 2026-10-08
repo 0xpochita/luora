@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode, useEffect, useRef, useState } from "react";
+import { IconButton, Toolbar } from "@/components/ui";
 import {
   type End,
   type GNode,
@@ -21,14 +22,15 @@ export const wireKey = (w: Wire) =>
 type Side = "in" | "out";
 type Pt = { x: number; y: number };
 const STATUS_LABEL = {
-  pass: "PASS",
-  revert: "REVERT",
-  fail: "FAIL",
+  pass: "Pass",
+  revert: "Revert",
+  fail: "Fail",
   unknown: "?",
 } as const;
+const GRID = 22;
 
 /**
- * ShaderLab-style node canvas: pan (drag the background) / zoom (wheel), drag cards by their body,
+ * Node canvas: pan (drag the background) / zoom (wheel), drag cards by their body,
  * drag from a socket to wire it (type-checked by `onConnect`), click to select, Delete to remove.
  */
 export function LabCanvas({
@@ -85,10 +87,23 @@ export function LabCanvas({
 
   const refit = () => {
     if (!nodes.length) return;
-    const x0 = Math.min(...nodes.map((n) => n.x)) - 30;
-    const y0 = Math.min(...nodes.map((n) => n.y)) - 56;
-    const x1 = Math.max(...nodes.map((n) => n.x + n.w)) + 30;
-    const y1 = Math.max(...nodes.map((n) => n.y + nodeHeight(n))) + 60;
+    const minX = Math.min(...nodes.map((n) => n.x));
+    const minY = Math.min(...nodes.map((n) => n.y));
+    const maxX = Math.max(...nodes.map((n) => n.x + n.w));
+    const maxY = Math.max(...nodes.map((n) => n.y + nodeHeight(n)));
+    // keep the floating toolbars clear: ~screen-px margins, converted with the expected zoom
+    const el = vp.current;
+    const k = el
+      ? Math.min(
+          1.1,
+          (el.clientWidth - 160) / (maxX - minX),
+          (el.clientHeight - 120) / (maxY - minY),
+        )
+      : 1;
+    const x0 = minX - 70 / k;
+    const y0 = minY - 60 / k;
+    const x1 = maxX + 60 / k;
+    const y1 = maxY + 50 / k;
     setOrigin({ x: x0, y: y0 });
     fit(x1 - x0, y1 - y0);
   };
@@ -247,10 +262,10 @@ export function LabCanvas({
     // biome-ignore lint/a11y/useKeyWithClickEvents: Esc is handled globally by LabView
     <div
       ref={vp}
-      className="lab-canvas"
+      className="lab-canvas dot-grid"
       style={{
         backgroundPosition: `${view.x}px ${view.y}px`,
-        backgroundSize: `${24 * view.k}px ${24 * view.k}px`,
+        backgroundSize: `${GRID * view.k}px ${GRID * view.k}px`,
       }}
       onClick={(e) => {
         if (moved.current || (e.target as HTMLElement).closest(".lab-card"))
@@ -277,7 +292,6 @@ export function LabCanvas({
             );
             const k = wireKey(w);
             const lit =
-              selWire === k ||
               selected === a.id ||
               selected === b.id ||
               hot.has(a.id) ||
@@ -285,13 +299,10 @@ export function LabCanvas({
             return (
               <g
                 key={k}
-                className={`wire ${type} ${lit ? "lit" : ""} ${pulse?.has(b.id) ? "pulse" : ""}`}
+                className={`wire ${type} ${lit ? "lit" : ""} ${selWire === k ? "picked" : ""} ${pulse?.has(b.id) ? "pulse" : ""}`}
+                style={{ "--c": PORT_COLOR[type] } as React.CSSProperties}
               >
-                <path
-                  d={d}
-                  className="vis"
-                  style={{ stroke: PORT_COLOR[type] }}
-                />
+                <path d={d} className="vis" />
                 {editable && (
                   // biome-ignore lint/a11y/noStaticElementInteractions: wide invisible hit area for the thin wire
                   <path
@@ -316,7 +327,7 @@ export function LabCanvas({
                   : wirePath(drag.to, drag.at)
               }
               style={{
-                stroke: drag.over?.err ? "var(--bad)" : PORT_COLOR[drag.type],
+                stroke: drag.over?.err ? "var(--red)" : PORT_COLOR[drag.type],
               }}
             />
           )}
@@ -332,7 +343,7 @@ export function LabCanvas({
               style={{ left: n.x, top: n.y, width: n.w, height: nodeHeight(n) }}
               onPointerDown={(e) => dragCard(e, n)}
             >
-              <header style={{ background: KIND_COLOR[n.kind] }}>
+              <header>
                 {n.flow &&
                   sock(
                     n,
@@ -340,6 +351,10 @@ export function LabCanvas({
                     "in",
                     isWired(n.id, "then", "in"),
                   )}
+                <span
+                  className="kdot"
+                  style={{ "--c": KIND_COLOR[n.kind] } as React.CSSProperties}
+                />
                 {n.logo && (
                   <span
                     className="logo"
@@ -369,32 +384,41 @@ export function LabCanvas({
                     isWired(n.id, "then", "out"),
                   )}
               </header>
-              {!!n.widgets && <div className="widgets">{widgets?.(n)}</div>}
-              {Array.from({ length: rows }, (_, i) => {
-                const pi = n.inputs[i];
-                const po = n.outputs[i];
-                return (
-                  <div className="prow" key={`${pi?.id ?? ""}${po?.id ?? i}`}>
-                    {pi && (
-                      <span className="pin">
-                        {sock(n, pi, "in", isWired(n.id, pi.id, "in"))}
-                        <em title={pi.label}>{pi.label}</em>
-                      </span>
-                    )}
-                    {po && (
-                      <span className="pout">
-                        <em title={po.label}>{po.label}</em>
-                        {sock(n, po, "out", isWired(n.id, po.id, "out"))}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-              {n.rows?.map((t) => (
-                <div className="trow" key={t} title={t}>
-                  {t}
+              <div
+                className={`lab-body ${selected === n.id ? "glow-border" : ""}`}
+              >
+                <div className="lab-inner">
+                  {!!n.widgets && <div className="widgets">{widgets?.(n)}</div>}
+                  {Array.from({ length: rows }, (_, i) => {
+                    const pi = n.inputs[i];
+                    const po = n.outputs[i];
+                    return (
+                      <div
+                        className="prow"
+                        key={`${pi?.id ?? ""}${po?.id ?? i}`}
+                      >
+                        {pi && (
+                          <span className="pin">
+                            {sock(n, pi, "in", isWired(n.id, pi.id, "in"))}
+                            <em title={pi.label}>{pi.label}</em>
+                          </span>
+                        )}
+                        {po && (
+                          <span className="pout">
+                            <em title={po.label}>{po.label}</em>
+                            {sock(n, po, "out", isWired(n.id, po.id, "out"))}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {n.rows?.map((t) => (
+                    <div className="trow" key={t} title={t}>
+                      {t}
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
               {r && (
                 <div className={`lab-result ${r.status}`}>
                   <b>{r.head}</b>
@@ -407,39 +431,42 @@ export function LabCanvas({
           );
         })}
       </div>
-      <div className="lab-zoom" data-no-pan>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            zoomAt(1.2);
-          }}
-          aria-label="Zoom in"
-        >
-          +
-        </button>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            zoomAt(1 / 1.2);
-          }}
-          aria-label="Zoom out"
-        >
-          −
-        </button>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            refit();
-          }}
-          title="Fit to view"
-        >
-          Fit
-        </button>
+      <div data-no-pan className="absolute right-3 bottom-3 z-[3]">
+        <Toolbar vertical>
+          <IconButton
+            size="sm"
+            label="Zoom in"
+            onClick={(e) => {
+              e.stopPropagation();
+              zoomAt(1.2);
+            }}
+          >
+            +
+          </IconButton>
+          <IconButton
+            size="sm"
+            label="Zoom out"
+            onClick={(e) => {
+              e.stopPropagation();
+              zoomAt(1 / 1.2);
+            }}
+          >
+            −
+          </IconButton>
+          <IconButton
+            size="sm"
+            label="Fit to view"
+            className="text-[11px]"
+            onClick={(e) => {
+              e.stopPropagation();
+              refit();
+            }}
+          >
+            Fit
+          </IconButton>
+        </Toolbar>
       </div>
-      {toast && <div className="lab-toast">{toast}</div>}
+      {toast && <div className="lab-float lab-toast">{toast}</div>}
     </div>
   );
 }
