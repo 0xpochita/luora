@@ -1,0 +1,298 @@
+/* Flow tab: watch-UX style swimlanes. Step colours are local to this view; red stays for findings / reverts. */
+.atlas .flow {
+  --fl-read: #4fd1e8;
+  --fl-call: #f5b041;
+  --fl-write: var(--ok);
+  --fl-event: #a78bfa;
+  --fl-wire: #4d6274;
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  cursor: grab;
+  background-color: var(--tray);
+  user-select: none;
+}
+.atlas .flow:active {
+  cursor: grabbing;
+}
+.flow svg {
+  overflow: visible;
+}
+.flow text {
+  font-family: var(--font-geist-mono);
+}
+
+.flow .fl-wire {
+  stroke: var(--fl-wire);
+  stroke-width: 1.2;
+  fill: none;
+}
+.flow .fl-wire.lit {
+  stroke: var(--ink);
+}
+.flow .fl-arrowhead {
+  fill: var(--fl-wire);
+}
+.flow .fl-joint {
+  fill: var(--shell);
+  stroke: var(--tick);
+}
+.flow .fl-rule {
+  stroke: var(--line);
+}
+
+.flow .fl-head {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  fill: var(--ink);
+}
+.flow .fl-cap {
+  font-size: 9.5px;
+  fill: var(--muted);
+}
+.flow .fl-line {
+  font-size: 8.5px;
+  fill: var(--dim);
+}
+
+/* lane label */
+.flow .fl-label {
+  fill: var(--card);
+  stroke: var(--edge);
+}
+.flow .fl-lane.on .fl-label {
+  stroke: var(--accent);
+}
+.flow .fl-code {
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  fill: var(--dim);
+}
+.flow .fl-sig {
+  font-size: 12px;
+  font-weight: 600;
+  fill: var(--ink);
+}
+.flow .fl-badge {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  fill: var(--muted);
+}
+.flow .fl-badge.gated {
+  fill: var(--ink);
+  font-weight: 600;
+}
+.flow .fl-play {
+  cursor: pointer;
+}
+.flow .fl-play rect {
+  fill: var(--shell);
+  stroke: var(--edge);
+}
+.flow .fl-play path {
+  fill: var(--tick);
+  stroke: var(--tick);
+  stroke-width: 1.2;
+}
+.flow .fl-play:hover rect,
+.flow .fl-play.on rect {
+  stroke: var(--accent);
+}
+
+/* hover a lane: dim the others */
+.flow .fl-lane {
+  transition: opacity 0.15s;
+}
+.flow .fl-hovering .fl-lane:not(.hot) {
+  opacity: 0.25;
+}
+
+/* nodes, coloured by step kind */
+.flow .fl-node {
+  --c: var(--tick);
+  cursor: pointer;
+  outline: none;
+}
+.flow .fl-node.entry {
+  --c: var(--ink);
+}
+.flow .fl-node.access,
+.flow .fl-node.ret {
+  --c: var(--accent);
+}
+.flow .fl-node.r {
+  --c: var(--fl-read);
+}
+.flow .fl-node.c {
+  --c: var(--fl-call);
+}
+.flow .fl-node.w {
+  --c: var(--fl-write);
+}
+.flow .fl-node.e {
+  --c: var(--fl-event);
+}
+.flow .fl-disc {
+  fill: var(--panel);
+  stroke: var(--c);
+  stroke-width: 1.6;
+}
+.flow .fl-disc.idle {
+  stroke-dasharray: 3 3;
+}
+.flow .fl-node.ret .fl-disc {
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+}
+.flow .fl-ring2 {
+  fill: none;
+  stroke: var(--c);
+  stroke-width: 1;
+}
+.flow .fl-icon {
+  fill: none;
+  stroke: var(--c);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.flow .fl-node:hover .fl-disc,
+.flow .fl-node:focus-visible .fl-disc,
+.flow .fl-node.sel .fl-disc {
+  stroke-width: 3;
+}
+.flow .fl-node.sel .fl-cap {
+  fill: var(--ink);
+}
+.flow .fl-node.done .fl-disc {
+  fill: color-mix(in srgb, var(--c) 18%, var(--panel));
+}
+.flow .fl-halo {
+  fill: color-mix(in srgb, var(--c) 22%, transparent);
+  stroke: var(--c);
+  stroke-width: 1;
+  animation: fl-pulse 1.3s ease-in-out infinite;
+}
+.flow .fl-node.now .fl-disc {
+  stroke-width: 3;
+  fill: color-mix(in srgb, var(--c) 28%, var(--panel));
+}
+.flow .fl-node.now .fl-cap {
+  fill: var(--ink);
+}
+
+/* red: write after external call, findings, reverts */
+.flow .fl-late {
+  fill: none;
+  stroke: var(--bad);
+  stroke-width: 1.6;
+}
+.flow .fl-tag {
+  fill: var(--bad);
+}
+.flow .fl-tagtx {
+  font-size: 8px;
+  font-weight: 700;
+  fill: var(--shell);
+}
+.flow .fl-fdot {
+  fill: var(--bad);
+  stroke: var(--panel);
+}
+.flow .fl-revert {
+  opacity: 0.85;
+}
+.flow .fl-rwire {
+  fill: none;
+  stroke: var(--bad);
+  stroke-opacity: 0.55;
+  stroke-dasharray: 3 3;
+}
+.flow .fl-rdot {
+  fill: var(--bad);
+}
+.flow .fl-rdisc {
+  fill: color-mix(in srgb, var(--bad) 14%, var(--panel));
+  stroke: var(--bad);
+}
+.flow .fl-rx {
+  stroke: var(--bad);
+  stroke-width: 1.6;
+}
+.flow .fl-rcap {
+  font-size: 9px;
+  fill: #ff8a8a;
+}
+.flow .fl-fbadge,
+.flow .fl-finding {
+  cursor: pointer;
+}
+.flow .fl-fbadge circle {
+  fill: var(--bad);
+}
+.flow .fl-fbadge text {
+  font-size: 9px;
+  font-weight: 700;
+  fill: var(--shell);
+}
+.flow .fl-fbadge.med circle,
+.flow .fl-finding.med .fl-fdisc {
+  fill-opacity: 0.7;
+}
+.flow .fl-fbadge.low circle,
+.flow .fl-finding.low .fl-fdisc {
+  fill-opacity: 0.4;
+}
+.flow .fl-fbadge.info circle,
+.flow .fl-finding.info .fl-fdisc {
+  fill-opacity: 0.2;
+}
+.flow .fl-fbadge.sel circle,
+.flow .fl-fbadge:hover circle {
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+.flow .fl-fdisc {
+  fill: var(--bad);
+  stroke: var(--bad);
+}
+.flow .fl-finding .fl-icon {
+  stroke: var(--ink);
+}
+.flow .fl-finding.sel .fl-fdisc,
+.flow .fl-finding.hot .fl-fdisc,
+.flow .fl-finding:hover .fl-fdisc {
+  stroke: var(--ink);
+  stroke-width: 2.5;
+}
+.flow .fl-tool {
+  fill: var(--shell);
+  stroke: var(--edge);
+}
+.flow .fl-tooltx {
+  font-size: 7.5px;
+  fill: var(--tick);
+}
+
+/* legend */
+.flow .fl-legend .fl-cap {
+  font-size: 10px;
+}
+.flow .fl-legend .fl-line {
+  font-size: 9.5px;
+}
+
+@keyframes fl-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flow .fl-halo {
+    animation: none;
+  }
+  .flow .fl-lane {
+    transition: none;
+  }
+}

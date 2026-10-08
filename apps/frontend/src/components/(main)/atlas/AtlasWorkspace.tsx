@@ -14,6 +14,7 @@ import { CityStage } from "./CityStage";
 import { ContractSource } from "./ContractSource";
 import { CoverageSummary } from "./CoverageSummary";
 import { ExplorerView } from "./ExplorerView";
+import { FlowView } from "./flow/FlowView";
 import { PieceInspector } from "./PieceInspector";
 import { QuickSearch } from "./QuickSearch";
 import "./atlas.css";
@@ -23,7 +24,10 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
   const model = useMemo(() => createAtlasModel(source.data), [source.data]);
   const [view, setView] = useState<AtlasView>("city");
   const [selected, setSelected] = useState<string | null>(null);
-  const sim = useCitySim(model, view === "city" ? selected : null);
+  const sim = useCitySim(
+    model,
+    view === "city" || view === "flow" ? selected : null,
+  );
   const triage = useTriage(model.contract);
 
   useEffect(() => {
@@ -43,6 +47,7 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
           options={[
             { value: "city", label: "City" },
             { value: "explorer", label: "Explorer" },
+            { value: "flow", label: "Flow" },
           ]}
         />
         <div className="ml-auto flex items-center gap-2 self-center">
@@ -62,6 +67,15 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
               model={model}
               selected={selected}
               onSelect={setSelected}
+            />
+          </section>
+        ) : view === "flow" ? (
+          <section className="stage">
+            <FlowView
+              model={model}
+              selected={selected}
+              onSelect={setSelected}
+              sim={sim}
             />
           </section>
         ) : (

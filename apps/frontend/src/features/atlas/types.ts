@@ -122,5 +122,5 @@ export type AtlasCoverage = {
 
 export type AtlasSource = { data: AtlasData; origin: "local" | "sample" };
 
-export type AtlasView = "city" | "explorer";
+export type AtlasView = "city" | "explorer" | "flow";
 export type AiQuestion = "explain" | "risks" | "test";
