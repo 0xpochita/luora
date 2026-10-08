@@ -129,5 +129,5 @@ export type AtlasSource = {
   calls?: TraceCall[];
 };
 
-export type AtlasView = "city" | "explorer";
+export type AtlasView = "city" | "explorer" | "map";
 export type AiQuestion = "explain" | "risks" | "test";

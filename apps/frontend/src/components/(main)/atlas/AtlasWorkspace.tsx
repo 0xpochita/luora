@@ -14,6 +14,7 @@ import { CityStage } from "./CityStage";
 import { ContractSource } from "./ContractSource";
 import { CoverageSummary } from "./CoverageSummary";
 import { ExplorerView } from "./ExplorerView";
+import { MapView } from "./map/MapView";
 import { PieceInspector } from "./PieceInspector";
 import { QuickSearch } from "./QuickSearch";
 import "./atlas.css";
@@ -43,6 +44,7 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
           options={[
             { value: "city", label: "City" },
             { value: "explorer", label: "Explorer" },
+            { value: "map", label: "Map" },
           ]}
         />
         <div className="ml-auto flex items-center gap-2 self-center">
@@ -56,7 +58,16 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
         </div>
       </header>
       <div className="body">
-        {view === "explorer" ? (
+        {view === "map" ? (
+          <section className="stage">
+            <MapView
+              model={model}
+              selected={selected}
+              onSelect={setSelected}
+              triage={triage}
+            />
+          </section>
+        ) : view === "explorer" ? (
           <section className="stage">
             <ExplorerView
               model={model}
