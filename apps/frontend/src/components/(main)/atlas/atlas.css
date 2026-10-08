@@ -172,7 +172,7 @@
   height: 20px;
 }
 
-/* Explorer: contract orb → system hubs → fan of pieces */
+/* Explorer: contract card → layer card → fan of piece cards, on the dot-grid canvas */
 .atlas .explorer {
   position: absolute;
   inset: 0;
@@ -182,86 +182,85 @@
 .atlas .explorer svg {
   width: 100%;
   height: 100%;
-  font-family: var(--font-geist-mono);
+  font-family: var(--font-outfit);
 }
 .atlas .ex-title {
-  fill: var(--ink);
-  font-size: 15px;
-  letter-spacing: 0.08em;
+  fill: var(--fg);
+  font-size: 13px;
+  font-weight: 500;
 }
-.atlas .ex-sub {
-  fill: var(--dim);
-  font-size: 9.5px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+.atlas .ex-card {
+  fill: var(--surface);
+  stroke: var(--border);
+  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.22));
 }
-.atlas .ex-orb {
-  animation: ex-pulse 3.2s ease-in-out infinite;
-  transform-box: fill-box;
-  transform-origin: center;
+.atlas .ex-inset {
+  fill: var(--inset);
 }
-.atlas .ex-ring {
-  animation: ex-spin 40s linear infinite;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-.atlas .ex-ring.rev {
-  animation-direction: reverse;
-  animation-duration: 26s;
-}
-.atlas .ex-tag {
-  fill: var(--shell);
-  stroke: var(--line);
-}
-.atlas .ex-tagtx {
+.atlas .ex-k {
   fill: var(--muted);
-  font-size: 8.5px;
-  letter-spacing: 0.12em;
+  font-size: 12px;
 }
-.atlas .ex-tagtx.dim {
-  fill: var(--dim);
+.atlas .ex-v,
+.atlas .ex-num,
+.atlas .ex-code {
+  font-family: var(--font-geist-mono);
+  font-size: 12px;
+}
+.atlas .ex-v {
+  fill: var(--fg);
+}
+.atlas .ex-port {
+  fill: var(--muted);
+  stroke: var(--surface);
+  stroke-width: 2;
 }
 .atlas .ex-hub {
   cursor: pointer;
   outline: none;
 }
-.atlas .ex-hubbox {
-  fill: var(--panel);
-  stroke: var(--line);
-  transition: stroke 0.15s;
+.atlas .ex-row {
+  fill: transparent;
+  transition: fill 0.15s;
 }
-.atlas .ex-hub:hover .ex-hubbox,
-.atlas .ex-hub:focus-visible .ex-hubbox {
-  stroke: var(--edge);
+.atlas .ex-hub:hover .ex-row,
+.atlas .ex-hub:focus-visible .ex-row {
+  fill: var(--raised);
 }
-.atlas .ex-hub.on .ex-hubbox {
-  stroke: var(--accent);
-  fill: #17181b;
+.atlas .ex-hub.on .ex-row {
+  fill: var(--hover);
 }
-.atlas .ex-num {
-  fill: var(--ink);
-  font-size: 17px;
+.atlas .ex-hub.on .ex-port {
+  fill: var(--fg);
 }
 .atlas .ex-lbl {
   fill: var(--muted);
-  font-size: 8.5px;
-  letter-spacing: 0.16em;
+  font-size: 13px;
 }
-.atlas .ex-bad {
-  fill: var(--bad);
-  font-size: 10px;
+.atlas .ex-hub.on .ex-lbl {
+  fill: var(--fg);
+}
+.atlas .ex-num {
+  fill: var(--muted);
+}
+.atlas .ex-hub.on .ex-num {
+  fill: var(--fg);
+}
+.atlas .ex-num.bad,
+.atlas .ex-hub.on .ex-num.bad {
+  fill: var(--red);
 }
 .atlas .ex-fan {
   fill: none;
-  stroke: #4a4e55;
-  stroke-width: 0.8;
+  stroke: #3a3a40;
+  stroke-width: 1;
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
   animation: ex-draw 0.7s ease-out forwards;
 }
 .atlas .ex-fan.on {
-  stroke: var(--accent);
-  stroke-width: 1.4;
+  stroke: var(--fg);
+  stroke-width: 1.5;
 }
 .atlas .ex-leaf {
   cursor: pointer;
@@ -269,41 +268,42 @@
   opacity: 0;
   animation: ex-in 0.35s ease-out forwards;
 }
+.atlas .ex-leafbox {
+  fill: var(--surface);
+  stroke: var(--border);
+  transition:
+    fill 0.15s,
+    stroke 0.15s;
+}
+.atlas .ex-leaf:hover .ex-leafbox,
+.atlas .ex-leaf:focus-visible .ex-leafbox {
+  fill: var(--raised);
+}
+.atlas .ex-leaf.on .ex-leafbox {
+  stroke: var(--border-strong);
+  filter: drop-shadow(0 12px 32px rgba(0, 0, 0, 0.4));
+}
 .atlas .ex-dot {
-  fill: var(--shell);
-  stroke: var(--muted);
-  stroke-width: 1.5;
-}
-.atlas .ex-leaf.finding .ex-dot,
-.atlas .ex-leaf.missing .ex-dot {
-  stroke: var(--bad);
-}
-.atlas .ex-leaf.on .ex-dot {
-  fill: var(--accent);
-  stroke: var(--accent);
+  stroke: var(--canvas);
+  stroke-width: 2;
 }
 .atlas .ex-name {
   fill: var(--muted);
-  font-size: 11.5px;
+  font-size: 13px;
   transition: fill 0.15s;
 }
 .atlas .ex-leaf:hover .ex-name,
 .atlas .ex-leaf:focus-visible .ex-name,
 .atlas .ex-leaf.on .ex-name {
-  fill: var(--ink);
+  fill: var(--fg);
 }
-.atlas .ex-bar {
-  fill: #23262a;
+.atlas .ex-code {
+  fill: var(--dim);
+  font-size: 11px;
 }
-.atlas .ex-bar.f {
-  fill: var(--ok);
-}
-.atlas .ex-bar.privileged.f {
-  fill: var(--muted);
-}
-.atlas .ex-bar.finding.f,
-.atlas .ex-bar.missing.f {
-  fill: var(--bad);
+.atlas .ex-caller {
+  fill: var(--dim);
+  font-size: 11.5px;
 }
 @keyframes ex-draw {
   to {
@@ -315,20 +315,7 @@
     opacity: 1;
   }
 }
-@keyframes ex-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-@keyframes ex-pulse {
-  50% {
-    transform: scale(1.12);
-    opacity: 0.85;
-  }
-}
 @media (prefers-reduced-motion: reduce) {
-  .atlas .ex-orb,
-  .atlas .ex-ring,
   .atlas .ex-fan,
   .atlas .ex-leaf {
     animation: none;
@@ -341,62 +328,14 @@
 .atlas .qsearch {
   width: min(560px, calc(100vw - 32px));
   margin: 12vh auto auto;
-  padding: 0;
-  border: 1px solid var(--edge);
-  background: var(--panel);
-  color: var(--ink);
-  font-family: var(--font-geist-mono);
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  color: var(--fg);
+  box-shadow: var(--shadow-float);
 }
 .atlas .qsearch::backdrop {
   background: rgba(0, 0, 0, 0.55);
-}
-.atlas .qsearch input {
-  width: 100%;
-  padding: 10px 12px;
-  border: 0;
-  border-bottom: 1px solid var(--line);
-  background: var(--tray);
-  color: var(--ink);
-  font: inherit;
-  font-size: 13px;
-  outline: none;
-}
-.atlas .qsearch ul {
-  margin: 0;
-  padding: 4px 0;
-  list-style: none;
-  max-height: 50vh;
-  overflow: auto;
-}
-.atlas .qsearch button {
-  display: grid;
-  grid-template-columns: 18px 64px 1fr auto;
-  gap: 10px;
-  align-items: center;
-  width: 100%;
-  padding: 5px 12px;
-  text-align: left;
-  font-size: 12px;
-  color: var(--muted);
-}
-.atlas .qsearch button[aria-current="true"] {
-  background: var(--sel);
-  color: var(--ink);
-  box-shadow: inset 2px 0 var(--accent);
-}
-.atlas .qsearch button.bad {
-  color: var(--bad);
-}
-.atlas .qsearch .code {
-  color: var(--ink);
-}
-.atlas .qsearch .sys,
-.atlas .qsearch .none {
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--dim);
-}
-.atlas .qsearch .none {
-  padding: 6px 12px;
+  backdrop-filter: blur(2px);
 }

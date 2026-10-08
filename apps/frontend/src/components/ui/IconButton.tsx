@@ -20,7 +20,7 @@ export function IconButton({
       aria-label={label}
       title={label}
       aria-pressed={active}
-      className={`${tile(active)} ${size === "sm" ? "size-8 text-[14px]" : "size-9 text-[16px]"} ${className}`}
+      className={`${tile(active)} disabled:pointer-events-none disabled:opacity-40 ${size === "sm" ? "size-8 text-[14px]" : "size-9 text-[16px]"} ${className}`}
       {...props}
     />
   );

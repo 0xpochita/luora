@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { IconButton, Panel, Toolbar } from "@/components/ui";
 import {
   type AtlasModel,
   ICON_PATH,
@@ -21,10 +22,12 @@ import {
 import { protocolOf } from "@/features/atlas/utils/protocols";
 import { STEP_VERB, unitCode } from "@/features/atlas/utils/units";
 import { usePanZoom } from "@/features/trace";
-import { ZoomControls } from "../../graph/ZoomControls";
+import { ZoomToolbar } from "../ZoomToolbar";
 import "./flow.css";
 
 const { r, trunkX, labelX, labelW, nodeX, revertR, badge } = FLOW;
+const TOP = 56; // headroom so the floating sim toolbar never covers the deploy node
+const LANE_IN = 5; // lane card padding around the label's inner card
 const MIN_K = 0.8; // first view never zooms out past readable captions; pan for the rest
 const TOOL = { slither: "SL", aderyn: "AD", manual: "LU" } as const;
 const SEV_LETTER = { high: "H", med: "M", low: "L", info: "I" } as const;
@@ -37,20 +40,38 @@ const slotName = (p: Piece) => (p.name.split("· ").pop() ?? p.name).trim();
 function caption(model: AtlasModel, lane: FlowLane, n: FlowNode): string {
   const p = model.byId[n.id];
   if (n.kind === "entry") return unitCode(model, lane.id);
-  if (n.kind === "ret") return "RETURN";
+  if (n.kind === "ret") return "return";
   if (n.kind === "access") {
     const caller = model.byId[lane.id]?.caller ?? "anyone";
     return caller === "anyone"
       ? lane.gates.length || lane.reverts.length
-        ? "CHECKS"
-        : "OPEN"
-      : caller.toUpperCase();
+        ? "checks"
+        : "open"
+      : caller;
   }
   if (!p) return n.id;
   if (p.sys === "storage") return slotName(p);
   if (p.sys === "calls")
     return p.member ?? p.name.replace(/\(.*$/, "").split(".").pop() ?? p.name;
   return p.name;
+}
+
+/** 24px stroke glyph for the sim toolbar. */
+function Glyph({ d, fill = false }: { d: string; fill?: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="size-4"
+      fill={fill ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d={d} />
+    </svg>
+  );
 }
 
 function Icon({ k, size = 14 }: { k: IconKey; size?: number }) {
@@ -82,19 +103,21 @@ export function FlowView({
   const vp = useRef<HTMLDivElement>(null);
   const { view, zoomAt, fit, moved } = usePanZoom(vp);
   const [hover, setHover] = useState<string | null>(null);
+  const [legend, setLegend] = useState(false);
   // a step / play click on another lane selects that lane first; the sim catches up next render
   const pending = useRef<{ lane: string; step: number } | null>(null);
 
   const fitView = () => {
     const el = vp.current;
     if (!el) return;
-    fit(L.w, L.h);
+    const h = L.h + TOP;
+    fit(L.w, h);
     const k = Math.min(
       1.1,
       (el.clientWidth - 40) / L.w,
-      (el.clientHeight - 40) / L.h,
+      (el.clientHeight - 40) / h,
     );
-    const y = Math.max(20, (el.clientHeight - L.h * k) / 2);
+    const y = Math.max(20, (el.clientHeight - h * k) / 2);
     if (k < MIN_K) zoomAt(MIN_K / k, 20, y);
   };
   // biome-ignore lint/correctness/useExhaustiveDependencies: refit only when the layout changes
@@ -151,7 +174,7 @@ export function FlowView({
       ref={vp}
       className="flow dot-grid"
       style={{
-        backgroundSize: `${24 * view.k}px ${24 * view.k}px`,
+        backgroundSize: `${22 * view.k}px ${22 * view.k}px`,
         backgroundPosition: `${view.x}px ${view.y}px`,
       }}
     >
@@ -163,30 +186,13 @@ export function FlowView({
       >
         <svg
           width={L.w}
-          height={L.h}
-          viewBox={`0 0 ${L.w} ${L.h}`}
+          height={L.h + TOP}
+          viewBox={`0 ${-TOP} ${L.w} ${L.h + TOP}`}
           role="img"
           aria-label={`${model.contract} execution flow`}
           className={hover ? "fl-hovering" : ""}
         >
           <defs>
-            <pattern
-              id="fl-hatch"
-              width="5"
-              height="5"
-              patternUnits="userSpaceOnUse"
-              patternTransform="rotate(45)"
-            >
-              <rect width="5" height="5" fill="var(--panel)" />
-              <line
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="5"
-                stroke="#4a4f56"
-                strokeWidth="2"
-              />
-            </pattern>
             <marker
               id="fl-arrow"
               viewBox="0 0 6 6"
@@ -202,8 +208,6 @@ export function FlowView({
               <circle r={r - 5} />
             </clipPath>
           </defs>
-
-          <Legend x={L.legend.x} y={L.legend.y} coverage={!!model.coverage} />
 
           {/* trunk: deploy → idle → one branch per lane */}
           <g className="fl-trunk">
@@ -235,7 +239,7 @@ export function FlowView({
               <circle r={r} className="fl-disc" />
               <Icon k="gear" />
               <text x={r + 10} y={-4} className="fl-head">
-                DEPLOY
+                Deploy
               </text>
               <text x={r + 10} y={9} className="fl-cap">
                 {L.deploy.writes.length
@@ -247,7 +251,7 @@ export function FlowView({
               <circle r={r} className="fl-disc idle" />
               <Icon k="cylinder" />
               <text x={r + 10} y={-4} className="fl-head">
-                IDLE STATE
+                Idle state
               </text>
               <text x={r + 10} y={9} className="fl-cap">
                 {L.idle.roles.length
@@ -272,18 +276,25 @@ export function FlowView({
                 onMouseEnter={() => setHover(lane.id)}
                 onMouseLeave={() => setHover(null)}
               >
+                <rect
+                  x={labelX - LANE_IN}
+                  y={lane.y - LANE_IN}
+                  width={lane.end - labelX + LANE_IN + 20}
+                  height={lane.h}
+                  rx={16}
+                  className="fl-lanecard"
+                />
                 <line
                   x1={trunkX}
                   y1={lane.cy}
-                  x2={labelX}
+                  x2={labelX - LANE_IN}
                   y2={lane.cy}
                   className="fl-wire"
                 />
-                <rect
-                  x={trunkX - 2.5}
-                  y={lane.cy - 2.5}
-                  width={5}
-                  height={5}
+                <circle
+                  cx={labelX - LANE_IN}
+                  cy={lane.cy}
+                  r={4}
                   className="fl-joint"
                 />
 
@@ -296,8 +307,10 @@ export function FlowView({
                     onClick={() => pick(lane.id)}
                     onKeyDown={keys(() => pick(lane.id))}
                   >
-                    <path
-                      d={`M0 0H${labelW - 10}L${labelW} 10V52H0Z`}
+                    <rect
+                      width={labelW}
+                      height={52}
+                      rx={11}
                       className="fl-label"
                     />
                     <text x={10} y={15} className="fl-code">
@@ -325,7 +338,7 @@ export function FlowView({
                       textAnchor="end"
                       className={`fl-badge ${caller === "anyone" ? "" : "gated"}`}
                     >
-                      {caller.toUpperCase()}
+                      {caller}
                     </text>
                   </g>
                   {/* biome-ignore lint/a11y/useSemanticElements: SVG group acting as a button */}
@@ -334,7 +347,7 @@ export function FlowView({
                     tabIndex={0}
                     aria-label={`Replay ${lane.sig}`}
                     className={`fl-play ${live && sim.playing ? "on" : ""}`}
-                    transform={`translate(${labelW - 22} 32)`}
+                    transform={`translate(${labelW - 26} 30)`}
                     onClick={() =>
                       live && sim.playing ? sim.pause() : goStep(lane.id, -1)
                     }
@@ -343,12 +356,12 @@ export function FlowView({
                     <title>
                       {live && sim.playing ? "Pause" : "Replay steps"}
                     </title>
-                    <rect width={16} height={14} />
+                    <rect width={20} height={16} rx={6} />
                     <path
                       d={
                         live && sim.playing
-                          ? "M5 3.5v7M11 3.5v7"
-                          : "M5.5 3l6 4-6 4z"
+                          ? "M7.5 4.5v7M12.5 4.5v7"
+                          : "M7.5 4.5l6 3.5-6 3.5z"
                       }
                     />
                   </g>
@@ -446,10 +459,7 @@ export function FlowView({
                       {n.late && <circle r={r + 4} className="fl-late" />}
                       <circle
                         r={r}
-                        className="fl-disc"
-                        style={
-                          n.untested ? { fill: "url(#fl-hatch)" } : undefined
-                        }
+                        className={`fl-disc ${n.untested ? "untested" : ""}`}
                       />
                       {n.kind === "access" && (
                         <circle r={r - 4} className="fl-ring2" />
@@ -476,10 +486,15 @@ export function FlowView({
                       )}
                       {n.late && (
                         <g transform={`translate(${r - 6} ${-r - 8})`}>
-                          <rect width={24} height={11} className="fl-tag" />
+                          <rect
+                            width={24}
+                            height={12}
+                            rx={6}
+                            className="fl-tag"
+                          />
                           <text
                             x={12}
-                            y={8.5}
+                            y={9}
                             textAnchor="middle"
                             className="fl-tagtx"
                           >
@@ -495,7 +510,7 @@ export function FlowView({
                           className="fl-fdot"
                         />
                       )}
-                      <text y={r + 13} textAnchor="middle" className="fl-cap">
+                      <text y={r + 13} textAnchor="middle" className="fl-ncap">
                         {cut(caption(model, lane, n), 10)}
                       </text>
                       {n.line != null && n.kind !== "entry" && (
@@ -549,18 +564,11 @@ export function FlowView({
           {/* bottom strip: events emitted, findings by severity */}
           {(
             [
-              ["EVENTS EMITTED", L.eventsY, L.events.length],
-              ["FINDINGS", L.findingsY, L.findings.length],
+              ["Events emitted", L.eventsY, L.events.length],
+              ["Findings", L.findingsY, L.findings.length],
             ] as const
           ).map(([label, y, n]) => (
             <g key={label}>
-              <line
-                x1={labelX}
-                y1={y - 6}
-                x2={L.w - 24}
-                y2={y - 6}
-                className="fl-rule"
-              />
               <text x={labelX} y={y + 14} className="fl-head">
                 {label}
               </text>
@@ -586,7 +594,7 @@ export function FlowView({
                 <title>{`${p.name} · emitted by ${e.lanes.map((l) => model.byId[l].name).join(", ") || "no entry point"}`}</title>
                 <circle r={r} className="fl-disc" />
                 <Icon k="waves" />
-                <text y={r + 13} textAnchor="middle" className="fl-cap">
+                <text y={r + 13} textAnchor="middle" className="fl-ncap">
                   {cut(p.name, 10)}
                 </text>
                 <text y={r + 24} textAnchor="middle" className="fl-line">
@@ -616,7 +624,7 @@ export function FlowView({
                 <Icon k="warn" />
                 {p.tool && (
                   <g transform={`translate(${r - 8} ${-r - 4})`}>
-                    <rect width={16} height={10} className="fl-tool" />
+                    <rect width={16} height={10} rx={4} className="fl-tool" />
                     <text
                       x={8}
                       y={7.8}
@@ -627,7 +635,7 @@ export function FlowView({
                     </text>
                   </g>
                 )}
-                <text y={r + 13} textAnchor="middle" className="fl-cap">
+                <text y={r + 13} textAnchor="middle" className="fl-ncap">
                   {unitCode(model, f.id)}
                 </text>
                 <text y={r + 24} textAnchor="middle" className="fl-line">
@@ -639,10 +647,78 @@ export function FlowView({
         </svg>
       </div>
 
-      <ZoomControls
+      <div
+        data-no-pan
+        className="absolute top-3 left-3 flex cursor-default flex-col items-start gap-2"
+      >
+        <Toolbar>
+          <IconButton
+            label="Restart"
+            size="sm"
+            disabled={!sim.entry}
+            onClick={sim.reset}
+          >
+            <Glyph d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4" />
+          </IconButton>
+          <IconButton
+            label="Previous step"
+            size="sm"
+            disabled={!sim.entry || sim.step < 0}
+            onClick={() => sim.seek(sim.step - 1)}
+          >
+            <Glyph d="M18 6l-8 6 8 6zM6 6v12" fill />
+          </IconButton>
+          <IconButton
+            label={sim.playing ? "Pause" : "Play steps"}
+            size="sm"
+            active={sim.playing}
+            disabled={!sim.entry}
+            onClick={sim.playing ? sim.pause : sim.play}
+          >
+            <Glyph
+              d={sim.playing ? "M8 6v12M16 6v12" : "M8 5l11 7-11 7z"}
+              fill={!sim.playing}
+            />
+          </IconButton>
+          <IconButton
+            label="Next step"
+            size="sm"
+            disabled={!sim.entry || sim.step >= sim.steps.length - 1}
+            onClick={sim.next}
+          >
+            <Glyph d="M6 6l8 6-8 6zM18 6v12" fill />
+          </IconButton>
+          <span className="px-1.5 text-[12px] text-dim">
+            {sim.entry ? (
+              <>
+                <span className="font-mono text-muted">
+                  {unitCode(model, sim.entry)}
+                </span>{" "}
+                step{" "}
+                <span className="font-mono text-muted">
+                  {Math.max(0, sim.step + 1)}/{sim.steps.length}
+                </span>
+              </>
+            ) : (
+              "Pick an entry point to replay"
+            )}
+          </span>
+          <IconButton
+            label="Legend"
+            size="sm"
+            active={legend}
+            onClick={() => setLegend(!legend)}
+          >
+            <Glyph d="M5 7h.01M9 7h10M5 12h.01M9 12h10M5 17h.01M9 17h10" />
+          </IconButton>
+        </Toolbar>
+        {legend && <Legend coverage={!!model.coverage} />}
+      </div>
+
+      <ZoomToolbar
         onIn={() => zoomAt(1.2)}
         onOut={() => zoomAt(1 / 1.2)}
-        onFit={() => fit(L.w, L.h)}
+        onFit={fitView}
       />
     </div>
   );
@@ -660,73 +736,55 @@ const SWATCH: [FlowKind | "revert" | "late" | "untested", string][] = [
   ["untested", "Never ran in tests"],
 ];
 
-/** Colour / ring key, drawn in the empty band above the first lane. */
-function Legend({
-  x,
-  y,
-  coverage,
-}: {
-  x: number;
-  y: number;
-  coverage: boolean;
-}) {
-  const items: [string, string][] = [
-    ...SWATCH.filter(([k]) => coverage || k !== "untested"),
-    ["finding", "Finding (H/M/L)"],
-  ];
-  const col = 150;
+/** Small swatch for the legend: a node disc / ring in a 16px box. */
+function Swatch({ children }: { children: ReactNode }) {
   return (
-    <g transform={`translate(${x} ${y})`} className="fl-legend">
-      <path
-        d={`M0 0H${FLOW.legendW - 10}L${FLOW.legendW} 10V${FLOW.legendH}H0Z`}
-        className="fl-label"
-      />
-      <text x={12} y={18} className="fl-code">
-        LEGEND
-      </text>
-      {items.map(([k, label], i) => (
-        <g
-          key={k}
-          transform={`translate(${20 + Math.floor(i / 4) * col} ${38 + (i % 4) * 22})`}
-        >
-          {k === "revert" ? (
-            <circle r={7} className="fl-rdisc" />
-          ) : k === "finding" ? (
-            <circle r={7} className="fl-fdisc" />
-          ) : k === "late" ? (
-            <g className="fl-node w">
-              <circle r={8.5} className="fl-late" />
-              <circle r={6} className="fl-disc" />
-            </g>
-          ) : (
-            <g className={`fl-node ${k === "untested" ? "r" : k}`}>
-              <circle
-                r={7}
-                className="fl-disc"
-                style={
-                  k === "untested" ? { fill: "url(#fl-hatch)" } : undefined
-                }
-              />
-              {k === "access" && <circle r={4} className="fl-ring2" />}
-            </g>
-          )}
-          <text x={16} y={3.5} className="fl-cap">
+    <svg viewBox="-9 -9 18 18" className="size-4 flex-none" aria-hidden="true">
+      {children}
+    </svg>
+  );
+}
+
+/** Colour / ring key, opened from the toolbar's legend tile. */
+function Legend({ coverage }: { coverage: boolean }) {
+  const items = SWATCH.filter(([k]) => coverage || k !== "untested");
+  return (
+    <Panel label="Legend" inset className="w-[380px] shadow-float">
+      <ul className="grid grid-cols-2 gap-x-4 gap-y-2 p-3 text-[12px] text-muted">
+        {items.map(([k, label]) => (
+          <li key={k} className="flex items-center gap-2">
+            <Swatch>
+              {k === "revert" ? (
+                <circle r={7} className="fl-rdisc" />
+              ) : k === "late" ? (
+                <g className="fl-node w">
+                  <circle r={8} className="fl-late" />
+                  <circle r={5.5} className="fl-disc" />
+                </g>
+              ) : (
+                <g className={`fl-node ${k === "untested" ? "r" : k}`}>
+                  <circle
+                    r={7}
+                    className={`fl-disc ${k === "untested" ? "untested" : ""}`}
+                  />
+                  {k === "access" && <circle r={4} className="fl-ring2" />}
+                </g>
+              )}
+            </Swatch>
             {label}
-          </text>
-        </g>
-      ))}
-      <g transform={`translate(${20 + 3 * col} 38)`} className="fl-hint">
-        {[
-          "Click node: source line",
-          "Double-click: open piece",
-          "▶ replays the lane",
-          "Hover lane: focus it",
-        ].map((t, i) => (
-          <text key={t} y={3.5 + i * 22} className="fl-line">
-            {t}
-          </text>
+          </li>
         ))}
-      </g>
-    </g>
+        <li className="flex items-center gap-2">
+          <Swatch>
+            <circle r={7} className="fl-fdisc" />
+          </Swatch>
+          Finding (H/M/L)
+        </li>
+      </ul>
+      <p className="px-3 pb-3 text-[12px] text-dim">
+        Click a node for its source line, double-click to open it. ▶ on a lane
+        replays it; hover a lane to focus it.
+      </p>
+    </Panel>
   );
 }
