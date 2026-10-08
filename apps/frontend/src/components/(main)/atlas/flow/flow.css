@@ -1,15 +1,16 @@
-/* Flow tab: watch-UX style swimlanes. Step colours are local to this view; red stays for findings / reverts. */
+/* Flow tab: swimlanes as rounded lane cards on the dot-grid canvas. Step colours are the port
+   colours from DESIGN.md (read blue, call yellow, write green, event violet); red stays for
+   findings / reverts. */
 .atlas .flow {
-  --fl-read: #4fd1e8;
-  --fl-call: #f5b041;
-  --fl-write: var(--ok);
-  --fl-event: #a78bfa;
-  --fl-wire: #4d6274;
+  --fl-read: var(--blue);
+  --fl-call: var(--yellow);
+  --fl-write: var(--green);
+  --fl-event: var(--violet);
+  --fl-wire: #3a3a40;
   position: relative;
   height: 100%;
   overflow: hidden;
   cursor: grab;
-  background-color: var(--tray);
   user-select: none;
 }
 .atlas .flow:active {
@@ -19,7 +20,7 @@
   overflow: visible;
 }
 .flow text {
-  font-family: var(--font-geist-mono);
+  font-family: var(--font-outfit);
 }
 
 .flow .fl-wire {
@@ -28,26 +29,34 @@
   fill: none;
 }
 .flow .fl-wire.lit {
-  stroke: var(--ink);
+  stroke: var(--fg);
+  stroke-width: 1.5;
 }
 .flow .fl-arrowhead {
   fill: var(--fl-wire);
 }
 .flow .fl-joint {
-  fill: var(--shell);
-  stroke: var(--tick);
-}
-.flow .fl-rule {
-  stroke: var(--line);
+  fill: var(--muted);
+  stroke: var(--canvas);
+  stroke-width: 2;
 }
 
 .flow .fl-head {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  fill: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  fill: var(--fg);
 }
 .flow .fl-cap {
+  font-size: 11px;
+  fill: var(--muted);
+}
+.flow .fl-ncap,
+.flow .fl-line,
+.flow .fl-code,
+.flow .fl-sig {
+  font-family: var(--font-geist-mono);
+}
+.flow .fl-ncap {
   font-size: 9.5px;
   fill: var(--muted);
 }
@@ -56,48 +65,59 @@
   fill: var(--dim);
 }
 
-/* lane label */
-.flow .fl-label {
-  fill: var(--card);
-  stroke: var(--edge);
+/* lane card + the label's nested inner card */
+.flow .fl-lanecard {
+  fill: var(--surface);
+  stroke: var(--border);
+  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.22));
+  transition: stroke 0.15s;
 }
-.flow .fl-lane.on .fl-label {
-  stroke: var(--accent);
+.flow .fl-lane.on .fl-lanecard {
+  stroke: var(--border-strong);
+  filter: drop-shadow(0 12px 32px rgba(0, 0, 0, 0.4));
+}
+.flow .fl-label {
+  fill: var(--inset);
 }
 .flow .fl-code {
   font-size: 9.5px;
-  letter-spacing: 0.1em;
   fill: var(--dim);
 }
 .flow .fl-sig {
   font-size: 12px;
-  font-weight: 600;
-  fill: var(--ink);
+  fill: var(--fg);
 }
 .flow .fl-badge {
-  font-size: 9px;
-  letter-spacing: 0.1em;
-  fill: var(--muted);
+  font-size: 11px;
+  fill: var(--dim);
 }
 .flow .fl-badge.gated {
-  fill: var(--ink);
-  font-weight: 600;
+  fill: var(--yellow);
 }
 .flow .fl-play {
   cursor: pointer;
+  outline: none;
 }
 .flow .fl-play rect {
-  fill: var(--shell);
-  stroke: var(--edge);
+  fill: var(--raised);
+  transition: fill 0.15s;
 }
 .flow .fl-play path {
-  fill: var(--tick);
-  stroke: var(--tick);
-  stroke-width: 1.2;
+  fill: var(--muted);
+  stroke: var(--muted);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
 }
 .flow .fl-play:hover rect,
+.flow .fl-play:focus-visible rect {
+  fill: var(--hover);
+}
 .flow .fl-play.on rect {
-  stroke: var(--accent);
+  fill: var(--primary);
+}
+.flow .fl-play.on path {
+  fill: var(--primary-fg);
+  stroke: var(--primary-fg);
 }
 
 /* hover a lane: dim the others */
@@ -105,21 +125,21 @@
   transition: opacity 0.15s;
 }
 .flow .fl-hovering .fl-lane:not(.hot) {
-  opacity: 0.25;
+  opacity: 0.3;
 }
 
-/* nodes, coloured by step kind */
+/* nodes: round tiles, port colour on the ring + icon */
 .flow .fl-node {
-  --c: var(--tick);
+  --c: var(--muted);
   cursor: pointer;
   outline: none;
 }
 .flow .fl-node.entry {
-  --c: var(--ink);
+  --c: var(--fg);
 }
 .flow .fl-node.access,
 .flow .fl-node.ret {
-  --c: var(--accent);
+  --c: var(--muted);
 }
 .flow .fl-node.r {
   --c: var(--fl-read);
@@ -134,20 +154,26 @@
   --c: var(--fl-event);
 }
 .flow .fl-disc {
-  fill: var(--panel);
-  stroke: var(--c);
-  stroke-width: 1.6;
+  fill: var(--raised);
+  stroke: color-mix(in srgb, var(--c) 45%, transparent);
+  stroke-width: 1.2;
+  transition:
+    fill 0.15s,
+    stroke 0.15s;
 }
-.flow .fl-disc.idle {
+.flow .fl-disc.idle,
+.flow .fl-node.ret .fl-disc {
+  stroke: var(--border-strong);
   stroke-dasharray: 3 3;
 }
-.flow .fl-node.ret .fl-disc {
-  stroke-width: 1;
-  stroke-dasharray: 2 2;
+.flow .fl-disc.untested {
+  fill: var(--inset);
+  stroke: var(--yellow);
+  stroke-dasharray: 3 2.5;
 }
 .flow .fl-ring2 {
   fill: none;
-  stroke: var(--c);
+  stroke: color-mix(in srgb, var(--c) 45%, transparent);
   stroke-width: 1;
 }
 .flow .fl-icon {
@@ -158,83 +184,89 @@
   stroke-linejoin: round;
 }
 .flow .fl-node:hover .fl-disc,
-.flow .fl-node:focus-visible .fl-disc,
-.flow .fl-node.sel .fl-disc {
-  stroke-width: 3;
+.flow .fl-node:focus-visible .fl-disc {
+  fill: var(--hover);
+  stroke: var(--c);
 }
+.flow .fl-node.sel .fl-disc {
+  stroke: var(--fg);
+  stroke-width: 1.5;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.5));
+}
+.flow .fl-node.sel .fl-ncap,
 .flow .fl-node.sel .fl-cap {
-  fill: var(--ink);
+  fill: var(--fg);
 }
 .flow .fl-node.done .fl-disc {
-  fill: color-mix(in srgb, var(--c) 18%, var(--panel));
+  fill: color-mix(in srgb, var(--c) 14%, var(--raised));
 }
 .flow .fl-halo {
-  fill: color-mix(in srgb, var(--c) 22%, transparent);
-  stroke: var(--c);
-  stroke-width: 1;
+  fill: color-mix(in srgb, var(--c) 14%, transparent);
   animation: fl-pulse 1.3s ease-in-out infinite;
 }
 .flow .fl-node.now .fl-disc {
-  stroke-width: 3;
-  fill: color-mix(in srgb, var(--c) 28%, var(--panel));
+  stroke: var(--c);
+  stroke-width: 2;
+  fill: color-mix(in srgb, var(--c) 22%, var(--raised));
 }
-.flow .fl-node.now .fl-cap {
-  fill: var(--ink);
+.flow .fl-node.now .fl-ncap {
+  fill: var(--fg);
 }
 
 /* red: write after external call, findings, reverts */
 .flow .fl-late {
   fill: none;
-  stroke: var(--bad);
-  stroke-width: 1.6;
+  stroke: var(--red);
+  stroke-width: 1.5;
 }
 .flow .fl-tag {
-  fill: var(--bad);
+  fill: var(--red);
 }
 .flow .fl-tagtx {
+  font-family: var(--font-geist-mono);
   font-size: 8px;
-  font-weight: 700;
-  fill: var(--shell);
+  fill: var(--canvas);
 }
 .flow .fl-fdot {
-  fill: var(--bad);
-  stroke: var(--panel);
-}
-.flow .fl-revert {
-  opacity: 0.85;
+  fill: var(--red);
+  stroke: var(--surface);
+  stroke-width: 2;
 }
 .flow .fl-rwire {
   fill: none;
-  stroke: var(--bad);
-  stroke-opacity: 0.55;
+  stroke: var(--red);
+  stroke-opacity: 0.45;
   stroke-dasharray: 3 3;
 }
 .flow .fl-rdot {
-  fill: var(--bad);
+  fill: var(--red);
 }
 .flow .fl-rdisc {
-  fill: color-mix(in srgb, var(--bad) 14%, var(--panel));
-  stroke: var(--bad);
+  fill: color-mix(in srgb, var(--red) 12%, var(--raised));
+  stroke: color-mix(in srgb, var(--red) 55%, transparent);
 }
 .flow .fl-rx {
-  stroke: var(--bad);
+  stroke: var(--red);
   stroke-width: 1.6;
+  stroke-linecap: round;
 }
 .flow .fl-rcap {
+  font-family: var(--font-geist-mono);
   font-size: 9px;
-  fill: #ff8a8a;
+  fill: var(--red);
 }
 .flow .fl-fbadge,
 .flow .fl-finding {
   cursor: pointer;
+  outline: none;
 }
 .flow .fl-fbadge circle {
-  fill: var(--bad);
+  fill: var(--red);
 }
 .flow .fl-fbadge text {
+  font-family: var(--font-geist-mono);
   font-size: 9px;
-  font-weight: 700;
-  fill: var(--shell);
+  fill: var(--canvas);
 }
 .flow .fl-fbadge.med circle,
 .flow .fl-finding.med .fl-fdisc {
@@ -250,37 +282,29 @@
 }
 .flow .fl-fbadge.sel circle,
 .flow .fl-fbadge:hover circle {
-  stroke: var(--ink);
-  stroke-width: 2;
+  stroke: var(--fg);
+  stroke-width: 1.5;
 }
 .flow .fl-fdisc {
-  fill: var(--bad);
-  stroke: var(--bad);
+  fill: var(--red);
+  stroke: var(--red);
 }
 .flow .fl-finding .fl-icon {
-  stroke: var(--ink);
+  stroke: var(--fg);
 }
 .flow .fl-finding.sel .fl-fdisc,
 .flow .fl-finding.hot .fl-fdisc,
 .flow .fl-finding:hover .fl-fdisc {
-  stroke: var(--ink);
-  stroke-width: 2.5;
+  stroke: var(--fg);
+  stroke-width: 2;
 }
 .flow .fl-tool {
-  fill: var(--shell);
-  stroke: var(--edge);
+  fill: var(--raised);
 }
 .flow .fl-tooltx {
+  font-family: var(--font-geist-mono);
   font-size: 7.5px;
-  fill: var(--tick);
-}
-
-/* legend */
-.flow .fl-legend .fl-cap {
-  font-size: 10px;
-}
-.flow .fl-legend .fl-line {
-  font-size: 9.5px;
+  fill: var(--muted);
 }
 
 @keyframes fl-pulse {
