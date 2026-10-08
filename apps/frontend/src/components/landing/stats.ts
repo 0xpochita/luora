@@ -5,8 +5,31 @@ import { LUORA_DATA_PATH } from "@/config/env.server";
 import { SAMPLE_ATLAS } from "@/features/atlas/fixtures/sample-atlas";
 import type { AtlasData } from "@/features/atlas/types";
 import { reportsOf } from "@/features/atlas/utils/findings";
+import {
+  type GNode,
+  nodeHeight,
+  type Wire,
+} from "@/features/atlas/utils/lab-graph";
+import {
+  runScenario,
+  type Status,
+  scenarioCard,
+  templates,
+} from "@/features/atlas/utils/lab-scenario";
+import { createAtlasModel } from "@/features/atlas/utils/model";
 import sample from "@/features/trace/fixtures/sample-trace.json";
-import type { LuoraData } from "@/features/trace/types";
+import type { Frame, LuoraData } from "@/features/trace/types";
+
+type Run = LuoraData & { atlas?: AtlasData };
+
+/** The local `luora-data.json`, else the bundled fixtures the app itself falls back to. */
+async function readRun(): Promise<Run> {
+  try {
+    return JSON.parse(await readFile(LUORA_DATA_PATH, "utf8"));
+  } catch {
+    return { ...(sample as LuoraData), atlas: SAMPLE_ATLAS };
+  }
+}
 
 export type Stat = { value: string; label: string };
 export type SampleRun = {
@@ -25,12 +48,7 @@ export type SampleRun = {
 export async function sampleRun(): Promise<SampleRun> {
   "use cache";
   cacheLife("max");
-  let data: LuoraData & { atlas?: AtlasData };
-  try {
-    data = JSON.parse(await readFile(LUORA_DATA_PATH, "utf8"));
-  } catch {
-    data = { ...(sample as LuoraData), atlas: SAMPLE_ATLAS };
-  }
+  const data = await readRun();
   const atlas = data.atlas ?? SAMPLE_ATLAS;
   const findings = atlas.pieces.filter((p) => p.sys === "vulns");
   const reports = findings
@@ -114,12 +132,7 @@ export type PillarData = {
 export async function pillarData(): Promise<PillarData> {
   "use cache";
   cacheLife("max");
-  let data: LuoraData & { atlas?: AtlasData };
-  try {
-    data = JSON.parse(await readFile(LUORA_DATA_PATH, "utf8"));
-  } catch {
-    data = { ...(sample as LuoraData), atlas: SAMPLE_ATLAS };
-  }
+  const data = await readRun();
   const atlas = data.atlas ?? SAMPLE_ATLAS;
   const ran = data.tests.map((t) =>
     t.frames.slice(0, 22).map((f): RanCell => {
@@ -188,4 +201,80 @@ export async function demoAtlas(): Promise<AtlasData> {
   } catch {
     return SAMPLE_ATLAS;
   }
+}
+
+/** The first decoded frames of one sample test (heavy per-line data dropped), for the Trace widget. */
+export async function traceFrames(): Promise<{
+  test: string;
+  frames: Frame[];
+}> {
+  "use cache";
+  cacheLife("max");
+  const data = await readRun();
+  const t =
+    data.tests.find((x) => x.name.startsWith("test_depositThenWithdraw")) ??
+    data.tests[0];
+  return {
+    test: t.name,
+    frames: t.frames.slice(1, 6).map(({ lines: _l, storage: _s, ...f }) => f),
+  };
+}
+
+export const LAB_W = 560;
+export type LabDemo = {
+  nodes: GNode[];
+  wires: Wire[];
+  runs: Record<string, { status: Status; head: string }>;
+  /** the inline widgets (name / role / USDC, revert reason) per card */
+  fields: Record<string, { label: string; value: string; select?: boolean }[]>;
+};
+
+/**
+ * The app's own "Non-<role> cannot <fn>" Lab template (Actor → Call → Expect revert), run by
+ * runScenario, laid out to fit LAB_W.
+ */
+export async function labDemo(): Promise<LabDemo | null> {
+  "use cache";
+  cacheLife("max");
+  const model = createAtlasModel(await demoAtlas());
+  const sc = templates(model)
+    .find((t) => t.name.startsWith("Non-"))
+    ?.build();
+  const pick = (id: string) => sc?.nodes.find((n) => n.id === id);
+  const a = pick("alice");
+  const c = pick("call");
+  const e = pick("expect");
+  if (!sc || a?.kind !== "actor" || !c || e?.kind !== "expect") return null;
+  const wires = sc.wires.filter((w) => w.to.node !== "only");
+  // Actor top-left feeds the Call to its right; Expect revert hangs under the Call, so the
+  // whole graph fits LAB_W at 1:1 (the revert wire loops down into Expect, as in the app)
+  const actor = { ...scenarioCard(model, a), x: 0, y: 0, w: 200 };
+  const call = { ...scenarioCard(model, c), x: 230, y: 40, w: LAB_W - 230 };
+  const ex = {
+    ...scenarioCard(model, e),
+    x: 300,
+    y: call.y + nodeHeight(call) + 48,
+    w: LAB_W - 300,
+  };
+  const runs = runScenario(model, sc).runs;
+  return {
+    nodes: [actor, call, ex],
+    wires,
+    runs: Object.fromEntries(
+      Object.entries(runs).map(([id, r]) => [
+        id,
+        { status: r.status, head: r.head },
+      ]),
+    ),
+    fields: {
+      alice: [
+        { label: "name", value: a.label },
+        { label: "role", value: a.role, select: true },
+        { label: "USDC", value: a.balance },
+      ],
+      expect: [
+        { label: "reason", value: e.reason || "from wire", select: true },
+      ],
+    },
+  };
 }

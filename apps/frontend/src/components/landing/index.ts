@@ -16,7 +16,7 @@
  *        `WorksWith` (text wordmarks of what Luora really reads, no customer logos).
  *  R4  brief: Linear "Issue tracking without the noise" (that shot is behind pin/183873597282670958;
  *      pin/151855818681736612 is the Mercury hero, used only for its gradient-faded second line)
- *      → `Features`: copy column + 2×2 tiny points, real product captures fading out, sides alternate;
+ *      → `Features`: copy column + 2×2 points beside the product, sides alternate (widgets: R21/R11);
  *        `Numbers`: big numbers with tiny captions (real sample-vault numbers, no quote).
  *  R5  pin/120823202500504610 ("Insights that actually — tell you something")
  *      → `Pillars` heading: one italic serif phrase (Instrument Serif, that phrase only);
@@ -28,8 +28,7 @@
  *        three cards in one rounded frame with monochrome isometric wireframes drawn in SVG.
  *  R6  brief: boutique cyber security statement (huge centred line on black, segmented pill)
  *      → `Statement`: "Built for auditors. Not for attackers." + Trace / Lab / Findings pill.
- *  R7  Linear "purpose-built tool" hero — real app screenshot tilted in perspective, fading to black
- *      → Hero product frame (`lp-tilt`), a real capture of /atlas Lab on the sample vault.
+ *  (R7, the tilted Linear-style hero capture, was dropped in the third pass: it read muddy.)
  *
  *
  * Second pass (2026-10-08, "too empty, add motion"), references I searched myself:
@@ -48,8 +47,24 @@
  *  Motion: words blur in, starburst breathes, packets ride the orbit wires, terminal types, tabs
  *  auto-advance, sections reveal on scroll, numbers count up — all off under prefers-reduced-motion.
  *
- * Product shots in public/landing/ are real captures of /trace and /atlas (production build, sample
- * vault from foundry/, `node luora-export.mjs`), never mock UI. Colour stays per DESIGN.md: grey/white,
+ * Third pass (2026-10-08, "blurry hero tabs, random cropped screenshots"):
+ *  R20 pin/672232681926990953 (Echo) — product UI crisp and bright right under the headline, one
+ *      light beam hitting its top edge, no blur, no overlap
+ *      → `ProductTabs` frame: flat (no tilt), one monochrome beam + lit stretch of the top edge,
+ *        crossfade where the outgoing view is gone before the incoming one shows.
+ *  R16 pin/63543044738210889 (code editor with AI assistance) — one window chrome, three dots + tab
+ *      → `Window.tsx`, used by the hero tabs (tab = view name) and the Trace widget (tab = test).
+ *  R21 pin/489273947042736110 ("Technical Solutions That Go Beyond Limits") — copy + short checked
+ *      bullets + CTA on one side, ONE isolated product widget on the other
+ *      → `Features` rows: check bullets, 'Open in the app' link, one widget per feature.
+ *  R11 pin/15270086238695547 ("Burn out less, build with smart code") — small, clean, isolated mini-UI
+ *      → `FeatureWidgets.tsx`: Trace frames, Lab Actor → Call → Expect revert, Findings filter +
+ *        two cards, CoverageSummary — the app's own components / utils on the sample data,
+ *        centred on the dot grid, nothing cut off.
+ *
+ * Product shots in public/landing/ are real captures of /trace and /atlas, never mock UI: hero-*.webp
+ * are the bundled sample data (Playwright, content area only, 2×); b-*.webp are from a local
+ * `node luora-export.mjs` run. Colour stays per DESIGN.md: grey/white,
  * red only on findings.
  */
 

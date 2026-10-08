@@ -355,7 +355,7 @@ export function Hero({ log }: { log: string[] }) {
 
         <Terminal log={log} />
 
-        {/* R7 + R8: the real app, tilted back and fading into black, switching views like onorca.dev */}
+        {/* R20 + R16 + R8: the real app, flat and crisp in a window, switching views like onorca.dev */}
         <div className="relative mt-10 w-full max-w-[1160px] md:mt-12">
           <ProductTabs />
         </div>

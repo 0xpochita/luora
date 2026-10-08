@@ -50,12 +50,6 @@
   }
 }
 
-/* R7: the product tilted back in perspective, fading into the black below it */
-.lp-tilt {
-  transform: perspective(2400px) rotateX(16deg);
-  transform-origin: 50% 0;
-}
-
 /* hero headline: words rise out of a blur, one after another (--i = word index) */
 .lp-word {
   display: inline-block;
