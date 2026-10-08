@@ -19,6 +19,7 @@ import {
   createPlaygroundLayer,
   type PlaygroundLayer,
 } from "./playground-layer";
+import { createUsdcCoin } from "./usdc-coin";
 
 /** `plan` = 2D top-down orthographic map */
 export type CityZoom = "city" | "district" | "street" | "plan";
@@ -501,15 +502,10 @@ export function createCityScene(
   };
   const tex = new THREE.TextureLoader().load("/logos/usdc.png");
   tex.colorSpace = THREE.SRGBColorSpace;
-  const tokenMat = new THREE.SpriteMaterial({
-    map: tex,
-    depthTest: false,
-    fog: false,
-  });
-  const token = new THREE.Sprite(tokenMat);
+  const coin = createUsdcCoin(tex);
+  const token = coin.token;
   const TOKEN = 1.8;
-  token.scale.set(TOKEN, TOKEN, 1);
-  token.renderOrder = 10;
+  token.scale.setScalar(TOKEN);
   token.visible = false;
   scene.add(token);
   const pg = createPlaygroundLayer({
@@ -593,8 +589,8 @@ export function createCityScene(
   function idle() {
     fx.visible = false;
     cap.visible = false;
-    tokenMat.rotation = 0;
-    token.scale.set(TOKEN, TOKEN, 1);
+    coin.spin(0);
+    token.scale.setScalar(TOKEN);
     setProc(null);
   }
   function travel(s: Stop, u: number) {
@@ -608,7 +604,7 @@ export function createCityScene(
     const dip = Math.sin(Math.PI * u); // 0 → 1 → 0 over the stop
     let y = top + 1;
     let size = TOKEN;
-    tokenMat.rotation = 0;
+    coin.spin(0);
     fx.visible = true;
     fxMat.color.set(s.late ? "#ff4545" : "#ffffff");
     if (s.k === "r") {
@@ -632,7 +628,7 @@ export function createCityScene(
       fxMat.opacity = 1 - q;
       y -= dip * Math.min(top, 2.4);
       size *= 1 - 0.5 * dip;
-      tokenMat.rotation = u * Math.PI * 4;
+      coin.spin(u * Math.PI * 4);
     } else {
       // event: the result is broadcast from the relay mast
       const q = (u * 2) % 1;
@@ -641,7 +637,7 @@ export function createCityScene(
       fxMat.opacity = 1 - q;
     }
     token.position.set(x, y, z);
-    token.scale.set(size, size, 1);
+    token.scale.setScalar(size);
     const key = `${s.i}:${s.id}`;
     if (capKey !== key) {
       capKey = key;
@@ -930,6 +926,7 @@ export function createCityScene(
     }
     base.update(t);
     fog.update(t);
+    coin.update(t);
     if (pg.owns()) {
       idle();
       pg.drive(t);

@@ -36,7 +36,7 @@ export function createPlaygroundLayer(o: {
   scene: THREE.Scene;
   blds: Map<string, Node>;
   pylon: (entry: string) => THREE.Vector3 | undefined;
-  token: THREE.Sprite;
+  token: THREE.Object3D;
   size: number;
 }) {
   const { scene, blds, token } = o;
@@ -175,7 +175,7 @@ export function createPlaygroundLayer(o: {
       if (!stop) return;
       const k = STILL ? 1 : Math.min(1, (performance.now() - stop.t0) / 900);
       token.visible = true;
-      token.scale.set(o.size, o.size, 1);
+      token.scale.setScalar(o.size);
       token.position.lerpVectors(stop.from, stop.at, ease(k));
       if (k < 1) return;
       cap.visible = gateFx.visible = true;
