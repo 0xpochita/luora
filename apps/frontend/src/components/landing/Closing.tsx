@@ -1,116 +1,414 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { LogoMark } from "@/components/ui";
 import { CityHorizon } from "./CityHorizon";
 import { GitHubMark } from "./GitHubMark";
 import { DOCS, GITHUB } from "./Hero";
 import { Reveal } from "./motion";
 
-const ROWS: [string, string][] = [
-  ["Decoded calls, events and cheatcodes", "Text tree"],
-  ["Source lines each frame executed", "Step debugger"],
-  ["Storage reads and writes per line", "Step debugger"],
-  ["Call graph per test", "—"],
-  ["Slither and Aderyn merged per issue", "Two reports"],
-  ["Triage status and Markdown report", "—"],
-  ["Coverage per function, untested first", "Per-file table"],
-  ["Wire a scenario, export a .t.sol", "By hand"],
+/** One row: what you get, what Luora shows (a full sentence, R29), what the CLIs give today (null = nothing). */
+const ROWS: { what: string; luora: string; cli: string | null }[] = [
+  {
+    what: "Decoded calls, events and cheatcodes",
+    luora: "Every call, event and cheatcode decoded with your own ABIs.",
+    cli: "A text tree from forge -vvvv",
+  },
+  {
+    what: "Source lines each frame executed",
+    luora: "Each frame opens on the source lines it ran.",
+    cli: "Step through them in forge debug",
+  },
+  {
+    what: "Storage reads and writes per line",
+    luora: "Slot reads and writes pinned to the line that made them.",
+    cli: "Step through them in forge debug",
+  },
+  {
+    what: "Call graph per test",
+    luora: "A call graph drawn for every test.",
+    cli: null,
+  },
+  {
+    what: "Slither and Aderyn merged per issue",
+    luora: "Slither and Aderyn merged into one finding per issue.",
+    cli: "Two separate reports",
+  },
+  {
+    what: "Triage status and Markdown report",
+    luora: "Triage each finding, then export a Markdown report.",
+    cli: null,
+  },
+  {
+    what: "Coverage per function, untested first",
+    luora: "Coverage per function, untested ones listed first.",
+    cli: "A per-file table from forge coverage",
+  },
+  {
+    what: "Wire a scenario, export a .t.sol",
+    luora: "Wire actors and calls, export the scenario as a .t.sol.",
+    cli: "Written by hand",
+  },
 ];
 
-/** R8 (onorca.dev "Built for agents, not retrofitted"): two-column heading, one quiet comparison table. */
+/** R27 / R29: a check in a small circle (Luora column). */
+function CheckCircle() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 16 16"
+      className="mt-[3px] size-4 flex-none text-fg"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="8" cy="8" r="7" strokeOpacity="0.55" />
+      <path d="M5 8.2L7.1 10.2L11 6" />
+    </svg>
+  );
+}
+
+/** R27 / R28: ✕ where the CLIs have nothing — muted, it is a missing feature, not a finding. */
+function Cross() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 16 16"
+      className="mt-[3px] size-4 flex-none text-white/30"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.3"
+      strokeLinecap="round"
+    >
+      <path d="M5.5 5.5L10.5 10.5M10.5 5.5L5.5 10.5" />
+    </svg>
+  );
+}
+
+/** R29: competitor cells lead with an icon too; a hollow dim ring where the CLIs do have something. */
+function Ring() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 16 16"
+      className="mt-[3px] size-4 flex-none text-white/25"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.3"
+    >
+      <circle cx="8" cy="8" r="3" />
+    </svg>
+  );
+}
+
+function CliCell({ cli }: { cli: string | null }) {
+  return cli ? (
+    <>
+      <Ring />
+      <span>{cli}</span>
+    </>
+  ) : (
+    <>
+      <Cross />
+      <span className="sr-only">Not available</span>
+    </>
+  );
+}
+
+/**
+ * R28 (pin/175218241748813574, Ortocosmos "Competitor analysis"): '№ / Subject / About' over a
+ * hairline, a bracketed index, the table hung from the Subject column.
+ * R27 (pin/36028865763636582, Ageeva "A card with features you won't find anywhere else"): the
+ * product column is one raised, lighter, rounded card standing above the flat table, its header the
+ * product name, checks in small circles, ✕ for missing.
+ * R29 (pin/36028865764245218, Ageeva "Constructor vs Legacy vs Building In-House"): every cell a
+ * short full sentence behind a leading icon. Mobile: one stacked card per row.
+ */
 export function Compare() {
   return (
     <section className="mx-auto max-w-[1240px] px-4 pb-32 md:px-6">
-      <Reveal className="mb-10 grid gap-6 md:grid-cols-2 md:items-end">
-        <h2 className="font-medium text-[clamp(32px,4.4vw,54px)] text-fg leading-[1.04] tracking-[-0.03em]">
-          Same run,
-          <br />
-          <span className="text-white/45">read differently.</span>
-        </h2>
-        <p className="max-w-[460px] text-[16px] text-muted leading-relaxed md:justify-self-end">
-          Luora does not replace forge or the analyzers. It reads what they
-          already produce and lays it over the contract.
-        </p>
-      </Reveal>
       <Reveal>
-        <table className="w-full overflow-hidden rounded-[20px] border border-white/[.07] bg-[#0c0c0d] text-left text-[14px]">
-          <thead className="text-[13px] text-dim">
-            <tr className="border-white/[.06] border-b">
-              <th className="px-5 py-4 font-normal">What you get</th>
-              <th className="w-[96px] px-3 py-4 text-center font-normal text-fg md:w-[140px]">
+        {/* R28 header row */}
+        <div className="hidden grid-cols-[140px_5fr_6fr] gap-6 border-white/[.14] border-b pb-2 text-[12.5px] text-dim md:grid">
+          <span>№</span>
+          <span>Subject</span>
+          <span>About</span>
+        </div>
+        <div className="grid gap-4 pt-5 md:grid-cols-[140px_5fr_6fr] md:gap-6">
+          <span className="font-mono text-[15px] text-muted md:text-[22px] md:text-fg md:leading-[1.2]">
+            [007]
+          </span>
+          <h2 className="font-medium text-[clamp(30px,3.6vw,46px)] text-fg leading-[1.04] tracking-[-0.03em]">
+            Same run,
+            <br />
+            <span className="text-white/45">read differently.</span>
+          </h2>
+          <p className="max-w-[460px] text-[16px] text-muted leading-relaxed">
+            Luora does not replace forge or the analyzers. It reads what they
+            already produce and lays it over the contract.
+          </p>
+        </div>
+      </Reveal>
+
+      <Reveal delay={0.08} className="mt-16 md:ml-[164px]">
+        {/* desktop: three columns, the Luora column one raised card spanning every row (R27) */}
+        <table className="relative hidden grid-cols-[minmax(0,0.85fr)_minmax(0,1.45fr)_minmax(0,1fr)] grid-rows-[auto_repeat(8,auto)] text-left before:col-start-2 before:row-start-1 before:row-end-[-1] before:-mt-3 before:-mb-4 before:rounded-card before:border before:border-white/[.13] before:bg-card-grad before:shadow-[0_0_80px_-12px_rgba(255,255,255,.14),0_24px_48px_rgba(0,0,0,.55)] md:grid">
+          <caption className="sr-only">
+            Luora compared with forge and the analyzer CLIs
+          </caption>
+          <thead className="contents">
+            <tr className="contents">
+              <th className="col-start-1 row-start-1 self-end pb-4 font-normal text-[13px] text-dim">
+                What you get
+              </th>
+              <th className="relative col-start-2 row-start-1 flex items-center gap-2.5 px-6 pt-4 pb-5 font-medium text-[17px] text-fg">
+                <LogoMark />
                 Luora
               </th>
-              <th className="w-[110px] px-3 py-4 text-center font-normal md:w-[200px]">
+              <th className="col-start-3 row-start-1 self-end px-6 pb-4 font-normal text-[13px] text-dim">
                 forge + analyzer CLIs
               </th>
             </tr>
           </thead>
-          <tbody>
-            {ROWS.map(([what, cli]) => (
-              <tr
-                key={what}
-                className="border-white/[.05] border-b transition-colors last:border-0 hover:bg-white/[.02]"
-              >
-                <td className="px-5 py-3.5 text-body">{what}</td>
-                <td className="px-3 py-3.5 text-center text-fg">✓</td>
-                <td className="px-3 py-3.5 text-center text-[13px] text-dim">
-                  {cli}
+          <tbody className="contents">
+            {ROWS.map((r, i) => (
+              <tr key={r.what} className="contents">
+                <th
+                  scope="row"
+                  className="col-start-1 border-white/[.07] border-t py-4 pr-4 font-normal text-[14px] text-body"
+                  style={{ gridRowStart: i + 2 }}
+                >
+                  {r.what}
+                </th>
+                <td
+                  className="relative col-start-2 mx-3 flex gap-3 border-white/[.06] border-t px-3 py-4 text-[14px] text-fg leading-snug"
+                  style={{ gridRowStart: i + 2 }}
+                >
+                  <CheckCircle />
+                  {r.luora}
+                </td>
+                <td
+                  className="col-start-3 flex gap-3 border-white/[.07] border-t px-6 py-4 text-[13px] text-dim leading-snug"
+                  style={{ gridRowStart: i + 2 }}
+                >
+                  <CliCell cli={r.cli} />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+
+        {/* mobile: one stacked card per row */}
+        <ul className="space-y-3 md:hidden">
+          {ROWS.map((r) => (
+            <li
+              key={r.what}
+              className="rounded-card border border-white/[.07] bg-[#0c0c0d] p-2"
+            >
+              <p className="px-3 pt-2 pb-2.5 text-[13px] text-dim">{r.what}</p>
+              <div className="rounded-inner border border-white/[.13] bg-card-grad p-3 shadow-[0_0_40px_-12px_rgba(255,255,255,.14)]">
+                <p className="mb-2 flex items-center gap-2 text-[12.5px] text-muted">
+                  <span className="size-1.5 rounded-full bg-white" />
+                  Luora
+                </p>
+                <p className="flex gap-2.5 text-[14px] text-fg leading-snug">
+                  <CheckCircle />
+                  {r.luora}
+                </p>
+              </div>
+              <p className="flex gap-2.5 px-3 pt-3 pb-2 text-[13px] text-dim leading-snug">
+                <CliCell cli={r.cli} />
+                {r.cli ? null : <span aria-hidden="true">Not in the CLIs</span>}
+              </p>
+            </li>
+          ))}
+        </ul>
       </Reveal>
     </section>
   );
 }
 
-/** Hairline radar behind the statement: rings, a slow sweep, a few blips (one red: a finding). */
-function Radar() {
-  const rings = [90, 170, 250, 330, 410];
+/** R32: a small monochrome icon badge sitting on a circle outline at `deg` (0 = right, clockwise). */
+function Badge({
+  cx,
+  cy,
+  r,
+  deg,
+  children,
+}: {
+  cx: number;
+  cy: number;
+  r: number;
+  deg: number;
+  children: ReactNode;
+}) {
+  const a = (deg * Math.PI) / 180;
+  const x = Math.round(cx + r * Math.cos(a));
+  const y = Math.round(cy + r * Math.sin(a));
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      {/* a canvas-coloured collar breaks the ring around the badge, as in R32 */}
+      <circle r="30" fill="#000" />
+      <circle
+        r="24"
+        fill="var(--raised)"
+        stroke="#fff"
+        strokeOpacity="0.16"
+        strokeWidth="1.5"
+      />
+      <g
+        fill="none"
+        stroke="var(--fg)"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        {children}
+      </g>
+    </g>
+  );
+}
+
+/**
+ * R32 (pin/65372632087024928, "Our Approach: Simplicity ⇄ Efficiency"): two large thin circles side by
+ * side, a ⇄ glyph between them, one word centred in each, icon badges sitting on the outlines.
+ * Rounded coordinates, SSR-safe; the rings draw in once revealed (lp-ring, off under reduced motion).
+ */
+function Rings() {
+  const R = 200;
   return (
     <svg
       aria-hidden="true"
-      viewBox="-440 -440 880 880"
-      className="pointer-events-none absolute top-1/2 left-1/2 size-[880px] -translate-x-1/2 -translate-y-1/2 [mask-image:radial-gradient(closest-side,#000_40%,transparent)]"
+      viewBox="0 0 1000 460"
+      className="w-full overflow-visible"
     >
-      <defs>
-        <linearGradient id="lp-sweep" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#fff" stopOpacity="0" />
-          <stop offset="1" stopColor="#fff" stopOpacity="0.05" />
-        </linearGradient>
-      </defs>
-      <g fill="none" stroke="#fff" strokeOpacity="0.08">
-        {rings.map((r) => (
-          <circle key={r} r={r} />
-        ))}
-        <path d="M-430 0H430M0-430V430" strokeOpacity="0.05" />
+      <g fill="none" stroke="#fff" strokeOpacity="0.13" strokeWidth="3">
+        <circle
+          className="lp-ring"
+          cx="250"
+          cy="230"
+          r={R}
+          pathLength={1}
+          transform="rotate(-90 250 230)"
+        />
+        <circle
+          className="lp-ring"
+          cx="750"
+          cy="230"
+          r={R}
+          pathLength={1}
+          transform="rotate(90 750 230)"
+        />
       </g>
-      <g className="lp-sweep">
-        <path d="M0 0L410 0A410 410 0 0 0 290 -290Z" fill="url(#lp-sweep)" />
-        <path d="M0 0L410 0" stroke="#fff" strokeOpacity="0.2" />
+      <g
+        className="font-sans"
+        fill="var(--fg)"
+        fontSize="46"
+        letterSpacing="-1"
+        textAnchor="middle"
+      >
+        <text x="250" y="246">
+          Reads
+        </text>
+        <text x="750" y="246" fill="var(--muted)">
+          Never
+        </text>
       </g>
-      {[
-        [-330, -90],
-        [250, 240],
-        [-180, 290],
-        [360, 60],
-      ].map(([x, y]) => (
-        <circle key={x} cx={x} cy={y} r="2.5" fill="#fff" fillOpacity="0.5" />
-      ))}
-      <circle cx="340" cy="-170" r="3" fill="var(--red)" />
-      <circle
-        cx="340"
-        cy="-170"
-        r="3"
+      {/* ⇄ link between the circles */}
+      <g
         fill="none"
-        stroke="var(--red)"
-        className="lp-blip"
-      />
+        stroke="var(--fg)"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M478 222H522M512 212L522 222L512 232" />
+        <path d="M522 240H478M488 230L478 240L488 250" />
+      </g>
+      {/* left: a report being read */}
+      <Badge cx={250} cy={230} r={R} deg={130}>
+        <path d="M-7 -10H3L8 -5V10H-7Z" />
+        <path d="M-3 0H4M-3 5H4" />
+      </Badge>
+      {/* left: decoded, mapped */}
+      <Badge cx={250} cy={230} r={R} deg={-40}>
+        <circle r="3" />
+        <path d="M-9 -7L-3 -2M9 -7L3 -2M0 3V10" />
+      </Badge>
+      {/* right: no live chain */}
+      <Badge cx={750} cy={230} r={R} deg={-130}>
+        <path d="M-4 4L4 -4" />
+        <path d="M-2 -6L1 -9A4 4 0 0 1 9 -1L6 2" />
+        <path d="M2 6L-1 9A4 4 0 0 1 -9 1L-6 -2" />
+        <path d="M-10 -10L10 10" strokeOpacity="0.6" />
+      </Badge>
+      {/* right: nothing signed */}
+      <Badge cx={750} cy={230} r={R} deg={50}>
+        <rect x="-7" y="-2" width="14" height="11" rx="2" />
+        <path d="M-4 -2V-5A4 4 0 0 1 4 -5V-2" />
+      </Badge>
     </svg>
   );
 }
 
-/** R6 (huge centred statement on black, segmented pill) + a radar of hairline rings for depth. */
+/**
+ * R30 (pin/707065210234626460, "Design Philosophy"): a hairline, then numbered lines 01–03 with the
+ * number in a gutter; the active number is circled by hand (first line until you hover another).
+ */
+function Principles({ items, never }: { items: string[]; never?: boolean }) {
+  return (
+    <ol className="lp-principles mx-auto w-full max-w-[400px] border-white/[.14] border-t pt-5">
+      {items.map((t, i) => (
+        <li
+          key={t}
+          className="flex items-center gap-4 py-2.5 text-[15px] text-muted transition-colors hover:text-fg"
+        >
+          <span className="relative grid w-8 flex-none place-items-center font-mono text-[13px] text-dim">
+            0{i + 1}
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 40 30"
+              className="absolute -inset-x-1.5 -inset-y-1.5 overflow-visible"
+              fill="none"
+              stroke="var(--fg)"
+              strokeWidth="1.2"
+              strokeLinecap="round"
+            >
+              <path
+                className="lp-circled"
+                pathLength={1}
+                d="M24 3C13 1 3 7 4 16C5 25 21 29 31 24C39 19 37 6 26 4C22 3 18 4 15 6"
+              />
+            </svg>
+          </span>
+          {never ? (
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 10 10"
+              className="size-2.5 flex-none"
+              stroke="var(--red)"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            >
+              <path d="M2 2L8 8M8 2L2 8" />
+            </svg>
+          ) : (
+            <span className="mx-[3px] size-1.5 flex-none rounded-full bg-white" />
+          )}
+          {t}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/**
+ * R31 (pin/11962755257568023, "What we do"): the brand line as a big left-aligned title over a
+ * full-width hairline, tiny labels under it, one statement line, the round action where R31 keeps
+ * its "Services" button (here the Trace / Lab / Findings pill into the app).
+ * Then R32's circle pair with R30's numbered lists under each circle.
+ */
 export function Statement() {
   const segments = [
     { label: "Trace", href: "/trace" },
@@ -128,59 +426,56 @@ export function Statement() {
     "Needs an RPC key or a live chain",
   ];
   return (
-    <section className="relative overflow-hidden py-28 md:py-40">
-      <Radar />
-      <div className="relative mx-auto flex max-w-[1240px] flex-col items-center px-4 text-center md:px-6">
-        <Reveal>
-          <h2 className="text-[clamp(40px,7.4vw,104px)] text-fg leading-[0.98] tracking-[-0.045em]">
-            Built for auditors.
-            <br />
-            <span className="text-white/40">Not for attackers.</span>
-          </h2>
-        </Reveal>
-        <Reveal
-          delay={0.1}
-          className="mt-14 grid w-full max-w-[760px] gap-3 text-left md:grid-cols-2"
-        >
-          {[
-            { title: "Luora does", items: does, dot: "bg-white" },
-            { title: "Luora never", items: never, dot: "bg-red" },
-          ].map((c) => (
-            <div
-              key={c.title}
-              className="rounded-[18px] border border-white/[.07] bg-[#0a0a0b]/85 p-5"
-            >
-              <p className="flex items-center gap-2 text-[13px] text-text">
-                <span className={`size-1.5 rounded-full ${c.dot}`} />
-                {c.title}
-              </p>
-              <ul className="mt-3 space-y-2 text-[14px] text-muted">
-                {c.items.map((i) => (
-                  <li key={i}>{i}</li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </Reveal>
-        <nav
-          aria-label="Open Luora"
-          className="mt-10 inline-flex gap-1 rounded-full border border-white/[.08] bg-inset p-1"
-        >
-          {segments.map((s) => (
-            <Link
-              key={s.label}
-              href={s.href}
-              className={`rounded-full px-4 py-1.5 text-[13px] transition-colors ${
-                s.on
-                  ? "bg-primary text-primary-fg"
-                  : "text-muted hover:bg-hover hover:text-fg"
-              }`}
-            >
-              {s.label}
-            </Link>
-          ))}
-        </nav>
-      </div>
+    <section className="mx-auto max-w-[1240px] px-4 py-28 md:px-6 md:py-36">
+      <Reveal>
+        <h2 className="text-[clamp(40px,7.4vw,104px)] text-fg leading-[0.98] tracking-[-0.045em]">
+          Built for auditors.
+          <br />
+          <span className="text-white/40">Not for attackers.</span>
+        </h2>
+        <div className="mt-8 flex justify-between border-white/[.2] border-t pt-2 text-[12.5px] text-dim">
+          <span>Stance</span>
+          <span className="hidden md:inline">Read only</span>
+          <span>Local files</span>
+        </div>
+        <div className="mt-10 flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
+          <p className="max-w-[620px] text-[clamp(20px,2.2vw,28px)] text-fg leading-[1.3] tracking-[-0.01em]">
+            Luora reads what your tests and analyzers already wrote, and lays it
+            over the contract. It never touches a chain.
+          </p>
+          <nav
+            aria-label="Open Luora"
+            className="inline-flex gap-1 self-start rounded-full border border-white/[.08] bg-inset p-1"
+          >
+            {segments.map((s) => (
+              <Link
+                key={s.label}
+                href={s.href}
+                className={`rounded-full px-4 py-1.5 text-[13px] transition-colors ${
+                  s.on
+                    ? "bg-primary text-primary-fg"
+                    : "text-muted hover:bg-hover hover:text-fg"
+                }`}
+              >
+                {s.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </Reveal>
+      <Reveal delay={0.1} className="mx-auto mt-20 max-w-[1000px]">
+        <Rings />
+        <div className="mt-10 grid gap-10 md:grid-cols-2">
+          <div>
+            <p className="mb-3 text-[13px] text-dim md:sr-only">Reads</p>
+            <Principles items={does} />
+          </div>
+          <div>
+            <p className="mb-3 text-[13px] text-dim md:sr-only">Never</p>
+            <Principles items={never} never />
+          </div>
+        </div>
+      </Reveal>
     </section>
   );
 }

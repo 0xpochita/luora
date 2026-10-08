@@ -79,6 +79,22 @@
  *      TraceRow, FlowView, MapView and FindingsTab rendered live, no screenshots; R20's flat frame
  *      and edge beam are gone.
  *
+ * Fifth pass (2026-10-09, Compare + Statement restaged), pins studied 2026-10-09:
+ *  R27 pin/36028865763636582 (Ageeva "A card with features you won't find anywhere else") — the
+ *      product column a raised, lighter rounded card standing above a flat table, checks in circles
+ *      → `Compare`: the Luora column is one graphite card with a soft white glow over every row.
+ *  R28 pin/175218241748813574 (Ortocosmos "Competitor analysis") — '№ / Subject / About' over a
+ *      hairline, '[003]' index, compact table hung from the Subject column → `Compare` header.
+ *  R29 pin/36028865764245218 (Ageeva "Constructor vs Legacy vs Building In-House") — every cell a
+ *      short full sentence behind a leading icon → `Compare` cells; ✕ (muted) where the CLIs have nothing.
+ *  R30 pin/707065210234626460 ("Design Philosophy") — hairline, numbered lines in a gutter, the active
+ *      number circled by hand → `Statement` lists (01–03, hover circles the number).
+ *  R31 pin/11962755257568023 ("What we do") — big title over a full-width hairline, tiny labels, one
+ *      statement line, a round action on the right → `Statement` head + the Trace / Lab / Findings pill.
+ *  R32 pin/65372632087024928 ("Our Approach: Simplicity ⇄ Efficiency") — two large thin circles, ⇄
+ *      between, a word in each, icon badges on the outlines → `Statement` 'Reads ⇄ Never' (replaces
+ *      the R6 radar and the two cards).
+ *
  * Product shots in public/landing/ (b-*.webp, Bento) are real captures of /trace and /atlas from a
  * local `node luora-export.mjs` run, never mock UI; the hero and 'How Luora works' render the app live. Colour stays per DESIGN.md: grey/white,
  * red only on findings.

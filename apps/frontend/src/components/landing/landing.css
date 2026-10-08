@@ -79,30 +79,27 @@
     opacity: 0.7;
   }
 }
-.lp-sweep {
-  transform-origin: 50% 50%;
-  animation: lp-spin 9s linear infinite;
+/* R32 rings draw in once their block is revealed; R30 hand-drawn circle around the active number */
+.lp-reveal .lp-ring {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 1.8s cubic-bezier(0.65, 0, 0.35, 1) 0.3s;
 }
-@keyframes lp-spin {
-  to {
-    transform: rotate(360deg);
-  }
+.lp-reveal[data-in] .lp-ring {
+  stroke-dashoffset: 0;
 }
-.lp-blip {
-  animation: lp-blip 3s ease-out infinite;
-  transform-box: fill-box;
-  transform-origin: center;
+.lp-circled {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  opacity: 0;
+  transition:
+    stroke-dashoffset 0.5s ease,
+    opacity 0.2s;
 }
-@keyframes lp-blip {
-  0% {
-    transform: scale(1);
-    opacity: 0.9;
-  }
-  70%,
-  100% {
-    transform: scale(3.2);
-    opacity: 0;
-  }
+.lp-principles li:hover .lp-circled,
+.lp-principles:not(:hover) li:first-child .lp-circled {
+  stroke-dashoffset: 0;
+  opacity: 1;
 }
 
 /* terminal lines in the hero type themselves in (--n = characters, --d = start delay) */
@@ -163,7 +160,6 @@
   .lp-fade,
   .lp-word,
   .lp-breathe,
-  .lp-sweep,
   .lp-progress,
   .lp-caret {
     animation: none;
@@ -176,13 +172,19 @@
     animation: none;
     width: auto;
   }
-  .lp-blip,
   .lp-packet {
     display: none;
   }
   .lp-reveal {
     opacity: 1;
     transform: none;
+    transition: none;
+  }
+  .lp-reveal .lp-ring {
+    transition: none;
+    stroke-dashoffset: 0;
+  }
+  .lp-circled {
     transition: none;
   }
 }
