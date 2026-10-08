@@ -19,7 +19,9 @@
  *      → `Features`: copy column + 2×2 tiny points, real product captures fading out, sides alternate;
  *        `Numbers`: big numbers with tiny captions (real sample-vault numbers, no quote).
  *  R5  pin/120823202500504610 ("Insights that actually — tell you something")
- *      → `Pillars`: heading with one italic serif phrase (Instrument Serif, that phrase only),
+ *      → `Pillars` heading: one italic serif phrase (Instrument Serif, that phrase only);
+ *   R12 QClay (pin 852728510751497559): dot-matrix panels, '+WORD+WORD' mono titles, dot compass,
+ *      mono key-value footers → `Pillars` panels (Pillars.tsx), all drawn from the sample run.
  *        three cards in one rounded frame with monochrome isometric wireframes drawn in SVG.
  *  R6  brief: boutique cyber security statement (huge centred line on black, segmented pill)
  *      → `Statement`: "Built for auditors. Not for attackers." + Trace / Lab / Findings pill.
@@ -52,6 +54,7 @@
 
 export { Bento } from "./Bento";
 export { Compare, Faq, FinalCta, Footer, Statement } from "./Closing";
-export { Pillars, Proof } from "./Evidence";
+export { Proof } from "./Evidence";
 export { Features } from "./Features";
 export { Hero, WorksWith } from "./Hero";
+export { Pillars } from "./Pillars";

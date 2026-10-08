@@ -192,3 +192,27 @@
     transition: none;
   }
 }
+
+/* R12: dot-matrix pixels step in once, the findings orbit turns very slowly */
+.lp-px {
+  animation: lp-px 0.5s steps(3, end) both;
+}
+@keyframes lp-px {
+  from {
+    opacity: 0;
+  }
+}
+.lp-orbit {
+  animation: lp-orbit 60s linear infinite;
+}
+@keyframes lp-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-px,
+  .lp-orbit {
+    animation: none;
+  }
+}
