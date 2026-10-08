@@ -157,7 +157,7 @@ export function AskDemo({ atlas }: { atlas: AtlasData }) {
           <span className="ml-auto text-[12px] text-dim">Ask Luora</span>
         </div>
 
-        <div className="grid md:grid-cols-[1.25fr_1fr]">
+        <div className="grid md:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
           {/* code: click a line; R18 accent bar on the selection, R17 inline diagnostics */}
           <ol className="border-white/[.06] py-3 font-mono text-[12.5px] leading-[2.05] md:border-r">
             {lines.map((l) => {
@@ -207,7 +207,7 @@ export function AskDemo({ atlas }: { atlas: AtlasData }) {
           </ol>
 
           {/* assistant panel */}
-          <div className="flex h-[520px] flex-col p-4">
+          <div className="flex h-[520px] min-w-0 flex-col p-4">
             {/* R16: the question as the user's bubble */}
             <div className="ml-auto max-w-[88%] rounded-2xl rounded-br-md bg-white/[.07] px-3.5 py-2 text-[13px] text-fg">
               {ask?.ask}
@@ -262,13 +262,13 @@ export function AskDemo({ atlas }: { atlas: AtlasData }) {
                   return (
                     <pre
                       key={key}
-                      className="overflow-x-auto rounded-lg border border-white/[.06] bg-black/50 p-3 font-mono text-[11.5px] text-white/75 leading-relaxed"
+                      className="whitespace-pre-wrap break-words rounded-lg border border-white/[.06] bg-black/50 p-3 font-mono text-[11.5px] text-white/75 leading-relaxed"
                     >
                       {b.t}
                     </pre>
                   );
                 return (
-                  <p key={key} className="whitespace-pre-wrap">
+                  <p key={key} className="whitespace-pre-wrap break-words">
                     {b.t}
                   </p>
                 );

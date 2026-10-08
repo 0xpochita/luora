@@ -11,6 +11,7 @@ import {
   type Wire,
 } from "@/features/atlas/utils/lab-graph";
 import {
+  assertOptions,
   runScenario,
   type Status,
   scenarioCard,
@@ -287,4 +288,58 @@ export async function testRows(): Promise<TestResult[]> {
   cacheLife("max");
   const data = await readRun();
   return data.tests.map((t) => ({ ...t, frames: [], transfers: [] }));
+}
+
+/**
+ * The whole "Non-<role> cannot <fn>" scenario as the Lab shows it (Actor → Call → Expect revert,
+ * plus the Assert on the call's 'then' port), at the template's own positions, run by runScenario.
+ */
+export async function scenarioDemo(): Promise<LabDemo | null> {
+  "use cache";
+  cacheLife("max");
+  const model = createAtlasModel(await demoAtlas());
+  const sc = templates(model)
+    .find((t) => t.name.startsWith("Non-"))
+    ?.build();
+  if (!sc) return null;
+  const nodes = sc.nodes.map((n) => scenarioCard(model, n));
+  const left = Math.min(...nodes.map((n) => n.x));
+  const top = Math.min(...nodes.map((n) => n.y));
+  const runs = runScenario(model, sc).runs;
+  const options = assertOptions(model);
+  const fields: LabDemo["fields"] = {};
+  for (const n of sc.nodes) {
+    if (n.kind === "actor")
+      fields[n.id] = [
+        { label: "name", value: n.label },
+        { label: "role", value: n.role, select: true },
+        { label: "USDC", value: n.balance },
+      ];
+    if (n.kind === "expect")
+      fields[n.id] = [
+        { label: "reason", value: n.reason || "from wire", select: true },
+      ];
+    if (n.kind === "assert")
+      fields[n.id] = [
+        {
+          label: "check",
+          value:
+            options.find(
+              (o) => JSON.stringify(o.check) === JSON.stringify(n.check),
+            )?.label ?? n.check.type,
+          select: true,
+        },
+      ];
+  }
+  return {
+    nodes: nodes.map((n) => ({ ...n, x: n.x - left, y: n.y - top })),
+    wires: sc.wires,
+    runs: Object.fromEntries(
+      Object.entries(runs).map(([id, r]) => [
+        id,
+        { status: r.status, head: r.head },
+      ]),
+    ),
+    fields,
+  };
 }

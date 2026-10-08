@@ -5,7 +5,7 @@ import { ICON_PATH, type IconKey } from "@/features/atlas/utils/icons";
 import { GitHubMark } from "./GitHubMark";
 import { LogoLoop } from "./LogoLoop";
 import { ProductTabs } from "./ProductTabs";
-import { demoAtlas, traceFrames } from "./stats";
+import { demoAtlas, scenarioDemo, traceFrames } from "./stats";
 
 export const GITHUB = "https://github.com/0xpochita/luora";
 export const DOCS = `${GITHUB}#readme`;
@@ -303,8 +303,14 @@ function Terminal({ log }: { log: string[] }) {
 
 /** The hero close-up's data: the audited contract and the first frames of one test. */
 async function Product() {
-  const [atlas, trace] = await Promise.all([demoAtlas(), traceFrames(14)]);
-  return <ProductTabs atlas={atlas} frames={trace.frames} />;
+  const [atlas, trace, scenario] = await Promise.all([
+    demoAtlas(),
+    traceFrames(14),
+    scenarioDemo(),
+  ]);
+  return (
+    <ProductTabs atlas={atlas} frames={trace.frames} scenario={scenario} />
+  );
 }
 
 /** R2 + R1 + R3 + R26 + R8, see index.ts. */

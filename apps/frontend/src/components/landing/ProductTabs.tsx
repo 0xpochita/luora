@@ -11,11 +11,13 @@ import { contractGraph } from "@/features/atlas/utils/lab-graph";
 import { createAtlasModel } from "@/features/atlas/utils/model";
 import type { Frame } from "@/features/trace";
 import { LabGraph } from "./FeatureWidgets";
+import type { LabDemo } from "./stats";
 import { Window } from "./Window";
 import "@/components/(main)/atlas/atlas.css";
 
 const VIEWS = [
   { id: "lab", route: "/atlas · Lab", label: "Lab" },
+  { id: "scenario", route: "/atlas · Lab · Scenario", label: "Scenario" },
   { id: "trace", route: "/trace", label: "Trace" },
   { id: "flow", route: "/atlas · Flow", label: "Flow" },
   { id: "map", route: "/atlas · Map", label: "Map" },
@@ -32,7 +34,8 @@ const WORLD = { w: 1440, h: 900 };
  * R26 (pin 3870349674475850, Alfred workflow editor): the product as a large, crisp close-up,
  * turned and tilted in perspective, running off the right and bottom edges with only the far
  * (bottom) edge fading out. Every view is the app's own component rendered live on the sample
- * data, at 1:1 (never an image): Lab = the contract graph (contractGraph → LabGraph), Trace = TraceRow,
+ * data, at 1:1 (never an image): Lab = the contract graph (contractGraph → LabGraph), Scenario = the Lab's
+ * 'Non-owner cannot setOracle' scenario run by runScenario (stats.ts scenarioDemo), Trace = TraceRow,
  * Flow = FlowView, Map = MapView, Findings = FindingsTab. The close-up is a picture of the app, so
  * it takes no pointer input (pan / zoom canvases would otherwise eat the page scroll).
  * Crossfade without ghosting: the outgoing view is gone (200ms) before the incoming one starts.
@@ -40,9 +43,12 @@ const WORLD = { w: 1440, h: 900 };
 export function ProductTabs({
   atlas,
   frames,
+  scenario,
 }: {
   atlas: AtlasData;
   frames: Frame[];
+  /** the Lab's "Non-<role> cannot <fn>" scenario, laid out and run on the server */
+  scenario: LabDemo | null;
 }) {
   const [at, setAt] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -71,6 +77,21 @@ export function ProductTabs({
         <div className="absolute top-14 left-16">
           <LabGraph nodes={graph.nodes} wires={graph.wires} />
         </div>
+      </div>
+    ),
+    scenario: (
+      <div className="dot-grid absolute inset-0">
+        {scenario && (
+          // the whole scenario has to stay inside the tilted frame, so it runs a little smaller
+          <div className="absolute top-14 left-12 origin-top-left scale-[0.78]">
+            <LabGraph
+              nodes={scenario.nodes}
+              wires={scenario.wires}
+              runs={scenario.runs}
+              fields={scenario.fields}
+            />
+          </div>
+        )}
       </div>
     ),
     trace: (
