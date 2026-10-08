@@ -1,7 +1,7 @@
 "use client";
 
 import { Panel } from "@/components/ui";
-import type { AtlasModel, CitySim } from "@/features/atlas";
+import type { AtlasModel, StepSim } from "@/features/atlas";
 import { linesOf, pieceAtLine } from "@/features/atlas/utils/audit";
 import { hitLabel } from "@/features/atlas/utils/coverage";
 import { STEP_VERB } from "@/features/atlas/utils/units";
@@ -16,7 +16,7 @@ export function ContractSource({
 }: {
   model: AtlasModel;
   selected: string | null;
-  sim: CitySim;
+  sim: StepSim;
   onSelect: (id: string | null) => void;
 }) {
   const p = selected ? model.byId[selected] : null;

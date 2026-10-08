@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   type AtlasModel,
-  type CitySim,
   ICON_PATH,
   type IconKey,
   iconOf,
   type Piece,
+  type StepSim,
 } from "@/features/atlas";
 import { SEVERITY } from "@/features/atlas/utils/audit";
 import { pctLabel, pieceCoverage } from "@/features/atlas/utils/coverage";
@@ -76,7 +76,7 @@ export function FlowView({
   model: AtlasModel;
   selected: string | null;
   onSelect: (id: string | null) => void;
-  sim: CitySim;
+  sim: StepSim;
 }) {
   const L = useMemo(() => flowLayout(model), [model]);
   const vp = useRef<HTMLDivElement>(null);

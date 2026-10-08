@@ -9,7 +9,7 @@ const STEP_MS = 1300;
  * Step-by-step replay of what an entry point touches (`model.seq`), for the selected entry.
  * Resets whenever the selection changes; step -1 = not started.
  */
-export function useCitySim(model: AtlasModel, selected: string | null) {
+export function useStepSim(model: AtlasModel, selected: string | null) {
   const entry = selected && model.seq[selected]?.length ? selected : null;
   const [state, setState] = useState({ entry, step: -1, playing: false });
   const { step, playing } =
@@ -44,4 +44,4 @@ export function useCitySim(model: AtlasModel, selected: string | null) {
   };
 }
 
-export type CitySim = ReturnType<typeof useCitySim>;
+export type StepSim = ReturnType<typeof useStepSim>;

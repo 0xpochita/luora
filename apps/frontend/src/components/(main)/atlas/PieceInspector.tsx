@@ -11,6 +11,7 @@ import {
   SYSTEMS,
   type TriageState,
 } from "@/features/atlas";
+import { CHECKLIST } from "@/features/atlas/utils/ai";
 import { pctLabel, pieceCoverage } from "@/features/atlas/utils/coverage";
 import { protocolOf } from "@/features/atlas/utils/protocols";
 import { FindingTriage } from "./FindingTriage";
@@ -126,6 +127,13 @@ export function PieceInspector({
       {p.sys === "vulns" && (
         <FindingTriage model={model} finding={p} triage={triage} />
       )}
+      <Panel label="What to check" aside={SYSTEMS[p.sys].label}>
+        <ul className="grid gap-1 px-3 py-2.5 text-muted text-xs">
+          {CHECKLIST[p.sys].map((x) => (
+            <li key={x}>□ {x}</li>
+          ))}
+        </ul>
+      </Panel>
       <Panel label="Luora AI" aside="Demo · mock">
         <div className="qs">
           {QUESTIONS.map(({ q, label }) => (

@@ -1,5 +1,5 @@
 export { COLORS, LAYERS, SYS_COLOR, SYSTEMS } from "./data/layers";
-export { type CitySim, useCitySim } from "./hooks/useCitySim";
+export { type StepSim, useStepSim } from "./hooks/useStepSim";
 export { type TriageState, useTriage } from "./hooks/useTriage";
 export type * from "./types";
 export { aiAnswer, RISK_LABEL } from "./utils/ai";

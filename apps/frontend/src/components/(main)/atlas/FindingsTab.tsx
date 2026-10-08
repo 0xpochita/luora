@@ -22,7 +22,7 @@ import {
   titleOf,
 } from "@/features/atlas/utils/findings";
 
-/** City's Findings tab: filter by tool / severity, triage state per card, Markdown report export. */
+/** Findings tab of the unit tray: filter by tool / severity, triage state per card, Markdown report export. */
 export function FindingsTab({
   model,
   triage,

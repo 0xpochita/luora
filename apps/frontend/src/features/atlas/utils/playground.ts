@@ -5,9 +5,9 @@ import { word } from "./step-lines.ts";
 import { unitCode } from "./units.ts";
 
 /**
- * USDC playground: the auditor drops the token on one building to replay ONE function's normal
- * execution path as a what-if (who may call it, what it touches, which findings sit on the path).
- * Pure logic only; the City draws it (engine/playground-layer.ts, components/(main)/atlas/playground).
+ * Playground logic: replay ONE function's normal execution path as a what-if (who may call it,
+ * what it touches, which findings sit on the path), with values from forge traces when a test made
+ * the same call. Pure logic only; the Lab's symbolic scenario run (lab-scenario.ts) builds on it.
  */
 
 export type PlayModel = Pick<

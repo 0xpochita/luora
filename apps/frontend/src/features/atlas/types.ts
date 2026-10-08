@@ -125,9 +125,9 @@ export type AtlasCoverage = {
 export type AtlasSource = {
   data: AtlasData;
   origin: "local" | "sample";
-  /** calls the forge tests made into the contract (luora-data.json `tests`), for the playground */
+  /** calls the forge tests made into the contract (luora-data.json `tests`), for real values in Lab runs */
   calls?: TraceCall[];
 };
 
-export type AtlasView = "city" | "explorer" | "map" | "flow";
+export type AtlasView = "lab" | "explorer" | "map" | "flow";
 export type AiQuestion = "explain" | "risks" | "test";

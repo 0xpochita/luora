@@ -1,0 +1,730 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { SegmentedControl } from "@/components/ui";
+import type { AtlasModel } from "@/features/atlas";
+import { useScenarios } from "@/features/atlas/hooks/useScenarios";
+import { foundryTest } from "@/features/atlas/utils/lab-foundry";
+import {
+  connect,
+  contractGraph,
+  type GNode,
+  PORT_COLOR,
+  type PortType,
+  revertsOf,
+  type Wire,
+  wireError,
+} from "@/features/atlas/utils/lab-graph";
+import {
+  actorRoles,
+  assertOptions,
+  checkKey,
+  type NodeRun,
+  newId,
+  paletteNode,
+  publicSlots,
+  type RunResult,
+  runScenario,
+  type Scenario,
+  type ScNode,
+  scenarioCard,
+  templates,
+} from "@/features/atlas/utils/lab-scenario";
+import type { TraceCall } from "@/features/atlas/utils/playground";
+import { fnName } from "@/features/atlas/utils/playground";
+import { LabCanvas, wireKey } from "./LabCanvas";
+import "./lab.css";
+
+type Mode = "contract" | "scenario";
+type Panel = "add" | "code" | "settings" | "help" | null;
+const STEP_MS = 650;
+
+const ICONS: Record<string, string> = {
+  add: "M12 5v14M5 12h14",
+  code: "M8 7l-5 5 5 5M16 7l5 5-5 5",
+  settings:
+    "M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM4 12h2M18 12h2M12 4v2M12 18v2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M6.3 17.7l1.4-1.4M16.3 7.7l1.4-1.4",
+  export: "M12 4v11M7 10l5 5 5-5M5 20h14",
+  share:
+    "M18 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM6 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM18 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM8 13l8 4M16 7l-8 4",
+  help: "M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.5",
+};
+const Icon = ({ d }: { d: string }) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d={d} />
+  </svg>
+);
+
+const download = (name: string, text: string, type = "text/plain") => {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+/**
+ * Lab: ShaderLab-style node editor. Contract mode = the contract as read-only cards wired from
+ * the atlas; Scenario mode = wire actors, amounts and calls into a test of intended behaviour,
+ * replay it symbolically and export it as a Foundry test.
+ */
+export function LabView({
+  model,
+  calls = [],
+  selected,
+  onSelect,
+}: {
+  model: AtlasModel;
+  calls?: TraceCall[];
+  selected: string | null;
+  onSelect: (id: string | null) => void;
+}) {
+  const [mode, setMode] = useState<Mode>("contract");
+  const [panel, setPanel] = useState<Panel>(null);
+  const [card, setCard] = useState<string | null>(null);
+  const [selWire, setSelWire] = useState<string | null>(null);
+  const [snap, setSnap] = useState(true);
+  const [moved, setMoved] = useState<Record<string, { x: number; y: number }>>(
+    {},
+  );
+  const [run, setRun] = useState<{
+    res: RunResult;
+    at: number;
+    id: string;
+  } | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const store = useScenarios(model.contract, () =>
+    templates(model).map((t) => t.build()),
+  );
+  const sc = store.current;
+
+  // ---- graph for the current mode ----
+  const contract = useMemo(() => contractGraph(model), [model]);
+  const graph = useMemo(() => {
+    if (mode === "contract")
+      return {
+        nodes: contract.nodes.map((n) =>
+          moved[n.id] ? { ...n, ...moved[n.id] } : n,
+        ),
+        wires: contract.wires,
+      };
+    return {
+      nodes: (sc?.nodes ?? []).map((n) => scenarioCard(model, n)),
+      wires: sc?.wires ?? [],
+    };
+  }, [mode, contract, moved, sc, model]);
+  const hot = new Set(
+    selected
+      ? graph.nodes.filter((n) => n.piece === selected).map((n) => n.id)
+      : [],
+  );
+
+  // ---- editing ----
+  const edit = (f: (s: Scenario) => Scenario, keepRun = false) => {
+    store.update(f);
+    if (!keepRun) setRun(null);
+  };
+  const patch = (id: string, p: Partial<ScNode>) =>
+    edit((s) => ({
+      ...s,
+      nodes: s.nodes.map((n) => (n.id === id ? ({ ...n, ...p } as ScNode) : n)),
+    }));
+  const grid = (v: number) => (snap ? Math.round(v / 12) * 12 : v);
+  const move = (id: string, x: number, y: number) => {
+    if (mode === "contract") return setMoved((m) => ({ ...m, [id]: { x, y } }));
+    edit(
+      (s) => ({
+        ...s,
+        nodes: s.nodes.map((n) =>
+          n.id === id ? { ...n, x: grid(x), y: grid(y) } : n,
+        ),
+      }),
+      true,
+    );
+  };
+  const wire = (w: Wire) => {
+    if (!sc) return "no scenario";
+    const rest = sc.wires.filter(
+      (x) => x.to.node !== w.to.node || x.to.port !== w.to.port,
+    );
+    const err = wireError(graph.nodes, rest, w);
+    if (!err) edit((s) => ({ ...s, wires: connect(s.wires, w) }));
+    return err;
+  };
+  const unwire = (w: Wire) =>
+    edit((s) => ({
+      ...s,
+      wires: s.wires.filter((x) => wireKey(x) !== wireKey(w)),
+    }));
+  const remove = () => {
+    if (card)
+      edit((s) => ({
+        ...s,
+        nodes: s.nodes.filter((n) => n.id !== card),
+        wires: s.wires.filter(
+          (w) => w.from.node !== card && w.to.node !== card,
+        ),
+      }));
+    else if (selWire)
+      edit((s) => ({
+        ...s,
+        wires: s.wires.filter((w) => wireKey(w) !== selWire),
+      }));
+    setCard(null);
+    setSelWire(null);
+  };
+  const add = (kind: ScNode["kind"], fn?: string) => {
+    if (!sc) return;
+    const xs = sc.nodes.map((n) => n.x);
+    const n = paletteNode(
+      model,
+      kind,
+      grid(xs.length ? Math.max(...xs) + 300 : 0),
+      grid(Math.min(0, ...sc.nodes.map((q) => q.y))),
+      fn,
+    );
+    edit((s) => ({ ...s, nodes: [...s.nodes, n] }));
+    setCard(n.id);
+    setPanel(null);
+  };
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (
+        (e.target as HTMLElement).closest(
+          "input, textarea, select, [contenteditable]",
+        )
+      )
+        return;
+      if (e.key === "Escape") {
+        setCard(null);
+        setSelWire(null);
+        setPanel(null);
+      }
+      if (
+        (e.key === "Delete" || e.key === "Backspace") &&
+        mode === "scenario" &&
+        (card || selWire)
+      ) {
+        e.preventDefault();
+        remove();
+      }
+    };
+    addEventListener("keydown", onKey);
+    return () => removeEventListener("keydown", onKey);
+  });
+
+  // ---- run: symbolic replay, one card per tick ----
+  const start = () => {
+    if (!sc) return;
+    setMode("scenario");
+    setRun({ res: runScenario(model, sc, calls), at: 0, id: sc.id });
+  };
+  useEffect(() => {
+    if (!run || run.at > run.res.order.length) return;
+    const t = setTimeout(
+      () => setRun((r) => r && { ...r, at: r.at + 1 }),
+      run.at ? STEP_MS : 50,
+    );
+    return () => clearTimeout(t);
+  }, [run]);
+  const live = run && sc && run.id === sc.id ? run : null;
+  const shown: Record<string, NodeRun> = {};
+  if (live) {
+    const done = new Set(live.res.order.slice(0, live.at));
+    for (const [id, r] of Object.entries(live.res.runs)) {
+      const from = sc?.wires.find(
+        (w) => w.to.node === id && w.to.port === "call",
+      )?.from.node;
+      if (done.has(id) || (from && done.has(from))) shown[id] = r;
+    }
+  }
+  const finished = live && live.at > live.res.order.length;
+  const pulse = new Set(live && !finished ? [live.res.order[live.at - 1]] : []);
+
+  const test = sc ? foundryTest(model, sc) : null;
+  const exportTest = () => test && download(test.file, test.source);
+  const share = async () => {
+    if (!sc) return;
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(sc, null, 1));
+      setNote("Scenario JSON copied");
+    } catch {
+      setNote("Clipboard blocked");
+    }
+  };
+  useEffect(() => {
+    if (!note) return;
+    const t = setTimeout(() => setNote(null), 2000);
+    return () => clearTimeout(t);
+  }, [note]);
+
+  const pick = (id: string | null) => {
+    setCard(id);
+    setSelWire(null);
+    const n = graph.nodes.find((g) => g.id === id);
+    if (n?.piece) onSelect(n.piece);
+  };
+
+  // ---- inline widgets ----
+  const widgets = (g: GNode) => {
+    const n = sc?.nodes.find((x) => x.id === g.id);
+    if (!n) return null;
+    if (n.kind === "actor")
+      return (
+        <>
+          <label className="w">
+            <span>name</span>
+            <input
+              value={n.label}
+              onChange={(e) =>
+                patch(n.id, { label: e.target.value.replace(/\s+/g, "_") })
+              }
+            />
+          </label>
+          <label className="w">
+            <span>role</span>
+            <select
+              value={n.role}
+              onChange={(e) => patch(n.id, { role: e.target.value })}
+            >
+              {actorRoles(model).map((r) => (
+                <option key={r}>{r}</option>
+              ))}
+            </select>
+          </label>
+          <label className="w">
+            <span>USDC</span>
+            <input
+              inputMode="decimal"
+              value={n.balance}
+              onChange={(e) => patch(n.id, { balance: e.target.value })}
+            />
+          </label>
+        </>
+      );
+    if (n.kind === "const")
+      return (
+        <label className="w">
+          <span>value</span>
+          <input
+            inputMode="decimal"
+            value={n.value}
+            onChange={(e) => patch(n.id, { value: e.target.value })}
+          />
+        </label>
+      );
+    if (n.kind === "expect") {
+      const reasons = [
+        ...new Set(
+          model.entry.flatMap((fn) =>
+            revertsOf(model, fn).map((r) => r.reason),
+          ),
+        ),
+      ];
+      return (
+        <label className="w">
+          <span>reason</span>
+          <select
+            value={n.reason}
+            onChange={(e) => patch(n.id, { reason: e.target.value })}
+          >
+            <option value="">from wire</option>
+            {reasons.map((r) => (
+              <option key={r}>{r}</option>
+            ))}
+          </select>
+        </label>
+      );
+    }
+    if (n.kind === "assert") {
+      const opts = assertOptions(model);
+      return (
+        <label className="w">
+          <span>check</span>
+          <select
+            value={checkKey(n.check)}
+            onChange={(e) => {
+              const o = opts.find((x) => checkKey(x.check) === e.target.value);
+              if (o)
+                edit((s) => ({
+                  ...s,
+                  nodes: s.nodes.map((q) =>
+                    q.id === n.id ? { ...q, check: o.check } : q,
+                  ),
+                  wires:
+                    o.check.type === "cmp"
+                      ? s.wires
+                      : s.wires.filter(
+                          (w) => w.to.node !== n.id || w.to.port === "flow",
+                        ),
+                }));
+            }}
+          >
+            {opts.map((o) => (
+              <option key={checkKey(o.check)} value={checkKey(o.check)}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      );
+    }
+    if (n.kind === "snapshot")
+      return (
+        <label className="w">
+          <span>read</span>
+          <select
+            value={n.of}
+            onChange={(e) => patch(n.id, { of: e.target.value })}
+          >
+            <option value="balance">USDC balance</option>
+            {publicSlots(model).map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name.split("· ").pop()}
+              </option>
+            ))}
+          </select>
+        </label>
+      );
+    return null;
+  };
+
+  const tool = (k: string, title: string, on: () => void, active = false) => (
+    <button
+      type="button"
+      title={title}
+      aria-label={title}
+      aria-pressed={active}
+      onClick={on}
+    >
+      <Icon d={ICONS[k]} />
+    </button>
+  );
+  const toggle = (p: Panel) => setPanel(panel === p ? null : p);
+  const res = live?.res;
+
+  return (
+    <div className="lab">
+      <nav className="lab-tools" aria-label="Lab tools">
+        {tool(
+          "add",
+          "Add node",
+          () => {
+            setMode("scenario");
+            toggle("add");
+          },
+          panel === "add",
+        )}
+        {tool(
+          "code",
+          "Generated Foundry test",
+          () => toggle("code"),
+          panel === "code",
+        )}
+        {tool(
+          "settings",
+          "Settings",
+          () => toggle("settings"),
+          panel === "settings",
+        )}
+        {tool("export", "Export .t.sol", exportTest)}
+        {tool("share", "Copy scenario JSON", share)}
+        <span className="grow" />
+        {tool("help", "Help", () => toggle("help"), panel === "help")}
+      </nav>
+
+      <div className="lab-main">
+        <div className="lab-top" data-no-pan>
+          <SegmentedControl
+            value={mode}
+            onChange={(m) => {
+              setMode(m);
+              setCard(null);
+            }}
+            options={[
+              {
+                value: "contract",
+                label: "Contract",
+                title: "Read-only graph of the contract",
+              },
+              {
+                value: "scenario",
+                label: "Scenario",
+                title: "Build a test of intended behaviour",
+              },
+            ]}
+          />
+          {mode === "scenario" && sc && (
+            <>
+              <select
+                className="lab-sel"
+                value={sc.id}
+                onChange={(e) => store.select(e.target.value)}
+                aria-label="Scenario"
+              >
+                {store.list.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+              <input
+                className="lab-name"
+                value={sc.name}
+                aria-label="Scenario name"
+                onChange={(e) =>
+                  edit((s) => ({ ...s, name: e.target.value }), true)
+                }
+              />
+              <select
+                className="lab-sel"
+                value=""
+                aria-label="New from template"
+                onChange={(e) => {
+                  const t = templates(model).find(
+                    (x) => x.name === e.target.value,
+                  );
+                  if (e.target.value === "blank")
+                    store.add({
+                      id: newId("sc"),
+                      name: "New scenario",
+                      nodes: [],
+                      wires: [],
+                    });
+                  else if (t) store.add(t.build());
+                  setRun(null);
+                }}
+              >
+                <option value="">+ New…</option>
+                <option value="blank">Blank scenario</option>
+                {templates(model).map((t) => (
+                  <option key={t.name} value={t.name}>
+                    Template · {t.name}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+          <span className="grow" />
+          {mode === "scenario" && (
+            <>
+              <button
+                type="button"
+                className="lab-btn run"
+                onClick={start}
+                disabled={!sc?.nodes.length}
+              >
+                ▶ Run
+              </button>
+              <button
+                type="button"
+                className="lab-btn"
+                onClick={exportTest}
+                disabled={!sc}
+              >
+                Export .t.sol ↓
+              </button>
+            </>
+          )}
+        </div>
+
+        <LabCanvas
+          nodes={graph.nodes}
+          wires={graph.wires}
+          editable={mode === "scenario"}
+          selected={card}
+          selWire={selWire}
+          hot={hot}
+          onSelect={pick}
+          onSelectWire={setSelWire}
+          onMove={move}
+          onConnect={mode === "scenario" ? wire : undefined}
+          onDisconnect={unwire}
+          runs={mode === "scenario" ? shown : undefined}
+          pulse={pulse}
+          widgets={widgets}
+          fitKey={`${mode}:${mode === "scenario" ? sc?.id : model.contract}`}
+        />
+
+        <p className="lab-hint">
+          {mode === "contract"
+            ? "Read-only · drag cards, drag background to pan, scroll to zoom · click a card to open it"
+            : "Drag from a socket to wire (types must match) · Delete removes the selection · ▶ Run replays it"}
+        </p>
+
+        {panel === "add" && (
+          <div className="lab-pop add" data-no-pan>
+            <h4>Add node</h4>
+            <button type="button" onClick={() => add("actor")}>
+              <i style={{ background: PORT_COLOR.actor }} /> Actor
+            </button>
+            <button type="button" onClick={() => add("const")}>
+              <i style={{ background: PORT_COLOR.amount }} /> Constant amount
+            </button>
+            {model.entry.map((fn) => (
+              <button type="button" key={fn} onClick={() => add("call", fn)}>
+                <i style={{ background: "#e0873a" }} /> Call{" "}
+                {fnName(model.byId[fn])}
+                <em>{model.byId[fn]?.caller ?? "anyone"}</em>
+              </button>
+            ))}
+            <button type="button" onClick={() => add("expect")}>
+              <i style={{ background: PORT_COLOR.revert }} /> Expect revert
+            </button>
+            <button type="button" onClick={() => add("assert")}>
+              <i style={{ background: PORT_COLOR.bool }} /> Assert
+            </button>
+            <button type="button" onClick={() => add("snapshot")}>
+              <i style={{ background: PORT_COLOR.slot }} /> Snapshot
+            </button>
+          </div>
+        )}
+        {panel === "settings" && (
+          <div className="lab-pop" data-no-pan>
+            <h4>Settings</h4>
+            <label className="chk">
+              <input
+                type="checkbox"
+                checked={snap}
+                onChange={() => setSnap(!snap)}
+              />{" "}
+              Snap cards to grid
+            </label>
+            <button type="button" onClick={() => setMoved({})}>
+              Reset contract layout
+            </button>
+            {sc && (
+              <button
+                type="button"
+                className="bad"
+                onClick={() => store.remove(sc.id)}
+              >
+                Delete scenario “{sc.name}”
+              </button>
+            )}
+          </div>
+        )}
+        {panel === "code" && test && (
+          <div className="lab-pop code" data-no-pan>
+            <h4>
+              {test.file}
+              <button type="button" onClick={exportTest}>
+                Download ↓
+              </button>
+            </h4>
+            <p>
+              Run it:{" "}
+              <code>node luora-scenario.mjs ~/Downloads/{test.file}</code> in
+              foundry/
+            </p>
+            <pre>{test.source}</pre>
+          </div>
+        )}
+        {panel === "help" && (
+          <div className="lab-pop help" data-no-pan>
+            <h4>Lab</h4>
+            <p>
+              Scenarios test intended behaviour: access control holds,
+              accounting stays consistent, pause works, funds round-trip. A
+              failing assert is a finding.
+            </p>
+            <ul className="legend">
+              {(Object.keys(PORT_COLOR) as PortType[]).map((t) => (
+                <li key={t}>
+                  <i style={{ borderColor: PORT_COLOR[t] }} />{" "}
+                  {t === "actor"
+                    ? "actor / address"
+                    : t === "amount"
+                      ? "amount / uint"
+                      : t === "slot"
+                        ? "state slot"
+                        : t === "bool"
+                          ? "bool / assert"
+                          : t === "flow"
+                            ? "then (execution order)"
+                            : t}
+                </li>
+              ))}
+            </ul>
+            <p className="dim">
+              / or ⌘K search · Esc clear · Delete remove · drag an input socket
+              to rewire
+            </p>
+          </div>
+        )}
+
+        {res && mode === "scenario" && (
+          <aside className="lab-run" data-no-pan>
+            <h4>
+              Run · {sc?.name}
+              <span>
+                {finished
+                  ? "done"
+                  : `${Math.min(live?.at ?? 0, res.order.length)}/${res.order.length}`}
+                <button
+                  type="button"
+                  className="x"
+                  aria-label="Close run"
+                  onClick={() => setRun(null)}
+                >
+                  ✕
+                </button>
+              </span>
+            </h4>
+            <ol>
+              {res.order.map((id, i) => {
+                const n = sc?.nodes.find((x) => x.id === id);
+                const r = shown[id];
+                const title =
+                  n?.kind === "call"
+                    ? `Call ${fnName(model.byId[n.fn] ?? ({ name: n.fn } as never))}`
+                    : n?.kind === "snapshot"
+                      ? "Snapshot"
+                      : "Assert";
+                return (
+                  <li key={id}>
+                    <button
+                      type="button"
+                      className={r ? r.status : "wait"}
+                      onClick={() => pick(id)}
+                    >
+                      <span>{String(i + 1).padStart(2, "0")}</span>
+                      <b>{title}</b>
+                      <em>{r ? r.head : "…"}</em>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+            {finished && (
+              <>
+                <p className={res.findings.length ? "bad" : "ok"}>
+                  {res.findings.length
+                    ? `▲ ${res.findings.length} finding${res.findings.length > 1 ? "s" : ""}`
+                    : Object.values(res.runs).some(
+                          (r) => r.status === "unknown",
+                        )
+                      ? "No failures · some checks need forge (symbolic values)"
+                      : "All checks hold"}
+                </p>
+                {res.findings.map((f) => (
+                  <div key={f.node + f.title} className="finding">
+                    <b>{f.title}</b>
+                    <span>{f.detail}</span>
+                    <span className="fix">Fix: {f.fix}</span>
+                  </div>
+                ))}
+                <button type="button" className="lab-btn" onClick={exportTest}>
+                  Export {test?.file} ↓
+                </button>
+              </>
+            )}
+          </aside>
+        )}
+        {note && <div className="lab-toast">{note}</div>}
+      </div>
+    </div>
+  );
+}

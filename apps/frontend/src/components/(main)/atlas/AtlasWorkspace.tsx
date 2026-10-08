@@ -6,29 +6,27 @@ import {
   type AtlasSource,
   type AtlasView,
   createAtlasModel,
-  useCitySim,
+  useStepSim,
   useTriage,
 } from "@/features/atlas";
 import { AtlasDashboard } from "./AtlasDashboard";
-import { CityStage } from "./CityStage";
 import { ContractSource } from "./ContractSource";
 import { CoverageSummary } from "./CoverageSummary";
 import { ExplorerView } from "./ExplorerView";
 import { FlowView } from "./flow/FlowView";
+import { LabView } from "./lab/LabView";
 import { MapView } from "./map/MapView";
 import { PieceInspector } from "./PieceInspector";
 import { QuickSearch } from "./QuickSearch";
+import { UnitTray } from "./UnitTray";
 import "./atlas.css";
 
-/** Smart-contract visual: 3D city + radial explorer, sharing one selection. */
+/** Smart-contract visual: Lab node editor, explorer, map and flow, sharing one selection. */
 export function AtlasWorkspace({ source }: { source: AtlasSource }) {
   const model = useMemo(() => createAtlasModel(source.data), [source.data]);
-  const [view, setView] = useState<AtlasView>("city");
+  const [view, setView] = useState<AtlasView>("lab");
   const [selected, setSelected] = useState<string | null>(null);
-  const sim = useCitySim(
-    model,
-    view === "city" || view === "flow" ? selected : null,
-  );
+  const sim = useStepSim(model, view === "flow" ? selected : null);
   const triage = useTriage(model.contract);
 
   useEffect(() => {
@@ -46,7 +44,7 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
           value={view}
           onChange={setView}
           options={[
-            { value: "city", label: "City" },
+            { value: "lab", label: "Lab" },
             { value: "explorer", label: "Explorer" },
             { value: "map", label: "Map" },
             { value: "flow", label: "Flow" },
@@ -90,14 +88,20 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
             />
           </section>
         ) : (
-          <CityStage
-            model={model}
-            selected={selected}
-            onSelect={setSelected}
-            sim={sim}
-            triage={triage}
-            calls={source.calls}
-          />
+          <section className="stage flex flex-col">
+            <LabView
+              model={model}
+              calls={source.calls}
+              selected={selected}
+              onSelect={setSelected}
+            />
+            <UnitTray
+              model={model}
+              selected={selected}
+              onSelect={setSelected}
+              triage={triage}
+            />
+          </section>
         )}
         <aside>
           <ContractSource

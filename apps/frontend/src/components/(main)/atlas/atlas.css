@@ -1,4 +1,4 @@
-/* Contract Atlas — City and Explorer views, plus the shared right panel.
+/* Contract Atlas — Explorer view, plus the shared right panel.
    Colours come from the shared tokens in app/globals.css; everything is scoped under .atlas. */
 .atlas {
   display: flex;
@@ -125,39 +125,7 @@
   border: 1px solid var(--line);
   padding: 8px 10px;
 }
-
-/* ---- City view (SurveilTrack-style map) ---- */
-.atlas .city {
-  background:
-    radial-gradient(900px 600px at 50% 45%, #1a1b1e, transparent 70%), #0b0c0e;
-}
-.atlas .cdist {
-  font-family: var(--font-geist-mono);
-  font-size: 9.5px;
-  letter-spacing: 0.18em;
-  color: var(--dim);
-  white-space: nowrap;
-  pointer-events: none;
-}
-/* square map marker with a code label: ■ ENT-02 deposit() */
-.atlas .cmark {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font-geist-mono);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  color: var(--ink);
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-.atlas .cmark.show {
-  opacity: 1;
-}
 /* code-meaning glyph: square marker with a monochrome stroke icon */
-.atlas .cmark i,
 .atlas .picon {
   display: grid;
   place-items: center;
@@ -168,7 +136,6 @@
   background: var(--shell);
   color: var(--ink);
 }
-.atlas .cmark svg,
 .atlas .picon svg {
   width: 12px;
   height: 12px;
@@ -186,34 +153,7 @@
   border-color: var(--bad);
   color: var(--bad);
 }
-.atlas .cmark span {
-  padding: 1px 5px;
-  background: rgba(10, 11, 12, 0.85);
-  border: 1px solid var(--line);
-}
-.atlas .cmark b {
-  display: none;
-  font-weight: 500;
-  color: var(--muted);
-}
-.atlas .cmark.focus b {
-  display: inline;
-}
-.atlas .cmark.focus span {
-  border-color: var(--ink);
-  background: var(--ink);
-  color: var(--shell);
-}
-.atlas .cmark.vulns i {
-  border-color: var(--bad);
-  color: var(--bad);
-}
-.atlas .cmark.vulns span {
-  color: var(--bad);
-  border-color: var(--bad);
-}
-/* recognised protocol: its logo replaces the square (only colour besides red / green) */
-.atlas .cmark img,
+/* recognised protocol: its logo replaces the square */
 .atlas .plogo {
   flex: none;
   width: 16px;
@@ -230,22 +170,6 @@
 .atlas .plogo.lg {
   width: 20px;
   height: 20px;
-}
-/* Protocol Core (the contract itself): name always visible */
-.atlas .cmark.core b {
-  display: inline;
-}
-.atlas .cmark.core span {
-  border-color: var(--ink);
-}
-.atlas .cmark.dim {
-  opacity: 0.25;
-}
-/* triaged as false positive / duplicate */
-.atlas .cfind.dismissed,
-.atlas .cmark.vulns.dismissed {
-  opacity: 0.18;
-  filter: grayscale(1);
 }
 
 /* Explorer: contract orb → system hubs → fan of pieces */
@@ -413,296 +337,6 @@
   }
 }
 
-/* city simulation: step list */
-.atlas .sim-step {
-  display: grid;
-  grid-template-columns: 22px 46px 1fr auto;
-  gap: 6px;
-  align-items: center;
-  width: 100%;
-  padding: 3px 10px;
-  text-align: left;
-  font: 11px / 1.5 var(--font-geist-mono);
-  color: var(--dim);
-  border-left: 2px solid transparent;
-}
-.atlas .sim-step.done {
-  color: var(--muted);
-}
-.atlas .sim-step.on {
-  color: var(--ink);
-  background: rgba(255, 255, 255, 0.07);
-  border-left-color: var(--accent);
-}
-.atlas .sim-step.late {
-  color: var(--bad);
-}
-.atlas .sim-step.late.on {
-  background: color-mix(in srgb, var(--bad) 14%, transparent);
-  border-left-color: var(--bad);
-}
-.atlas .sim-step .k {
-  letter-spacing: 0.12em;
-}
-.atlas .sim-step .k.r {
-  text-decoration: underline dashed;
-}
-.atlas .sim-step .k.e {
-  text-decoration: underline dotted;
-}
-
-/* City: caption over the building the USDC token is being processed in */
-.atlas .cproc {
-  display: grid;
-  gap: 3px;
-  max-width: 320px;
-  padding: 5px 8px;
-  border: 1px solid var(--edge);
-  background: color-mix(in srgb, var(--shell) 88%, transparent);
-  font-family: var(--font-geist-mono);
-  pointer-events: none;
-}
-.atlas .cproc b {
-  font-size: 9.5px;
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  color: var(--ink);
-  text-transform: uppercase;
-}
-.atlas .cproc code {
-  overflow: hidden;
-  font-size: 11px;
-  color: var(--muted);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.atlas .cproc.late {
-  border-color: var(--bad);
-}
-.atlas .cproc.late b {
-  color: var(--bad);
-}
-
-/* coverage overlay: % on each code building, UNTESTED flag on state-changing entries that never ran */
-.atlas .ccov {
-  padding: 1px 4px;
-  border: 1px solid var(--line);
-  background: rgba(10, 11, 12, 0.85);
-  font-family: var(--font-geist-mono);
-  font-size: 9.5px;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-  white-space: nowrap;
-  pointer-events: none;
-}
-.atlas .ccov.covered {
-  color: var(--ok);
-}
-.atlas .ccov.untested {
-  color: var(--bad);
-  border-color: var(--bad);
-}
-.atlas .ccov.flag {
-  padding: 2px 6px;
-  background: var(--bad);
-  color: var(--shell);
-  font-weight: 600;
-  letter-spacing: 0.14em;
-}
-.atlas .covkey {
-  display: flex;
-  gap: 10px;
-  padding: 4px 8px;
-  border: 1px solid var(--line);
-  background: rgba(10, 11, 12, 0.85);
-  color: var(--muted);
-}
-.atlas .covkey span::before {
-  content: "";
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  margin-right: 5px;
-  border: 1px solid var(--tick);
-}
-.atlas .covkey .untested::before {
-  border-color: var(--bad);
-  background: repeating-linear-gradient(
-    -45deg,
-    var(--bad) 0 1px,
-    transparent 1px 3px
-  );
-}
-.atlas .covkey .covered::before {
-  border-color: var(--ok);
-  background: var(--ok);
-}
-
-/* City: label declutter — lower-priority labels hidden where they would overlap */
-.atlas .cmark.occl,
-.atlas .cdist.occl,
-.atlas .cproc.occl,
-.atlas .cfind.occl {
-  visibility: hidden;
-}
-
-/* City: one finding marker per building, ▲n + highest severity; list opens on hover / select */
-.atlas .cfind {
-  display: grid;
-  justify-items: center;
-  gap: 2px;
-  font-family: var(--font-geist-mono);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-  pointer-events: auto;
-  transition: opacity 0.2s;
-}
-.atlas .cfind.dim {
-  opacity: 0.25;
-}
-.atlas .cfind .head {
-  display: flex;
-  align-items: stretch;
-  border: 1px solid var(--bad);
-  background: rgba(10, 11, 12, 0.9);
-  color: var(--bad);
-}
-.atlas .cfind .head i {
-  padding: 1px 5px;
-  font-style: normal;
-  background: var(--bad);
-  color: var(--shell);
-}
-.atlas .cfind .head b {
-  padding: 1px 6px;
-  font-weight: 500;
-}
-.atlas .cfind.sev-med .head i {
-  background: none;
-  border-right: 1px solid var(--bad);
-  color: var(--bad);
-}
-.atlas .cfind.sev-low .head,
-.atlas .cfind.sev-info .head {
-  border-color: var(--edge);
-  color: var(--muted);
-}
-.atlas .cfind.sev-low .head i,
-.atlas .cfind.sev-info .head i {
-  background: none;
-  border-right: 1px solid var(--edge);
-  color: var(--muted);
-}
-.atlas .cfind ul {
-  display: none;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border: 1px solid var(--line);
-  background: rgba(10, 11, 12, 0.94);
-}
-.atlas .cfind.open ul,
-.atlas .cfind:hover ul {
-  display: block;
-}
-.atlas .cfind li button {
-  display: block;
-  width: 100%;
-  padding: 2px 8px;
-  text-align: left;
-  color: var(--muted);
-}
-.atlas .cfind li button:hover {
-  background: var(--soft);
-  color: var(--ink);
-}
-.atlas .cfind li .sev-high,
-.atlas .cfind li .sev-med {
-  color: var(--bad);
-}
-
-/* City legend: collapsible key in the corner of the stage */
-.atlas .clegend {
-  max-width: 360px;
-  border: 1px solid var(--line);
-  background: color-mix(in srgb, var(--shell) 92%, transparent);
-  font-family: var(--font-geist-mono);
-  font-size: 10.5px;
-}
-.atlas .clegend summary {
-  padding: 6px 10px;
-  color: var(--muted);
-  cursor: pointer;
-  list-style: none;
-}
-.atlas .clegend summary::before {
-  content: "+ ";
-}
-.atlas .clegend[open] summary::before {
-  content: "− ";
-}
-.atlas .clegend ul {
-  display: grid;
-  gap: 3px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.atlas .clegend li {
-  display: grid;
-  grid-template-columns: 14px 92px 1fr;
-  gap: 8px;
-  align-items: center;
-  color: var(--dim);
-}
-.atlas .clegend li b {
-  font-weight: 500;
-  color: var(--ink);
-}
-.atlas .clegend svg {
-  width: 13px;
-  height: 13px;
-  fill: none;
-  stroke: var(--tick);
-  stroke-width: 2;
-}
-.atlas .clegend li i {
-  justify-self: center;
-  width: 12px;
-  height: 4px;
-  background: var(--ink);
-}
-.atlas .clegend i.ok {
-  background: var(--ok);
-}
-.atlas .clegend i.bad {
-  background: var(--bad);
-}
-.atlas .clegend i.belt {
-  height: 5px;
-  background: #1f2124;
-  border: 1px solid #3a3e44;
-}
-.atlas .clegend i.power {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.6);
-}
-.atlas .clegend i.mark {
-  width: 10px;
-  height: 10px;
-  background: var(--bad);
-}
-.atlas .clegend i.token {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #2775ca;
-}
-.atlas .clegend i.token.bad {
-  background: var(--bad);
-}
-
 /* quick search (/ or ⌘K) */
 .atlas .qsearch {
   width: min(560px, calc(100vw - 32px));
@@ -765,8 +399,4 @@
 }
 .atlas .qsearch .none {
   padding: 6px 12px;
-}
-.atlas .cfind.compact:not(.open):not(:hover) .head b,
-.atlas .cproc.compact code {
-  display: none;
 }
