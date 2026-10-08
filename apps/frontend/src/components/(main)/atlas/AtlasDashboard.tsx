@@ -15,7 +15,7 @@ export function AtlasDashboard({ model }: { model: AtlasModel }) {
             key={L.key}
             className="grid grid-cols-[1fr_28px_60px_auto] items-center gap-3 border-line border-b px-3 py-2 last:border-b-0"
           >
-            <span className="flex items-center gap-2 text-muted hud-label">
+            <span className="flex items-center gap-2 text-muted ui-label">
               <span className="size-2" style={{ background: L.color }} />
               {L.name}
             </span>
@@ -24,7 +24,7 @@ export function AtlasDashboard({ model }: { model: AtlasModel }) {
             </b>
             <Meter value={n / mapped.length} className="w-full" />
             <span
-              className={`whitespace-nowrap text-right hud-label ${f ? "text-bad" : "text-dim"}`}
+              className={`whitespace-nowrap text-right ui-label ${f ? "text-bad" : "text-dim"}`}
             >
               {f ? `▲ ${f} finding${f > 1 ? "s" : ""}` : "Clear"}
             </span>

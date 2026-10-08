@@ -1,6 +1,6 @@
 "use client";
 
-/** Square segmented control; the active segment is filled white. */
+/** Compact choice inside one dark tray; the active segment is a white tile. */
 export function SegmentedControl<T extends string>({
   value,
   options,
@@ -11,7 +11,7 @@ export function SegmentedControl<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="flex border border-line bg-tray">
+    <div className="inline-flex gap-1 rounded-tile bg-inset p-1">
       {options.map((o) => (
         <button
           key={o.value}
@@ -19,10 +19,10 @@ export function SegmentedControl<T extends string>({
           title={o.title}
           aria-pressed={o.value === value}
           onClick={() => onChange(o.value)}
-          className={`min-w-8 px-3 py-1.5 transition-colors hud-label ${
+          className={`h-7 min-w-8 rounded-[8px] px-2.5 text-[12.5px] transition-colors ${
             o.value === value
-              ? "bg-accent text-shell"
-              : "text-muted hover:bg-soft hover:text-ink"
+              ? "bg-primary text-primary-fg shadow-soft"
+              : "text-muted hover:bg-hover hover:text-fg"
           }`}
         >
           {o.label}

@@ -1,13 +1,17 @@
 import type { ReactNode } from "react";
+import { TONE_DOT, type Tone } from "./tone";
 
-const TONES = {
-  neutral: "border-line text-muted",
-  ok: "border-ok/50 text-ok",
-  bad: "border-bad/60 text-bad",
-  solid: "border-accent bg-accent text-shell",
-} as const;
+const TONES: Record<Tone, string> = {
+  neutral: "bg-raised text-muted",
+  ok: "bg-green/10 text-green",
+  bad: "bg-red/10 text-red",
+  warn: "bg-yellow/10 text-yellow",
+  info: "bg-blue/10 text-blue",
+  violet: "bg-violet/10 text-violet",
+  solid: "bg-primary text-primary-fg",
+};
 
-/** Small square status chip: `● ACTIVE`. */
+/** Soft pill for status / counts; `dot` adds a tone-coloured dot. */
 export function Chip({
   children,
   tone = "neutral",
@@ -15,15 +19,15 @@ export function Chip({
   className = "",
 }: {
   children: ReactNode;
-  tone?: keyof typeof TONES;
+  tone?: Tone;
   dot?: boolean;
   className?: string;
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap border px-2 py-[3px] hud-label ${TONES[tone]} ${className}`}
+      className={`inline-flex h-6 items-center gap-1.5 whitespace-nowrap rounded-chip px-2 text-[12px] ${TONES[tone]} ${className}`}
     >
-      {dot && <span className="size-1.5 bg-current" />}
+      {dot && <span className={`size-1.5 rounded-full ${TONE_DOT[tone]}`} />}
       {children}
     </span>
   );

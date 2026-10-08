@@ -1,4 +1,4 @@
-/** Striped progress bar, 0–1. */
+/** Rounded progress bar, 0–1. `tone` is a text colour class; the fill uses currentColor. */
 export function Meter({
   value,
   tone = "text-tick",
@@ -9,9 +9,11 @@ export function Meter({
   className?: string;
 }) {
   return (
-    <i className={`block h-1.5 flex-none border border-line p-px ${className}`}>
+    <i
+      className={`block h-1.5 flex-none overflow-hidden rounded-full bg-inset ${className}`}
+    >
       <b
-        className={`block h-full hud-stripes ${tone}`}
+        className={`block h-full rounded-full bg-current ${tone}`}
         style={{ width: `${Math.max(2, Math.min(1, value) * 100)}%` }}
       />
     </i>

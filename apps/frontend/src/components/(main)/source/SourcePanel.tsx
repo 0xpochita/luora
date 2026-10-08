@@ -26,7 +26,8 @@ export function SourcePanel({
       <Tabs
         value={file}
         onChange={onFile}
-        className="overflow-x-auto border-line border-b px-1"
+        size="sm"
+        className="overflow-x-auto border-line border-b px-3 pb-2.5"
         options={Object.keys(sources).map((f) => ({
           value: f,
           label: f.split("/").pop() ?? f,
@@ -41,7 +42,7 @@ export function SourcePanel({
               ` · ${spanLines(span, span.file).length} lines executed`}
           </>
         ) : (
-          <span className="hud-label text-dim">Select a frame</span>
+          <span className="ui-label text-dim">Select a frame</span>
         )}
       </p>
       <CodeView

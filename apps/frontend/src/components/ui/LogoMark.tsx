@@ -1,8 +1,9 @@
+/** Brand mark: white rounded tile, dark "L", violet dot. */
 export function LogoMark() {
   return (
-    <span className="relative grid size-[26px] place-items-center border border-edge font-bold font-mono text-[13px]">
+    <span className="relative grid size-9 place-items-center rounded-tile bg-primary font-semibold text-[17px] text-primary-fg shadow-soft">
       L
-      <span className="absolute -top-px -right-px size-1.5 bg-accent" />
+      <span className="absolute top-2 right-2 size-1.5 rounded-full bg-violet" />
     </span>
   );
 }

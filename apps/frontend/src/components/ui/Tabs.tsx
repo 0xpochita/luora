@@ -1,45 +1,38 @@
 "use client";
 
-/** Folder tabs with a chamfered top-right corner; the active tab opens into the panel below. */
+import { tile } from "./tile";
+
+/** Row of separate rounded tiles with gaps; the active one is solid white. Used for every tab bar. */
 export function Tabs<T extends string>({
   value,
   options,
   onChange,
+  size = "md",
   className = "",
 }: {
   value: T;
-  options: { value: T; label: string }[];
+  options: { value: T; label: string; title?: string }[];
   onChange: (v: T) => void;
+  size?: "sm" | "md";
   className?: string;
 }) {
   return (
-    <div
-      role="tablist"
-      className={`flex items-end gap-1.5 border-line border-b ${className}`}
-    >
-      {options.map((o) => {
-        const on = o.value === value;
-        return (
-          <button
-            key={o.value}
-            type="button"
-            role="tab"
-            aria-selected={on}
-            onClick={() => onChange(o.value)}
-            className={`group -mb-px chamfer p-px pb-0 [--cut:9px] ${on ? "bg-edge" : "bg-line"}`}
-          >
-            <span
-              className={`block chamfer whitespace-nowrap px-4 pt-2 pb-2.5 font-mono text-[12.5px] tracking-wide transition-colors [--cut:9px] ${
-                on
-                  ? "bg-panel text-ink"
-                  : "bg-shell text-dim group-hover:text-muted"
-              }`}
-            >
-              {o.label}
-            </span>
-          </button>
-        );
-      })}
+    <div role="tablist" className={`flex items-center gap-1.5 ${className}`}>
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          role="tab"
+          title={o.title}
+          aria-selected={o.value === value}
+          onClick={() => onChange(o.value)}
+          className={`${tile(o.value === value)} ${size === "sm" ? "h-7 px-2.5 text-[12.5px]" : "h-9 px-4 text-[14px]"}`}
+        >
+          {o.label}
+        </button>
+      ))}
     </div>
   );
 }
+
+export { Tabs as TileGroup };

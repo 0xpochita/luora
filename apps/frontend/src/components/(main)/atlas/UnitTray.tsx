@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Brackets, Chip, Tabs, ToggleChip } from "@/components/ui";
+import { Chip, Tabs, ToggleChip } from "@/components/ui";
 import type { AtlasModel, SystemKey, TriageState } from "@/features/atlas";
 import { pctLabel, pieceCoverage } from "@/features/atlas/utils/coverage";
 import { protocolOf } from "@/features/atlas/utils/protocols";
@@ -52,6 +52,7 @@ export function UnitTray({
     <div className="relative z-[3] flex-none border-line border-t bg-shell/95 px-3 pt-2 pb-3">
       <div className="flex items-end gap-2">
         <Tabs
+          size="sm"
           value={tab}
           onChange={setTab}
           options={UNIT_TABS.map((t) => ({ value: t.value, label: t.label }))}
@@ -94,7 +95,6 @@ export function UnitTray({
                     : "border-line bg-tray hover:border-edge"
                 }`}
               >
-                <Brackets />
                 <PieceIcon piece={p} />
                 <Chip tone={st.tone} dot>
                   {st.label}
@@ -129,7 +129,7 @@ export function UnitTray({
             );
           })}
           {!units.length && (
-            <span className="py-2 text-dim hud-label">Nothing here</span>
+            <span className="py-2 text-dim ui-label">Nothing here</span>
           )}
         </div>
       )}

@@ -51,7 +51,7 @@ export function TraceWorkspace({ source }: { source: TraceSource }) {
 
   if (!test)
     return (
-      <p className="p-10 text-muted hud-label">No tests in luora-data.json.</p>
+      <p className="p-10 text-muted ui-label">No tests in luora-data.json.</p>
     );
 
   return (

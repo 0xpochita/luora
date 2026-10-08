@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-/** `POWER ……… 80%` row. */
+/** Key / value row: sans key on the left, mono value on the right. */
 export function KV({
   k,
   children,
@@ -12,7 +12,7 @@ export function KV({
 }) {
   return (
     <div className={`flex items-baseline gap-3 py-1 ${className}`}>
-      <span className="text-dim hud-label">{k}</span>
+      <span className="text-[12px] text-muted">{k}</span>
       <span className="ml-auto truncate font-mono text-xs">{children}</span>
     </div>
   );

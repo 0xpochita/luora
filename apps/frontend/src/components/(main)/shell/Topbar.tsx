@@ -15,7 +15,7 @@ export function Topbar({
 }) {
   return (
     <header className="flex h-10 flex-none items-center gap-2 border-line border-b px-4">
-      <nav className="flex min-w-0 items-center gap-2 text-dim hud-label">
+      <nav className="flex min-w-0 items-center gap-2 text-dim ui-label">
         <span>Foundry</span>
         <span>/</span>
         <span className="truncate text-ink">{crumb}</span>

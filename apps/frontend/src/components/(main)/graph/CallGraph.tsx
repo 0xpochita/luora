@@ -126,7 +126,7 @@ export function CallGraph({
   return (
     <div
       ref={vp}
-      className="hud-grid relative h-full min-h-[440px] cursor-grab overflow-hidden border border-line bg-tray active:cursor-grabbing"
+      className="dot-grid relative h-full min-h-[440px] cursor-grab overflow-hidden border border-line bg-tray active:cursor-grabbing"
       style={{
         backgroundSize: `${24 * view.k}px ${24 * view.k}px`,
         backgroundPosition: `${view.x}px ${view.y}px`,
@@ -178,7 +178,7 @@ export function CallGraph({
         {edges.map((e) => (
           <span
             key={`l-${e.id}`}
-            className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap border border-line bg-shell px-1.5 py-px text-[9.5px] text-muted hud-label"
+            className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap border border-line bg-shell px-1.5 py-px text-[9.5px] text-muted ui-label"
             style={{ left: (e.x1 + e.x2) / 2, top: (e.y1 + e.y2) / 2 }}
           >
             {e.label}

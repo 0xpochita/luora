@@ -39,7 +39,7 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
 
   return (
     <div className="atlas">
-      <header className="flex flex-none items-end gap-2 border-line border-b px-2">
+      <header className="flex flex-none items-center gap-2 px-3 pb-2">
         <Tabs
           value={view}
           onChange={setView}
@@ -50,8 +50,8 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
             { value: "flow", label: "Flow" },
           ]}
         />
-        <div className="ml-auto flex items-center gap-2 self-center">
-          <span className="text-dim hud-label">/ or ⌘K search</span>
+        <div className="ml-auto flex items-center gap-1.5">
+          <span className="mr-1 text-dim ui-label">/ or ⌘K search</span>
           <Chip>{model.file.split("/").pop()}</Chip>
           <Chip>solc {model.compiler}</Chip>
           {source.origin === "sample" && <Chip>Sample</Chip>}

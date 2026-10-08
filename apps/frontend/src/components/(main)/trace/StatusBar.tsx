@@ -21,7 +21,7 @@ export function StatusBar({
       </code>
       <span className="font-mono">{test.file}</span>
       {test.reason && <span className="text-bad">{test.reason}</span>}
-      <span className="ml-auto hud-label text-dim">
+      <span className="ml-auto ui-label text-dim">
         Exported {new Date(exportedAt).toLocaleString()}
       </span>
     </div>

@@ -78,7 +78,7 @@ export function ContractSource({
             {` · L${start + 1}–${start + (p.n ?? 1)}`}
           </>
         ) : (
-          <span className="text-dim hud-label">
+          <span className="text-dim ui-label">
             Select a building or click a line · red = finding
             {cov && " · gutter = test hits"}
           </span>

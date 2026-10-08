@@ -2,7 +2,7 @@ import { KV, Panel } from "@/components/ui";
 import { human, netBalances, type Transfer } from "@/features/trace";
 
 const Empty = ({ text }: { text: string }) => (
-  <p className="px-3 py-3 text-dim hud-label">{text}</p>
+  <p className="px-3 py-3 text-dim ui-label">{text}</p>
 );
 
 export function BalancePanels({ transfers }: { transfers: Transfer[] }) {

@@ -53,7 +53,7 @@ export function CoverageSummary({
           key={k}
           className="grid grid-cols-[1fr_60px_auto] items-center gap-3 border-line border-b px-3 py-2"
         >
-          <span className="text-muted hud-label">{k}</span>
+          <span className="text-muted ui-label">{k}</span>
           <Meter
             value={ratio(c)}
             tone={ratio(c) < 1 ? "text-tick" : "text-ok"}
@@ -68,7 +68,7 @@ export function CoverageSummary({
         </div>
       ))}
       <p
-        className={`px-3 pt-2.5 pb-1 hud-label ${untested.length ? "text-bad" : "text-ok"}`}
+        className={`px-3 pt-2.5 pb-1 ui-label ${untested.length ? "text-bad" : "text-ok"}`}
       >
         {untested.length
           ? `▲ Audit focus · ${untested.length} state-changing entr${untested.length > 1 ? "ies" : "y"} untested`
@@ -77,7 +77,7 @@ export function CoverageSummary({
       <ul>{untested.map((x) => item(x, true))}</ul>
       {gaps.length > 0 && (
         <>
-          <p className="px-3 pt-2.5 pb-1 text-dim hud-label">Partly tested</p>
+          <p className="px-3 pt-2.5 pb-1 text-dim ui-label">Partly tested</p>
           <ul>{gaps.map((x) => item(x, false))}</ul>
         </>
       )}

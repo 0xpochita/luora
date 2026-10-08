@@ -1,5 +1,6 @@
 "use client";
 
+/** Filter pill; on = lit dot + bright text, off = dim. */
 export function ToggleChip({
   label,
   on,
@@ -14,18 +15,14 @@ export function ToggleChip({
       type="button"
       aria-pressed={on}
       onClick={onToggle}
-      className={`chamfer p-px [--cut:7px] ${on ? "bg-edge" : "bg-line"}`}
+      className={`inline-flex h-7 items-center gap-2 whitespace-nowrap rounded-chip px-2.5 text-[12.5px] transition-colors ${
+        on ? "bg-hover text-fg" : "bg-raised text-dim hover:text-muted"
+      }`}
     >
       <span
-        className={`inline-flex chamfer items-center gap-2 whitespace-nowrap bg-shell px-2.5 py-1.5 transition-colors hud-label [--cut:7px] ${
-          on ? "text-ink" : "text-dim"
-        }`}
-      >
-        <span
-          className={`size-2 border ${on ? "border-accent bg-accent" : "border-dim"}`}
-        />
-        {label}
-      </span>
+        className={`size-2 rounded-full ${on ? "bg-primary" : "border border-dim"}`}
+      />
+      {label}
     </button>
   );
 }

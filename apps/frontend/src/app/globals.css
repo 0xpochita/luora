@@ -1,35 +1,75 @@
 @import "tailwindcss";
 
-/* Luora HUD: one monochrome dark system shared by /trace and /atlas.
-   Greys only; white is the accent, red is reserved for findings/failures, green for pass. */
+/* Luora soft dark UI. Rules live in apps/frontend/DESIGN.md — read it before styling anything.
+   Near-black dot-grid canvas, floating rounded surfaces, white = primary/active,
+   colour only for dots and status (red = findings / reverts / bad). */
 :root {
-  --shell: #0a0b0c;
-  --panel: #111214;
-  --tray: #0d0e10;
-  --card: #16181b;
-  --ink: #e8eaec;
-  --muted: #8c9197;
-  --dim: #565b62;
-  --line: #24272b;
-  --edge: #3a3e44;
-  --tick: #9ba0a6;
-  --soft: #1b1d20;
-  --guide: #2a2d32;
-  --sel: #202327;
-  --accent: #ffffff;
-  --ok: #3ddc84;
-  --bad: #ff4545;
+  --canvas: #0d0d0f;
+  --dot: #2a2a2f;
+  --surface: #17171a;
+  --raised: #1e1e22;
+  --hover: #26262b;
+  --inset: #121214;
+  --border: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.11);
+  --fg: #ececee;
+  --muted: #8e8e96;
+  --dim: #5d5d65;
+  --primary: #f4f4f5;
+  --primary-fg: #0d0d0f;
+  --green: #4ade80;
+  --yellow: #facc15;
+  --red: #f87171;
+  --blue: #60a5fa;
+  --violet: #a78bfa;
+  --pink: #f472b6;
+  --glow: linear-gradient(135deg, var(--violet), var(--pink));
+
+  /* legacy names: feature screens still use these until their area is restyled.
+     New code uses the names above; delete an alias once nothing references it. */
+  --shell: var(--canvas);
+  --panel: var(--surface);
+  --tray: var(--inset);
+  --card: var(--raised);
+  --ink: var(--fg);
+  --line: #222226;
+  --edge: #2e2e34;
+  --tick: #9a9aa2;
+  --soft: var(--hover);
+  --guide: #232327;
+  --sel: #222226;
+  --accent: var(--primary);
+  --ok: var(--green);
+  --bad: var(--red);
   color-scheme: dark;
 }
 
 @theme inline {
+  --color-canvas: var(--canvas);
+  --color-dot: var(--dot);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-hover: var(--hover);
+  --color-inset: var(--inset);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-dim: var(--dim);
+  --color-primary: var(--primary);
+  --color-primary-fg: var(--primary-fg);
+  --color-green: var(--green);
+  --color-yellow: var(--yellow);
+  --color-red: var(--red);
+  --color-blue: var(--blue);
+  --color-violet: var(--violet);
+  --color-pink: var(--pink);
+
   --color-shell: var(--shell);
   --color-panel: var(--panel);
   --color-tray: var(--tray);
   --color-card: var(--card);
   --color-ink: var(--ink);
-  --color-muted: var(--muted);
-  --color-dim: var(--dim);
   --color-line: var(--line);
   --color-edge: var(--edge);
   --color-tick: var(--tick);
@@ -39,7 +79,18 @@
   --color-accent: var(--accent);
   --color-ok: var(--ok);
   --color-bad: var(--bad);
-  --font-sans: var(--font-geist-sans);
+
+  /* radius scale: chip 8 · tile (buttons, icon tiles) 11 · card (cards, panels, toolbars) 16.
+     Nested inner card = card − inset: 16 − 5 = inner 11. */
+  --radius-chip: 8px;
+  --radius-tile: 11px;
+  --radius-card: 16px;
+  --radius-inner: 11px;
+
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 14px rgba(0, 0, 0, 0.22);
+  --shadow-float: 0 2px 6px rgba(0, 0, 0, 0.35), 0 12px 32px rgba(0, 0, 0, 0.4);
+
+  --font-sans: var(--font-outfit);
   --font-mono: var(--font-geist-mono);
   --animate-rise: rise 0.35s ease-out both;
   --animate-pop: rise 0.35s ease-out both;
@@ -52,39 +103,47 @@
   }
 }
 
-/* monospace UPPERCASE label: `POWER 80%` */
-@utility hud-label {
-  font-family: var(--font-geist-mono);
-  font-size: 10.5px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+/* small sentence-case label (section titles, table heads, hints). Never uppercase. */
+@utility ui-label {
+  font-family: var(--font-outfit);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
 }
 
-/* chamfered top-right corner (folder-tab look). For a border that follows the cut,
-   nest: outer = border colour + 1px padding, inner = fill; both `chamfer`. --cut sets the size. */
-@utility chamfer {
-  clip-path: polygon(
-    0 0,
-    calc(100% - var(--cut, 10px)) 0,
-    100% var(--cut, 10px),
-    100% 100%,
-    0 100%
-  );
+/* faint dot grid; pan/zoom canvases override background-size/position inline */
+@utility dot-grid {
+  background-color: var(--canvas);
+  background-image: radial-gradient(circle, var(--dot) 1px, transparent 1.4px);
+  background-size: 22px 22px;
 }
 
-/* diagonal stripes for progress bars */
-@utility hud-stripes {
-  background-image: repeating-linear-gradient(
-    -45deg,
-    currentColor 0 2px,
-    transparent 2px 4px
-  );
+/* violet→pink gradient border for focused / primary floating cards; needs a rounded box */
+@utility glow-border {
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: linear-gradient(
+      135deg,
+      rgba(167, 139, 250, 0.7),
+      rgba(244, 114, 182, 0.45) 45%,
+      rgba(255, 255, 255, 0.06) 75%
+    );
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+  }
 }
 
 body {
-  background: var(--shell);
-  color: var(--ink);
+  background: var(--canvas);
+  color: var(--fg);
 }
 
 /* indentation guides for the trace tree */
@@ -95,13 +154,6 @@ body {
     var(--guide) 13px 14px,
     transparent 14px 24px
   );
-}
-
-/* tactical grid for the call graph */
-.hud-grid {
-  background-image:
-    linear-gradient(var(--line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--line) 1px, transparent 1px);
 }
 
 /* Solidity syntax — greyscale, keywords bright, comments dim */

@@ -149,7 +149,7 @@ export function FlowView({
   return (
     <div
       ref={vp}
-      className="flow hud-grid"
+      className="flow dot-grid"
       style={{
         backgroundSize: `${24 * view.k}px ${24 * view.k}px`,
         backgroundPosition: `${view.x}px ${view.y}px`,

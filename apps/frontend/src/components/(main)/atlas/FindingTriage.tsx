@@ -32,7 +32,7 @@ export function FindingTriage({
     <Panel label="Triage" aside={TRIAGE_LABEL[t.status]}>
       <div className="flex flex-col gap-3 p-3">
         <table className="w-full font-mono text-xs">
-          <thead className="text-left text-dim hud-label">
+          <thead className="text-left text-dim ui-label">
             <tr>
               <th className="pb-1 font-normal">Tool</th>
               <th className="pr-2 pb-1 font-normal">Detector</th>

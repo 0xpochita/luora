@@ -2,18 +2,16 @@ import type { ReactNode } from "react";
 import { Chip, LogoMark } from "@/components/ui";
 import { RouteTabs } from "./RouteTabs";
 
-/** HUD frame shared by every route: brand, route tabs, status; pages fill the rest. */
+/** App frame shared by every route: floating brand + route tiles over the dot-grid canvas. */
 export function MainShell({ children }: { children: ReactNode }) {
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-shell font-sans text-[13px] text-ink">
-      <header className="flex h-11 flex-none items-center border-line border-b bg-tray">
-        <div className="flex h-full items-center gap-2.5 border-line border-r px-4 font-mono font-semibold text-[13px] tracking-[0.3em]">
-          <LogoMark />
-          LUORA
-        </div>
+    <div className="flex h-dvh flex-col overflow-hidden font-sans text-[13px] text-fg dot-grid">
+      <header className="flex flex-none items-center gap-1.5 px-3 pt-3 pb-2">
+        <LogoMark />
+        <span className="mr-2 ml-1 font-medium text-[16px] text-fg">luora</span>
         <RouteTabs />
-        <div className="ml-auto flex items-center gap-3 px-4">
-          <span className="text-dim hud-label">Audit console</span>
+        <div className="ml-auto flex items-center gap-1.5">
+          <Chip>Audit console</Chip>
           <Chip tone="ok" dot>
             Defensive
           </Chip>

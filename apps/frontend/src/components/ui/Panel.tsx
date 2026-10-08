@@ -1,54 +1,65 @@
 import type { ReactNode } from "react";
+import { TONE_DOT, type Tone } from "./tone";
 
-const CORNERS = [
-  "-top-px -left-px border-t border-l",
-  "-top-px -right-px border-t border-r",
-  "-bottom-px -left-px border-b border-l",
-  "-bottom-px -right-px border-b border-r",
-];
-
-/** L-shaped ticks on the corners; drop inside any `relative` box. `chamfered` skips top-right. */
-export function Brackets({ chamfered = false }: { chamfered?: boolean }) {
-  // inside a clip-path box the -1px offset would be clipped away, so sit flush instead
-  const corners = chamfered
-    ? CORNERS.filter((_, i) => i !== 1).map((c) => c.replaceAll("-px", "-0"))
-    : CORNERS;
-  return corners.map((c) => (
-    <i
-      key={c}
-      aria-hidden="true"
-      className={`pointer-events-none absolute size-2.5 border-tick ${c}`}
-    />
-  ));
-}
-
-/** HUD panel: thin border with a chamfered top-right corner, bracket ticks, optional `LABEL ……… aside` header. */
+/**
+ * Rounded dark card. `label` + `aside` make a soft header row inside the card;
+ * `titleAbove` moves that row above the card (node-card anatomy); `inset` wraps the body
+ * in a nested inner card (5px in, radius 16 − 5 = 11); `glow` adds the violet→pink border.
+ */
 export function Panel({
   label,
   aside,
+  dot,
+  titleAbove = false,
+  inset = false,
+  glow = false,
   children,
   className = "",
 }: {
   label?: ReactNode;
   aside?: ReactNode;
+  dot?: Tone;
+  titleAbove?: boolean;
+  inset?: boolean;
+  glow?: boolean;
   children: ReactNode;
   className?: string;
 }) {
-  return (
-    <section
-      className={`relative flex flex-col chamfer bg-line p-px [--cut:14px] ${className}`}
+  const header = label != null && (
+    <header
+      className={`flex items-center gap-2 text-[13px] text-muted ${titleAbove ? "px-1 pb-1.5" : "px-3.5 pt-3 pb-2"}`}
     >
-      <Brackets chamfered />
-      <div className="flex min-h-0 flex-1 flex-col chamfer bg-panel [--cut:14px]">
-        {label != null && (
-          <header className="flex items-center gap-2 border-line border-b px-3 py-2 text-muted hud-label">
-            <span className="size-1.5 bg-accent" />
-            {label}
-            {aside != null && <span className="ml-auto text-dim">{aside}</span>}
-          </header>
-        )}
-        {children}
-      </div>
+      {dot && <span className={`size-1.5 rounded-full ${TONE_DOT[dot]}`} />}
+      <span className="truncate text-fg">{label}</span>
+      {aside != null && (
+        <span className="ml-auto whitespace-nowrap text-[12px] text-dim">
+          {aside}
+        </span>
+      )}
+    </header>
+  );
+  const body = inset ? (
+    <div className="m-[5px] flex min-h-0 flex-1 flex-col rounded-inner bg-inset">
+      {children}
+    </div>
+  ) : (
+    children
+  );
+  const card = `flex min-h-0 flex-col rounded-card border border-border bg-surface shadow-soft ${glow ? "glow-border" : ""}`;
+
+  if (titleAbove)
+    return (
+      <section className={`flex min-h-0 flex-col ${className}`}>
+        {header}
+        <div className={`flex-1 ${card}`}>{body}</div>
+      </section>
+    );
+  return (
+    <section className={`${card} ${className}`}>
+      {header}
+      {body}
     </section>
   );
 }
+
+export { Panel as Card };

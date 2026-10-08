@@ -19,7 +19,7 @@ export function TestList({
     <div>
       {[...suites].map(([suite, items]) => (
         <section key={suite}>
-          <h3 className="flex px-1 pt-3 pb-1.5 text-dim hud-label">
+          <h3 className="flex px-1 pt-3 pb-1.5 text-dim ui-label">
             {suite}
             <span className="ml-auto">{items.length}</span>
           </h3>
@@ -41,7 +41,7 @@ export function TestList({
                   className={`size-1.5 flex-none ${pass ? "bg-ok" : "bg-bad"}`}
                 />
                 <span className="truncate">{t.name}</span>
-                <small className="ml-auto text-dim hud-label">
+                <small className="ml-auto text-dim ui-label">
                   {testKind(t.kind)}
                 </small>
               </button>

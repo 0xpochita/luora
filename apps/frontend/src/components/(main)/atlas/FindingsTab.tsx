@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Brackets, Chip, ToggleChip } from "@/components/ui";
+import { Chip, ToggleChip } from "@/components/ui";
 import type {
   AtlasModel,
   FindingTool,
@@ -85,7 +85,7 @@ export function FindingsTab({
             onToggle={() => setSevs(toggle(sevs, s))}
           />
         ))}
-        <span className="ml-auto text-dim hud-label">
+        <span className="ml-auto text-dim ui-label">
           {shown.length}/{all.length} shown · {triage.dismissed.size} dismissed
         </span>
         <button
@@ -97,7 +97,7 @@ export function FindingsTab({
               ? "Download confirmed findings as Markdown"
               : "Confirm findings in the inspector to include them"
           }
-          className="border border-line bg-tray px-3 py-1.5 text-muted transition-colors hud-label enabled:hover:border-accent enabled:hover:text-ink disabled:opacity-40"
+          className="border border-line bg-tray px-3 py-1.5 text-muted transition-colors ui-label enabled:hover:border-accent enabled:hover:text-ink disabled:opacity-40"
         >
           Report · {confirmed} confirmed ↓
         </button>
@@ -118,7 +118,6 @@ export function FindingsTab({
                   : "border-line bg-tray hover:border-edge"
               } ${isDismissed(t) ? "opacity-40" : ""}`}
             >
-              <Brackets />
               <span className="flex items-center gap-1.5">
                 <Chip
                   tone={
@@ -154,7 +153,7 @@ export function FindingsTab({
           );
         })}
         {!shown.length && (
-          <span className="py-2 text-dim hud-label">
+          <span className="py-2 text-dim ui-label">
             No findings match the filters
           </span>
         )}

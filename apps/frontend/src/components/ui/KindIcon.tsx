@@ -1,6 +1,6 @@
 import { type DisplayKind, KIND_ICON } from "@/features/trace";
 
-/** Square map marker with the frame kind's glyph; reverts in red. */
+/** Rounded marker with the frame kind's glyph; reverts in red. */
 export function KindIcon({
   kind,
   size = "md",
@@ -16,10 +16,8 @@ export function KindIcon({
   return (
     <span
       title={kind}
-      className={`grid flex-none place-items-center border font-mono ${dims} ${
-        kind === "REVERT"
-          ? "border-bad/70 bg-bad/10 text-bad"
-          : "border-edge bg-tray text-tick"
+      className={`grid flex-none place-items-center rounded-[7px] font-mono ${dims} ${
+        kind === "REVERT" ? "bg-red/12 text-red" : "bg-raised text-tick"
       }`}
     >
       {KIND_ICON[kind]}

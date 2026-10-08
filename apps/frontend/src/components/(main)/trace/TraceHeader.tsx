@@ -26,7 +26,7 @@ export function TraceHeader({
     <div className="border-line border-b px-5 pt-4">
       <div className="flex items-end gap-3 pb-3">
         <div className="min-w-0">
-          <p className="text-dim hud-label">Test / call trace</p>
+          <p className="text-dim ui-label">Test / call trace</p>
           <h1 className="mt-1 truncate font-mono font-semibold text-[20px] uppercase leading-tight tracking-[0.04em]">
             {title}
           </h1>
@@ -50,7 +50,7 @@ export function TraceHeader({
       <Tabs
         value={mode}
         onChange={onMode}
-        className="-mx-3.5"
+        className="pb-3"
         options={[
           { value: "trace", label: "Trace" },
           { value: "graph", label: "Graph" },

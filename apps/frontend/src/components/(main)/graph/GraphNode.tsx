@@ -1,6 +1,6 @@
 "use client";
 
-import { Brackets, KindIcon } from "@/components/ui";
+import { KindIcon } from "@/components/ui";
 import { displayKind, type Frame, frameRows, human } from "@/features/trace";
 
 export const NODE_W = 320;
@@ -51,7 +51,6 @@ export function GraphNode({
             : "border-bad/70"
       }`}
     >
-      <Brackets />
       <div className="flex items-center gap-2 px-2 pt-2 pb-2.5">
         <KindIcon kind={kind} size="lg" />
         <div className="flex min-w-0 flex-col">
@@ -59,7 +58,7 @@ export function GraphNode({
             <span className="font-normal text-muted">{frame.to}</span>.
             {frame.fn}
           </b>
-          <span className="text-[9.5px] text-dim hud-label">{kind}</span>
+          <span className="text-[9.5px] text-dim ui-label">{kind}</span>
         </div>
         {frame.gas != null && kind !== "EVENT" && (
           <span className="ml-auto flex-none whitespace-nowrap border border-line px-1.5 py-px text-[10px] text-dim">
