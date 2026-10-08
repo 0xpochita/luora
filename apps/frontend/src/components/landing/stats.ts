@@ -58,8 +58,8 @@ export async function sampleRun(): Promise<SampleRun> {
   stats.push(
     reports.length
       ? {
-          value: `${reports.length} → ${findings.length}`,
-          label: "analyzer reports merged into findings",
+          value: String(findings.length),
+          label: `findings merged from ${reports.length} analyzer reports`,
         }
       : { value: String(findings.length), label: "findings mapped to source" },
   );

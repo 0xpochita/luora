@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LogoMark } from "@/components/ui";
 import { ICON_PATH, type IconKey } from "@/features/atlas/utils/icons";
+import { GitHubMark } from "./GitHubMark";
 import { ProductTabs } from "./ProductTabs";
 
 export const GITHUB = "https://github.com/0xpochita/luora";
@@ -122,7 +123,7 @@ type Orbit = {
 /** R3: small labelled nodes on thin lines around the headline, named after real Lab pieces. */
 const ORBITS: Orbit[] = [
   {
-    icon: "in",
+    icon: "fn",
     label: "deposit()",
     sub: "entry · anyone",
     x: 180,
@@ -321,7 +322,7 @@ export function Hero({ log }: { log: string[] }) {
           <span className="rounded-full bg-white/[.08] px-2 py-0.5 font-mono text-[11.5px] text-text">
             forge test -vvvv
           </span>
-          Reads your local Foundry runs →
+          Reads your local Foundry runs
         </a>
         <h1 className="max-w-[900px] font-light text-[clamp(40px,7vw,80px)] text-fg leading-[1.02] tracking-[-0.035em]">
           <Words text="See what your contract" />
@@ -343,9 +344,10 @@ export function Hero({ log }: { log: string[] }) {
           </Link>
           <a
             href={GITHUB}
-            className="rounded-full border border-white/[.09] bg-raised px-5 py-2.5 text-[14px] text-fg transition-colors hover:bg-hover"
+            className="inline-flex items-center gap-2 rounded-full border border-white/[.09] bg-raised px-5 py-2.5 text-[14px] text-fg transition-colors hover:bg-hover"
           >
-            View on GitHub ↗
+            <GitHubMark />
+            View on GitHub
           </a>
         </div>
 

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LogoMark } from "@/components/ui";
+import { GitHubMark } from "./GitHubMark";
 import { DOCS, GITHUB } from "./Hero";
 import { Reveal } from "./motion";
 
@@ -286,9 +287,10 @@ export function FinalCta() {
             </Link>
             <a
               href={GITHUB}
-              className="rounded-full border border-white/[.09] bg-raised px-5 py-2.5 text-[14px] text-fg transition-colors hover:bg-hover"
+              className="inline-flex items-center gap-2 rounded-full border border-white/[.09] bg-raised px-5 py-2.5 text-[14px] text-fg transition-colors hover:bg-hover"
             >
-              View on GitHub ↗
+              <GitHubMark />
+              View on GitHub
             </a>
           </div>
           <p className="relative mt-8 font-mono text-[12px] text-dim">
