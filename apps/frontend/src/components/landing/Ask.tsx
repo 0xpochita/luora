@@ -3,8 +3,7 @@ import { Reveal } from "./motion";
 import { demoAtlas } from "./stats";
 
 /**
- * Ask about a line. R4 (Linear: copy column + real product UI), kept bare at the user's request:
- * no frames or docks, code on the left, the answer and three question pills on the right.
+ * Ask about a line. Heading row from R4 (Linear); the demo below follows R16-R19, see AskDemo.tsx.
  * The answers are the app's own `aiAnswer` output for the piece that owns the clicked line.
  */
 export async function Ask() {
