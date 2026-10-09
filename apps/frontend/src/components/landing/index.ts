@@ -146,6 +146,13 @@
  *  Compare (Closing, CompareStage)        → P4 rows; Genie pricing card rising into place: the
  *                                           Luora card slides up, rows reveal one by one
  *
+ * Eighth pass (2026-10-09, 'How Luora works' restaged), pins from the Pinterest search 'winning
+ * awward website', picked for fit (dark / technical, explains steps), IsoStack removed:
+ *  H1 pin/5629568280219721 (PlayerZero) — core tile, wires to labelled pills → step inputs / outputs
+ *  H2 pin/436497388907405556 (ONYX 'Our Process') — masked rising index, panel over panel → the wipe
+ *  H3 pin/3307399722549125 (Lumina) — one lit hairline between blocks → the edge riding the wipe
+ *  H4 pin/5207355814660740 (GRFN 'How it works' 1 → 2 → 3) → the circled step rail (HowItWorks.tsx)
+ *
  * Product shots in public/landing/ (b-*.webp, Bento) are real captures of /trace and /atlas from a
  * local `node luora-export.mjs` run, never mock UI; the hero and 'How Luora works' render the app live. Colour stays per DESIGN.md: grey/white,
  * red only on findings.
