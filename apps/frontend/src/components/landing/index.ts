@@ -258,6 +258,19 @@
  *       dropped as one object too many). Rail, deck, pipeline and the big mark are gone; the haze
  *       now starts below the rim and the Works-with hub is the first product view.
  *
+ * Seventeenth pass (2026-10-10, "ganti lagi pake referensi ini"):
+ *  HJ pin/1148699448726643412 (VEX, a MotionSites AI prompt) — a black sky: soft light pooled
+ *     bottom-left (a lit limb) and top-right (diffuse), a fine star field, one bright curved
+ *     glint on the right; a notched hairline frame hanging off the nav's corners and faint guide
+ *     lines down the left; a two-line regular-weight white headline, one subline, a white
+ *     button beside an outlined one (small radius, not pills); a hairline chip at the bottom
+ *     centre ('Investing. Building. Advisory.') with thin lines falling from behind it.
+ *     → Hero: the sky as three radial gradients, a deterministic 140-star path, the glint as a
+ *       gradient-stroked curve with a soft copy under it; the notches as two tiny SVGs under the
+ *       HA nav; the same headline / subline / two buttons; the chip reads 'Trace. Graph.
+ *       Triage.' — the three product views — with four lines running to the foot. ZERO's
+ *       horizon, hairline braces and sparks are gone.
+ *
  * No screenshots: every product view on the page is the app's own component rendered live on the
  * sample run (built near the screen only, Lazy). Colour stays per DESIGN.md: grey/white, red only
  * on findings.

@@ -1,14 +1,15 @@
 /*
- * Hero refs (sixteenth pass: one ref, HA nav kept):
+ * Hero refs (seventeenth pass: one ref, HA nav kept):
  *  HA https://id.pinterest.com/pin/760404718381966789/ — Triopixels: glass pill nav
- *  HI https://id.pinterest.com/pin/933300722780733209/ — ZERO by Freede (the shot R13's closing
- *     scene also came from): wordmark + one pill, a two-line centred headline with the second
- *     line tinted, one subline, one App-Store-style button, two hairlines dropping from the top
- *     edge onto the headline and two rules running out from the button, a curved horizon lit
- *     from behind (its phone over the rim was tried and dropped). Nothing else.
+ *  HJ https://id.pinterest.com/pin/1148699448726643412/ — VEX (MotionSites AI): a black sky with
+ *     soft light pooled bottom-left and top-right, a fine star field, one bright curved glint on
+ *     the right; notched hairline frame under the nav; a two-line regular-weight headline, one
+ *     subline, a white button beside an outlined one; a hairline chip at the bottom centre with
+ *     thin lines falling from it.
  */
 import Link from "next/link";
 import { LogoText } from "@/components/ui";
+import { GitHubMark } from "./GitHubMark";
 import { HeroExit } from "./Haze";
 import { ProductTabs } from "./ProductTabs";
 import { ScatterGrow } from "./ScatterGrow";
@@ -85,147 +86,165 @@ const SOLIDITY =
 const ETHEREUM =
   "M11.944 17.97L4.58 13.62 11.943 24l7.37-10.38-7.372 4.35h.003zM12.056 0L4.69 12.223l7.365 4.354 7.365-4.35L12.056 0z";
 
+/** deterministic, so the star field is identical on every render (same rng as CityHorizon) */
+function rng(seed: number) {
+  let s = seed >>> 0;
+  return () => {
+    s = (s + 0x6d2b79f5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+/** HJ: ~140 stars in two brightnesses, one path each */
+const STARS = (() => {
+  const rand = rng(5);
+  const by: Record<string, string> = {};
+  for (let i = 0; i < 140; i++) {
+    const x = Math.round(rand() * 1600);
+    const y = Math.round(rand() * 900);
+    const r = rand() < 0.15 ? 2 : 1.3;
+    const a = rand() < 0.3 ? "0.75" : "0.35";
+    by[a] = `${by[a] ?? ""}M${x} ${y}h${r}v${r}h-${r}z`;
+  }
+  return Object.entries(by);
+})();
+
+/** HJ: the notch under the nav: a hairline in from the edge, then up to the nav's hairline */
+const Notch = ({ side }: { side: "left" | "right" }) => (
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 160 60"
+    className={`lh-notch absolute top-[76px] h-[60px] w-[160px] ${
+      side === "left" ? "left-0 origin-left" : "right-0 origin-right"
+    }`}
+    fill="none"
+    stroke="rgba(255,255,255,.22)"
+    strokeWidth="1"
+  >
+    <path
+      d={side === "left" ? "M0 59.5H80L140 0.5H160" : "M160 59.5H80L20 0.5H0"}
+    />
+  </svg>
+);
+
 /**
- * Sixteenth pass (HI ZERO). Hairlines drop onto the headline → lines rise → subline → the button
- * with its rules running out → the horizon lights up. The Works-with hub under the haze is the
- * first product view.
+ * Seventeenth pass (HJ VEX). The sky fades up → stars → the notches draw in from the edges →
+ * lines rise → subline → buttons → the chip and its lines at the foot. The Works-with hub under
+ * the haze is the first product view.
  */
 export function Hero() {
   return (
     <HeroExit>
       <Nav />
 
-      {/* HI: a curved horizon lit from behind, the ground black below it */}
+      {/* HJ: the sky, soft light bottom-left and top-right, a star field, one curved glint */}
       <div
         aria-hidden="true"
-        data-lp="hero-horizon"
-        className="lh-horizon pointer-events-none absolute inset-x-0 bottom-0 h-[min(62vh,580px)]"
+        data-lp="hero-sky"
+        className="lh-sky pointer-events-none absolute inset-0"
       >
         <svg
           aria-hidden="true"
-          viewBox="0 0 1600 640"
-          preserveAspectRatio="xMidYMax slice"
+          viewBox="0 0 1600 900"
+          preserveAspectRatio="xMidYMid slice"
           className="absolute inset-0 size-full"
         >
+          <g fill="#fff">
+            {STARS.map(([a, d]) => (
+              <path key={a} d={d} opacity={a} />
+            ))}
+          </g>
+        </svg>
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 320 120"
+          className="lh-glint absolute top-[56%] right-[7%] hidden h-[120px] w-[320px] md:block"
+          fill="none"
+        >
           <defs>
-            <radialGradient
-              id="lh-dawn"
-              gradientUnits="userSpaceOnUse"
-              cx="800"
-              cy="330"
-              r="620"
-            >
-              <stop offset="0" stopColor="#eef0f5" stopOpacity=".5" />
-              <stop offset=".22" stopColor="#b4b9c6" stopOpacity=".2" />
-              <stop offset=".55" stopColor="#5b6070" stopOpacity=".06" />
-              <stop offset="1" stopColor="#000" stopOpacity="0" />
-            </radialGradient>
-            <linearGradient id="lh-rim" x1="0" x2="1">
+            <linearGradient id="lh-glint" x1="0" x2="1">
               <stop offset="0" stopColor="#fff" stopOpacity="0" />
-              <stop offset=".3" stopColor="#fff" stopOpacity=".9" />
-              <stop offset=".5" stopColor="#fff" />
-              <stop offset=".7" stopColor="#fff" stopOpacity=".9" />
+              <stop offset=".55" stopColor="#fff" />
               <stop offset="1" stopColor="#fff" stopOpacity="0" />
             </linearGradient>
           </defs>
-          <rect width="1600" height="640" fill="url(#lh-dawn)" />
-          <ellipse cx="800" cy="1130" rx="1500" ry="800" fill="#09090b" />
-          {/* the rim: a soft bloom under a hairline */}
-          <ellipse
-            cx="800"
-            cy="1130"
-            rx="1500"
-            ry="800"
-            fill="none"
-            stroke="url(#lh-rim)"
-            strokeWidth="8"
-            opacity=".35"
+          <path
+            d="M10 110C110 50 200 20 310 10"
+            stroke="url(#lh-glint)"
+            strokeWidth="10"
+            opacity=".25"
           />
-          <ellipse
-            cx="800"
-            cy="1130"
-            rx="1500"
-            ry="800"
-            fill="none"
-            stroke="url(#lh-rim)"
+          <path
+            d="M10 110C110 50 200 20 310 10"
+            stroke="url(#lh-glint)"
             strokeWidth="2"
           />
         </svg>
+        {/* faint guide lines down the left, as in the ref */}
+        <span className="absolute top-0 left-[4.5%] hidden h-[55%] w-px bg-gradient-to-b from-white/10 to-transparent md:block" />
+        <span className="absolute top-0 left-[7%] hidden h-[40%] w-px bg-gradient-to-b from-white/[.07] to-transparent md:block" />
       </div>
+      <Notch side="left" />
+      <Notch side="right" />
 
       <div
         data-lp="hero-body"
-        className="relative z-10 mx-auto flex min-h-[calc(100svh-76px)] max-w-[1240px] flex-col items-center px-4 pt-[15vh] pb-[42vh] text-center md:pt-[17vh]"
+        className="relative z-10 mx-auto flex min-h-[calc(100svh-76px)] max-w-[1240px] flex-col items-center justify-center px-4 pt-6 pb-40 text-center md:pb-48"
       >
-        <div className="relative">
-          {/* HI: two hairlines fall from the top edge down the headline's shoulders, each ending
-              in a spark at the first line's baseline */}
-          <span
-            aria-hidden="true"
-            className="lh-brace absolute top-[-14vh] bottom-[52%] left-0 hidden w-px bg-gradient-to-b from-transparent via-white/15 to-white/60 after:absolute after:bottom-0 after:left-1/2 after:size-[3px] after:-translate-x-1/2 after:rounded-full after:bg-white after:shadow-[0_0_8px_2px_rgba(255,255,255,.5)] after:content-[''] md:block"
-          />
-          <span
-            aria-hidden="true"
-            className="lh-brace absolute top-[-14vh] right-0 bottom-[52%] hidden w-px bg-gradient-to-b from-transparent via-white/15 to-white/60 after:absolute after:bottom-0 after:left-1/2 after:size-[3px] after:-translate-x-1/2 after:rounded-full after:bg-white after:shadow-[0_0_8px_2px_rgba(255,255,255,.5)] after:content-[''] md:block"
-          />
-          <h1 className="font-medium text-[clamp(36px,5vw,72px)] text-fg leading-[1.08] tracking-[-0.03em]">
-            <span className="lh-line">
-              <span style={{ "--d": "0.45s" } as Delay}>
-                See what your contract
-              </span>
+        <h1 className="font-normal text-[clamp(34px,4.3vw,66px)] text-fg leading-[1.1] tracking-[-0.025em]">
+          <span className="lh-line">
+            <span style={{ "--d": "0.45s" } as Delay}>
+              See what your contract
             </span>
-            <span className="lh-line">
-              <span className="lh-tint" style={{ "--d": "0.58s" } as Delay}>
-                actually does.
-              </span>
-            </span>
-          </h1>
-        </div>
+          </span>
+          <span className="lh-line">
+            <span style={{ "--d": "0.58s" } as Delay}>actually does.</span>
+          </span>
+        </h1>
         <p
-          className="lh-up mt-4 max-w-[600px] text-[14.5px] text-muted leading-relaxed"
+          className="lh-up mt-4 max-w-[600px] text-[15px] text-muted leading-relaxed md:text-[16px]"
           style={{ "--d": "0.85s" } as Delay}
         >
           Decoded traces, a contract graph and analyzer findings, from your own
           Foundry run.
         </p>
-
-        {/* HI: one small App-Store-style button; rules run out from it to the edges, a spark at
-            each inner end */}
         <div
-          className="lh-up relative mt-6 flex w-full items-center justify-center"
+          className="lh-up mt-7 flex flex-wrap items-center justify-center gap-3"
           style={{ "--d": "1.05s" } as Delay}
         >
-          <span
-            aria-hidden="true"
-            className="lh-rule absolute top-1/2 right-[calc(50%+104px)] left-0 hidden h-px origin-right bg-gradient-to-l from-white/30 to-transparent md:block"
-          />
-          <span
-            aria-hidden="true"
-            className="lh-rule absolute top-1/2 right-0 left-[calc(50%+104px)] hidden h-px origin-left bg-gradient-to-r from-white/30 to-transparent md:block"
-          />
-          <span
-            aria-hidden="true"
-            className="absolute top-1/2 right-[calc(50%+102px)] hidden size-[3px] -translate-y-1/2 rounded-full bg-white shadow-[0_0_6px_1px_rgba(255,255,255,.5)] md:block"
-          />
-          <span
-            aria-hidden="true"
-            className="absolute top-1/2 left-[calc(50%+102px)] hidden size-[3px] -translate-y-1/2 rounded-full bg-white shadow-[0_0_6px_1px_rgba(255,255,255,.5)] md:block"
-          />
           <Link
             href="/atlas"
-            className="relative inline-flex h-10 items-center gap-2.5 rounded-full border border-white/25 bg-[#0b0b0d] pr-4 pl-3 transition-colors hover:border-white/50 hover:bg-white/[.04]"
+            className="inline-flex h-11 items-center rounded-[8px] bg-primary px-6 font-medium text-[14px] text-primary-fg transition-colors hover:bg-white"
           >
-            {/* biome-ignore lint/performance/noImgElement: 18px static brand mark */}
-            <img src="/brand/mark-white.png" alt="" width={18} height={18} />
-            <span className="flex flex-col items-start text-left leading-none">
-              <span className="text-[9.5px] text-muted">
-                From your forge run
-              </span>
-              <span className="mt-[3px] font-medium text-[13px] text-fg">
-                Open the Lab
-              </span>
-            </span>
+            Open the Lab
           </Link>
+          <a
+            href={GITHUB}
+            className="inline-flex h-11 items-center gap-2 rounded-[8px] border border-white/20 bg-black/40 px-6 text-[14px] text-fg transition-colors hover:border-white/40 hover:bg-white/[.05]"
+          >
+            <GitHubMark />
+            View on GitHub
+          </a>
+        </div>
+
+        {/* HJ: the chip at the foot, thin lines falling from behind it */}
+        <div
+          className="lh-up absolute bottom-[7%] left-1/2 -translate-x-1/2"
+          style={{ "--d": "1.4s" } as Delay}
+        >
+          {[-90, -30, 30, 90].map((x) => (
+            <span
+              key={x}
+              aria-hidden="true"
+              className="absolute top-1/2 bottom-[-60vh] w-px bg-gradient-to-b from-white/[.14] via-white/[.06] to-transparent"
+              style={{ left: `calc(50% + ${x}px)` }}
+            />
+          ))}
+          <span className="relative inline-block rounded-[10px] border border-white/[.14] bg-[#060607]/80 px-6 py-2.5 text-[15px] text-muted">
+            Trace. Graph. Triage.
+          </span>
         </div>
       </div>
     </HeroExit>

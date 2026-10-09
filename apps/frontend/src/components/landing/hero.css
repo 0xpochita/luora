@@ -1,7 +1,6 @@
-/* Hero (Hero.tsx). Sixteenth pass, HI ZERO by Freede: hairlines drop onto the headline → lines
-   rise → subline → the button with its rules → the horizon lights up. Only transform / opacity
-   animate; every loop sits under [data-tone=hero], so motion.tsx's data-off pauses it off
-   screen. --d = start delay. */
+/* Hero (Hero.tsx). Seventeenth pass, HJ VEX: the sky fades up → the notches draw in → lines
+   rise → subline → buttons → the chip. Only transform / opacity animate; every loop sits under
+   [data-tone=hero], so motion.tsx's data-off pauses it off screen. --d = start delay. */
 
 @keyframes lh-in {
   from {
@@ -38,52 +37,53 @@
     transform: none;
   }
 }
-/* ZERO tints its second line pale blue; here the coolest grey the palette allows */
-.lh-tint {
-  color: transparent;
-  background: linear-gradient(#e3e8f3, #96a0b5);
-  -webkit-background-clip: text;
-  background-clip: text;
-}
 
-/* the two hairlines grow down onto the headline, the rules grow out of the button */
-.lh-brace {
-  transform-origin: top;
-  animation: lh-brace 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 0.2s backwards;
+/* HJ: soft light pooled bottom-left (bright, a lit limb) and top-right (diffuse) over black */
+.lh-sky {
+  background:
+    radial-gradient(
+      50% 46% at -6% 106%,
+      rgba(255, 255, 255, 0.62),
+      rgba(255, 255, 255, 0.2) 42%,
+      transparent 72%
+    ),
+    radial-gradient(
+      46% 50% at 106% 0%,
+      rgba(255, 255, 255, 0.38),
+      rgba(255, 255, 255, 0.1) 45%,
+      transparent 72%
+    ),
+    radial-gradient(
+      30% 26% at 72% 52%,
+      rgba(255, 255, 255, 0.05),
+      transparent 70%
+    );
+  animation: lh-in 1.6s ease-out backwards;
 }
-@keyframes lh-brace {
-  from {
-    transform: scaleY(0);
-  }
+.lh-glint {
+  animation: lh-in 1.2s ease-out 0.9s backwards;
 }
-.lh-rule {
-  animation: lh-rule 1s cubic-bezier(0.2, 0.7, 0.2, 1) 1.25s backwards;
+/* the notches draw in from the edges */
+.lh-notch {
+  animation: lh-notch 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 0.3s backwards;
 }
-@keyframes lh-rule {
+@keyframes lh-notch {
   from {
     transform: scaleX(0);
-  }
-}
-
-/* the horizon lights up from below */
-.lh-horizon {
-  animation: lh-horizon 1.6s ease-out 0.1s backwards;
-}
-@keyframes lh-horizon {
-  from {
-    opacity: 0;
-    transform: translateY(40px);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .lh-up,
   .lh-line > span,
-  .lh-brace,
-  .lh-rule,
-  .lh-horizon {
+  .lh-sky,
+  .lh-glint,
+  .lh-notch {
     animation: none;
     opacity: 1;
+  }
+  .lh-up,
+  .lh-line > span {
     transform: none;
   }
 }
