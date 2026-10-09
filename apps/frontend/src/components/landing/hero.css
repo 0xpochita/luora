@@ -1,12 +1,8 @@
-/* Hero (Hero.tsx). Seventeenth pass, HJ VEX: the sky fades up → the notches draw in → lines
-   rise → subline → buttons → the chip. Only transform / opacity animate; every loop sits under
-   [data-tone=hero], so motion.tsx's data-off pauses it off screen. --d = start delay. */
+/* Hero (Hero.tsx). Eighteenth pass, HK Memory Library: the copy fades up, then the bars grow out
+   of the floor left to right, the flagged bar's label last. Only transform / opacity animate;
+   every loop sits under [data-tone=hero], so motion.tsx's data-off pauses it off screen.
+   --d = start delay. */
 
-@keyframes lh-in {
-  from {
-    opacity: 0;
-  }
-}
 .lh-up {
   animation: lh-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) var(--d, 0s) backwards;
 }
@@ -17,73 +13,22 @@
   }
 }
 
-/* headline: each line rises out of its own mask. Held at opacity 0 by the class (forwards fill),
-   like the old lp-word, so the static subline stays the LCP element. */
-.lh-line {
-  display: block;
-  overflow: hidden;
-  padding-bottom: 0.08em;
-  margin-bottom: -0.08em;
+/* one bar per source line, standing up from the bottom edge */
+.lh-bar {
+  transform-origin: bottom;
+  animation: lh-bar 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) var(--d, 0s) backwards;
 }
-.lh-line > span {
-  display: inline-block;
-  opacity: 0;
-  transform: translateY(105%);
-  animation: lh-rise 1s cubic-bezier(0.2, 0.8, 0.2, 1) var(--d) forwards;
-}
-@keyframes lh-rise {
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-/* HJ: soft light pooled bottom-left (bright, a lit limb) and top-right (diffuse) over black */
-.lh-sky {
-  background:
-    radial-gradient(
-      50% 46% at -6% 106%,
-      rgba(255, 255, 255, 0.62),
-      rgba(255, 255, 255, 0.2) 42%,
-      transparent 72%
-    ),
-    radial-gradient(
-      46% 50% at 106% 0%,
-      rgba(255, 255, 255, 0.38),
-      rgba(255, 255, 255, 0.1) 45%,
-      transparent 72%
-    ),
-    radial-gradient(
-      30% 26% at 72% 52%,
-      rgba(255, 255, 255, 0.05),
-      transparent 70%
-    );
-  animation: lh-in 1.6s ease-out backwards;
-}
-.lh-glint {
-  animation: lh-in 1.2s ease-out 0.9s backwards;
-}
-/* the notches draw in from the edges */
-.lh-notch {
-  animation: lh-notch 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 0.3s backwards;
-}
-@keyframes lh-notch {
+@keyframes lh-bar {
   from {
-    transform: scaleX(0);
+    transform: scaleY(0);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .lh-up,
-  .lh-line > span,
-  .lh-sky,
-  .lh-glint,
-  .lh-notch {
+  .lh-bar {
     animation: none;
     opacity: 1;
-  }
-  .lh-up,
-  .lh-line > span {
     transform: none;
   }
 }

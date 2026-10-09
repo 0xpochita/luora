@@ -45,8 +45,7 @@ function heroExit(root: HTMLElement, gsap: Gsap) {
       q("[data-lp=hero-body]"),
       { y: -140, autoAlpha: 0, scale: 0.96, ease: "power1.in" },
       0,
-    )
-    .to(q("[data-lp=hero-sky]"), { autoAlpha: 0 }, 0);
+    );
 }
 
 export function HeroExit({ children }: { children: ReactNode }) {

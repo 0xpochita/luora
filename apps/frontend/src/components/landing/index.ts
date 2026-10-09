@@ -271,6 +271,21 @@
  *       Triage.' — the three product views — with four lines running to the foot. ZERO's
  *       horizon, hairline braces and sparks are gone.
  *
+ * Eighteenth pass (2026-10-10, "ganti lagi hero pake ini referensinya"):
+ *  HK pin/119767671335610696 ('The world's richest Memory Library · Data capture') — a small
+ *     title with a grey subtitle top-left and two dark metric chips under it (icon · label:
+ *     value), a three-line paragraph top-right, and the rest of the screen one chart: thin
+ *     vertical hairlines rising from the bottom edge, one of them white with a rotated value
+ *     label and a green dot above it.
+ *     → Hero: the same four pieces on the run's own data, and as little text as the ref
+ *       ("buatlah lebih minimalist agar tidak terlalu banyak teks"): title + subtitle, two
+ *       chips (tests, findings with a red dot), one line on the right; the chart = one hairline
+ *       per call frame in the traced tests, height = gas used, cheapest first, so it ramps like
+ *       the ref's; the white bar = the costliest call of the function the first high finding
+ *       sits in, its name and gas rotated above a red dot. Bars grow out of the floor left to
+ *       right. (Coverage hits per line were tried first: a log scale of 1…126k fuzz hits gave
+ *       three plateaus, a barcode, not a ramp.) VEX's sky, stars, glint, notches, chip gone.
+ *
  * No screenshots: every product view on the page is the app's own component rendered live on the
  * sample run (built near the screen only, Lazy). Colour stays per DESIGN.md: grey/white, red only
  * on findings.

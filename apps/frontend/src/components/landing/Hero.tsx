@@ -1,19 +1,25 @@
 /*
- * Hero refs (seventeenth pass: one ref, HA nav kept):
+ * Hero refs (eighteenth pass: one ref, HA nav kept):
  *  HA https://id.pinterest.com/pin/760404718381966789/ — Triopixels: glass pill nav
- *  HJ https://id.pinterest.com/pin/1148699448726643412/ — VEX (MotionSites AI): a black sky with
- *     soft light pooled bottom-left and top-right, a fine star field, one bright curved glint on
- *     the right; notched hairline frame under the nav; a two-line regular-weight headline, one
- *     subline, a white button beside an outlined one; a hairline chip at the bottom centre with
- *     thin lines falling from it.
+ *  HK https://id.pinterest.com/pin/119767671335610696/ — 'The world's richest Memory Library':
+ *     a small title + grey subtitle top-left with two dark metric chips (icon · label: value)
+ *     under it, a three-line paragraph top-right, and the rest of the screen a chart of thin
+ *     vertical hairlines rising from the bottom edge, one bar white with a rotated value label
+ *     and a coloured dot above it.
  */
 import Link from "next/link";
 import { LogoText } from "@/components/ui";
-import { GitHubMark } from "./GitHubMark";
+import { ICON_PATH } from "@/features/atlas/utils/icons";
 import { HeroExit } from "./Haze";
 import { ProductTabs } from "./ProductTabs";
 import { ScatterGrow } from "./ScatterGrow";
-import { scenarioDemo, traceFrames } from "./stats";
+import {
+  demoAtlas,
+  gasProfile,
+  sampleRun,
+  scenarioDemo,
+  traceFrames,
+} from "./stats";
 import "./hero.css";
 
 export const GITHUB = "https://github.com/0xpochita/luora";
@@ -86,165 +92,125 @@ const SOLIDITY =
 const ETHEREUM =
   "M11.944 17.97L4.58 13.62 11.943 24l7.37-10.38-7.372 4.35h.003zM12.056 0L4.69 12.223l7.365 4.354 7.365-4.35L12.056 0z";
 
-/** deterministic, so the star field is identical on every render (same rng as CityHorizon) */
-function rng(seed: number) {
-  let s = seed >>> 0;
-  return () => {
-    s = (s + 0x6d2b79f5) >>> 0;
-    let t = s;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-/** HJ: ~140 stars in two brightnesses, one path each */
-const STARS = (() => {
-  const rand = rng(5);
-  const by: Record<string, string> = {};
-  for (let i = 0; i < 140; i++) {
-    const x = Math.round(rand() * 1600);
-    const y = Math.round(rand() * 900);
-    const r = rand() < 0.15 ? 2 : 1.3;
-    const a = rand() < 0.3 ? "0.75" : "0.35";
-    by[a] = `${by[a] ?? ""}M${x} ${y}h${r}v${r}h-${r}z`;
-  }
-  return Object.entries(by);
-})();
-
-/** HJ: the notch under the nav: a hairline in from the edge, then up to the nav's hairline */
-const Notch = ({ side }: { side: "left" | "right" }) => (
+const glyph = (d: string) => (
   <svg
     aria-hidden="true"
-    viewBox="0 0 160 60"
-    className={`lh-notch absolute top-[76px] h-[60px] w-[160px] ${
-      side === "left" ? "left-0 origin-left" : "right-0 origin-right"
-    }`}
+    viewBox="0 0 24 24"
+    className="size-3.5"
     fill="none"
-    stroke="rgba(255,255,255,.22)"
-    strokeWidth="1"
+    stroke="currentColor"
+    strokeWidth="1.6"
+    strokeLinecap="round"
+    strokeLinejoin="round"
   >
-    <path
-      d={side === "left" ? "M0 59.5H80L140 0.5H160" : "M160 59.5H80L20 0.5H0"}
-    />
+    <path d={d} />
   </svg>
 );
 
 /**
- * Seventeenth pass (HJ VEX). The sky fades up → stars → the notches draw in from the edges →
- * lines rise → subline → buttons → the chip and its lines at the foot. The Works-with hub under
- * the haze is the first product view.
+ * Eighteenth pass (HK). Title and two chips top-left, one line top-right, and under them the
+ * run's own profile: one hairline per call frame in the traced tests, its height the gas that
+ * frame used, cheapest first, so the chart ramps up like the ref's. The white bar is the most
+ * expensive call of the function the first high finding sits in, flagged red. Bars grow out
+ * of the floor, left to right.
  */
-export function Hero() {
+export async function Hero() {
+  const [atlas, run, bars] = await Promise.all([
+    demoAtlas(),
+    sampleRun(),
+    gasProfile(),
+  ]);
+  const max = Math.max(1, ...bars.map((b) => b.gas));
+  const pct = (gas: number) => 3 + (69 * gas) / max;
+  const findings = atlas.pieces.filter((p) => p.sys === "vulns");
+  const flagged = findings.find((f) => f.risk === "high") ?? findings[0];
+  const fnName = flagged?.name.match(/in (\w+)\(\)/)?.[1];
+  // the costliest frame of that function (bars are sorted by gas), else the costliest frame
+  const flagAt =
+    fnName && bars.some((b) => b.fn === fnName)
+      ? bars.reduce((m, b, i) => (b.fn === fnName ? i : m), 0)
+      : bars.length - 1;
+  const tests = run.stats.find((s) => s.label === "forge tests traced")?.value;
+  const chips: { icon: React.ReactNode; label: string; value: string }[] = [
+    { icon: glyph(ICON_PATH.fn), label: "Tests", value: tests ?? "—" },
+    {
+      icon: <span className="size-1.5 rounded-full bg-red" />,
+      label: "Findings",
+      value: String(findings.length),
+    },
+  ];
+
   return (
     <HeroExit>
       <Nav />
 
-      {/* HJ: the sky, soft light bottom-left and top-right, a star field, one curved glint */}
-      <div
-        aria-hidden="true"
-        data-lp="hero-sky"
-        className="lh-sky pointer-events-none absolute inset-0"
-      >
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 1600 900"
-          preserveAspectRatio="xMidYMid slice"
-          className="absolute inset-0 size-full"
-        >
-          <g fill="#fff">
-            {STARS.map(([a, d]) => (
-              <path key={a} d={d} opacity={a} />
-            ))}
-          </g>
-        </svg>
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 320 120"
-          className="lh-glint absolute top-[56%] right-[7%] hidden h-[120px] w-[320px] md:block"
-          fill="none"
-        >
-          <defs>
-            <linearGradient id="lh-glint" x1="0" x2="1">
-              <stop offset="0" stopColor="#fff" stopOpacity="0" />
-              <stop offset=".55" stopColor="#fff" />
-              <stop offset="1" stopColor="#fff" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M10 110C110 50 200 20 310 10"
-            stroke="url(#lh-glint)"
-            strokeWidth="10"
-            opacity=".25"
-          />
-          <path
-            d="M10 110C110 50 200 20 310 10"
-            stroke="url(#lh-glint)"
-            strokeWidth="2"
-          />
-        </svg>
-        {/* faint guide lines down the left, as in the ref */}
-        <span className="absolute top-0 left-[4.5%] hidden h-[55%] w-px bg-gradient-to-b from-white/10 to-transparent md:block" />
-        <span className="absolute top-0 left-[7%] hidden h-[40%] w-px bg-gradient-to-b from-white/[.07] to-transparent md:block" />
-      </div>
-      <Notch side="left" />
-      <Notch side="right" />
-
       <div
         data-lp="hero-body"
-        className="relative z-10 mx-auto flex min-h-[calc(100svh-76px)] max-w-[1240px] flex-col items-center justify-center px-4 pt-6 pb-40 text-center md:pb-48"
+        className="relative z-10 mx-auto min-h-[calc(100svh-76px)] max-w-[1240px] px-4 pt-7 md:px-6 md:pt-9"
       >
-        <h1 className="font-normal text-[clamp(34px,4.3vw,66px)] text-fg leading-[1.1] tracking-[-0.025em]">
-          <span className="lh-line">
-            <span style={{ "--d": "0.45s" } as Delay}>
-              See what your contract
-            </span>
-          </span>
-          <span className="lh-line">
-            <span style={{ "--d": "0.58s" } as Delay}>actually does.</span>
-          </span>
-        </h1>
-        <p
-          className="lh-up mt-4 max-w-[600px] text-[15px] text-muted leading-relaxed md:text-[16px]"
-          style={{ "--d": "0.85s" } as Delay}
-        >
-          Decoded traces, a contract graph and analyzer findings, from your own
-          Foundry run.
-        </p>
-        <div
-          className="lh-up mt-7 flex flex-wrap items-center justify-center gap-3"
-          style={{ "--d": "1.05s" } as Delay}
-        >
-          <Link
-            href="/atlas"
-            className="inline-flex h-11 items-center rounded-[8px] bg-primary px-6 font-medium text-[14px] text-primary-fg transition-colors hover:bg-white"
+        {/* HK: title + subtitle + chips left, one line right */}
+        <div className="relative z-10 grid gap-5 md:grid-cols-2 md:gap-10">
+          <div className="lh-up" style={{ "--d": "0.1s" } as Delay}>
+            <h1 className="font-medium text-[clamp(22px,2.1vw,30px)] text-fg leading-tight tracking-[-0.02em]">
+              See what your contract actually does.
+            </h1>
+            <p className="mt-1 text-[clamp(16px,1.5vw,20px)] text-dim leading-tight">
+              Decoded Foundry runs
+            </p>
+            <div className="mt-5 flex flex-wrap items-center gap-2">
+              {chips.map((c) => (
+                <span
+                  key={c.label}
+                  className="inline-flex h-7 items-center gap-1.5 rounded-[6px] border border-white/[.08] bg-[#131315] px-2.5 font-mono text-[11.5px] text-muted"
+                >
+                  {c.icon}
+                  {c.label}: <span className="text-fg">{c.value}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+          <p
+            className="lh-up max-w-[440px] text-[15px] text-body leading-relaxed md:justify-self-end md:text-[16px]"
+            style={{ "--d": "0.25s" } as Delay}
           >
-            Open the Lab
-          </Link>
-          <a
-            href={GITHUB}
-            className="inline-flex h-11 items-center gap-2 rounded-[8px] border border-white/20 bg-black/40 px-6 text-[14px] text-fg transition-colors hover:border-white/40 hover:bg-white/[.05]"
-          >
-            <GitHubMark />
-            View on GitHub
-          </a>
+            Decoded traces, a contract graph and analyzer findings, from your
+            own forge run.
+          </p>
         </div>
 
-        {/* HJ: the chip at the foot, thin lines falling from behind it */}
+        {/* HK: the chart; every bar is one call frame of the traced tests */}
         <div
-          className="lh-up absolute bottom-[7%] left-1/2 -translate-x-1/2"
-          style={{ "--d": "1.4s" } as Delay}
+          role="img"
+          aria-label={`Gas per call frame in the traced tests of ${atlas.contract}, cheapest first`}
+          className="absolute inset-x-4 top-[270px] bottom-0 flex items-end justify-between md:inset-x-6 md:top-[230px]"
         >
-          {[-90, -30, 30, 90].map((x) => (
-            <span
-              key={x}
-              aria-hidden="true"
-              className="absolute top-1/2 bottom-[-60vh] w-px bg-gradient-to-b from-white/[.14] via-white/[.06] to-transparent"
-              style={{ left: `calc(50% + ${x}px)` }}
-            />
-          ))}
-          <span className="relative inline-block rounded-[10px] border border-white/[.14] bg-[#060607]/80 px-6 py-2.5 text-[15px] text-muted">
-            Trace. Graph. Triage.
-          </span>
+          {bars.map((b, i) => {
+            const flag = i === flagAt;
+            return (
+              <span
+                key={`${b.fn}-${b.gas}-${i}`}
+                className={`lh-bar relative w-px ${flag ? "bg-white" : "bg-white/[.22]"}`}
+                style={
+                  {
+                    height: `${pct(b.gas)}%`,
+                    "--d": `${0.3 + i * 0.016}s`,
+                  } as Delay
+                }
+              >
+                {flag && (
+                  <span
+                    className="lh-up absolute bottom-[calc(100%+12px)] left-1/2 flex -translate-x-1/2 flex-col items-center gap-2.5"
+                    style={{ "--d": "1.5s" } as Delay}
+                  >
+                    <span className="whitespace-nowrap font-mono text-[11px] text-muted [writing-mode:vertical-rl] rotate-180">
+                      {b.fn}() · {Math.round(b.gas / 1000)}k gas
+                    </span>
+                    <span className="size-[7px] rounded-full bg-red shadow-[0_0_10px_rgba(255,80,80,.6)]" />
+                  </span>
+                )}
+              </span>
+            );
+          })}
         </div>
       </div>
     </HeroExit>
