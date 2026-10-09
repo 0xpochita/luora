@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LogoMark } from "@/components/ui";
+import { LogoText } from "@/components/ui";
 import { ICON_PATH, type IconKey } from "@/features/atlas/utils/icons";
 import { GitHubMark } from "./GitHubMark";
 import { HeroExit } from "./Haze";
@@ -21,8 +21,7 @@ export function Nav() {
   return (
     <nav className="relative z-20 mx-auto flex h-[76px] max-w-[1240px] items-center justify-between px-4 md:px-6">
       <Link href="/" className="flex items-center gap-2.5" aria-label="Luora">
-        <LogoMark />
-        <span className="font-medium text-[17px] text-fg">luora</span>
+        <LogoText height={28} />
       </Link>
       <ul className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-0.5 rounded-full border border-white/[.08] bg-[#0b0b0c]/85 p-1 md:flex">
         {items.map((i) => (

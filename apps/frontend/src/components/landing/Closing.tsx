@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LogoMark } from "@/components/ui";
+import { LogoText } from "@/components/ui";
 import { CityHorizon } from "./CityHorizon";
 import { CompareTable } from "./CompareTable";
 import { GitHubMark } from "./GitHubMark";
@@ -226,8 +226,7 @@ export function Footer() {
       <div className="mx-auto grid max-w-[1240px] gap-10 px-4 py-14 md:grid-cols-[2fr_1fr_1fr] md:px-6">
         <div>
           <span className="flex items-center gap-2.5">
-            <LogoMark />
-            <span className="font-medium text-[17px] text-fg">luora</span>
+            <LogoText height={28} />
           </span>
           <p className="mt-4 max-w-[300px] text-[13px] text-dim leading-relaxed">
             Visual tooling for smart contract audits. Defensive by design.

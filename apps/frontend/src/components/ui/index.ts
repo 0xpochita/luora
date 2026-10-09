@@ -6,7 +6,7 @@ export { IconButton } from "./IconButton";
 export { Input, Select, Textarea } from "./Input";
 export { KindIcon } from "./KindIcon";
 export { KV } from "./KV";
-export { LogoMark } from "./LogoMark";
+export { LogoMark, LogoText } from "./LogoMark";
 export { Meter } from "./Meter";
 export { Card, Panel } from "./Panel";
 export { SegmentedControl } from "./SegmentedControl";
