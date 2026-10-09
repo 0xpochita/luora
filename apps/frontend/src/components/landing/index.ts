@@ -253,9 +253,10 @@
  *     the top edge onto the headline, two rules running out from the button with small diamonds,
  *     a curved horizon lit from behind, the product peeking over its rim. Nothing else.
  *     → Hero: the same five pieces and nothing more. 'actually does.' in silver, the Lab button
- *       with the brand tile as its icon, the horizon an ellipse with a gradient rim over a dawn
- *       glow, the brand tile standing on the rim. Rail, deck, pipeline and the big mark are gone;
- *       the haze now starts below the rim and the Works-with hub is the first product view.
+ *       with the brand tile as its icon, the horizon an ellipse with a bright gradient rim and a
+ *       bloom over a dawn glow (a brand tile standing on the rim, ZERO's phone, was tried and
+ *       dropped as one object too many). Rail, deck, pipeline and the big mark are gone; the haze
+ *       now starts below the rim and the Works-with hub is the first product view.
  *
  * No screenshots: every product view on the page is the app's own component rendered live on the
  * sample run (built near the screen only, Lazy). Colour stays per DESIGN.md: grey/white, red only

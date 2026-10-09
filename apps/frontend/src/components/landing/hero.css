@@ -65,7 +65,7 @@
   }
 }
 
-/* the horizon lights up from below, the tile lands on its rim last */
+/* the horizon lights up from below */
 .lh-horizon {
   animation: lh-horizon 1.6s ease-out 0.1s backwards;
 }
@@ -73,18 +73,6 @@
   from {
     opacity: 0;
     transform: translateY(40px);
-  }
-}
-.lh-tile {
-  /* on the rim: the ellipse tops out 310 viewBox units above the svg's bottom edge, and the
-     slice scale is width- or height-driven (h = min(62vh, 580px) / 640) */
-  bottom: max(19.375vw, min(30.03vh, 281px));
-  animation: lh-tile 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) 1.2s backwards;
-}
-@keyframes lh-tile {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 110%);
   }
 }
 
@@ -97,8 +85,5 @@
     animation: none;
     opacity: 1;
     transform: none;
-  }
-  .lh-tile {
-    animation: none;
   }
 }

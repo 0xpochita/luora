@@ -5,7 +5,7 @@
  *     scene also came from): wordmark + one pill, a two-line centred headline with the second
  *     line tinted, one subline, one App-Store-style button, two hairlines dropping from the top
  *     edge onto the headline and two rules running out from the button, a curved horizon lit
- *     from behind with the product peeking over it. Nothing else.
+ *     from behind (its phone over the rim was tried and dropped). Nothing else.
  */
 import Link from "next/link";
 import { LogoMark, LogoText } from "@/components/ui";
@@ -87,8 +87,8 @@ const ETHEREUM =
 
 /**
  * Sixteenth pass (HI ZERO). Hairlines drop onto the headline → lines rise → subline → the button
- * with its rules running out → the horizon lights up with the brand tile over it. The Works-with
- * hub under the haze is the first product view.
+ * with its rules running out → the horizon lights up. The Works-with hub under the haze is the
+ * first product view.
  */
 export function Hero() {
   return (
@@ -122,7 +122,9 @@ export function Hero() {
             </radialGradient>
             <linearGradient id="lh-rim" x1="0" x2="1">
               <stop offset="0" stopColor="#fff" stopOpacity="0" />
-              <stop offset=".5" stopColor="#fff" stopOpacity=".85" />
+              <stop offset=".3" stopColor="#fff" stopOpacity=".9" />
+              <stop offset=".5" stopColor="#fff" />
+              <stop offset=".7" stopColor="#fff" stopOpacity=".9" />
               <stop offset="1" stopColor="#fff" stopOpacity="0" />
             </linearGradient>
           </defs>
@@ -136,8 +138,8 @@ export function Hero() {
             ry="800"
             fill="none"
             stroke="url(#lh-rim)"
-            strokeWidth="7"
-            opacity=".22"
+            strokeWidth="8"
+            opacity=".35"
           />
           <ellipse
             cx="800"
@@ -146,14 +148,9 @@ export function Hero() {
             ry="800"
             fill="none"
             stroke="url(#lh-rim)"
-            strokeWidth="1.5"
+            strokeWidth="2"
           />
         </svg>
-        {/* ZERO's phone peeking over the rim: here a dark tile with the mark, lit from behind */}
-        <div className="lh-tile absolute left-1/2 grid size-[96px] -translate-x-1/2 translate-y-[70%] place-items-center rounded-[24px] border border-white/[.16] bg-gradient-to-b from-[#1a1a1e] to-[#0a0a0c] shadow-[0_-10px_50px_rgba(255,255,255,.12)]">
-          {/* biome-ignore lint/performance/noImgElement: 44px static brand mark */}
-          <img src="/brand/mark-white.png" alt="" width={44} height={44} />
-        </div>
       </div>
 
       <div
