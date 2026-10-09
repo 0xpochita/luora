@@ -151,7 +151,7 @@ export function HowItWorks({
   ];
 
   return (
-    <section id="how-it-works" className="pb-32">
+    <section id="how-it-works" data-tone="how" className="pb-32">
       <div className="mx-auto max-w-[1240px] px-4 md:px-6">
         <p className="flex items-center gap-2 text-[13px] text-text">
           <span className="size-1.5 rounded-full bg-white" />

@@ -3,8 +3,9 @@ import type { ReactNode } from "react";
 import { LogoMark } from "@/components/ui";
 import { CityHorizon } from "./CityHorizon";
 import { GitHubMark } from "./GitHubMark";
+import { FinaleRise } from "./Haze";
 import { DOCS, GITHUB } from "./Hero";
-import { Reveal } from "./motion";
+import { Exit, Reveal } from "./motion";
 
 /** One row: what you get, what Luora shows (a full sentence, R29), what the CLIs give today (null = nothing). */
 const ROWS: { what: string; luora: string; cli: string | null }[] = [
@@ -127,104 +128,113 @@ function CliCell({ cli }: { cli: string | null }) {
  */
 export function Compare() {
   return (
-    <section className="mx-auto max-w-[1240px] px-4 pb-32 md:px-6">
-      <Reveal>
-        {/* R28 header row */}
-        <div className="hidden grid-cols-[140px_5fr_6fr] gap-6 border-white/[.14] border-b pb-2 text-[12.5px] text-dim md:grid">
-          <span>№</span>
-          <span>Subject</span>
-          <span>About</span>
-        </div>
-        <div className="grid gap-4 pt-5 md:grid-cols-[140px_5fr_6fr] md:gap-6">
-          <span className="font-mono text-[15px] text-muted md:text-[22px] md:text-fg md:leading-[1.2]">
-            [007]
-          </span>
-          <h2 className="font-medium text-[clamp(30px,3.6vw,46px)] text-fg leading-[1.04] tracking-[-0.03em]">
-            Same run,
-            <br />
-            <span className="text-white/45">read differently.</span>
-          </h2>
-          <p className="max-w-[460px] text-[16px] text-muted leading-relaxed">
-            Luora does not replace forge or the analyzers. It reads what they
-            already produce and lays it over the contract.
-          </p>
-        </div>
-      </Reveal>
+    <section
+      data-tone="compare"
+      className="mx-auto max-w-[1240px] px-4 pb-32 md:px-6"
+    >
+      <Exit>
+        <Reveal>
+          {/* R28 header row */}
+          <div className="hidden grid-cols-[140px_5fr_6fr] gap-6 border-white/[.14] border-b pb-2 text-[12.5px] text-dim md:grid">
+            <span>№</span>
+            <span>Subject</span>
+            <span>About</span>
+          </div>
+          <div className="grid gap-4 pt-5 md:grid-cols-[140px_5fr_6fr] md:gap-6">
+            <span className="font-mono text-[15px] text-muted md:text-[22px] md:text-fg md:leading-[1.2]">
+              [007]
+            </span>
+            <h2 className="font-medium text-[clamp(30px,3.6vw,46px)] text-fg leading-[1.04] tracking-[-0.03em]">
+              Same run,
+              <br />
+              <span className="text-white/45">read differently.</span>
+            </h2>
+            <p className="max-w-[460px] text-[16px] text-muted leading-relaxed">
+              Luora does not replace forge or the analyzers. It reads what they
+              already produce and lays it over the contract.
+            </p>
+          </div>
+        </Reveal>
 
-      <Reveal delay={0.08} className="mt-16 md:ml-[164px]">
-        {/* desktop: three columns, the Luora column one raised card spanning every row (R27) */}
-        <table className="relative hidden grid-cols-[minmax(0,0.85fr)_minmax(0,1.45fr)_minmax(0,1fr)] grid-rows-[auto_repeat(8,auto)] text-left before:col-start-2 before:row-start-1 before:row-end-[-1] before:-mt-3 before:-mb-4 before:rounded-card before:border before:border-white/[.13] before:bg-card-grad before:shadow-[0_0_80px_-12px_rgba(255,255,255,.14),0_24px_48px_rgba(0,0,0,.55)] md:grid">
-          <caption className="sr-only">
-            Luora compared with forge and the analyzer CLIs
-          </caption>
-          <thead className="contents">
-            <tr className="contents">
-              <th className="col-start-1 row-start-1 self-end pb-4 font-normal text-[13px] text-dim">
-                What you get
-              </th>
-              <th className="relative col-start-2 row-start-1 flex items-center gap-2.5 px-6 pt-4 pb-5 font-medium text-[17px] text-fg">
-                <LogoMark />
-                Luora
-              </th>
-              <th className="col-start-3 row-start-1 self-end px-6 pb-4 font-normal text-[13px] text-dim">
-                forge + analyzer CLIs
-              </th>
-            </tr>
-          </thead>
-          <tbody className="contents">
-            {ROWS.map((r, i) => (
-              <tr key={r.what} className="contents">
-                <th
-                  scope="row"
-                  className="col-start-1 border-white/[.07] border-t py-4 pr-4 font-normal text-[14px] text-body"
-                  style={{ gridRowStart: i + 2 }}
-                >
-                  {r.what}
+        <Reveal delay={0.08} className="mt-16 md:ml-[164px]">
+          {/* desktop: three columns, the Luora column one raised card spanning every row (R27) */}
+          <table className="relative hidden grid-cols-[minmax(0,0.85fr)_minmax(0,1.45fr)_minmax(0,1fr)] grid-rows-[auto_repeat(8,auto)] text-left before:col-start-2 before:row-start-1 before:row-end-[-1] before:-mt-3 before:-mb-4 before:rounded-card before:border before:border-white/[.13] before:bg-card-grad before:shadow-[0_0_80px_-12px_rgba(255,255,255,.14),0_24px_48px_rgba(0,0,0,.55)] md:grid">
+            <caption className="sr-only">
+              Luora compared with forge and the analyzer CLIs
+            </caption>
+            <thead className="contents">
+              <tr className="contents">
+                <th className="col-start-1 row-start-1 self-end pb-4 font-normal text-[13px] text-dim">
+                  What you get
                 </th>
-                <td
-                  className="relative col-start-2 mx-3 flex gap-3 border-white/[.06] border-t px-3 py-4 text-[14px] text-fg leading-snug"
-                  style={{ gridRowStart: i + 2 }}
-                >
-                  <CheckCircle />
-                  {r.luora}
-                </td>
-                <td
-                  className="col-start-3 flex gap-3 border-white/[.07] border-t px-6 py-4 text-[13px] text-dim leading-snug"
-                  style={{ gridRowStart: i + 2 }}
-                >
-                  <CliCell cli={r.cli} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {/* mobile: one stacked card per row */}
-        <ul className="space-y-3 md:hidden">
-          {ROWS.map((r) => (
-            <li
-              key={r.what}
-              className="rounded-card border border-white/[.07] bg-[#0c0c0d] p-2"
-            >
-              <p className="px-3 pt-2 pb-2.5 text-[13px] text-dim">{r.what}</p>
-              <div className="rounded-inner border border-white/[.13] bg-card-grad p-3 shadow-[0_0_40px_-12px_rgba(255,255,255,.14)]">
-                <p className="mb-2 flex items-center gap-2 text-[12.5px] text-muted">
-                  <span className="size-1.5 rounded-full bg-white" />
+                <th className="relative col-start-2 row-start-1 flex items-center gap-2.5 px-6 pt-4 pb-5 font-medium text-[17px] text-fg">
+                  <LogoMark />
                   Luora
+                </th>
+                <th className="col-start-3 row-start-1 self-end px-6 pb-4 font-normal text-[13px] text-dim">
+                  forge + analyzer CLIs
+                </th>
+              </tr>
+            </thead>
+            <tbody className="contents">
+              {ROWS.map((r, i) => (
+                <tr key={r.what} className="contents">
+                  <th
+                    scope="row"
+                    className="col-start-1 border-white/[.07] border-t py-4 pr-4 font-normal text-[14px] text-body"
+                    style={{ gridRowStart: i + 2 }}
+                  >
+                    {r.what}
+                  </th>
+                  <td
+                    className="relative col-start-2 mx-3 flex gap-3 border-white/[.06] border-t px-3 py-4 text-[14px] text-fg leading-snug"
+                    style={{ gridRowStart: i + 2 }}
+                  >
+                    <CheckCircle />
+                    {r.luora}
+                  </td>
+                  <td
+                    className="col-start-3 flex gap-3 border-white/[.07] border-t px-6 py-4 text-[13px] text-dim leading-snug"
+                    style={{ gridRowStart: i + 2 }}
+                  >
+                    <CliCell cli={r.cli} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* mobile: one stacked card per row */}
+          <ul className="space-y-3 md:hidden">
+            {ROWS.map((r) => (
+              <li
+                key={r.what}
+                className="rounded-card border border-white/[.07] bg-[#0c0c0d] p-2"
+              >
+                <p className="px-3 pt-2 pb-2.5 text-[13px] text-dim">
+                  {r.what}
                 </p>
-                <p className="flex gap-2.5 text-[14px] text-fg leading-snug">
-                  <CheckCircle />
-                  {r.luora}
+                <div className="rounded-inner border border-white/[.13] bg-card-grad p-3 shadow-[0_0_40px_-12px_rgba(255,255,255,.14)]">
+                  <p className="mb-2 flex items-center gap-2 text-[12.5px] text-muted">
+                    <span className="size-1.5 rounded-full bg-white" />
+                    Luora
+                  </p>
+                  <p className="flex gap-2.5 text-[14px] text-fg leading-snug">
+                    <CheckCircle />
+                    {r.luora}
+                  </p>
+                </div>
+                <p className="flex gap-2.5 px-3 pt-3 pb-2 text-[13px] text-dim leading-snug">
+                  <CliCell cli={r.cli} />
+                  {r.cli ? null : (
+                    <span aria-hidden="true">Not in the CLIs</span>
+                  )}
                 </p>
-              </div>
-              <p className="flex gap-2.5 px-3 pt-3 pb-2 text-[13px] text-dim leading-snug">
-                <CliCell cli={r.cli} />
-                {r.cli ? null : <span aria-hidden="true">Not in the CLIs</span>}
-              </p>
-            </li>
-          ))}
-        </ul>
-      </Reveal>
+              </li>
+            ))}
+          </ul>
+        </Reveal>
+      </Exit>
     </section>
   );
 }
@@ -249,7 +259,7 @@ function Badge({
   return (
     <g transform={`translate(${x} ${y})`}>
       {/* a canvas-coloured collar breaks the ring around the badge, as in R32 */}
-      <circle r="30" fill="#000" />
+      <circle r="30" fill="var(--lp-bg, #000)" />
       <circle
         r="24"
         fill="var(--raised)"
@@ -426,7 +436,10 @@ export function Statement() {
     "Needs an RPC key or a live chain",
   ];
   return (
-    <section className="mx-auto max-w-[1240px] px-4 py-28 md:px-6 md:py-36">
+    <section
+      data-tone="statement"
+      className="mx-auto max-w-[1240px] px-4 pt-4 pb-28 md:px-6 md:pb-36"
+    >
       <Reveal>
         <h2 className="text-[clamp(40px,7.4vw,104px)] text-fg leading-[0.98] tracking-[-0.045em]">
           Built for auditors.
@@ -547,17 +560,15 @@ export function Faq() {
 
 /**
  * R13 (ZERO) + R14 (SurveilTrack): the closing CTA and the footer share one full-bleed scene, a
- * glowing horizon carrying a dark city. R2 starburst stays above the headline.
+ * glowing horizon carrying a dark city that rises with the scroll (FinaleRise, Genie's closing
+ * clouds). R2 starburst stays above the headline.
  */
 export function Finale() {
   return (
-    <section className="relative overflow-hidden bg-black">
-      <CityHorizon />
-      <div className="relative">
-        <FinalCta />
-        <Footer />
-      </div>
-    </section>
+    <FinaleRise city={<CityHorizon />}>
+      <FinalCta />
+      <Footer />
+    </FinaleRise>
   );
 }
 
@@ -579,8 +590,8 @@ export function FinalCta() {
           +
         </span>
       </div>
-      <Reveal>
-        <div className="relative text-center">
+      <div data-lp="finale-body" className="relative text-center">
+        <div>
           <svg
             aria-hidden="true"
             viewBox="-40 -40 80 80"
@@ -619,7 +630,7 @@ export function FinalCta() {
             cd foundry && node luora-export.mjs
           </p>
         </div>
-      </Reveal>
+      </div>
     </div>
   );
 }
@@ -647,7 +658,7 @@ export function Footer() {
     },
   ];
   return (
-    <footer className="border-white/[.06] border-t bg-black/40 backdrop-blur-[2px]">
+    <footer className="bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,.5)_40%)]">
       <div className="mx-auto grid max-w-[1240px] gap-10 px-4 py-14 md:grid-cols-[2fr_1fr_1fr] md:px-6">
         <div>
           <span className="flex items-center gap-2.5">

@@ -13,19 +13,16 @@
  *  R3  pin/3659243441333295 ("One-click for Asset Defense") — eyebrow pill above the H1, white +
  *      dark pill CTAs, small orbiting labelled nodes on thin lines around the headline, logo strip
  *      → Hero eyebrow + CTAs, `Orbits` (deposit(), slot 5 · totalShares, IOracle, ▲ finding),
- *        `WorksWith` (text wordmarks of what Luora really reads, no customer logos).
+ *        the "Works with" marks (now the scattering row in ScatterGrow, no customer logos).
  *  R4  brief: Linear "Issue tracking without the noise" (that shot is behind pin/183873597282670958;
  *      pin/151855818681736612 is the Mercury hero, used only for its gradient-faded second line)
  *      → `Features`: copy column + 2×2 points beside the product, sides alternate (widgets: R21/R11);
  *        `Numbers`: big numbers with tiny captions (real sample-vault numbers, no quote).
- *  R5  pin/120823202500504610 ("Insights that actually — tell you something")
- *      → `Pillars` heading: one italic serif phrase (Instrument Serif, that phrase only);
- *   R12 QClay (pin 852728510751497559): dot-matrix panels, '+WORD+WORD' mono titles, dot compass,
+ *  (R5 / R12 drove the old `Pillars` panels; removed in the sixth pass, the findings wheel and
+ *      'How Luora works' carry the same run / coverage / findings data.)
  *   R13 ZERO (user ref): full-bleed closing scene, glowing curved horizon, hairlines with '+' markers;
  *   R14 SurveilTrack (user ref): that horizon is a dark city with lit roofs, windows, square markers
  *      → `Finale` (CityHorizon.tsx + FinalCta + Footer).
- *      mono key-value footers → `Pillars` panels (Pillars.tsx), all drawn from the sample run.
- *        three cards in one rounded frame with monochrome isometric wireframes drawn in SVG.
  *  R6  brief: boutique cyber security statement (huge centred line on black, segmented pill)
  *      → `Statement`: "Built for auditors. Not for attackers." + Trace / Lab / Findings pill.
  *  (R7, the tilted Linear-style hero capture, was dropped in the third pass: it read muddy.)
@@ -95,6 +92,29 @@
  *      between, a word in each, icon badges on the outlines → `Statement` 'Reads ⇄ Never' (replaces
  *      the R6 radar and the two cards).
  *
+ * Sixth pass (2026-10-09, "make it flow like geniestudio.app — yang penting nyambung"), Genie studied
+ * by scrolling it top to bottom: Lenis + GSAP ScrollTrigger, three pinned scrubbed stages, a
+ * background that never cuts. Same dark graphite look, same content and data; only the staging.
+ *  Section (file)                         → Genie pattern
+ *  SmoothScroll + .lp-backdrop (motion)   → Lenis smooth scroll on the GSAP ticker; one fixed
+ *                                           background whose tone drifts per section (data-tone)
+ *  Hero (Haze.tsx HeroExit)               → the hero swallowed by clouds rising from below: a
+ *                                           graphite haze + perspective grid climbs over it
+ *  Product (ScatterGrow.tsx, pinned)      → row of 5 round icons scatters, a tiny square in the
+ *                                           centre grows into the app mockup (the live ProductTabs)
+ *  Run (RunSentence.tsx, pinned)          → 'You can [+ Create] with one click', button inside the
+ *                                           sentence, tiles around it (Run pill, scenario cards)
+ *  BigWords ('Trace' / 'Test' / 'Triage') → 'Create' / 'Like' / 'Magic', letters dropping in one
+ *                                           by one, mascots beside them (icon badges)
+ *  Features ('How Luora works')           → (kept: sticky R22 stack)
+ *  Findings (FindingsWheel.tsx, pinned)   → arc of style cards turning like a wheel, 'Hover to …'
+ *  Tests (TestDrift.tsx)                  → testimonial rows drifting sideways (real test names,
+ *                                           no quotes)
+ *  Bento / Ask / Compare / Statement      → bento + scrubbed fade-and-lift entrances (Reveal);
+ *                                           Compare sinks back under Statement (Exit)
+ *  Finale (Haze.tsx FinaleRise)           → footer closed by clouds rising again: the city rises
+ * Phones (<768px) and reduced motion: no pins, static readable layout (STAGE_MQ, landing.css).
+ *
  * Product shots in public/landing/ (b-*.webp, Bento) are real captures of /trace and /atlas from a
  * local `node luora-export.mjs` run, never mock UI; the hero and 'How Luora works' render the app live. Colour stays per DESIGN.md: grey/white,
  * red only on findings.
@@ -102,7 +122,9 @@
 
 export { Ask } from "./Ask";
 export { Bento } from "./Bento";
+export { BigWords } from "./BigWords";
 export { Compare, Faq, FinalCta, Finale, Footer, Statement } from "./Closing";
 export { Features } from "./Features";
-export { Hero, WorksWith } from "./Hero";
-export { Pillars } from "./Pillars";
+export { Hero, Product } from "./Hero";
+export { SmoothScroll } from "./motion";
+export { Findings, Run, Tests } from "./Stages";

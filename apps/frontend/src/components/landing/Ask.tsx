@@ -9,7 +9,11 @@ import { demoAtlas } from "./stats";
 export async function Ask() {
   const atlas = await demoAtlas();
   return (
-    <section id="ask" className="mx-auto max-w-[1240px] px-4 pb-32 md:px-6">
+    <section
+      id="ask"
+      data-tone="ask"
+      className="mx-auto max-w-[1240px] px-4 pb-32 md:px-6"
+    >
       <Reveal className="mb-12 grid gap-6 md:grid-cols-2 md:items-end">
         <h2 className="font-medium text-[clamp(32px,4.4vw,54px)] text-fg leading-[1.04] tracking-[-0.03em]">
           Ask about the line,

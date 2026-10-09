@@ -1,4 +1,4 @@
-/* Landing-only motion. Two moves: the beam drifts (R1), node lines draw in (R3). Nothing else animates. */
+/* Landing-only motion. Ambient CSS loops (beam, draw-ins, typing) plus the layouts the GSAP scroll stages need. */
 .lp-beam {
   background: radial-gradient(
     50% 100% at 50% 0%,
@@ -139,20 +139,6 @@
   }
 }
 
-/* scroll reveal: Reveal sets data-in once the block enters the viewport */
-.lp-reveal {
-  opacity: 0;
-  transform: translateY(24px);
-  transition:
-    opacity 0.8s ease,
-    transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
-  transition-delay: var(--delay, 0s);
-}
-.lp-reveal[data-in] {
-  opacity: 1;
-  transform: none;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .lp-beam,
   .lp-beam-core,
@@ -175,41 +161,12 @@
   .lp-packet {
     display: none;
   }
-  .lp-reveal {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
   .lp-reveal .lp-ring {
     transition: none;
     stroke-dashoffset: 0;
   }
   .lp-circled {
     transition: none;
-  }
-}
-
-/* R12: dot-matrix pixels step in once, the findings orbit turns very slowly */
-.lp-px {
-  animation: lp-px 0.5s steps(3, end) both;
-}
-@keyframes lp-px {
-  from {
-    opacity: 0;
-  }
-}
-.lp-orbit {
-  animation: lp-orbit 60s linear infinite;
-}
-@keyframes lp-orbit {
-  to {
-    transform: rotate(360deg);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .lp-px,
-  .lp-orbit {
-    animation: none;
   }
 }
 
@@ -261,13 +218,228 @@
   }
 }
 
-/* R26 hero close-up: the live app turned and tilted back, bleeding off the right and bottom;
-   only the far (bottom) edge fades. The stage spans the viewport so the mask never cuts a side. */
-.lp-closeup {
-  perspective: 2200px;
-  perspective-origin: 30% 0%;
-  mask-image: linear-gradient(to bottom, #000 72%, transparent);
+/* Genie: one continuous background. A fixed graphite backdrop whose tone and soft glow drift with
+   the scroll (motion.tsx writes --lp-bg / --lp-glow / --lp-gx / --lp-gy); sections stay transparent. */
+.lp-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      60% 50% at var(--lp-gx, 50%) var(--lp-gy, 0%),
+      rgb(200 205 220 / calc(var(--lp-glow, 0.09) * 1)),
+      transparent 70%
+    ),
+    var(--lp-bg, #000);
 }
-.lp-tilt {
-  transform: rotateX(20deg) rotateZ(-6deg);
+
+/* Genie's clouds, in graphite: a perspective grid rising in a haze. Both ends fade, so it never
+   draws an edge where it is clipped. */
+.lp-haze {
+  position: absolute;
+  inset-inline: 0;
+  height: 110vh;
+  pointer-events: none;
+  overflow: hidden;
+  perspective: 520px;
+  perspective-origin: 50% 0%;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 22%,
+    #000 78%,
+    transparent
+  );
+}
+.lp-haze-grid {
+  position: absolute;
+  inset: 18% -60% -60%;
+  transform: rotateX(64deg);
+  transform-origin: 50% 0%;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: linear-gradient(to bottom, transparent, #000 35%);
+}
+.lp-haze-mist {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      55% 32% at 50% 52%,
+      rgba(205, 210, 222, 0.13),
+      transparent 70%
+    ),
+    radial-gradient(
+      30% 22% at 18% 62%,
+      rgba(255, 255, 255, 0.06),
+      transparent 70%
+    ),
+    radial-gradient(
+      30% 22% at 82% 58%,
+      rgba(255, 255, 255, 0.06),
+      transparent 70%
+    ),
+    linear-gradient(
+      to bottom,
+      transparent 30%,
+      var(--lp-bg, #000) 62%,
+      transparent
+    );
+  filter: blur(24px);
+}
+
+/* without motion the haze would only sit on top of the content: drop it */
+@media (prefers-reduced-motion: reduce) {
+  .lp-haze {
+    display: none;
+  }
+}
+
+/* Scroll stages. Static (phones, reduced motion): plain flow. Staged: one pinned screen each. */
+.lp-sg {
+  padding: 96px 16px 64px;
+}
+.lp-sg-marks {
+  margin: 40px auto 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px 28px;
+}
+.lp-sg-product {
+  margin: 56px auto 0;
+  max-width: 1180px;
+}
+.lp-shot {
+  perspective: 1800px;
+  transform-style: preserve-3d;
+}
+.lp-square {
+  display: none;
+}
+.lp-run {
+  padding: 96px 0 64px;
+}
+.lp-run-graph {
+  margin: 48px auto 0;
+  max-width: 1000px;
+  padding-inline: 16px;
+}
+.lp-wheel {
+  padding: 96px 16px;
+}
+.lp-wheel-ring {
+  margin: 48px auto 0;
+  max-width: 1080px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+.lp-wheel-read {
+  display: none;
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .lp-sg {
+    position: relative;
+    height: 100vh;
+    padding: 0;
+  }
+  .lp-sg-head {
+    position: absolute;
+    inset-inline: 0;
+    top: 15vh;
+  }
+  .lp-sg-marks {
+    position: absolute;
+    inset-inline: 0;
+    top: 50%;
+    margin: 0;
+    flex-wrap: nowrap;
+    gap: 36px;
+    translate: 0 -30%;
+  }
+  .lp-sg-product {
+    position: absolute;
+    inset: 4vh 32px 4vh;
+    margin: 0 auto;
+    pointer-events: none;
+  }
+  .lp-sg-product [role="tablist"] {
+    pointer-events: auto;
+  }
+  .lp-sg-product .lp-shot {
+    flex: 1;
+    height: auto;
+    min-height: 0;
+  }
+  .lp-square {
+    display: block;
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 56px;
+    height: 56px;
+    border: 1.5px solid rgba(255, 255, 255, 0.55);
+    border-radius: 14px;
+    box-shadow: 0 0 40px -6px rgba(255, 255, 255, 0.25);
+    pointer-events: none;
+  }
+
+  .lp-run {
+    position: relative;
+    height: 100vh;
+    padding: 0;
+    display: grid;
+    place-items: center;
+  }
+  .lp-run > * {
+    grid-area: 1 / 1;
+  }
+  .lp-run-graph {
+    margin: 0;
+    width: 100%;
+  }
+
+  .lp-wheel {
+    position: relative;
+    height: 100vh;
+    padding: 0;
+    overflow: hidden;
+  }
+  .lp-wheel-head {
+    position: absolute;
+    inset-inline: 0;
+    top: 11vh;
+  }
+  .lp-wheel-ring {
+    --r: 1150px;
+    position: absolute;
+    left: 50%;
+    top: calc(52vh + var(--r));
+    width: 0;
+    height: 0;
+    margin: 0;
+    display: block;
+  }
+  .lp-wheel-card {
+    position: absolute;
+    left: -140px;
+    top: -95px;
+    width: 280px;
+    height: 190px;
+    transform: rotate(var(--a)) translateY(calc(-1 * var(--r)));
+  }
+  .lp-wheel-what {
+    display: none;
+  }
+  .lp-wheel-read {
+    display: block;
+    position: absolute;
+    inset-inline: 0;
+    top: calc(52vh + 150px);
+  }
 }

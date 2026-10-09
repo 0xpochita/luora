@@ -1,10 +1,10 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
 import { LogoMark } from "@/components/ui";
 import { ICON_PATH, type IconKey } from "@/features/atlas/utils/icons";
 import { GitHubMark } from "./GitHubMark";
-import { LogoLoop } from "./LogoLoop";
+import { HeroExit } from "./Haze";
 import { ProductTabs } from "./ProductTabs";
+import { ScatterGrow } from "./ScatterGrow";
 import { demoAtlas, scenarioDemo, traceFrames } from "./stats";
 
 export const GITHUB = "https://github.com/0xpochita/luora";
@@ -164,6 +164,7 @@ function Orbits() {
   return (
     <div
       aria-hidden="true"
+      data-lp="hero-body"
       className="pointer-events-none absolute inset-x-0 top-[190px] mx-auto hidden h-[380px] max-w-[1240px] lg:block"
     >
       <svg
@@ -301,22 +302,10 @@ function Terminal({ log }: { log: string[] }) {
   );
 }
 
-/** The hero close-up's data: the audited contract and the first frames of one test. */
-async function Product() {
-  const [atlas, trace, scenario] = await Promise.all([
-    demoAtlas(),
-    traceFrames(14),
-    scenarioDemo(),
-  ]);
-  return (
-    <ProductTabs atlas={atlas} frames={trace.frames} scenario={scenario} />
-  );
-}
-
 /** R2 + R1 + R3 + R26 + R8, see index.ts. */
 export function Hero({ log }: { log: string[] }) {
   return (
-    <header className="relative overflow-hidden bg-black">
+    <HeroExit>
       <Backdrop />
       {/* R1: one soft monochrome beam from the top, drifting */}
       <div
@@ -329,7 +318,10 @@ export function Hero({ log }: { log: string[] }) {
       <Nav />
       <Orbits />
 
-      <div className="relative z-10 mx-auto flex max-w-[1240px] flex-col items-center px-4 pt-[140px] text-center md:pt-[150px]">
+      <div
+        data-lp="hero-body"
+        className="relative z-10 mx-auto flex max-w-[1240px] flex-col items-center px-4 pt-[140px] pb-40 text-center md:pt-[150px] md:pb-56"
+      >
         <a
           href="#product"
           className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/[.09] bg-white/[.04] py-1 pr-3 pl-1.5 text-[12.5px] text-muted transition-colors hover:text-fg"
@@ -367,22 +359,17 @@ export function Hero({ log }: { log: string[] }) {
         </div>
 
         <Terminal log={log} />
-
-        {/* R26 + R16 + R8: the live app as a tilted close-up, switching views like onorca.dev */}
-        <div id="product" className="relative mt-10 w-full md:mt-12">
-          <Product />
-        </div>
       </div>
 
       {/* R1: vertical scroll label on the right edge */}
       <a
-        href="#works-with"
+        href="#product"
         className="absolute top-[420px] right-5 z-10 hidden items-center gap-3 text-[12px] text-dim [writing-mode:vertical-rl] hover:text-muted xl:flex"
       >
         Scroll to explore
         <span className="h-10 w-px bg-white/20" />
       </a>
-    </header>
+    </HeroExit>
   );
 }
 
@@ -392,17 +379,6 @@ const SOLIDITY =
   "M4.409 6.608L7.981.255l3.572 6.353H4.409zM8.411 0l3.569 6.348L15.552 0H8.411zm4.036 17.392l3.572 6.354 3.575-6.354h-7.147zm-.608-10.284h-7.43l3.715 6.605 3.715-6.605zm.428-.25h7.428L15.982.255l-3.715 6.603zM15.589 24l-3.569-6.349L8.448 24h7.141zm-3.856-6.858H4.306l3.712 6.603 3.715-6.603zm.428-.25h7.433l-3.718-6.605-3.715 6.605z";
 const ETHEREUM =
   "M11.944 17.97L4.58 13.62 11.943 24l7.37-10.38-7.372 4.35h.003zM12.056 0L4.69 12.223l7.365 4.354 7.365-4.35L12.056 0z";
-
-function Mark({ children, label }: { children: ReactNode; label: string }) {
-  return (
-    <span className="flex items-center gap-2.5 text-white/55 transition-colors hover:text-white">
-      {children}
-      <span className="font-medium text-[18px] tracking-[-0.01em]">
-        {label}
-      </span>
-    </span>
-  );
-}
 
 /** a PNG logo shown as a monochrome mark: `invert` for black-on-white art, `silhouette` for transparent colour art,
  *  `mono` for colour art on an opaque white background (it turns black and melts into the page) */
@@ -429,100 +405,55 @@ function Png({
 }
 
 /**
- * R3 logo strip, made a marquee with React Bits LogoLoop. Only tools Luora really reads:
- * official marks from each project (foundry-rs org avatar, crytic/slither logo.png,
- * Cyfrin/aderyn logo) and simple-icons for Solidity / Ethereum, all shown monochrome.
+ * R3 logo strip: only tools Luora really reads, official marks from each project (foundry-rs org
+ * avatar, crytic/slither logo.png, Cyfrin/aderyn logo) and simple-icons for Solidity / Ethereum,
+ * shown monochrome. Genie: these are the row of round icons that scatter before the product
+ * grows out of a square in the middle (ScatterGrow.tsx), with the live app tabs (ProductTabs).
  */
-export function WorksWith() {
-  const logos = [
+export async function Product() {
+  const [atlas, trace, scenario] = await Promise.all([
+    demoAtlas(),
+    traceFrames(14),
+    scenarioDemo(),
+  ]);
+  const icon = (d: string) => (
+    <svg
+      viewBox="0 0 24 24"
+      className="size-7"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d={d} />
+    </svg>
+  );
+  const marks = [
     {
-      node: (
-        <Mark label="Foundry">
-          <Png src="/logos/tools/foundry.png" alt="" mode="invert" h={28} />
-        </Mark>
-      ),
       title: "Foundry",
       href: "https://getfoundry.sh",
+      node: <Png src="/logos/tools/foundry.png" alt="" mode="invert" h={34} />,
     },
     {
-      node: (
-        <Mark label="Solidity">
-          <svg
-            viewBox="0 0 24 24"
-            className="size-6"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            <path d={SOLIDITY} />
-          </svg>
-        </Mark>
-      ),
       title: "Solidity",
       href: "https://soliditylang.org",
+      node: icon(SOLIDITY),
     },
     {
-      node: (
-        <Png
-          src="/logos/tools/slither.png"
-          alt="Slither"
-          mode="silhouette"
-          h={48}
-        />
-      ),
       title: "Slither",
       href: "https://github.com/crytic/slither",
+      node: (
+        <Png src="/logos/tools/slither.png" alt="" mode="silhouette" h={44} />
+      ),
     },
     {
-      node: (
-        <Png src="/logos/tools/aderyn.png" alt="Aderyn" mode="mono" h={30} />
-      ),
       title: "Aderyn",
       href: "https://github.com/Cyfrin/aderyn",
+      node: <Png src="/logos/tools/aderyn.png" alt="" mode="mono" h={30} />,
     },
-    {
-      node: (
-        <Mark label="Ethereum">
-          <svg
-            viewBox="0 0 24 24"
-            className="size-6"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            <path d={ETHEREUM} />
-          </svg>
-        </Mark>
-      ),
-      title: "Ethereum",
-      href: "https://ethereum.org",
-    },
-    {
-      node: (
-        <span className="font-mono text-[15px] text-white/50">
-          forge coverage
-        </span>
-      ),
-      title: "forge coverage",
-    },
+    { title: "Ethereum", href: "https://ethereum.org", node: icon(ETHEREUM) },
   ];
   return (
-    <section
-      id="works-with"
-      className="mx-auto flex max-w-[1240px] flex-col items-center gap-6 px-4 pt-4 pb-24 md:flex-row md:gap-10 md:px-6"
-    >
-      <p className="shrink-0 text-[13px] text-dim">Works with</p>
-      <div className="relative h-[40px] w-full min-w-0 flex-1 overflow-hidden">
-        <LogoLoop
-          logos={logos}
-          speed={60}
-          direction="left"
-          logoHeight={34}
-          gap={64}
-          pauseOnHover
-          fadeOut
-          fadeOutColor="#000000"
-          ariaLabel="Tools Luora works with"
-        />
-      </div>
-    </section>
+    <ScatterGrow marks={marks}>
+      <ProductTabs atlas={atlas} frames={trace.frames} scenario={scenario} />
+    </ScatterGrow>
   );
 }

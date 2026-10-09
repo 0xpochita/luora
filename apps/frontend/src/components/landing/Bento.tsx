@@ -90,7 +90,10 @@ const CARDS: Card[] = [
 /** R8 (onorca.dev "Agent-first, end to end") + R11 (mixed-size bento with mini UI) + R12 (bold lead, muted rest). */
 export function Bento() {
   return (
-    <section className="mx-auto max-w-[1240px] px-4 pb-32 md:px-6">
+    <section
+      data-tone="bento"
+      className="mx-auto max-w-[1240px] px-4 pb-32 md:px-6"
+    >
       <Reveal className="mb-12 grid gap-6 md:grid-cols-2 md:items-end">
         <h2 className="font-medium text-[clamp(32px,4.4vw,54px)] text-fg leading-[1.04] tracking-[-0.03em]">
           One console

@@ -1,14 +1,18 @@
 import {
   Ask,
   Bento,
+  BigWords,
   Compare,
   Faq,
   Features,
   Finale,
+  Findings,
   Hero,
-  Pillars,
+  Product,
+  Run,
+  SmoothScroll,
   Statement,
-  WorksWith,
+  Tests,
 } from "@/components/landing";
 import { sampleRun } from "@/components/landing/stats";
 import "@/components/landing/landing.css";
@@ -19,20 +23,26 @@ export const metadata = {
     "Defensive tooling for smart contract auditors: decoded Foundry traces, a contract graph that exports Foundry tests, deduplicated Slither and Aderyn findings, and forge coverage.",
 };
 
+/** One continuous story, every section handing over to the next (see the Genie map in index.ts). */
 export default async function Home() {
   const { log } = await sampleRun();
   return (
-    <main className="min-h-full overflow-x-clip bg-black">
-      <Hero log={log} />
-      <WorksWith />
-      <Features />
-      <Bento />
-      <Pillars />
-      <Ask />
-      <Compare />
-      <Statement />
-      <Faq />
-      <Finale />
+    <main className="relative min-h-full overflow-x-clip">
+      <SmoothScroll>
+        <Hero log={log} />
+        <Product />
+        <Run />
+        <BigWords />
+        <Features />
+        <Findings />
+        <Tests />
+        <Bento />
+        <Ask />
+        <Compare />
+        <Statement />
+        <Faq />
+        <Finale />
+      </SmoothScroll>
     </main>
   );
 }
