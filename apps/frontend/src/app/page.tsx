@@ -1,7 +1,5 @@
 import {
   Ask,
-  Bento,
-  BigWords,
   Compare,
   Faq,
   Features,
@@ -11,8 +9,8 @@ import {
   Product,
   Run,
   SmoothScroll,
-  Statement,
   Tests,
+  Words,
 } from "@/components/landing";
 import { sampleRun } from "@/components/landing/stats";
 import "@/components/landing/landing.css";
@@ -32,14 +30,12 @@ export default async function Home() {
         <Hero log={log} />
         <Product />
         <Run />
-        <BigWords />
+        <Words />
         <Features />
         <Findings />
         <Tests />
-        <Bento />
         <Ask />
         <Compare />
-        <Statement />
         <Faq />
         <Finale />
       </SmoothScroll>

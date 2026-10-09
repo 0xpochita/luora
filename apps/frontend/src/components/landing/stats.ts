@@ -5,6 +5,7 @@ import { LUORA_DATA_PATH } from "@/config/env.server";
 import { SAMPLE_ATLAS } from "@/features/atlas/fixtures/sample-atlas";
 import type { AtlasData } from "@/features/atlas/types";
 import { reportsOf } from "@/features/atlas/utils/findings";
+import { foundryTest } from "@/features/atlas/utils/lab-foundry";
 import {
   type GNode,
   nodeHeight,
@@ -220,6 +221,63 @@ export async function traceFrames(count = 5): Promise<{
     frames: t.frames
       .slice(1, 1 + count)
       .map(({ lines: _l, storage: _s, ...f }) => f),
+  };
+}
+
+/**
+ * The deposit that reads the oracle in test_depositThenWithdraw (its call, the oracle read, the
+ * token transfer and both events), for the Trace word: frame rows and the call graph of that call.
+ */
+export async function depositFrames(): Promise<{
+  test: string;
+  frames: Frame[];
+}> {
+  "use cache";
+  cacheLife("max");
+  const data = await readRun();
+  const t =
+    data.tests.find((x) => x.name.startsWith("test_depositThenWithdraw")) ??
+    data.tests[0];
+  const read = t.frames.findIndex((f) => f.kind === "STATICCALL" && f.d > 1);
+  const at = Math.max(0, read - 1);
+  const end = t.frames.findIndex((f, i) => i > at && f.d <= t.frames[at].d);
+  return {
+    test: t.name,
+    frames: t.frames
+      .slice(at, end < 0 ? undefined : end)
+      .map(({ lines: _l, storage: _s, ...f }) => f),
+  };
+}
+
+/**
+ * The .t.sol the Lab exports for the "Non-<role> cannot <fn>" scenario, setUp folded to one line
+ * (the rest is the generated source as is), for the Test word.
+ */
+export async function scenarioSol(): Promise<{
+  file: string;
+  lines: string[];
+} | null> {
+  "use cache";
+  cacheLife("max");
+  const model = createAtlasModel(await demoAtlas());
+  const sc = templates(model)
+    .find((t) => t.name.startsWith("Non-"))
+    ?.build();
+  if (!sc) return null;
+  const { file, source } = foundryTest(model, sc);
+  const src = source.trimEnd().split("\n");
+  const head = src.findIndex((l) => l.startsWith("contract "));
+  const setUp = src.findIndex((l) => l.includes("function setUp()"));
+  const test = src.findIndex((l) => l.includes("function test_scenario()"));
+  if (head < 0 || setUp < 0 || test < 0) return { file, lines: src };
+  return {
+    file,
+    lines: [
+      ...src.slice(head, setUp),
+      "    function setUp() public { … }",
+      "",
+      ...src.slice(test),
+    ],
   };
 }
 

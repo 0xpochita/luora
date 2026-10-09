@@ -67,7 +67,7 @@
   }
 }
 
-/* starburst breathes; the sweep rotates (statement radar) */
+/* starburst breathes */
 .lp-breathe {
   transform-box: fill-box;
   transform-origin: center;
@@ -79,29 +79,6 @@
     opacity: 0.7;
   }
 }
-/* R32 rings draw in once their block is revealed; R30 hand-drawn circle around the active number */
-.lp-reveal .lp-ring {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  transition: stroke-dashoffset 1.8s cubic-bezier(0.65, 0, 0.35, 1) 0.3s;
-}
-.lp-reveal[data-in] .lp-ring {
-  stroke-dashoffset: 0;
-}
-.lp-circled {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  opacity: 0;
-  transition:
-    stroke-dashoffset 0.5s ease,
-    opacity 0.2s;
-}
-.lp-principles li:hover .lp-circled,
-.lp-principles:not(:hover) li:first-child .lp-circled {
-  stroke-dashoffset: 0;
-  opacity: 1;
-}
-
 /* terminal lines in the hero type themselves in (--n = characters, --d = start delay) */
 .lp-type {
   display: block;
@@ -160,13 +137,6 @@
   }
   .lp-packet {
     display: none;
-  }
-  .lp-reveal .lp-ring {
-    transition: none;
-    stroke-dashoffset: 0;
-  }
-  .lp-circled {
-    transition: none;
   }
 }
 
@@ -503,54 +473,6 @@ a:hover > .lp-mark {
   .lp-how-widget:not(:first-child) {
     visibility: hidden;
     opacity: 0;
-  }
-}
-
-/* Bento cards (seventh pass): graphite card, lifts on hover with a lit top edge and a soft glow
-   (Genie's "There's more" cards lift; P3 Deerflow tiles carry the lit edge). */
-.lp-bento {
-  position: relative;
-  display: flex;
-  height: 100%;
-  flex-direction: column;
-  border-radius: 18px;
-  border: 1px solid var(--border);
-  background: linear-gradient(180deg, var(--card-top), var(--card-bot));
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-  transition:
-    transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1),
-    border-color 0.3s,
-    box-shadow 0.45s;
-}
-.lp-bento::before {
-  content: "";
-  position: absolute;
-  inset: -1px 18% auto;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.7),
-    transparent
-  );
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-.lp-bento:hover {
-  transform: translateY(-4px);
-  border-color: var(--border-strong);
-  box-shadow:
-    0 0 60px -18px rgba(255, 255, 255, 0.16),
-    0 24px 48px rgba(0, 0, 0, 0.55);
-}
-.lp-bento:hover::before {
-  opacity: 1;
-}
-@media (prefers-reduced-motion: reduce) {
-  .lp-bento,
-  .lp-bento:hover {
-    transition: none;
-    transform: none;
   }
 }
 

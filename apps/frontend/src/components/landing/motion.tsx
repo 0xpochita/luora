@@ -93,10 +93,9 @@ const TONES: Record<
   how: { bg: [10, 10, 12], glow: 0.04, x: 50, y: 60 },
   findings: { bg: [13, 13, 15], glow: 0.08, x: 50, y: 100 },
   tests: { bg: [9, 9, 11], glow: 0.05, x: 50, y: 50 },
-  bento: { bg: [8, 8, 10], glow: 0.04, x: 50, y: 20 },
   ask: { bg: [11, 11, 13], glow: 0.06, x: 70, y: 40 },
   compare: { bg: [7, 7, 8], glow: 0.05, x: 30, y: 30 },
-  statement: { bg: [3, 3, 4], glow: 0.04, x: 50, y: 60 },
+  faq: { bg: [4, 4, 5], glow: 0.04, x: 50, y: 60 },
   finale: { bg: [0, 0, 0], glow: 0, x: 50, y: 100 },
 };
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -285,18 +284,15 @@ export function Lazy({
 
 /**
  * Genie-style entrance: the block fades and lifts with the scroll (scrubbed, so it also plays back
- * on the way up). Sets data-in once it has entered, for the R32 rings. Static under reduced motion.
+ * on the way up). Static under reduced motion.
  */
 export function Reveal({
   children,
   delay = 0,
-  tilt = false,
   className = "",
 }: {
   children: ReactNode;
   delay?: number;
-  /** also tips up from a slight backward tilt and scale (cards rising into place) */
-  tilt?: boolean;
   className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -308,42 +304,25 @@ export function Reveal({
       mm.add(MOTION_MQ, () => {
         gsap.fromTo(
           el,
-          tilt
-            ? {
-                autoAlpha: 0,
-                y: 96,
-                scale: 0.94,
-                rotateX: 14,
-                transformPerspective: 1200,
-                transformOrigin: "50% 100%",
-              }
-            : { autoAlpha: 0, y: 64 },
+          { autoAlpha: 0, y: 64 },
           {
             autoAlpha: 1,
             y: 0,
-            scale: 1,
-            rotateX: 0,
-            ease: tilt ? "power2.out" : "none",
+            ease: "none",
             scrollTrigger: {
               trigger: el,
               start: `top ${96 - delay * 80}%`,
               end: `top ${62 - delay * 80}%`,
               scrub: 0.6,
-              onEnter: () => {
-                el.dataset.in = "";
-              },
             },
           },
         );
       });
-      mm.add("(prefers-reduced-motion: reduce)", () => {
-        el.dataset.in = "";
-      });
       return () => mm.revert();
     });
-  }, [delay, tilt]);
+  }, [delay]);
   return (
-    <div ref={ref} className={`lp-reveal ${className}`}>
+    <div ref={ref} className={className}>
       {children}
     </div>
   );

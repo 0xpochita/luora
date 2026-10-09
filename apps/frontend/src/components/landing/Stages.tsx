@@ -8,9 +8,16 @@ import {
   titleOf,
 } from "@/features/atlas/utils/findings";
 import { createAtlasModel } from "@/features/atlas/utils/model";
+import { BigWords } from "./BigWords";
 import { FindingsWheel } from "./FindingsWheel";
 import { RunSentence } from "./RunSentence";
-import { demoAtlas, scenarioDemo, testRows } from "./stats";
+import {
+  demoAtlas,
+  depositFrames,
+  scenarioDemo,
+  scenarioSol,
+  testRows,
+} from "./stats";
 import { TestDrift } from "./TestDrift";
 
 /** Server halves of the scroll stages: read the sample run, hand plain data to the client stage. */
@@ -48,4 +55,14 @@ export async function Tests() {
       }))}
     />
   );
+}
+
+export async function Words() {
+  const [trace, scenario, sol, atlas] = await Promise.all([
+    depositFrames(),
+    scenarioDemo(),
+    scenarioSol(),
+    demoAtlas(),
+  ]);
+  return <BigWords trace={trace} scenario={scenario} sol={sol} atlas={atlas} />;
 }

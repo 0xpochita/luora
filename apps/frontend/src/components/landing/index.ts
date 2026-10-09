@@ -23,8 +23,8 @@
  *   R13 ZERO (user ref): full-bleed closing scene, glowing curved horizon, hairlines with '+' markers;
  *   R14 SurveilTrack (user ref): that horizon is a dark city with lit roofs, windows, square markers
  *      → `Finale` (CityHorizon.tsx + FinalCta + Footer).
- *  R6  brief: boutique cyber security statement (huge centred line on black, segmented pill)
- *      → `Statement`: "Built for auditors. Not for attackers." + Trace / Lab / Findings pill.
+ *  (R6 drove `Statement`, "Built for auditors. Not for attackers."; removed in the eighth pass, the
+ *      defensive stance stays in the footer tagline and the FAQ.)
  *  (R7, the tilted Linear-style hero capture, was dropped in the third pass: it read muddy.)
  *
  *
@@ -32,15 +32,12 @@
  *  R8  onorca.dev — tabbed product demo under the hero with a progress pill, a bento of many small
  *      real-UI capability cards, a comparison table, FAQ, closing CTA card, column footer
  *      → `ProductTabs` (Lab / Trace / Flow / Map / Findings), hero `Terminal` (the real export
- *        output, typed in), `Bento`, `Compare`, `Faq`, `FinalCta`, `Footer`.
+ *        output, typed in), `Compare`, `Faq`, `FinalCta`, `Footer` (its bento drove `Bento`,
+ *        removed in the eighth pass).
  *  (R9 Nrok / R10 bento proof drove the old stats section; replaced at the user's request by `Ask`:
  *      R4 copy + real UI, R15 ComfyUI-style glassy prompt dock, answers from the app's aiAnswer.)
- *  R11 pin/15270086238695547 ("Burn out less, build with smart code") — mixed 3+2 bento with mini UI
- *      in each card → `Bento` grid rhythm.
  *  R12 pin/15270086238695545 ("Scale from a startup…") — bold lead + muted continuation captions
- *      → `Bento` and `Features` copy.
- *  Statement radar (hairline rings, slow sweep, one red blip) follows the concentric-ring security
- *  hero seen in the same Pinterest search, kept monochrome per DESIGN.md.
+ *      → `Features` copy.
  *  Motion: words blur in, starburst breathes, packets ride the orbit wires, terminal types, tabs
  *  auto-advance, sections reveal on scroll, numbers count up — all off under prefers-reduced-motion.
  *
@@ -76,7 +73,8 @@
  *      TraceRow, FlowView, MapView and FindingsTab rendered live, no screenshots; R20's flat frame
  *      and edge beam are gone.
  *
- * Fifth pass (2026-10-09, Compare + Statement restaged), pins studied 2026-10-09:
+ * Fifth pass (2026-10-09, Compare + Statement restaged; Statement and R30–R32 removed in the eighth
+ * pass), pins studied 2026-10-09:
  *  R27 pin/36028865763636582 (Ageeva "A card with features you won't find anywhere else") — the
  *      product column a raised, lighter rounded card standing above a flat table, checks in circles
  *      → `Compare`: the Luora column is one graphite card with a soft white glow over every row.
@@ -105,13 +103,14 @@
  *  Run (RunSentence.tsx, pinned)          → 'You can [+ Create] with one click', button inside the
  *                                           sentence, tiles around it (Run pill, scenario cards)
  *  BigWords ('Trace' / 'Test' / 'Triage') → 'Create' / 'Like' / 'Magic', letters dropping in one
- *                                           by one, mascots beside them (icon badges)
+ *                                           by one, mascots beside them (icon badges; restaged
+ *                                           with product visuals in the eighth pass)
  *  Features ('How Luora works')           → pinned + scrubbed since the seventh pass (below)
  *  Findings (FindingsWheel.tsx, pinned)   → arc of style cards turning like a wheel, 'Hover to …'
  *  Tests (TestDrift.tsx)                  → testimonial rows drifting sideways (real test names,
  *                                           no quotes)
- *  Bento / Ask / Compare / Statement      → bento + scrubbed fade-and-lift entrances (Reveal);
- *                                           Compare sinks back under Statement (Exit)
+ *  Ask / Compare / Faq                    → scrubbed fade-and-lift entrances (Reveal); Compare
+ *                                           sinks back (Exit) as the FAQ rises over it
  *  Finale (Haze.tsx FinaleRise)           → footer closed by clouds rising again: the city rises
  * Phones (<768px) and reduced motion: no pins, static readable layout (STAGE_MQ, landing.css).
  *
@@ -123,13 +122,13 @@
  *     from above inside dark rounded shells, a faint halo → the tools row marks (.lp-mark).
  *  P2 pin/523191681737169397 (Lore "01 Write / 02 Generate / 03 Share") — equal step cards, dim
  *     index + bright name, the mini UI whole inside a nested inner card, two-line caption
- *     → `Bento` card anatomy; the How Luora works index + step name.
+ *     → the How Luora works index + step name (and the removed `Bento` cards).
  *  P3 pin/4362930885208241 (Deerflow AIoT dashboard) — equal-height tiles, a small index/title row,
- *     the instrument centred with air around it, a lit edge → `Bento` grid + hover edge.
+ *     the instrument centred with air around it, a lit edge → the removed `Bento` grid.
  *  P4 pin/449163762860877017 ("Pricing page with comparison table") — quiet rows with air, values
  *     larger than the row labels → `Compare` type scale and spacing.
  *  P5 pin/30047522509933052 ("Code / Design / Writing / Building") — one composed monochrome object
- *     per tile, nothing bleeding off → live, fitted mini UIs in `Bento` (BentoMini.tsx).
+ *     per tile, nothing bleeding off → live, fitted mini UIs (now WordVisuals.tsx).
  *  P6 pin/36169603254422786 ("AI Assistant - SaaS & UX UI Dashboard Design") — near-black panel,
  *     one soft beam from the top, glassy prompt box, chips → `Ask` window (.lp-askwin, .lp-glass).
  *  Section (file)                         → reference
@@ -139,23 +138,39 @@
  *                                           slab, swap note + widget in place (rise + blur),
  *                                           close up at the end; R25 + P2 odometer index;
  *                                           R22's boxed frame/grid removed for open space
- *  Bento (Bento, BentoMini)               → P2 / P3 / P5 cards; Genie "There's more" lift on
- *                                           hover; Reveal tilt = scrubbed staggered rise
  *  Ask (AskDemo)                          → P6 window; answers always render whole (CSS stagger
  *                                           replaces the interval that stalled at 'Checklist')
  *  Compare (Closing, CompareStage)        → P4 rows; Genie pricing card rising into place: the
  *                                           Luora card slides up, rows reveal one by one
  *
- * Product shots in public/landing/ (b-*.webp, Bento) are real captures of /trace and /atlas from a
- * local `node luora-export.mjs` run, never mock UI; the hero and 'How Luora works' render the app live. Colour stays per DESIGN.md: grey/white,
- * red only on findings.
+ *
+ * Eighth pass (2026-10-09, "the giant words sit alone on an empty black screen"). Genie's 'Create /
+ * Like / Magic' re-read with Awwwards staging: the word stays big but shares its screen with the
+ * product doing it. Bento and Statement are removed (their content now lives in the words), so the
+ * story runs Tests → Ask → Compare → Faq → Finale with no seam (Faq carries its own data-tone).
+ *  Section (file)                         → reference
+ *  Words (Stages.tsx Words → BigWords,    → Genie 'Create / Like / Magic': letters drop in one by
+ *         WordVisuals.tsx)                  one; the visual scrubs in (rise, 0.96 → 1, tilted back
+ *                                           → flat) and the icon badges orbit its corners.
+ *                                           Trace = word left, decoded frames of the oracle-reading
+ *                                           deposit in test_depositThenWithdraw + their call graph
+ *                                           (GraphNode); Test = word right, the Lab scenario
+ *                                           (Actor → Call → Expect revert → Assert, scenarioDemo)
+ *                                           + the exported .t.sol (foundryTest, setUp folded);
+ *                                           Triage = word on top sliding up as the visual rises:
+ *                                           Findings on the line (source, red flagged lines),
+ *                                           the triage table (FindingTriage, read only), Flow
+ *                                           replay lanes, ⌘K search. Phones stack word, line,
+ *                                           visual; each panel fits its column (never clipped).
+ *
+ * No screenshots: every product view on the page is the app's own component rendered live on the
+ * sample run (built near the screen only, Lazy). Colour stays per DESIGN.md: grey/white, red only
+ * on findings.
  */
 
 export { Ask } from "./Ask";
-export { Bento } from "./Bento";
-export { BigWords } from "./BigWords";
-export { Compare, Faq, FinalCta, Finale, Footer, Statement } from "./Closing";
+export { Compare, Faq, FinalCta, Finale, Footer } from "./Closing";
 export { Features } from "./Features";
 export { Hero, Product } from "./Hero";
 export { SmoothScroll } from "./motion";
-export { Findings, Run, Tests } from "./Stages";
+export { Findings, Run, Tests, Words } from "./Stages";
