@@ -253,11 +253,11 @@ export function CompareWorlds({ data }: { data: CompareData }) {
       {/* C1 + C2: an editorial title, big and light, second line muted; the note at its foot */}
       <h2 className="font-light text-[clamp(40px,6.4vw,88px)] text-fg leading-[0.94] tracking-[-0.045em]">
         <span className="lp-cmp-line">
-          <span data-rise>Same run,</span>
+          <span data-rise>The CLIs print text.</span>
         </span>
         <span className="lp-cmp-line">
           <span data-rise className="text-white/40">
-            read differently.
+            Luora draws the contract.
           </span>
         </span>
       </h2>
