@@ -6,6 +6,7 @@ import type Lenis from "lenis";
 import {
   type ReactNode,
   type RefObject,
+  startTransition,
   useCallback,
   useEffect,
   useRef,
@@ -214,7 +215,8 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     let h = document.body.scrollHeight;
     let t = 0;
     const ro = new ResizeObserver(() => {
-      if (document.body.scrollHeight === h) return;
+      // sub-pixel rounding (fitted widgets) moves no trigger visibly: not worth a full refresh
+      if (Math.abs(document.body.scrollHeight - h) < 4) return;
       clearTimeout(t);
       t = window.setTimeout(() => {
         refresh();
@@ -255,15 +257,23 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
  * Mounts heavy live UI only once its spot comes within `margin` of the screen, so the server HTML
  * and the first hydration skip it. A spot under display:none (the other of two responsive layouts)
  * never intersects, so that copy is never built. Until then `className` sizes the empty spot.
+ * The build runs as a transition: React renders it in slices between frames instead of one long
+ * task in the middle of a scroll. `wait`: what the children need first (their code chunk, the
+ * atlas), loaded once the spot nears the screen; the spot keeps its size until they can draw.
  */
 export function Lazy({
   children,
   className,
   margin = "100% 0px",
+  wait,
+  fallback,
 }: {
   children: ReactNode;
   className?: string;
   margin?: string;
+  wait?: () => Promise<unknown>;
+  /** drawn in the empty spot until then */
+  fallback?: ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [on, setOn] = useState(false);
@@ -272,14 +282,24 @@ export function Lazy({
     if (on || !el) return;
     const io = new IntersectionObserver(
       ([e]) => {
-        if (e.isIntersecting) setOn(true);
+        if (!e.isIntersecting) return;
+        io.disconnect();
+        void Promise.resolve(wait?.()).then(() =>
+          startTransition(() => setOn(true)),
+        );
       },
       { rootMargin: margin },
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [on, margin]);
-  return on ? children : <div ref={ref} className={className} />;
+  }, [on, margin, wait]);
+  return on ? (
+    children
+  ) : (
+    <div ref={ref} className={className}>
+      {fallback}
+    </div>
+  );
 }
 
 /**
@@ -396,10 +416,14 @@ export function CompareStage({
           },
         },
       );
-      // each row on its own trigger, so a long (phone) list never hides rows already on screen
+      // each row on its own trigger, so a long (phone) list never hides rows already on screen:
+      // the three cells of a table row from md, the whole stacked card (data-card) below it
+      const wide = matchMedia("(min-width: 768px)").matches;
       const rows = new Map<string, HTMLElement[]>();
-      for (const el of q("[data-row]") as HTMLElement[]) {
-        const k = el.dataset.row ?? "";
+      for (const el of q(
+        wide ? "[data-row]" : "[data-card]",
+      ) as HTMLElement[]) {
+        const k = (wide ? el.dataset.row : el.dataset.card) ?? "";
         rows.set(k, [...(rows.get(k) ?? []), el]);
       }
       for (const cells of rows.values())

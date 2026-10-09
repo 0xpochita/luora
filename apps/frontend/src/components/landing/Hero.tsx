@@ -5,7 +5,7 @@ import { GitHubMark } from "./GitHubMark";
 import { HeroExit } from "./Haze";
 import { ProductTabs } from "./ProductTabs";
 import { ScatterGrow } from "./ScatterGrow";
-import { demoAtlas, scenarioDemo, traceFrames } from "./stats";
+import { scenarioDemo, traceFrames } from "./stats";
 
 export const GITHUB = "https://github.com/0xpochita/luora";
 export const DOCS = `${GITHUB}#readme`;
@@ -387,8 +387,7 @@ const ETHEREUM =
  * Genie: these are the row of round icons that scatter before the product grows out of a square in the middle (ScatterGrow.tsx), with the live app tabs (ProductTabs).
  */
 export async function Product() {
-  const [atlas, trace, scenario] = await Promise.all([
-    demoAtlas(),
+  const [trace, scenario] = await Promise.all([
     traceFrames(14),
     scenarioDemo(),
   ]);
@@ -420,7 +419,7 @@ export async function Product() {
   ];
   return (
     <ScatterGrow marks={marks}>
-      <ProductTabs atlas={atlas} frames={trace.frames} scenario={scenario} />
+      <ProductTabs frames={trace.frames} scenario={scenario} />
     </ScatterGrow>
   );
 }

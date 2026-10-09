@@ -1,12 +1,19 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { type ReactNode, useRef } from "react";
-import type { AtlasData } from "@/features/atlas/types";
 import { ICON_PATH, type IconKey } from "@/features/atlas/utils/icons";
 import type { Frame } from "@/features/trace";
+import { loadAtlas } from "./atlas";
 import { type Gsap, Lazy, MOTION_MQ, useStage } from "./motion";
 import type { LabDemo } from "./stats";
-import { TestVisual, TraceVisual, TriageVisual } from "./WordVisuals";
+
+// the visuals are their own chunk, fetched (with the atlas the Triage one reads) as their spot nears
+const visuals = () => import("./WordVisuals");
+const TraceVisual = dynamic(() => visuals().then((m) => m.TraceVisual));
+const TestVisual = dynamic(() => visuals().then((m) => m.TestVisual));
+const TriageVisual = dynamic(() => visuals().then((m) => m.TriageVisual));
+const triageReady = () => Promise.all([visuals(), loadAtlas()]);
 
 type Layout = "left" | "right" | "top";
 
@@ -17,9 +24,12 @@ type Word = {
   layout: Layout;
   /** two icon badges orbiting the visual: icon, where they sit on its edge, finding dot */
   glyphs: { icon: IconKey; at: string; bad?: boolean }[];
-  /** the empty spot's height until the visual mounts (Lazy) */
+  /** the empty spot's height until the visual mounts (Lazy): the mounted height per breakpoint,
+   *  measured, so mounting barely moves the page (each height change re-measures every trigger) */
   min: string;
   visual: ReactNode;
+  /** what the visual needs loaded before it mounts (Lazy) */
+  wait: () => Promise<unknown>;
 };
 
 /** a letter's tumble while it drops in (the last letters trail, like Genie's 'Creat e') */
@@ -34,6 +44,7 @@ const TILT = [-14, 9, -6, 12, -10, 16];
  * word, line, visual; reduced motion shows everything in place.
  */
 function bigWords(root: HTMLElement, gsap: Gsap) {
+  const orbit = matchMedia("(min-width: 768px)").matches ? 26 : 8;
   for (const block of gsap.utils.toArray<HTMLElement>("[data-lp=word]", root)) {
     const q = gsap.utils.selector(block);
     const [visual] = q("[data-lp=visual]");
@@ -68,13 +79,16 @@ function bigWords(root: HTMLElement, gsap: Gsap) {
         { autoAlpha: 1, y: 0, duration: 0.6 },
         "-=0.4",
       );
-    const rise = {
-      trigger: visual,
-      start: "top 100%",
-      end: "top 40%",
-      scrub: 0.6,
-    };
-    gsap.fromTo(
+    // the visual rises; the word above it slides up out of the way on the same trigger
+    const rise = gsap.timeline({
+      scrollTrigger: {
+        trigger: visual,
+        start: "top 100%",
+        end: "top 40%",
+        scrub: 0.6,
+      },
+    });
+    rise.fromTo(
       visual,
       {
         y: 140,
@@ -90,33 +104,33 @@ function bigWords(root: HTMLElement, gsap: Gsap) {
         rotateX: 0,
         autoAlpha: 1,
         ease: "power2.out",
-        scrollTrigger: rise,
       },
+      0,
     );
-    // the word above its visual slides up out of the way as the visual rises
     if (block.dataset.layout === "top")
-      gsap.fromTo(
-        q("[data-lp=head]"),
-        { y: 60 },
-        { y: -40, ease: "none", scrollTrigger: rise },
-      );
-    // the badges circle their corner of the visual while it passes
+      rise.fromTo(q("[data-lp=head]"), { y: 60 }, { y: -40, ease: "none" }, 0);
+    // the badges circle their corner of the visual while it passes, both on one trigger
     // (a tighter circle on phones, where the badges sit in the gap above and below the visual)
-    const orbit = matchMedia("(min-width: 768px)").matches ? 26 : 8;
+    const spin = gsap.timeline({
+      scrollTrigger: {
+        trigger: block,
+        start: "top bottom",
+        end: "bottom top",
+        scrub: true,
+      },
+    });
     for (const [i, g] of q("[data-lp=glyph]").entries()) {
       const r = i ? -orbit : orbit;
-      gsap.to(g, {
-        keyframes: { x: [0, r, 0, -r, 0], y: [-r, 0, r, 0, -r] },
-        easeEach: "sine.inOut",
-        rotate: i ? -40 : 40,
-        ease: "none",
-        scrollTrigger: {
-          trigger: block,
-          start: "top bottom",
-          end: "bottom top",
-          scrub: true,
+      spin.to(
+        g,
+        {
+          keyframes: { x: [0, r, 0, -r, 0], y: [-r, 0, r, 0, -r] },
+          easeEach: "sine.inOut",
+          rotate: i ? -40 : 40,
+          ease: "none",
         },
-      });
+        0,
+      );
     }
   }
 }
@@ -157,12 +171,10 @@ export function BigWords({
   trace,
   scenario,
   sol,
-  atlas,
 }: {
   trace: { test: string; frames: Frame[] };
   scenario: LabDemo | null;
   sol: { file: string; lines: string[] } | null;
-  atlas: AtlasData;
 }) {
   const ref = useRef<HTMLElement>(null);
   useStage(ref, bigWords, MOTION_MQ);
@@ -175,8 +187,9 @@ export function BigWords({
         { icon: "waves", at: "-top-12 left-3 md:-top-16 md:-left-4" },
         { icon: "fn", at: "-bottom-12 right-3 md:-right-4 md:-bottom-16" },
       ],
-      min: "min-h-[640px]",
+      min: "min-h-[494px] md:min-h-[517px] lg:min-h-[722px] xl:min-h-[837px]",
       visual: <TraceVisual {...trace} />,
+      wait: visuals,
     },
     {
       word: "Test",
@@ -186,8 +199,9 @@ export function BigWords({
         { icon: "plug", at: "-top-12 right-3 md:-top-16 md:-right-4" },
         { icon: "user", at: "-bottom-12 left-3 md:-bottom-16 md:-left-4" },
       ],
-      min: "min-h-[720px]",
+      min: "min-h-[474px] md:min-h-[491px] lg:min-h-[680px] xl:min-h-[729px]",
       visual: scenario && <TestVisual scenario={scenario} sol={sol} />,
+      wait: visuals,
     },
     {
       word: "Triage",
@@ -197,8 +211,9 @@ export function BigWords({
         { icon: "warn", at: "-top-12 left-3 md:-top-16 md:-left-4", bad: true },
         { icon: "check", at: "-bottom-12 right-3 md:-right-4 md:-bottom-16" },
       ],
-      min: "min-h-[760px]",
-      visual: <TriageVisual atlas={atlas} />,
+      min: "min-h-[861px] md:min-h-[505px] lg:min-h-[634px] xl:min-h-[674px]",
+      visual: <TriageVisual />,
+      wait: triageReady,
     },
   ];
   return (
@@ -257,7 +272,9 @@ export function BigWords({
             {w.glyphs.map((g) => (
               <Glyph key={g.icon} {...g} />
             ))}
-            <Lazy className={w.min}>{w.visual}</Lazy>
+            <Lazy className={w.min} wait={w.wait}>
+              {w.visual}
+            </Lazy>
           </div>
         </div>
       ))}

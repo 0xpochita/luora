@@ -1,30 +1,14 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { useStepSim, useTriage } from "@/features/atlas";
-import type { AtlasData } from "@/features/atlas/types";
-import { contractGraph } from "@/features/atlas/utils/lab-graph";
-import { createAtlasModel } from "@/features/atlas/utils/model";
+import { startTransition, useEffect, useRef, useState } from "react";
 import type { Frame } from "@/features/trace";
-import { LabGraph } from "./FeatureWidgets";
+import { useAtlas } from "./atlas";
 import type { LabDemo } from "./stats";
 import { Window } from "./Window";
-import "@/components/(main)/atlas/atlas.css";
 
-// only the Lab (first view) is in the page's own bundle; the others load as the tabs come up to them
-const FindingsTab = dynamic(() =>
-  import("@/components/(main)/atlas/FindingsTab").then((m) => m.FindingsTab),
-);
-const FlowView = dynamic(() =>
-  import("@/components/(main)/atlas/flow/FlowView").then((m) => m.FlowView),
-);
-const MapView = dynamic(() =>
-  import("@/components/(main)/atlas/map/MapView").then((m) => m.MapView),
-);
-const TraceRow = dynamic(() =>
-  import("@/components/(main)/trace/TraceRow").then((m) => m.TraceRow),
-);
+// the views (and the atlas code they run on) are their own chunk, fetched once the tabs come near
+const Views = dynamic(() => import("./ProductViews").then((m) => m.Views));
 
 const VIEWS = [
   { id: "lab", route: "/atlas · Lab", label: "Lab" },
@@ -34,6 +18,7 @@ const VIEWS = [
   { id: "map", route: "/atlas · Map", label: "Map" },
   { id: "findings", route: "/atlas · Findings", label: "Findings" },
 ] as const;
+export type ViewId = (typeof VIEWS)[number]["id"];
 const DWELL = 6000;
 /** the close-up's own size: big enough that the app runs at 1:1 and is cropped by the window */
 const WORLD = { w: 1440, h: 900 };
@@ -53,11 +38,9 @@ const WORLD = { w: 1440, h: 900 };
  * none before the section comes near the screen: the server HTML carries the frame alone.
  */
 export function ProductTabs({
-  atlas,
   frames,
   scenario,
 }: {
-  atlas: AtlasData;
   frames: Frame[];
   /** the Lab's "Non-<role> cannot <fn>" scenario, laid out and run on the server */
   scenario: LabDemo | null;
@@ -67,10 +50,7 @@ export function ProductTabs({
   const [auto, setAuto] = useState(false);
   const [tick, setTick] = useState(0);
   const tabs = useRef<HTMLDivElement>(null);
-  const model = useMemo(() => createAtlasModel(atlas), [atlas]);
-  const graph = useMemo(() => contractGraph(model), [model]);
-  const sim = useStepSim(model, null);
-  const triage = useTriage(model.contract);
+  const atlas = useAtlas();
   const view = VIEWS[at];
   const [seen, setSeen] = useState<ReadonlySet<number>>(() => new Set());
   // the section sits below the fold (and its window starts clipped to a square): views mount once
@@ -81,17 +61,35 @@ export function ProductTabs({
     if (near || !el) return;
     const io = new IntersectionObserver(
       ([e]) => {
-        if (e.isIntersecting) setNear(true);
+        if (e.isIntersecting) startTransition(() => setNear(true));
       },
       { rootMargin: "100% 0px" },
     );
     io.observe(el);
     return () => io.disconnect();
   }, [near]);
+  // off screen the tabs hold still: no dwell timer, no progress animation, no view remounting
+  // under some other section (it used to cycle Flow / Map forever, 60 style recalcs a second)
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const el = tabs.current?.parentElement;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => setShown(e.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  const hold = paused || !shown;
   useEffect(() => {
     if (!near) return;
-    const next = (at + 1) % VIEWS.length;
-    setSeen((s) => (s.has(at) && s.has(next) ? s : new Set([...s, at, next])));
+    // transitions, so building a view yields to scrolling instead of one long task; the active
+    // view first, the next one a little later (it has the whole dwell before it shows)
+    const add = (i: number) =>
+      startTransition(() =>
+        setSeen((s) => (s.has(i) ? s : new Set([...s, i]))),
+      );
+    add(at);
+    const t = setTimeout(() => add((at + 1) % VIEWS.length), 1500);
+    return () => clearTimeout(t);
   }, [at, near]);
 
   useEffect(() => {
@@ -100,7 +98,7 @@ export function ProductTabs({
   // biome-ignore lint/correctness/useExhaustiveDependencies: `at` / `tick` restart the dwell after every switch
   useEffect(() => {
     // no auto-advance before the section is near: arrive on the Lab, never on an unbuilt view
-    if (!auto || paused || !near) return;
+    if (!auto || hold || !near) return;
     const t = setTimeout(() => {
       // while ScatterGrow still hides the tabs (the window is growing in) stay on the Lab
       if (
@@ -112,82 +110,7 @@ export function ProductTabs({
       } else setAt((i) => (i + 1) % VIEWS.length);
     }, DWELL);
     return () => clearTimeout(t);
-  }, [at, tick, auto, paused, near]);
-
-  const maxGas = Math.max(1, ...frames.map((f) => f.gas ?? 0));
-  const none = () => {};
-  const content: Record<(typeof VIEWS)[number]["id"], ReactNode> = {
-    lab: (
-      <div className="dot-grid absolute inset-0">
-        <div className="absolute top-14 left-16">
-          <LabGraph nodes={graph.nodes} wires={graph.wires} />
-        </div>
-      </div>
-    ),
-    scenario: (
-      <div className="dot-grid absolute inset-0">
-        {scenario && (
-          // the whole scenario has to stay inside the tilted frame, so it runs a little smaller
-          <div className="absolute top-14 left-12 origin-top-left scale-[0.78]">
-            <LabGraph
-              nodes={scenario.nodes}
-              wires={scenario.wires}
-              runs={scenario.runs}
-              fields={scenario.fields}
-            />
-          </div>
-        )}
-      </div>
-    ),
-    trace: (
-      <div className="dot-grid absolute inset-0 p-10">
-        <div className="w-[820px] rounded-card border border-border bg-card-grad p-2 shadow-soft">
-          {frames.map((f, i) => (
-            <TraceRow
-              key={`${i}${f.fn}`}
-              index={i}
-              frame={f}
-              maxGas={maxGas}
-              order={i}
-              selected={i === 1}
-              onSelect={none}
-            />
-          ))}
-        </div>
-      </div>
-    ),
-    flow: (
-      <div className="atlas absolute inset-0">
-        <section className="stage h-full">
-          <FlowView model={model} selected={null} onSelect={none} sim={sim} />
-        </section>
-      </div>
-    ),
-    map: (
-      <div className="atlas absolute inset-0">
-        <section className="stage h-full">
-          <MapView
-            model={model}
-            selected={null}
-            onSelect={none}
-            triage={triage}
-          />
-        </section>
-      </div>
-    ),
-    findings: (
-      <div className="dot-grid absolute inset-0 p-10">
-        <div className="w-[880px]">
-          <FindingsTab
-            model={model}
-            triage={triage}
-            selected={model.findings[0]?.id ?? null}
-            onSelect={none}
-          />
-        </div>
-      </div>
-    ),
-  };
+  }, [at, tick, auto, hold, near]);
 
   return (
     <div className="flex h-full w-full flex-col items-center">
@@ -217,13 +140,13 @@ export function ProductTabs({
             {s.label}
             {i === at && auto && (
               <span
-                key={`${at}-${paused}`}
+                key={`${at}-${hold}`}
                 aria-hidden="true"
                 className="lp-progress absolute inset-x-3 bottom-0.5 h-px bg-white/50"
                 style={
                   {
                     "--t": `${DWELL}ms`,
-                    animationPlayState: paused ? "paused" : "running",
+                    animationPlayState: hold ? "paused" : "running",
                   } as React.CSSProperties
                 }
               />
@@ -250,20 +173,16 @@ export function ProductTabs({
               className="absolute top-0 left-0 origin-top-left max-md:scale-[0.6]"
               style={{ width: WORLD.w, height: WORLD.h }}
             >
-              {VIEWS.map((s, i) => (
-                <div
-                  key={s.id}
-                  inert
-                  aria-hidden={i !== at}
-                  className={`absolute inset-0 transition-opacity ease-out motion-reduce:transition-none ${
-                    i === at
-                      ? "opacity-100 delay-200 duration-300"
-                      : "opacity-0 duration-200"
-                  }`}
-                >
-                  {seen.has(i) && content[s.id]}
-                </div>
-              ))}
+              {atlas && (
+                <Views
+                  ids={VIEWS.map((v) => v.id)}
+                  atlas={atlas}
+                  frames={frames}
+                  scenario={scenario}
+                  at={at}
+                  seen={seen}
+                />
+              )}
             </div>
           </div>
         </Window>

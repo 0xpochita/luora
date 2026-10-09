@@ -27,7 +27,7 @@ export async function Ask() {
         </p>
       </Reveal>
       <Reveal>
-        <AskDemo atlas={atlas} />
+        <AskDemo file={atlas.file.split("/").pop() ?? atlas.file} />
       </Reveal>
     </section>
   );

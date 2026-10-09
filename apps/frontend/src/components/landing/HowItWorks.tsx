@@ -1,23 +1,44 @@
 "use client";
 
 import type { ScrollTrigger } from "gsap/ScrollTrigger";
-import { type ReactNode, useCallback, useRef, useState } from "react";
-import { TestList } from "@/components/(main)/trace/TestList";
+import dynamic from "next/dynamic";
+import {
+  type ReactNode,
+  startTransition,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Chip } from "@/components/ui";
 import type { Tone } from "@/components/ui/tone";
-import type { AtlasData } from "@/features/atlas/types";
 import { ICON_PATH, type IconKey } from "@/features/atlas/utils/icons";
 import type { Frame, TestResult } from "@/features/trace";
-import {
-  CoverageWidget,
-  FindingsWidget,
-  LabWidget,
-  TraceWidget,
-} from "./FeatureWidgets";
+import { loadAtlas, useAtlas } from "./atlas";
 import { type Gsap, Lazy, Reveal, scrollToY, useStage } from "./motion";
 import type { LabDemo } from "./stats";
 import { Window } from "./Window";
 import "./how.css";
+
+// the step widgets are on-demand chunks, fetched (with the atlas step 4 reads) as their spot nears
+const list = () => import("@/components/(main)/trace/TestList");
+const widgetChunk = () => import("./FeatureWidgets");
+const TestList = dynamic(() => list().then((m) => m.TestList));
+const TraceWidget = dynamic(() => widgetChunk().then((m) => m.TraceWidget));
+const LabWidget = dynamic(() => widgetChunk().then((m) => m.LabWidget));
+const FindingsWidget = dynamic(() =>
+  widgetChunk().then((m) => m.FindingsWidget),
+);
+const CoverageWidget = dynamic(() =>
+  widgetChunk().then((m) => m.CoverageWidget),
+);
+/** what each step's widget needs loaded before it mounts */
+const READY: (() => Promise<unknown>)[] = [
+  list,
+  widgetChunk,
+  widgetChunk,
+  () => Promise.all([widgetChunk(), loadAtlas()]),
+];
 
 /** one labelled pill on a wire: what goes into a step, or what comes out of it */
 type Io = { t: string; code?: true; tone?: Tone };
@@ -79,6 +100,9 @@ const STEPS: Step[] = [
     ],
   },
 ];
+
+/** each static step's widget height (measured), held until it mounts so the page does not jump */
+const SPOT = ["h-[395px]", "h-[265px]", "h-[276px] md:h-[432px]", "h-[518px]"];
 
 /** the pinned stage only runs where the board fits (same query as `.lp-how-*` in landing.css) */
 const HOW_MQ =
@@ -207,17 +231,22 @@ export function HowItWorks({
   frames,
   test,
   lab,
-  atlas,
 }: {
   tests: TestResult[];
   frames: Frame[];
   test: string;
   lab: LabDemo | null;
-  atlas: AtlasData;
 }) {
+  const atlas = useAtlas();
   const ref = useRef<HTMLElement>(null);
   const trigger = useRef<ScrollTrigger | null>(null);
   const [at, setAt] = useState(0);
+  // the pinned core builds only the open step's widget and the next one (kept once built), so
+  // the four live UIs never mount in one go as the stage nears
+  const [upto, setUpto] = useState(1);
+  useEffect(() => {
+    if (at + 1 > upto) startTransition(() => setUpto(at + 1));
+  }, [at, upto]);
 
   const setup = useCallback((root: HTMLElement, gsap: Gsap) => {
     const q = gsap.utils.selector(root);
@@ -397,10 +426,12 @@ export function HowItWorks({
     </Window>,
     <TraceWidget key="trace" test={test} frames={frames} />,
     lab && <LabWidget key="lab" {...lab} />,
-    <div key="find" className="grid w-full max-w-[460px] gap-3">
-      <FindingsWidget atlas={atlas} cards={1} />
-      <CoverageWidget atlas={atlas} partly={false} />
-    </div>,
+    atlas && (
+      <div key="find" className="grid w-full max-w-[460px] gap-3">
+        <FindingsWidget atlas={atlas} cards={1} />
+        <CoverageWidget atlas={atlas} partly={false} />
+      </div>
+    ),
   ];
 
   const head = (
@@ -525,7 +556,11 @@ export function HowItWorks({
                       data-lp="body"
                       className="flex size-full items-center justify-center p-6"
                     >
-                      <Lazy className="size-full">{w}</Lazy>
+                      {i <= upto && (
+                        <Lazy className="size-full" wait={READY[i]}>
+                          {w}
+                        </Lazy>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -574,7 +609,9 @@ export function HowItWorks({
                   ))}
                 </p>
                 <div className="mt-6 flex justify-center">
-                  <Lazy className="h-[320px] w-full">{widgets[i]}</Lazy>
+                  <Lazy className={`w-full ${SPOT[i]}`} wait={READY[i]}>
+                    {widgets[i]}
+                  </Lazy>
                 </div>
               </Reveal>
             </li>

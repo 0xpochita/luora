@@ -58,11 +58,10 @@ export async function Tests() {
 }
 
 export async function Words() {
-  const [trace, scenario, sol, atlas] = await Promise.all([
+  const [trace, scenario, sol] = await Promise.all([
     depositFrames(),
     scenarioDemo(),
     scenarioSol(),
-    demoAtlas(),
   ]);
-  return <BigWords trace={trace} scenario={scenario} sol={sol} atlas={atlas} />;
+  return <BigWords trace={trace} scenario={scenario} sol={sol} />;
 }
