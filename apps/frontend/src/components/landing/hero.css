@@ -1,5 +1,5 @@
-/* Hero (Hero.tsx). Thirteenth pass, refs in index.ts (HA–HD). One light path down the middle:
-   beam → lit mark → headline → horizon on the terminal's top edge → hairline into the hub.
+/* Hero (Hero.tsx). Fifteenth pass, Awwwards refs in Hero.tsx (HF Cerebrium, HG Aspen, HH
+   Evervault): rail → headline → lit mark behind the right half → product deck → hairline.
    Only transform / opacity / clip-path animate; every loop sits under [data-tone=hero], so
    motion.tsx's data-off pauses it off screen. --d = start delay. */
 
@@ -110,27 +110,40 @@
   }
 }
 
-/* HE Prophet: a soft light pooled over a fine dot field behind the headline */
-.lh-glow {
+/* HG Aspen halftone + HC lit object: a dot field only around the big mark, both fading towards
+   the foot so the deck under them stays readable */
+.lh-field {
   background:
-    radial-gradient(
-      50% 60% at 50% 30%,
-      rgba(255, 255, 255, 0.1),
-      rgba(255, 255, 255, 0.03) 50%,
-      transparent 75%
-    ),
-    radial-gradient(circle, rgba(255, 255, 255, 0.16) 0.8px, transparent 1.2px)
-    0 0 / 9px 9px;
-  mask-image: radial-gradient(50% 55% at 50% 28%, #000 20%, transparent 75%);
-  animation: lh-in 1.2s ease-out backwards;
+    radial-gradient(circle, rgba(255, 255, 255, 0.22) 0.8px, transparent 1.3px)
+    0 0 / 10px 10px;
+  mask-image: radial-gradient(62% 62% at 50% 42%, #000 20%, transparent 78%);
+  animation: lh-in 1.4s ease-out 0.3s backwards;
 }
-/* the brand's lit tile in the pipeline */
-.lh-core {
-  animation: lh-mark 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 1.55s backwards;
+.lh-bigmark {
+  opacity: 0.55;
+  mask-image: linear-gradient(#000 35%, transparent 92%);
+  animation: lh-bigmark 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) 0.5s backwards;
+}
+@keyframes lh-bigmark {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(16px);
+  }
+}
+/* HH Evervault: the product deck rises in under the headline */
+.lh-deck {
+  animation: lh-deck 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 1.15s backwards;
+}
+@keyframes lh-deck {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .lh-glow,
-  .lh-core {
+  .lh-field,
+  .lh-bigmark,
+  .lh-deck {
     animation: none;
   }
 }

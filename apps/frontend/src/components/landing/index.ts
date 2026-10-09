@@ -227,6 +227,25 @@
  *  → Hero (Hero.tsx + hero.css): beam ignites → mark lit → flag lands → lines rise from masks →
  *    wires grow out of the mark → horizon draws → the real export types itself.
  *
+ * Fifteenth pass (2026-10-10, "belajar dari awwwards"), Site of the Day / Honorable Mention
+ * winners browsed at awwwards.com (filter: SOTD, dark palette), picked for fit (dark developer /
+ * security tools; agency, fashion and 3D-scene heroes rejected):
+ *  HF awwwards.com/sites/cerebrium (SOTD, cerebrium.ai) — editorial split: one huge light
+ *     headline bottom-left, copy + two CTAs sitting at its baseline on the right, the visual
+ *     bleeding behind the right half, a hairline + stack strip under it
+ *     → the three-line h1 with 'actually does.' dimmed, copy + CTAs in the right column,
+ *       the brand mark big and lit behind them
+ *  HG awwwards.com/sites/aspen-search (SOTD, aspensearch.com) — strict hairline grid, a mono
+ *     metadata rail on the top edge (time · place), halftone dot fields, huge type
+ *     → the rail (file · solc · forge · tests · findings, read from the run), the column
+ *       guides, the dot field the mark sits in
+ *  HH awwwards.com/sites/evervault (HM, evervault.com) — the product right under the headline:
+ *     a capabilities panel with 'ALWAYS ON' pills beside a ledger with status badges and a
+ *     totals footer
+ *     → the deck: Decoded trace / Contract graph / Findings merged / Coverage beside the
+ *       sample's real findings (id, title, every tool that reported it, severity, lines) and
+ *       the totals (findings, high, line coverage)
+ *
  * No screenshots: every product view on the page is the app's own component rendered live on the
  * sample run (built near the screen only, Lazy). Colour stays per DESIGN.md: grey/white, red only
  * on findings.

@@ -12,7 +12,6 @@ import {
   Tests,
   Words,
 } from "@/components/landing";
-import { sampleRun } from "@/components/landing/stats";
 import "@/components/landing/landing.css";
 
 export const metadata = {
@@ -23,11 +22,10 @@ export const metadata = {
 
 /** One continuous story, every section handing over to the next (see the Genie map in index.ts). */
 export default async function Home() {
-  const { log } = await sampleRun();
   return (
     <main className="relative min-h-full overflow-x-clip">
       <SmoothScroll>
-        <Hero log={log} />
+        <Hero />
         <Product />
         <Run />
         <Words />

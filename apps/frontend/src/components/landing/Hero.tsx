@@ -1,19 +1,37 @@
 /*
- * Hero refs (fourteenth pass: HE restaged the hero as a pipeline; HA nav and HC lit mark kept):
- *  HA https://id.pinterest.com/pin/760404718381966789/ — Triopixels: glass pill nav, one shaft of light
- *  HB https://id.pinterest.com/pin/1125968725514399/ — Huly: the beam lands on the product's top edge
+ * Hero refs (fifteenth pass, Awwwards winners; HA nav and HC lit mark kept from earlier passes):
+ *  HA https://id.pinterest.com/pin/760404718381966789/ — Triopixels: glass pill nav
  *  HC https://id.pinterest.com/pin/4081455908271646/ — Ascend: one big monochrome lit object
- *  HD https://id.pinterest.com/pin/3307399722549125/ — Lumina: the mark wired to its pieces
- *  HE https://id.pinterest.com/pin/1095148834406977968/ — Prophet: glow + CTA, sources → card → lit tile → triage stacks
+ *  HF https://www.awwwards.com/sites/cerebrium (SOTD, AI infra) — editorial split: a huge light
+ *     three-line headline bottom-left with one emphasised phrase, copy + two CTAs at its baseline
+ *     on the right, the hero visual bleeding behind the right half, a hairline + stack strip below
+ *  HG https://www.awwwards.com/sites/aspen-search (SOTD) — strict hairline grid, a mono
+ *     metadata rail along the top edge (time · place), halftone dot fields, huge type
+ *  HH https://www.awwwards.com/sites/evervault (HM, payments security) — below the headline the
+ *     product itself: a left capabilities panel ('always on' pills) beside a ledger with status
+ *     badges and a totals footer
  */
 import Link from "next/link";
 import { LogoText } from "@/components/ui";
+import type { AtlasData, Risk } from "@/features/atlas/types";
+import {
+  flaggedLines,
+  lineRanges,
+  reportsOf,
+  TOOL_LABEL,
+} from "@/features/atlas/utils/findings";
 import { ICON_PATH } from "@/features/atlas/utils/icons";
 import { GitHubMark } from "./GitHubMark";
 import { HeroExit } from "./Haze";
 import { ProductTabs } from "./ProductTabs";
 import { ScatterGrow } from "./ScatterGrow";
-import { scenarioDemo, traceFrames } from "./stats";
+import {
+  demoAtlas,
+  type SampleRun,
+  sampleRun,
+  scenarioDemo,
+  traceFrames,
+} from "./stats";
 import "./hero.css";
 
 export const GITHUB = "https://github.com/0xpochita/luora";
@@ -133,219 +151,219 @@ const glyph = (d: string, cls = "size-[18px]") => (
     <path d={d} />
   </svg>
 );
-const solid = (d: string) => (
-  <svg
-    aria-hidden="true"
-    viewBox="0 0 24 24"
-    className="size-[18px]"
-    fill="currentColor"
-  >
-    <path d={d} />
-  </svg>
-);
+const RISK_ORDER: Record<Risk, number> = { high: 0, med: 1, low: 2, info: 3 };
+const RISK_LABEL: Record<Risk, string> = {
+  high: "HIGH",
+  med: "MEDIUM",
+  low: "LOW",
+  info: "INFO",
+};
+const findingsOf = (atlas: AtlasData) =>
+  atlas.pieces
+    .filter((p) => p.sys === "vulns")
+    .sort(
+      (a, b) =>
+        RISK_ORDER[a.risk ?? "low"] - RISK_ORDER[b.risk ?? "low"] ||
+        a.name.localeCompare(b.name),
+    );
+const testsOf = (run: SampleRun) =>
+  run.stats.find((s) => s.label === "forge tests traced")?.value;
 
 /**
- * HE pin/1095148834406977968 (Prophet, AI SOC platform): under the CTA, one pipeline reads left to
- * right: a grid of source tiles bracketed into one input card, into the brand's lit tile, then a
- * fork into a highlighted 'true positive' stack and a faded 'false positive' stack.
- * Here: what Luora reads (Foundry, Solidity, Ethereum, the forge -vvvv trace, forge coverage, the
- * analyzer reports) → the one file the export writes (its real output line) → Luora → triage:
- * the sample's first high finding confirmed, the rest of the noise dismissed as false positives.
+ * HG Aspen: a mono metadata rail along the hero's top edge, the run's own facts where Aspen
+ * prints the time and the place.
  */
-const TILES: { label: string; node: React.ReactNode }[] = [
-  {
-    label: "Foundry",
-    node: (
-      // biome-ignore lint/performance/noImgElement: 18px static logo
-      <img
-        src="/logos/tools/foundry.png"
-        alt=""
-        className="size-[18px] invert"
-      />
-    ),
-  },
-  { label: "Solidity", node: solid(SOLIDITY) },
-  { label: "Ethereum", node: solid(ETHEREUM) },
-  { label: "forge test -vvvv", node: glyph("M4 17l6-5-6-5M12 19h8") },
-  { label: "forge coverage", node: glyph(ICON_PATH.grid) },
-  { label: "Slither · Aderyn reports", node: glyph(ICON_PATH.warn) },
-];
-const T = 44; // tile size
-const TX = [0, 54, 108];
-const TY = [102, 154];
-
-function Pipeline({ log }: { log: string[] }) {
-  const out =
-    log.find((l) => l.includes("luora-data")) ?? log[log.length - 1] ?? "";
-  const wire =
-    "M156 124H172Q178 124 178 130V170Q178 176 172 176H156M178 150H200M440 150H500M620 150H690Q700 150 700 140V110Q700 100 710 100H740M700 160V200Q700 210 710 210H740";
+function Rail({ atlas, run }: { atlas: AtlasData; run: SampleRun }) {
+  const tests = testsOf(run);
+  const items = [
+    atlas.file.split("/").pop() ?? atlas.file,
+    `solc ${atlas.compiler}`,
+    run.tools[0],
+    tests && `${tests} tests`,
+    `${findingsOf(atlas).length} findings`,
+  ].filter((x): x is string => !!x);
   return (
     <div
-      className="lh-up relative mt-16 w-full"
-      style={{ "--d": "1.2s" } as Delay}
+      className="lh-up flex flex-wrap items-center gap-x-5 gap-y-1 border-white/[.07] border-b py-3 font-mono text-[11px] text-dim tracking-[0.04em]"
+      style={{ "--d": "0.4s" } as Delay}
     >
-      {/* desktop: the pipeline at 1:1 in a 960×260 box */}
-      <div className="relative mx-auto hidden h-[260px] w-[960px] md:block">
-        <svg
-          aria-hidden="true"
-          data-smil
-          viewBox="0 0 960 260"
-          className="lh-wires absolute inset-0 size-full"
-          fill="none"
-        >
-          <path d={wire} stroke="#fff" strokeOpacity="0.2" />
-          <path
-            d="M700 160V200Q700 210 710 210H740"
-            stroke="#fff"
-            strokeOpacity="0.1"
-          />
-          <circle r="2.5" fill="#fff" opacity="0" className="lh-packet">
-            <animate
-              attributeName="opacity"
-              dur="4.2s"
-              begin="2.4s"
-              repeatCount="indefinite"
-              values="0;1;1;0"
-              keyTimes="0;0.08;0.9;1"
-            />
-            <animateMotion
-              dur="4.2s"
-              begin="2.4s"
-              repeatCount="indefinite"
-              path="M178 150H500M620 150H690Q700 150 700 140V110Q700 100 710 100H740"
-              calcMode="spline"
-              keyPoints="0;1"
-              keyTimes="0;1"
-              keySplines="0.4 0 0.6 1"
-            />
-          </circle>
-        </svg>
+      {items.map((t, i) => (
+        <span key={t} className="flex items-center gap-5">
+          {i > 0 && (
+            <span aria-hidden="true" className="size-[3px] bg-white/25" />
+          )}
+          {t}
+        </span>
+      ))}
+      <span className="ml-auto hidden text-white/35 md:inline">
+        local run · read only
+      </span>
+    </div>
+  );
+}
 
-        {/* sources */}
-        {TILES.map((t, i) => (
-          <span
-            key={t.label}
-            title={t.label}
-            className="lh-node absolute grid place-items-center rounded-[12px] border border-white/[.09] bg-gradient-to-b from-[#1b1b1e] to-[#111113] text-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,.06)]"
-            style={
-              {
-                left: TX[i % 3],
-                top: TY[Math.floor(i / 3)],
-                width: T,
-                height: T,
-                "--d": `${1.4 + i * 0.05}s`,
-              } as Delay
-            }
+/**
+ * HH Evervault: the product sits right under the headline as two panels, a capabilities list on
+ * the left ('always on' pills) beside a ledger with status badges and a totals footer. All of it
+ * is read from the sample run: the counts, the findings (worst first, every tool that reported
+ * each, the lines it flags) and the totals.
+ */
+function Deck({ atlas, run }: { atlas: AtlasData; run: SampleRun }) {
+  const findings = findingsOf(atlas);
+  const rows = findings.slice(0, 5);
+  const high = findings.filter((f) => f.risk === "high").length;
+  const entries = atlas.pieces.filter((p) => p.sys === "entry").length;
+  const tests = testsOf(run);
+  const cov = atlas.coverage?.lines;
+  const pct = cov?.found ? Math.round((cov.hit / cov.found) * 100) : null;
+  const analyzers = [
+    ...new Set(findings.flatMap((f) => reportsOf(f).map((r) => r.tool))),
+  ].filter((t) => t !== "manual");
+  const caps = [
+    {
+      icon: "M4 17l6-5-6-5M12 19h8",
+      label: "Decoded trace",
+      meta: tests ? `${tests} forge tests` : "forge test -vvvv",
+      on: true,
+    },
+    {
+      icon: ICON_PATH.fn,
+      label: "Contract graph",
+      meta: `${entries} entry points`,
+      on: true,
+    },
+    {
+      icon: ICON_PATH.warn,
+      label: "Findings merged",
+      meta: analyzers.length
+        ? analyzers.map((t) => TOOL_LABEL[t]).join(" · ")
+        : "Luora checks",
+      on: true,
+    },
+    {
+      icon: ICON_PATH.grid,
+      label: "Coverage",
+      meta: pct == null ? "forge coverage" : `${pct}% of lines`,
+      on: pct != null,
+    },
+  ];
+  const sev = (r?: Risk) =>
+    r === "high" || r === "med"
+      ? "border-red/40 bg-red/[.08] text-red"
+      : "border-white/[.1] bg-white/[.04] text-muted";
+
+  return (
+    <div className="lh-deck relative mt-12 grid w-full gap-3 text-left md:mt-14 md:grid-cols-[300px_minmax(0,1fr)] md:gap-4">
+      {/* capabilities */}
+      <div className="rounded-[18px] border border-white/[.08] bg-gradient-to-b from-[#161618] to-[#0e0e10] p-2 shadow-float md:self-start">
+        {caps.map((c) => (
+          <div
+            key={c.label}
+            className="flex items-center gap-3 px-3 py-3 [&+&]:border-white/[.06] [&+&]:border-t"
           >
-            {t.node}
-          </span>
-        ))}
-
-        {/* the export's one file */}
-        <div
-          className="lh-node absolute top-[125px] left-[200px] flex h-[50px] w-[240px] items-center gap-3 rounded-[14px] border border-white/[.12] bg-gradient-to-b from-[#1d1d20] to-[#121214] px-2.5 text-left shadow-float"
-          style={{ "--d": "1.7s" } as Delay}
-        >
-          <span className="grid size-8 shrink-0 place-items-center rounded-[9px] bg-white text-[#0b0b0c]">
-            {glyph("M14 3v5h5M6 3h8l5 5v13H6z", "size-4")}
-          </span>
-          <span className="flex min-w-0 flex-col">
-            <span className="font-mono text-[12.5px] text-fg">
-              luora-data.json
+            <span className="grid size-9 shrink-0 place-items-center rounded-[10px] border border-white/[.08] bg-[#0b0b0c] text-white/70">
+              {glyph(c.icon, "size-[17px]")}
             </span>
-            <span className="truncate text-[11px] text-dim" title={out}>
-              {out.replace(/^luora: /, "").replace(/ → luora-data\.json$/, "")}
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="text-[13.5px] text-fg">{c.label}</span>
+              <span className="truncate font-mono text-[11px] text-dim">
+                {c.meta}
+              </span>
             </span>
-          </span>
-        </div>
-
-        {/* HE: the brand's lit tile in the middle of the pipeline */}
-        <div className="lh-core absolute top-[90px] left-[500px] size-[120px] rounded-[28px] border border-white/[.18] bg-gradient-to-b from-[#2a2a2e] to-[#121214] shadow-[0_0_60px_rgba(255,255,255,.12),inset_0_1px_0_rgba(255,255,255,.18)]">
-          <Mark className="lh-mark absolute inset-[22px]" />
-        </div>
-
-        {/* triage: the first high confirmed, the noise dismissed */}
-        <p
-          className="lh-node absolute top-[34px] left-[740px] flex items-center gap-2 text-[11.5px] text-muted"
-          style={{ "--d": "2.1s" } as Delay}
-        >
-          <span className="grid size-3.5 place-items-center rounded-[4px] bg-white text-[#0b0b0c]">
-            {glyph(ICON_PATH.check, "size-2.5")}
-          </span>
-          Pin it with a Foundry test
-        </p>
-        <div
-          className="lh-node absolute top-[80px] left-[740px] w-[220px]"
-          style={{ "--d": "2s" } as Delay}
-        >
-          {[2, 1, 0].map((k) => (
             <span
-              key={k}
-              className={`absolute inset-x-0 flex h-9 items-center gap-2 rounded-[10px] border px-3 text-[12.5px] ${
-                k
-                  ? "border-red/20 bg-[#1a1112] text-red/40"
-                  : "border-red/45 bg-[#221415] text-red shadow-[0_0_24px_rgba(248,113,113,.18)]"
+              className={`flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[10px] tracking-[0.06em] ${
+                c.on
+                  ? "border-white/[.14] bg-white/[.06] text-text"
+                  : "border-white/[.08] text-dim"
               }`}
-              style={{
-                top: k * 7,
-                transform: `scale(${1 - k * 0.04})`,
-                zIndex: 3 - k,
-              }}
             >
-              ▲ <span className="font-mono">H-01</span> · Confirmed
+              {c.on && glyph(ICON_PATH.check, "size-2.5")}
+              {c.on ? "ALWAYS ON" : "OPTIONAL"}
             </span>
-          ))}
-        </div>
-        <div
-          className="lh-node absolute top-[190px] left-[740px] w-[220px]"
-          style={{ "--d": "2.15s" } as Delay}
-        >
-          {[4, 3, 2, 1, 0].map((k) => (
-            <span
-              key={k}
-              className="absolute inset-x-0 flex h-9 items-center rounded-[10px] border border-white/[.07] bg-[#111113] px-3 text-[12.5px] text-dim"
-              style={{
-                top: k * 7,
-                opacity: 1 - k * 0.18,
-                transform: `scale(${1 - k * 0.03})`,
-                zIndex: 5 - k,
-              }}
-            >
-              False positive
-            </span>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
 
-      {/* phones: the same pipeline, top to bottom */}
-      <div className="mx-auto flex max-w-[340px] flex-col items-center gap-3 md:hidden">
-        <div className="flex flex-wrap justify-center gap-2">
-          {TILES.map((t) => (
-            <span
-              key={t.label}
-              title={t.label}
-              className="grid size-9 place-items-center rounded-[10px] border border-white/[.09] bg-[#151517] text-white/70"
-            >
-              {t.node}
+      {/* ledger */}
+      <div className="overflow-hidden rounded-[18px] border border-white/[.08] bg-gradient-to-b from-[#141416] to-[#0c0c0d] shadow-float">
+        <table className="w-full border-collapse text-[12.5px]">
+          <thead>
+            <tr className="text-dim [&>th]:px-4 [&>th]:py-2.5 [&>th]:text-left [&>th]:font-normal [&>th]:text-[11px] [&>th]:tracking-[0.04em]">
+              <th>Finding</th>
+              <th className="hidden md:table-cell">Reported by</th>
+              <th>Severity</th>
+              <th className="text-right">Lines</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((f) => {
+              const id = f.name.match(/^[A-Z]-\d+/)?.[0] ?? f.id;
+              const title = f.name.replace(/^[A-Z]-\d+\s*/, "");
+              const lines =
+                f.line == null ? "" : `L${lineRanges(flaggedLines(f, f.line))}`;
+              return (
+                <tr
+                  key={f.id}
+                  className="border-white/[.06] border-t [&>td]:px-4 [&>td]:py-3"
+                >
+                  <td className="w-full max-w-0">
+                    <span className="flex items-center gap-2.5">
+                      <span className="whitespace-nowrap font-mono text-[11.5px] text-dim">
+                        {id}
+                      </span>
+                      <span className="truncate text-fg">{title}</span>
+                    </span>
+                  </td>
+                  <td className="hidden whitespace-nowrap md:table-cell">
+                    <span className="flex gap-1">
+                      {[...new Set(reportsOf(f).map((r) => r.tool))].map(
+                        (t) => (
+                          <span
+                            key={t}
+                            className="rounded-[6px] border border-white/[.08] bg-white/[.03] px-1.5 py-0.5 font-mono text-[10.5px] text-muted"
+                          >
+                            {TOOL_LABEL[t]}
+                          </span>
+                        ),
+                      )}
+                    </span>
+                  </td>
+                  <td className="whitespace-nowrap">
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[10.5px] tracking-[0.04em] ${sev(f.risk)}`}
+                    >
+                      {(f.risk === "high" || f.risk === "med") && "▲ "}
+                      {RISK_LABEL[f.risk ?? "low"]}
+                    </span>
+                  </td>
+                  <td className="whitespace-nowrap text-right font-mono text-[11.5px] text-muted">
+                    {lines}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <div className="flex items-center justify-between gap-4 border-white/[.08] border-t bg-black/30 px-4 py-3">
+          <span className="flex flex-col">
+            <span className="font-mono text-[10px] text-dim tracking-[0.08em]">
+              FINDINGS
             </span>
-          ))}
-        </div>
-        <span className="h-5 w-px bg-white/20" />
-        <span className="rounded-[12px] border border-white/[.12] bg-[#17171a] px-3 py-2 font-mono text-[12px] text-fg">
-          luora-data.json
-        </span>
-        <span className="h-5 w-px bg-white/20" />
-        <span className="relative size-20 rounded-[20px] border border-white/[.18] bg-gradient-to-b from-[#2a2a2e] to-[#121214] shadow-[0_0_40px_rgba(255,255,255,.1)]">
-          <Mark className="absolute inset-[14px]" />
-        </span>
-        <span className="h-5 w-px bg-white/20" />
-        <div className="flex gap-2 text-[12px]">
-          <span className="rounded-[10px] border border-red/45 bg-[#221415] px-3 py-2 text-red">
-            ▲ H-01 · Confirmed
+            <span className="font-medium text-[18px] text-fg">
+              {findings.length}
+              <span className="ml-1.5 font-mono text-[11px] text-red">
+                {high} high
+              </span>
+            </span>
           </span>
-          <span className="rounded-[10px] border border-white/[.07] bg-[#111113] px-3 py-2 text-dim">
-            False positive
-          </span>
+          {pct != null && (
+            <span className="flex flex-col items-end">
+              <span className="font-mono text-[10px] text-dim tracking-[0.08em]">
+                LINE COVERAGE
+              </span>
+              <span className="font-medium text-[18px] text-fg">{pct}%</span>
+            </span>
+          )}
         </div>
       </div>
     </div>
@@ -353,72 +371,97 @@ function Pipeline({ log }: { log: string[] }) {
 }
 
 /**
- * Fourteenth pass (HE Prophet): glow → eyebrow → headline lines rise → CTA → the pipeline under it
- * (sources → luora-data.json → Luora → triage) draws left to right. The hairline under it hands
- * over to the Works-with hub below (HD).
+ * Fifteenth pass (Awwwards: HF Cerebrium, HG Aspen, HH Evervault). Rail → headline lines rise →
+ * copy + CTAs → the lit mark behind the right half → the product deck below → the hairline that
+ * hands over to the Works-with hub.
  */
-export function Hero({ log }: { log: string[] }) {
+export async function Hero() {
+  const [atlas, run] = await Promise.all([demoAtlas(), sampleRun()]);
   return (
     <HeroExit>
       <Nav />
 
       <div
         data-lp="hero-body"
-        className="relative z-10 mx-auto flex max-w-[1240px] flex-col items-center px-4 pt-16 pb-32 text-center md:pt-24 md:pb-44"
+        className="relative z-10 mx-auto max-w-[1240px] px-4 pt-6 pb-32 md:px-6 md:pt-8 md:pb-44"
       >
-        {/* HE: a soft light pooled over a fine dot field behind the headline (no beam) */}
+        {/* HG: hairline column guides */}
         <div
           aria-hidden="true"
-          className="lh-glow pointer-events-none absolute top-[-76px] left-1/2 h-[560px] w-[1200px] -translate-x-1/2"
+          className="pointer-events-none absolute inset-y-0 left-4 hidden w-px bg-white/[.05] md:left-6 md:block"
         />
-        <a
-          href="#product"
-          className="lh-up inline-flex items-center gap-2 rounded-full border border-white/[.09] bg-white/[.04] py-1 pr-3 pl-1.5 text-[12.5px] text-muted transition-colors hover:text-fg md:mt-5"
-          style={{ "--d": "0.6s" } as Delay}
-        >
-          <span className="rounded-full bg-white/[.08] px-2 py-0.5 font-mono text-[11.5px] text-text">
-            forge test -vvvv
-          </span>
-          Reads your local Foundry runs
-        </a>
-        <h1 className="mt-5 max-w-[920px] font-light text-[clamp(40px,6.4vw,84px)] text-fg leading-[1.02] tracking-[-0.035em]">
-          <span className="lh-line">
-            <span style={{ "--d": "0.7s" } as Delay}>
-              See what your contract
-            </span>
-          </span>
-          <span className="lh-line text-white/45">
-            <span style={{ "--d": "0.84s" } as Delay}>actually does.</span>
-          </span>
-        </h1>
-        <p className="mt-6 max-w-[520px] text-[16px] text-body leading-relaxed md:text-[17px]">
-          Decoded traces, a contract graph you can write tests on, and analyzer
-          findings you can triage. All from code you are reviewing.
-        </p>
         <div
-          className="lh-up mt-7 flex flex-wrap items-center justify-center gap-3"
-          style={{ "--d": "1.05s" } as Delay}
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 right-4 hidden w-px bg-white/[.05] md:right-6 md:block"
+        />
+        {/* HC + HG: the lit mark bleeding behind the right half, over a halftone dot field */}
+        <div
+          aria-hidden="true"
+          className="lh-field pointer-events-none absolute top-[40px] right-[-120px] hidden size-[640px] md:block"
         >
-          <Link
-            href="/atlas"
-            className="rounded-full bg-primary px-5 py-2.5 font-medium text-[14px] text-primary-fg shadow-[0_0_32px_rgba(255,255,255,.22)] transition-[background-color,box-shadow] hover:bg-white hover:shadow-[0_0_44px_rgba(255,255,255,.32)]"
-          >
-            Open the Lab
-          </Link>
-          <a
-            href={GITHUB}
-            className="inline-flex items-center gap-2 rounded-full border border-white/[.09] bg-raised px-5 py-2.5 text-[14px] text-fg transition-colors hover:bg-hover"
-          >
-            <GitHubMark />
-            View on GitHub
-          </a>
+          <Mark className="lh-bigmark absolute inset-0 size-full" />
         </div>
 
-        <Pipeline log={log} />
+        <Rail atlas={atlas} run={run} />
+
+        {/* HF: editorial split */}
+        <div className="relative grid gap-8 pt-10 md:grid-cols-12 md:items-end md:pt-14">
+          <div className="md:col-span-8">
+            <a
+              href="#product"
+              className="lh-up mb-7 inline-flex items-center gap-2 rounded-full border border-white/[.09] bg-white/[.04] py-1 pr-3 pl-1.5 text-[12.5px] text-muted transition-colors hover:text-fg"
+              style={{ "--d": "0.55s" } as Delay}
+            >
+              <span className="rounded-full bg-white/[.08] px-2 py-0.5 font-mono text-[11.5px] text-text">
+                forge test -vvvv
+              </span>
+              Reads your local Foundry runs
+            </a>
+            <h1 className="font-light text-[clamp(46px,7.4vw,104px)] text-fg leading-[0.98] tracking-[-0.04em]">
+              <span className="lh-line">
+                <span style={{ "--d": "0.65s" } as Delay}>See what</span>
+              </span>
+              <span className="lh-line">
+                <span style={{ "--d": "0.76s" } as Delay}>your contract</span>
+              </span>
+              <span className="lh-line text-white/45">
+                <span style={{ "--d": "0.87s" } as Delay}>actually does.</span>
+              </span>
+            </h1>
+          </div>
+          <div
+            className="lh-up md:col-span-4 md:pb-3"
+            style={{ "--d": "1s" } as Delay}
+          >
+            <p className="max-w-[360px] text-[15.5px] text-body leading-relaxed md:text-[16px]">
+              Decoded traces, a contract graph you can write tests on, and
+              analyzer findings you can triage. All from the code you are
+              reviewing.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Link
+                href="/atlas"
+                className="rounded-full bg-primary px-5 py-2.5 font-medium text-[14px] text-primary-fg shadow-[0_0_32px_rgba(255,255,255,.18)] transition-[background-color,box-shadow] hover:bg-white hover:shadow-[0_0_44px_rgba(255,255,255,.3)]"
+              >
+                Open the Lab
+              </Link>
+              <a
+                href={GITHUB}
+                className="inline-flex items-center gap-2 rounded-full border border-white/[.09] bg-raised px-5 py-2.5 text-[14px] text-fg transition-colors hover:bg-hover"
+              >
+                <GitHubMark />
+                View on GitHub
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <Deck atlas={atlas} run={run} />
+
         <div
           aria-hidden="true"
-          className="lh-up h-24 w-px bg-gradient-to-b from-white/25 to-transparent"
-          style={{ "--d": "2.2s" } as Delay}
+          className="lh-up mx-auto mt-10 h-24 w-px bg-gradient-to-b from-white/25 to-transparent"
+          style={{ "--d": "2s" } as Delay}
         />
       </div>
 
