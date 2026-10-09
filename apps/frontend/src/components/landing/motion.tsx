@@ -94,7 +94,7 @@ const TONES: Record<
   how: { bg: [10, 10, 12], glow: 0.04, x: 50, y: 60 },
   findings: { bg: [13, 13, 15], glow: 0.08, x: 50, y: 100 },
   tests: { bg: [9, 9, 11], glow: 0.05, x: 50, y: 50 },
-  ask: { bg: [11, 11, 13], glow: 0.06, x: 70, y: 40 },
+  ask: { bg: [16, 15, 14], glow: 0.07, x: 30, y: 80 },
   compare: { bg: [7, 7, 8], glow: 0.05, x: 30, y: 30 },
   faq: { bg: [4, 4, 5], glow: 0.04, x: 50, y: 60 },
   finale: { bg: [0, 0, 0], glow: 0, x: 50, y: 100 },

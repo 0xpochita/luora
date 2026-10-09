@@ -102,6 +102,7 @@ type Block =
   | { k: "h"; t: string }
   | { k: "p"; t: string }
   | { k: "li"; t: string }
+  | { k: "c"; t: string }
   | { k: "f"; t: string; risk: Piece["risk"] }
   | { k: "code"; t: string };
 
@@ -117,7 +118,7 @@ function blocks(model: AtlasModel, p: Piece, q: AiQuestion): Block[] {
       if (r.startsWith("Connected to: ")) {
         out.push({ k: "h", t: "Connected to" });
         for (const c of r.slice(14).replace(/\.$/, "").split(", "))
-          out.push({ k: "li", t: c });
+          out.push({ k: "c", t: c });
       } else out.push({ k: "p", t: r });
   } else if (q === "risks") {
     out.push({ k: "h", t: "Checklist" });
@@ -146,11 +147,11 @@ function place(d: number, gap: number) {
   const a = Math.abs(d);
   return {
     transform: `translate3d(calc(-50% + ${(d * gap).toFixed(1)}px), ${(Math.min(a, 1) * 18).toFixed(1)}px, 0) scale(${(1 - 0.17 * Math.min(a, 2)).toFixed(3)})`,
-    opacity: (a <= 1 ? 1 - 0.3 * a : Math.max(0, 0.7 - 0.45 * (a - 1))).toFixed(
+    opacity: (a <= 1 ? 1 - 0.3 * a : Math.max(0, 0.7 - 0.35 * (a - 1))).toFixed(
       3,
     ),
     zIndex: String(10 - Math.round(a * 2)),
-    visibility: a > 2.5 ? "hidden" : "visible",
+    visibility: a > 2.95 ? "hidden" : "visible",
   } as const;
 }
 
@@ -217,8 +218,11 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
     drive.current = { go, step: (d) => go(Math.round(target) + d) };
 
     const measure = () => {
-      const w = row.clientWidth;
-      gap = w < 640 ? Math.min(300, w * 0.8) : Math.min(360, w * 0.25);
+      // cards are sized in em off the viewport height (ask.css), the slot follows the card
+      // on phones the neighbours peek in from both edges
+      gap =
+        (els.current.find(Boolean)?.offsetWidth ?? 314) *
+        (row.clientWidth < 640 ? 0.9 : 1.05);
       paint();
     };
     const ro = new ResizeObserver(measure);
@@ -312,9 +316,13 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
   const line = card.at + 1;
   const text = question(q, card.p.name, line);
   const answer = blocks(model, card.p, q);
+  /** where the second column starts: the second heading, or the test's code */
+  const split = answer.findIndex(
+    (b, i) => i > 0 && (b.k === "h" || b.k === "code"),
+  );
 
   return (
-    <div ref={root} className="relative pb-16">
+    <div ref={root} className="relative flex h-full flex-col justify-center">
       {/* the row runs the full viewport width and fades out at both edges */}
       <section
         ref={track}
@@ -327,7 +335,7 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
           e.preventDefault();
           drive.current?.step(e.key === "ArrowLeft" ? -1 : 1);
         }}
-        className="lp-ask-track relative mx-[calc(50%-50vw)] h-[300px] cursor-grab select-none rounded-card outline-none focus-visible:ring-1 focus-visible:ring-white/30 active:cursor-grabbing"
+        className="lp-ask-track relative mx-[calc(50%-50vw)] h-[21.5em] shrink-0 cursor-grab select-none rounded-card outline-none focus-visible:ring-1 focus-visible:ring-white/30 active:cursor-grabbing"
       >
         {cards.map((c, i) => {
           const on = i === at;
@@ -343,30 +351,30 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
               aria-hidden={!on}
               onClick={() => drive.current?.go(i)}
               style={place(wrap(i - first, n), 330)}
-              className={`lp-ask-card absolute top-3 left-1/2 w-[290px] cursor-pointer rounded-card border bg-card-grad p-2 text-left transition-[border-color,box-shadow] duration-500 md:w-[340px] ${
+              className={`lp-ask-card absolute top-[1em] left-1/2 w-[24em] cursor-pointer rounded-card border bg-card-grad p-[0.65em] text-left transition-[border-color,box-shadow] duration-500 md:w-[28em] ${
                 on
-                  ? "border-border-strong shadow-float"
-                  : "border-border shadow-soft"
+                  ? "border-border-strong shadow-[0_40px_80px_-24px_rgba(0,0,0,.85),0_16px_32px_-16px_rgba(0,0,0,.7)]"
+                  : "border-border shadow-[0_28px_56px_-24px_rgba(0,0,0,.8)]"
               }`}
             >
-              <span className="flex items-center gap-2 px-2 pt-1 pb-2.5">
+              <span className="flex items-center gap-2 px-[0.65em] pt-[0.3em] pb-[0.8em]">
                 <span className="size-1.5 shrink-0 rounded-full bg-white/70" />
-                <span className="min-w-0 truncate font-mono text-[13px] text-fg">
+                <span className="min-w-0 truncate font-mono text-[1.08em] text-fg">
                   {c.p.name}
                 </span>
                 {c.found > 0 && (
-                  <span className="ml-auto flex shrink-0 items-center gap-1.5 rounded-chip bg-raised px-2 text-[12px] text-text leading-[22px]">
+                  <span className="ml-auto flex shrink-0 items-center gap-1.5 rounded-chip bg-raised px-[0.65em] text-[1em] text-text leading-[1.8]">
                     <span className="size-1.5 rounded-full bg-red" />▲ {c.found}
                   </span>
                 )}
               </span>
-              <span className="block h-[150px] overflow-hidden rounded-inner border border-border bg-[#0b0b0d] py-2 font-mono text-[12px] leading-[1.85]">
+              <span className="block h-[12.5em] overflow-hidden rounded-inner border border-border bg-[#0b0b0d] py-[0.65em] font-mono text-[1em] leading-[1.85]">
                 {c.lines.map((l) => (
                   <span
                     key={l.n}
-                    className={`flex items-center gap-3 px-3 ${l.n === c.at ? "bg-white/[.04]" : ""}`}
+                    className={`flex items-center gap-[1em] px-[1em] ${l.n === c.at ? "bg-white/[.04]" : ""}`}
                   >
-                    <span className="w-6 shrink-0 text-right text-white/25">
+                    <span className="w-[2em] shrink-0 text-right text-white/25">
                       {l.n + 1}
                     </span>
                     <span
@@ -375,14 +383,14 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
                       {l.t || " "}
                     </span>
                     {l.d > 0 && (
-                      <span className="shrink-0 rounded-md bg-red/[.12] px-1.5 font-sans text-[10.5px] text-red leading-[17px]">
+                      <span className="shrink-0 rounded-md bg-red/[.12] px-[0.5em] font-sans text-[0.875em] text-red leading-[1.6]">
                         ▲ {l.d}
                       </span>
                     )}
                   </span>
                 ))}
               </span>
-              <span className="flex items-center justify-between px-2 pt-2.5 pb-1 text-[12.5px] text-dim">
+              <span className="flex items-center justify-between px-[0.65em] pt-[0.8em] pb-[0.3em] text-[1.04em] text-dim">
                 <span>{KIND[c.p.sys]}</span>
                 <span className="font-mono">L{c.at + 1}</span>
               </span>
@@ -391,13 +399,14 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
         })}
       </section>
 
-      {/* Genie's prompt box: the question in big type, meta bottom-left, actions bottom-right */}
-      <div className="relative mx-auto mt-6 max-w-[780px] rounded-card border border-border bg-card-grad p-2 shadow-float">
-        <div className="px-3 pt-3 pb-2 md:px-4 md:pt-4">
+      {/* Genie's prompt box: the question in big type, meta bottom-left, actions bottom-right; it
+          takes the height left under the row and the answer fills what it does not use */}
+      <div className="relative mx-auto mt-[clamp(6px,1.6svh,24px)] flex min-h-0 w-full max-w-[920px] flex-1 flex-col rounded-card md:flex-initial border border-border bg-card-grad p-2 shadow-[0_48px_96px_-32px_rgba(0,0,0,.9),0_20px_40px_-20px_rgba(0,0,0,.7)]">
+        <div className="shrink-0 px-3 pt-[clamp(6px,1.2svh,16px)] pb-1.5 md:px-4">
           <p
             key={`${at}:${q}`}
             aria-live="polite"
-            className="min-h-[3.75em] text-[clamp(21px,2.4vw,28px)] text-fg leading-[1.25] tracking-[-0.02em] md:min-h-[2.5em]"
+            className="text-[clamp(17px,min(2.4vw,2.9svh),28px)] text-fg leading-[1.25] tracking-[-0.02em]"
           >
             {text.split(" ").map((w, i) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: words of one fixed sentence
@@ -411,8 +420,8 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
               </span>
             ))}
           </p>
-          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-3">
-            <span className="flex min-w-0 items-center gap-2 text-[13px] text-dim">
+          <div className="mt-[clamp(6px,1.4svh,16px)] flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span className="hidden min-w-0 items-center gap-2 text-[13px] text-dim md:flex">
               <span
                 className={`size-1.5 shrink-0 rounded-full ${card.found ? "bg-red" : "bg-white/40"}`}
               />
@@ -421,14 +430,14 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
                 {card.found} finding{card.found === 1 ? "" : "s"}
               </span>
             </span>
-            <div className="ml-auto flex flex-wrap items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5 md:ml-auto">
               {QUESTIONS.map((x) =>
                 x.q === q ? (
                   <button
                     key={x.q}
                     type="button"
                     aria-pressed="true"
-                    className="flex h-10 cursor-pointer items-center gap-1.5 rounded-full bg-primary px-4 text-[14px] text-primary-fg"
+                    className="flex h-[clamp(32px,4.4svh,40px)] cursor-pointer items-center gap-1.5 rounded-full bg-primary px-4 text-[14px] text-primary-fg"
                   >
                     <span aria-hidden="true">✦</span>
                     {x.label}
@@ -439,7 +448,7 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
                     type="button"
                     aria-pressed="false"
                     onClick={() => setQ(x.q)}
-                    className="h-9 cursor-pointer rounded-full bg-raised px-3.5 text-[13px] text-muted transition-colors hover:bg-hover hover:text-fg"
+                    className="h-[clamp(30px,4svh,36px)] cursor-pointer rounded-full bg-raised px-3.5 text-[13px] text-muted transition-colors hover:bg-hover hover:text-fg"
                   >
                     {x.label}
                   </button>
@@ -449,70 +458,99 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
           </div>
         </div>
 
-        {/* the answer: an inner card 8px in, every block rendered at once, revealed by CSS */}
+        {/* the answer: an inner card 8px in, every block rendered at once, revealed by CSS. Wide
+            screens split it in two columns at its second part (findings, connections, the test),
+            so it fits the box; it scrolls only when the screen is too short for it */}
         <div
           key={`a:${at}:${q}`}
-          className="lp-scroll mt-2 h-[300px] space-y-2 overflow-y-auto rounded-inner border border-border bg-inner-grad p-4 text-[13.5px] text-body leading-relaxed"
+          className={`lp-scroll grid min-h-0 flex-1 content-start md:h-[clamp(200px,30svh,340px)] md:flex-initial gap-x-6 gap-y-2 overflow-y-auto rounded-inner border border-border bg-inner-grad p-2.5 text-[12px] text-body leading-normal md:text-[clamp(12px,1.55svh,13.5px)] md:p-[clamp(10px,1.6svh,16px)] md:leading-[1.55] ${split > 0 ? "md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]" : ""}`}
         >
-          {answer.map((b, i) => {
-            const key = `${i}:${b.t.slice(0, 24)}`;
-            const a = { style: { "--i": i + 4 } as CSSProperties };
-            if (b.k === "h")
-              return (
-                <p
-                  key={key}
-                  {...a}
-                  className="lp-ask-in pt-1 font-medium text-[12.5px] text-fg"
-                >
-                  {b.t}
-                </p>
-              );
-            if (b.k === "li")
-              return (
-                <p
-                  key={key}
-                  {...a}
-                  className="lp-ask-in flex gap-2 text-white/70"
-                >
-                  <span className="mt-[9px] size-1 shrink-0 rounded-full bg-white/30" />
-                  {b.t}
-                </p>
-              );
-            if (b.k === "f")
-              return (
-                <p
-                  key={key}
-                  {...a}
-                  className="lp-ask-in flex items-start gap-2 rounded-lg border border-white/[.05] bg-white/[.03] px-2.5 py-1.5 text-white/80"
-                >
-                  <span
-                    className={`mt-[3px] shrink-0 rounded px-1.5 text-[10.5px] leading-[16px] ${b.risk === "high" || b.risk === "med" ? "bg-red/[.14] text-red" : "bg-white/[.08] text-muted"}`}
-                  >
-                    {SEV[b.risk ?? "low"]}
-                  </span>
-                  {b.t}
-                </p>
-              );
-            if (b.k === "code")
-              return (
-                <pre
-                  key={key}
-                  {...a}
-                  className="lp-ask-in whitespace-pre-wrap break-words rounded-lg border border-white/[.06] bg-black/50 p-3 font-mono text-[11.5px] text-white/75 leading-relaxed"
-                >
-                  {b.t}
-                </pre>
-              );
-            return (
-              <p
-                key={key}
-                {...a}
-                className="lp-ask-in whitespace-pre-wrap break-words"
+          {[
+            answer.slice(0, split > 0 ? split : undefined),
+            split > 0 ? answer.slice(split) : [],
+          ]
+            .filter((col) => col.length)
+            .map((col, c) => (
+              <div
+                key={col[0].t}
+                className={
+                  col.some((b) => b.k === "c")
+                    ? "flex min-w-0 flex-wrap content-start gap-1.5"
+                    : "min-w-0 space-y-1.5 md:space-y-2"
+                }
               >
-                {b.t}
-              </p>
-            );
-          })}
+                {col.map((b, j) => {
+                  const i = j + (c ? split : 0);
+                  const key = `${i}:${b.t.slice(0, 24)}`;
+                  const a = { style: { "--i": i + 4 } as CSSProperties };
+                  if (b.k === "h")
+                    return (
+                      <p
+                        key={key}
+                        {...a}
+                        className="lp-ask-in w-full pt-1 font-medium text-[12.5px] text-fg"
+                      >
+                        {b.t}
+                      </p>
+                    );
+                  if (b.k === "li")
+                    return (
+                      <p
+                        key={key}
+                        {...a}
+                        className="lp-ask-in flex gap-2 text-white/70"
+                      >
+                        <span className="mt-[0.7em] size-1 shrink-0 rounded-full bg-white/30" />
+                        {b.t}
+                      </p>
+                    );
+                  if (b.k === "c")
+                    return (
+                      <span
+                        key={key}
+                        {...a}
+                        className="lp-ask-in inline-block rounded-full border border-white/[.06] bg-white/[.04] px-2.5 font-mono text-[0.9em] text-white/75 leading-[1.75]"
+                      >
+                        {b.t}
+                      </span>
+                    );
+                  if (b.k === "f")
+                    return (
+                      <p
+                        key={key}
+                        {...a}
+                        className="lp-ask-in flex items-start gap-2 rounded-lg border border-white/[.05] bg-white/[.03] px-2.5 py-1.5 text-white/80"
+                      >
+                        <span
+                          className={`mt-[3px] shrink-0 rounded px-1.5 text-[10.5px] leading-[16px] ${b.risk === "high" || b.risk === "med" ? "bg-red/[.14] text-red" : "bg-white/[.08] text-muted"}`}
+                        >
+                          {SEV[b.risk ?? "low"]}
+                        </span>
+                        {b.t}
+                      </p>
+                    );
+                  if (b.k === "code")
+                    return (
+                      <pre
+                        key={key}
+                        {...a}
+                        className="lp-ask-in whitespace-pre-wrap break-words rounded-lg border border-white/[.06] bg-black/50 p-[clamp(8px,1.2svh,12px)] font-mono text-[10px] md:text-[clamp(10.5px,1.35svh,11.5px)] text-white/75 leading-[1.5]"
+                      >
+                        {b.t}
+                      </pre>
+                    );
+                  return (
+                    <p
+                      key={key}
+                      {...a}
+                      className="lp-ask-in whitespace-pre-wrap break-words"
+                    >
+                      {b.t}
+                    </p>
+                  );
+                })}
+              </div>
+            ))}
         </div>
       </div>
     </div>
