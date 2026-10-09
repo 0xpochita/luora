@@ -1,56 +1,28 @@
 import Link from "next/link";
 import { LogoText } from "@/components/ui";
 import { CityHorizon } from "./CityHorizon";
-import { CompareTable } from "./CompareTable";
+import { CompareWorlds } from "./CompareTable";
+import { compareData } from "./compare-data";
 import { GitHubMark } from "./GitHubMark";
 import { FinaleRise } from "./Haze";
 import { DOCS, GITHUB } from "./Hero";
 import { Exit, Reveal } from "./motion";
 
 /**
- * R28 (pin/175218241748813574, Ortocosmos "Competitor analysis"): '№ / Subject / About' over a
- * hairline, a bracketed index, the table hung from the Subject column.
- * R27 (pin/36028865763636582, Ageeva "A card with features you won't find anywhere else"): the
- * product column is one raised, lighter, rounded card standing above the flat table, its header the
- * product name, checks in small circles, ✕ for missing.
- * R29 (pin/36028865764245218, Ageeva "Constructor vs Legacy vs Building In-House"): every cell a
- * short full sentence behind a leading icon. Mobile: one stacked card per row.
- * Seventh pass: P4 (pin/449163762860877017, "Pricing page with comparison table"): quiet rows with
- * more air, values in a larger size than the row labels, the heading at the section scale.
- * Genie (its pricing card rising into place): the Luora card slides up and the rows reveal one by
- * one, scrubbed (CompareStage); the block sinks back (Exit) as the FAQ rises over it.
+ * Twelfth pass (C1–C3 in CompareTable.tsx, index.ts): an editorial title over eight rows, each one
+ * two worlds, the raw text forge and the analyzer CLIs print beside the same run as Luora renders
+ * it, a lit seam wiping from one to the other with the scroll. The block sinks back (Exit) as the
+ * FAQ rises over it.
  */
-export function Compare() {
+export async function Compare() {
+  const data = await compareData();
   return (
     <section
       data-tone="compare"
       className="mx-auto max-w-[1240px] px-4 pb-32 md:px-6"
     >
       <Exit>
-        <Reveal>
-          {/* R28 header row */}
-          <div className="hidden grid-cols-[140px_5fr_6fr] gap-6 border-white/[.14] border-b pb-2 text-[12.5px] text-dim md:grid">
-            <span>№</span>
-            <span>Subject</span>
-            <span>About</span>
-          </div>
-          <div className="grid gap-4 pt-5 md:grid-cols-[140px_5fr_6fr] md:gap-6">
-            <span className="font-mono text-[15px] text-muted md:text-[22px] md:text-fg md:leading-[1.2]">
-              [007]
-            </span>
-            <h2 className="font-medium text-[clamp(32px,4.4vw,54px)] text-fg leading-[1.04] tracking-[-0.03em]">
-              Same run,
-              <br />
-              <span className="text-white/45">read differently.</span>
-            </h2>
-            <p className="max-w-[460px] text-[16px] text-muted leading-relaxed">
-              Luora does not replace forge or the analyzers. It reads what they
-              already produce and lays it over the contract.
-            </p>
-          </div>
-        </Reveal>
-
-        <CompareTable />
+        <CompareWorlds data={data} />
       </Exit>
     </section>
   );
