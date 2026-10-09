@@ -1,14 +1,12 @@
 import { AskDemo } from "./AskDemo";
 import { Reveal } from "./motion";
-import { demoAtlas } from "./stats";
 
 /**
  * Ask about a line. Heading row from R4 (Linear); the demo below is Genie's 'Prompts in. Magic out.'
- * carousel + prompt, see AskDemo.tsx. The answers are the app's own `aiAnswer` output for the piece
+ * carousel + prompt, see AskCarousel.tsx (AskDemo.tsx loads it). The answers are the app's own `aiAnswer` output for the piece
  * on the centre card. The row runs full width (main clips it).
  */
-export async function Ask() {
-  const atlas = await demoAtlas();
+export function Ask() {
   return (
     <section
       id="ask"
@@ -28,7 +26,7 @@ export async function Ask() {
         </p>
       </Reveal>
       <Reveal>
-        <AskDemo atlas={atlas} />
+        <AskDemo />
       </Reveal>
     </section>
   );

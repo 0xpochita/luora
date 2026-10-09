@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { nodeHeight } from "@/features/atlas/utils/lab-graph";
-import { LabGraph } from "./FeatureWidgets";
+import { LabGraph } from "./LabGraph";
 import { type Gsap, useStage } from "./motion";
 import type { LabDemo } from "./stats";
 

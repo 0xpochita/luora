@@ -41,18 +41,21 @@
   }
 }
 .lp-fade {
-  opacity: 0;
-  animation: lp-fade 0.6s ease-out 1.2s forwards;
+  animation: lp-fade 0.6s ease-out 1.2s backwards;
 }
+/* fades and reveals hold only their start (backwards fill), never their end: a finished animation
+   with a forwards fill stays active and keeps its own compositor layer for the life of the page */
 @keyframes lp-fade {
-  to {
-    opacity: 1;
+  from {
+    opacity: 0;
   }
 }
 
 /* hero headline: words rise out of a blur, one after another (--i = word index) */
 .lp-word {
   display: inline-block;
+  /* held at opacity 0 by the class itself (forwards fill), not by the animation: that keeps the
+     words out of LCP, so the static subline stays the LCP element */
   opacity: 0;
   filter: blur(10px);
   transform: translateY(14px);
@@ -140,8 +143,9 @@
   }
 }
 
-/* a section off screen (motion.tsx sets data-off) holds its loops; the tab progress keeps time */
-[data-off] :not(.lp-progress) {
+/* a section off screen (motion.tsx sets data-off) holds its loops (the tab progress restarts with
+   its dwell timer when the tabs come back, ProductTabs) */
+[data-off] * {
   animation-play-state: paused;
 }
 
@@ -151,23 +155,10 @@
   scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
 }
 
-/* How Luora works (R22): the lit plate lifts. Reduced motion keeps the highlight, drops the movement. */
-.lp-plate {
-  transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-.lp-plate[data-on] {
-  transform: translateY(-14px);
-}
 .lp-fadein {
-  animation: lp-fade 0.5s ease-out both;
+  animation: lp-fade 0.5s ease-out backwards;
 }
 @media (prefers-reduced-motion: reduce) {
-  .lp-plate {
-    transition: none;
-  }
-  .lp-plate[data-on] {
-    transform: none;
-  }
   .lp-fadein {
     animation: none;
   }
@@ -363,7 +354,9 @@
     position: relative;
     height: 100vh;
     padding: 0;
-    overflow: hidden;
+    /* clip-path, not overflow: hidden: same clip, but an overflow clip makes Chrome count the pin
+       switching to position: fixed as a full-screen layout shift (CLS 1.0 at each end of the pin) */
+    clip-path: inset(0);
   }
   .lp-wheel-head {
     position: absolute;

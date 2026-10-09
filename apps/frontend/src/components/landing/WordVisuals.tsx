@@ -1,6 +1,12 @@
 "use client";
 
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ReactNode,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { FindingTriage } from "@/components/(main)/atlas/FindingTriage";
 import { PieceIcon } from "@/components/(main)/atlas/PieceIcon";
 import {
@@ -20,7 +26,9 @@ import { createAtlasModel } from "@/features/atlas/utils/model";
 import { unitCode } from "@/features/atlas/utils/units";
 import { buildTree, type Frame, layoutTree } from "@/features/trace";
 import { tokenize } from "@/features/trace/utils/highlight";
-import { LabGraph, TraceWidget } from "./FeatureWidgets";
+import { useAtlas } from "./atlas";
+import { TraceWidget } from "./FeatureWidgets";
+import { LabGraph } from "./LabGraph";
 import type { LabDemo } from "./stats";
 import { Window } from "./Window";
 
@@ -31,7 +39,11 @@ import { Window } from "./Window";
  * to its column, so it is always whole. Built only once its spot nears the screen (Lazy).
  */
 
-/** scales its child down (never up) to the box width; the box takes the scaled height */
+/**
+ * scales its child down (never up) to the box width; the box takes the scaled height. Measured in a
+ * layout effect, so the box never paints (or reaches the page's ResizeObserver) at height 0 first:
+ * every in-between height change cost the page a ScrollTrigger refresh mid-scroll.
+ */
 function Fit({
   children,
   className = "",
@@ -42,14 +54,16 @@ function Fit({
   const box = useRef<HTMLDivElement>(null);
   const inner = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ k: 1, h: 0 });
-  useEffect(() => {
+  useLayoutEffect(() => {
     const b = box.current;
     const c = inner.current;
     if (!b || !c) return;
     const fit = () => {
       const k = Math.min(1, b.clientWidth / c.offsetWidth);
-      setSize({ k, h: c.offsetHeight * k });
+      const h = c.offsetHeight * k;
+      setSize((s) => (s.k === k && s.h === h ? s : { k, h }));
     };
+    fit();
     const ro = new ResizeObserver(fit);
     ro.observe(b);
     ro.observe(c);
@@ -417,7 +431,12 @@ const READ_ONLY: TriageState = {
 };
 
 /** Triage: findings on the line, the triage table of the worst finding, Flow replay lanes, ⌘K. */
-export function TriageVisual({ atlas }: { atlas: AtlasData }) {
+export function TriageVisual() {
+  const atlas = useAtlas();
+  return atlas && <Triage atlas={atlas} />;
+}
+
+function Triage({ atlas }: { atlas: AtlasData }) {
   const model = useMemo(() => createAtlasModel(atlas), [atlas]);
   // the finding most detectors agreed on, so its triage table shows the merged reports
   const f = model.findings.reduce<Piece | undefined>(

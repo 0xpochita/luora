@@ -156,17 +156,17 @@ export function FinalCta() {
       </div>
       <div data-lp="finale-body" className="relative text-center">
         <div>
+          {/* the breathing runs on the <svg> box itself (not an inner <g>), so it stays on the
+              compositor: no style / layout pass every frame while the finale is on screen */}
           <svg
             aria-hidden="true"
             viewBox="-40 -40 80 80"
-            className="relative mx-auto mb-8 size-12"
+            className="lp-breathe relative mx-auto mb-8 size-12"
             stroke="#fff"
             strokeWidth="2.5"
           >
-            <g className="lp-breathe">
-              <path d="M0-7V-34M0 7V34M-7 0H-34M7 0H34" />
-              <path d="M6-6L19-19M-6 6L-19 19M-6-6L-19-19M6 6L19 19" />
-            </g>
+            <path d="M0-7V-34M0 7V34M-7 0H-34M7 0H34" />
+            <path d="M6-6L19-19M-6 6L-19 19M-6-6L-19-19M6 6L19 19" />
           </svg>
           <h2 className="relative font-light text-[clamp(36px,5.6vw,72px)] text-fg leading-[1.02] tracking-[-0.035em]">
             Open the sample vault.

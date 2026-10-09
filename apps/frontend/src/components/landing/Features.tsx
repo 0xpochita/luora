@@ -1,10 +1,10 @@
 import { HowItWorks } from "./HowItWorks";
-import { demoAtlas, labDemo, testRows, traceFrames } from "./stats";
+import { labDemo, testRows, traceFrames } from "./stats";
 
-/** 'How Luora works' (HowItWorks.tsx): everything it draws is read from the sample run here. */
+/** 'How Luora works' (HowItWorks.tsx): read from the sample run here (the atlas its last step
+ *  draws from is fetched by the client, atlas.ts). */
 export async function Features() {
-  const [atlas, trace, lab, tests] = await Promise.all([
-    demoAtlas(),
+  const [trace, lab, tests] = await Promise.all([
     traceFrames(),
     labDemo(),
     testRows(),
@@ -15,7 +15,6 @@ export async function Features() {
       test={trace.test}
       frames={trace.frames}
       lab={lab}
-      atlas={atlas}
     />
   );
 }

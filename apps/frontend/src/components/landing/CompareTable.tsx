@@ -4,9 +4,8 @@ import { LogoMark } from "@/components/ui/LogoMark";
 import { CompareStage } from "./motion";
 
 /*
- * Compare's rows (Closing.tsx): static, but rendered twice (the desktop table and the phone cards).
- * A client component so the page ships these few lines of code instead of every cell twice more in
- * the RSC payload; the server HTML is unchanged.
+ * Compare's rows (Closing.tsx): static. A client component so the page ships these few lines of
+ * code instead of every cell again in the RSC payload.
  */
 
 /** One row: what you get, what Luora shows (a full sentence, R29), what the CLIs give today (null = nothing). */
@@ -119,7 +118,11 @@ function CliCell({ cli }: { cli: string | null }) {
   );
 }
 
-/** the raised Luora card, the table (desktop) and the stacked cards (phones), see Compare */
+/**
+ * the raised Luora card and the table, see Compare. One table for both layouts: from md it is the
+ * three-column grid; below md every row is a stacked card (row label, the Luora answer in its own
+ * raised inner card, the CLI line), so the rows are not rendered twice.
+ */
 export function CompareTable() {
   return (
     <CompareStage className="relative mt-20 md:ml-[164px]">
@@ -130,11 +133,11 @@ export function CompareTable() {
         data-lp="card"
         className="absolute -top-3 -bottom-4 left-[25.76%] hidden w-[43.94%] rounded-card border border-white/[.13] bg-card-grad shadow-[0_0_80px_-12px_rgba(255,255,255,.14),0_24px_48px_rgba(0,0,0,.55)] md:block"
       />
-      <table className="relative hidden grid-cols-[minmax(0,0.85fr)_minmax(0,1.45fr)_minmax(0,1fr)] grid-rows-[auto_repeat(8,auto)] text-left md:grid">
+      <table className="relative block text-left md:grid md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.45fr)_minmax(0,1fr)] md:grid-rows-[auto_repeat(8,auto)]">
         <caption className="sr-only">
           Luora compared with forge and the analyzer CLIs
         </caption>
-        <thead className="contents">
+        <thead className="hidden md:contents">
           <tr className="contents">
             <th className="col-start-1 row-start-1 self-end pb-4 font-normal text-[13px] text-dim">
               What you get
@@ -148,63 +151,51 @@ export function CompareTable() {
             </th>
           </tr>
         </thead>
-        <tbody className="contents">
+        <tbody className="block space-y-3 md:contents">
           {ROWS.map((r, i) => (
-            <tr key={r.what} className="contents">
+            <tr
+              key={r.what}
+              data-card={i}
+              className="block rounded-card border border-white/[.07] bg-[#0c0c0d] p-2 md:contents"
+            >
               <th
                 scope="row"
                 data-row={i}
-                className="col-start-1 border-white/[.07] border-t py-5 pr-4 font-normal text-[14.5px] text-body"
+                className="block px-3 pt-2 pb-2.5 font-normal text-[13px] text-dim md:col-start-1 md:border-white/[.07] md:border-t md:px-0 md:py-5 md:pr-4 md:text-[14.5px] md:text-body"
                 style={{ gridRowStart: i + 2 }}
               >
                 {r.what}
               </th>
               <td
                 data-row={i}
-                className="relative col-start-2 mx-3 flex gap-3 border-white/[.06] border-t px-3 py-5 text-[15px] text-fg leading-snug"
+                className="relative block max-md:rounded-inner max-md:border max-md:border-white/[.13] max-md:bg-card-grad max-md:p-3 max-md:shadow-[0_0_40px_-12px_rgba(255,255,255,.14)] md:col-start-2 md:mx-3 md:border-white/[.06] md:border-t md:px-3 md:py-5"
                 style={{ gridRowStart: i + 2 }}
               >
-                <CheckCircle />
-                {r.luora}
+                <p className="mb-2 flex items-center gap-2 text-[12.5px] text-muted md:hidden">
+                  <span className="size-1.5 rounded-full bg-white" />
+                  Luora
+                </p>
+                <p className="flex gap-2.5 text-[14px] text-fg leading-snug md:gap-3 md:text-[15px]">
+                  <CheckCircle />
+                  {r.luora}
+                </p>
               </td>
               <td
                 data-row={i}
-                className="col-start-3 flex gap-3 border-white/[.07] border-t px-6 py-5 text-[13.5px] text-dim leading-snug"
+                className="flex gap-2.5 px-3 pt-3 pb-2 text-[13px] text-dim leading-snug md:col-start-3 md:gap-3 md:border-white/[.07] md:border-t md:px-6 md:py-5 md:text-[13.5px]"
                 style={{ gridRowStart: i + 2 }}
               >
                 <CliCell cli={r.cli} />
+                {r.cli ? null : (
+                  <span aria-hidden="true" className="md:hidden">
+                    Not in the CLIs
+                  </span>
+                )}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-
-      {/* mobile: one stacked card per row */}
-      <ul className="space-y-3 md:hidden">
-        {ROWS.map((r, i) => (
-          <li
-            key={r.what}
-            data-row={`m${i}`}
-            className="rounded-card border border-white/[.07] bg-[#0c0c0d] p-2"
-          >
-            <p className="px-3 pt-2 pb-2.5 text-[13px] text-dim">{r.what}</p>
-            <div className="rounded-inner border border-white/[.13] bg-card-grad p-3 shadow-[0_0_40px_-12px_rgba(255,255,255,.14)]">
-              <p className="mb-2 flex items-center gap-2 text-[12.5px] text-muted">
-                <span className="size-1.5 rounded-full bg-white" />
-                Luora
-              </p>
-              <p className="flex gap-2.5 text-[14px] text-fg leading-snug">
-                <CheckCircle />
-                {r.luora}
-              </p>
-            </div>
-            <p className="flex gap-2.5 px-3 pt-3 pb-2 text-[13px] text-dim leading-snug">
-              <CliCell cli={r.cli} />
-              {r.cli ? null : <span aria-hidden="true">Not in the CLIs</span>}
-            </p>
-          </li>
-        ))}
-      </ul>
     </CompareStage>
   );
 }
