@@ -130,7 +130,8 @@
  *  P5 pin/30047522509933052 ("Code / Design / Writing / Building") — one composed monochrome object
  *     per tile, nothing bleeding off → live, fitted mini UIs (now WordVisuals.tsx).
  *  P6 pin/36169603254422786 ("AI Assistant - SaaS & UX UI Dashboard Design") — near-black panel,
- *     one soft beam from the top, glassy prompt box, chips → `Ask` window (.lp-askwin, .lp-glass).
+ *     one soft beam from the top, glassy prompt box, chips → the old `Ask` window
+ *     (replaced in the eleventh pass, below).
  *  Section (file)                         → reference
  *  Tools row (Hero Product, ScatterGrow)  → Foundry, Solidity, Ethereum only (Slither/Aderyn
  *                                           logos removed); P1 marks; Genie scatter → grow kept
@@ -169,6 +170,30 @@
  *  H2 pin/436497388907405556 (ONYX 'Our Process') — masked rising index, panel over panel → the wipe
  *  H3 pin/3307399722549125 (Lumina) — one lit hairline between blocks → the edge riding the wipe
  *  H4 pin/5207355814660740 (GRFN 'How it works' 1 → 2 → 3) → the circled step rail (HowItWorks.tsx)
+ *
+ * Tenth pass (2026-10-09, 'Works with' read as three circles on an empty screen), pins from
+ * id.pinterest.com ('integrations hub orbit website dark', 'dark website background grid texture'):
+ *  W1 pin/56858014040806247 (Integrations Wheel) — rings around one core, tools on the orbit
+ *  W2 pin/1076360379685275188 (MagicWand) — tick ring, one lit arc, short labels on the leaders
+ *  W3 pin/1150880879804919385 (zsearch) — round marks wired into one lit-cornered square
+ *  B1 pin/23432860626141831 / B2 pin/70437490488374 — graphite grid under a soft light, lit dots
+ *  → ScatterGrow.tsx + hub.css: Foundry / Solidity / Ethereum on arms wired into the Luora core,
+ *    what each hands over on its wire (forge test -vvvv · forge coverage, your own ABIs, calls &
+ *    events · one local run), packets riding in, masked grid behind; the hub comes apart into the
+ *    scatter and the core lands where the square grows into the Lab.
+ *
+ * Eleventh pass (2026-10-09, 'Ask' restaged), geniestudio.app studied in the browser:
+ *  Genie: Prompts in. Magic out. carousel + prompt — a row of cards, the centre one larger, lifted
+ *  and opaque, the sides smaller and fading to the edges, over one big rounded prompt box (prompt
+ *  in large type, credits meta bottom-left, sparkle + white '+ Create' pill bottom-right) that
+ *  always shows the centre card's prompt, typed in as the row moves
+ *  → `Ask` (AskDemo.tsx + ask.css): one card per piece of the sample contract (five entry points,
+ *    the busiest slot and external call: 3–6 lines, red ▲ on flagged lines), the question about the
+ *    centre card in big type ('What should I check in harvest() on line 90?'), 'L90 · harvest() ·
+ *    4 findings' bottom-left, Explain / What to check / Write a test bottom-right (the active one
+ *    the white pill), the answer (aiAnswer, CHECKLIST, findings) in an inner card below. One rAF
+ *    driver eases the row on transform + opacity; click, drag / swipe, ←/→, auto-advance paused on
+ *    hover, focus, off screen and reduced motion. The R16–R19 / P6 editor window is gone.
  *
  * No screenshots: every product view on the page is the app's own component rendered live on the
  * sample run (built near the screen only, Lazy). Colour stays per DESIGN.md: grey/white, red only

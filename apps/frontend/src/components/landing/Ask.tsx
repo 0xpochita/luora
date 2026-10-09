@@ -1,13 +1,12 @@
 import { AskDemo } from "./AskDemo";
 import { Reveal } from "./motion";
-import { demoAtlas } from "./stats";
 
 /**
- * Ask about a line. Heading row from R4 (Linear); the demo below follows R16-R19, see AskDemo.tsx.
- * The answers are the app's own `aiAnswer` output for the piece that owns the clicked line.
+ * Ask about a line. Heading row from R4 (Linear); the demo below is Genie's 'Prompts in. Magic out.'
+ * carousel + prompt, see AskCarousel.tsx (AskDemo.tsx loads it). The answers are the app's own `aiAnswer` output for the piece
+ * on the centre card. The row runs full width (main clips it).
  */
-export async function Ask() {
-  const atlas = await demoAtlas();
+export function Ask() {
   return (
     <section
       id="ask"
@@ -21,13 +20,13 @@ export async function Ask() {
           <span className="text-white/45">not the whole file.</span>
         </h2>
         <p className="max-w-[460px] text-[16px] text-muted leading-relaxed md:justify-self-end">
-          Click any line of the contract. Luora knows which function, slot or
-          call it belongs to, and answers about that piece: what it does, what
-          to check, and a Foundry test that pins the safe behaviour.
+          Every line of the contract belongs to a function, slot or call. Pick
+          one and Luora answers about that piece: what it does, what to check,
+          and a Foundry test that pins the safe behaviour.
         </p>
       </Reveal>
       <Reveal>
-        <AskDemo file={atlas.file.split("/").pop() ?? atlas.file} />
+        <AskDemo />
       </Reveal>
     </section>
   );
