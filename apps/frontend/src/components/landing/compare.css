@@ -155,12 +155,31 @@
   }
   .lp-cmp-stage .lp-cmp-rows {
     position: relative;
-    height: 290px;
-    margin-top: 40px;
+    height: min(460px, 52vh);
+    margin-top: 36px;
   }
   .lp-cmp-stage .lp-cmp-rows > li {
     position: absolute;
     inset: 0;
     margin: 0;
+  }
+  /* the one row on screen gets the room: the world fills the slot, the raw text and the Luora
+     panel's content step up with it */
+  .lp-cmp-stage .lp-cmp-world {
+    height: 100%;
+  }
+  .lp-cmp-stage .lp-cmp-raw {
+    padding: 30px 32px;
+    font-size: 12.5px;
+  }
+  .lp-cmp-stage .lp-cmp-read {
+    width: 62%;
+    padding: 22px;
+  }
+  .lp-cmp-stage .lp-cmp-read > * {
+    zoom: 1.15;
+  }
+  .lp-cmp-stage .lp-cmp-seam {
+    left: calc(38% - 11px);
   }
 }

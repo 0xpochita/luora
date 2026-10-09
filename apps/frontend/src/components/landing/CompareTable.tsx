@@ -283,23 +283,23 @@ export function CompareWorlds({ data }: { data: CompareData }) {
             className="grid gap-5 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:items-center lg:gap-12"
           >
             <div className="lg:pr-2">
-              <p className="font-mono text-[12.5px] text-dim">
+              <p className="font-mono text-[12.5px] text-dim lg:text-[13.5px]">
                 {String(i + 1).padStart(2, "0")} / 08
               </p>
-              <h3 className="mt-2 font-medium text-[19px] text-fg leading-snug tracking-[-0.01em]">
+              <h3 className="mt-2 font-medium text-[19px] text-fg leading-snug tracking-[-0.01em] lg:text-[25px]">
                 {r.what}
               </h3>
               {/* C1: what everyone else does (faded) over what Luora does (lit) */}
               <p
                 data-them
-                className="mt-4 flex gap-2.5 text-[13.5px] text-dim leading-snug"
+                className="mt-4 flex gap-2.5 text-[13.5px] text-dim leading-snug lg:mt-5 lg:text-[15.5px]"
               >
                 <Mark on={false} />
                 {r.cli ?? "Not in the CLIs"}
               </p>
               <p
                 data-us
-                className="mt-2 flex gap-2.5 text-[15px] text-fg leading-snug"
+                className="mt-2 flex gap-2.5 text-[15px] text-fg leading-snug lg:mt-3 lg:text-[17.5px]"
               >
                 <Mark on />
                 {r.luora}
