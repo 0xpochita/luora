@@ -195,6 +195,21 @@
  *    driver eases the row on transform + opacity; click, drag / swipe, ←/→, auto-advance paused on
  *    hover, focus, off screen and reduced motion. The R16–R19 / P6 editor window is gone.
  *
+ * Twelfth pass (2026-10-09, Compare restaged: "too boxy and flat"), pins from the Pinterest search
+ * 'winning awward website', picked for fit (contrast / editorial, dark or monochrome-able):
+ *  C1 pin/677228862766302378 (Award OR Free, 'The bill is the bug') — what everyone else does in
+ *     faded type over what they do in bright type → each row's copy: the CLI line fades, Luora lights
+ *  C2 pin/3307399721419408 ('Step Through. Work Smarter.') — two dark masses, one lit gap, big
+ *     two-tone title bottom-left with the note at its foot → the seam between the two worlds and
+ *     the editorial 'Same run, / read differently.' title (no №/Subject/About table)
+ *  C3 pin/281543726069847 (EqtyLab 'Verify to Trust AI') — thin curved light converging under the
+ *     product → the arcs on the raw side, rounded shells instead of hairlines
+ *  → Compare (Closing.tsx, CompareTable.tsx, CompareFragments.tsx, compare-data.ts, compare.css):
+ *    eight rows, each the raw text forge / the analyzer CLIs print beside the same run as Luora
+ *    draws it (decoded frames, source lines, slot reads / writes, call graph, the Slither + Aderyn
+ *    reports merged, triage, coverage untested first, the Lab scenario and its .t.sol); the Luora
+ *    side wipes open over the raw one with the scroll, the lit seam riding its edge.
+
  * No screenshots: every product view on the page is the app's own component rendered live on the
  * sample run (built near the screen only, Lazy). Colour stays per DESIGN.md: grey/white, red only
  * on findings.

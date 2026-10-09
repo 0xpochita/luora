@@ -6,7 +6,6 @@ import type Lenis from "lenis";
 import {
   type ReactNode,
   type RefObject,
-  useCallback,
   useEffect,
   useRef,
   useState,
@@ -358,71 +357,6 @@ export function Exit({ children }: { children: ReactNode }) {
   }, []);
   return (
     <div ref={ref} className="origin-bottom">
-      {children}
-    </div>
-  );
-}
-
-/**
- * Compare's scrubbed entrance (seventh pass). Genie's pricing card rises into place as you scroll
- * to it; here the raised Luora card (data-lp="card") slides up from below while the rows
- * (cells sharing data-row) reveal one after another, both scrubbed so they play back on the way up.
- */
-export function CompareStage({
-  children,
-  className = "",
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  useStage(
-    ref,
-    useCallback((root: HTMLElement, gsap: Gsap) => {
-      const q = gsap.utils.selector(root);
-      gsap.fromTo(
-        q("[data-lp=card]"),
-        { y: 180, autoAlpha: 0, scale: 0.96 },
-        {
-          y: 0,
-          autoAlpha: 1,
-          scale: 1,
-          ease: "power2.out",
-          scrollTrigger: {
-            trigger: root,
-            start: "top 90%",
-            end: "top 35%",
-            scrub: 0.6,
-          },
-        },
-      );
-      // each row on its own trigger, so a long (phone) list never hides rows already on screen
-      const rows = new Map<string, HTMLElement[]>();
-      for (const el of q("[data-row]") as HTMLElement[]) {
-        const k = el.dataset.row ?? "";
-        rows.set(k, [...(rows.get(k) ?? []), el]);
-      }
-      for (const cells of rows.values())
-        gsap.fromTo(
-          cells,
-          { y: 28, autoAlpha: 0 },
-          {
-            y: 0,
-            autoAlpha: 1,
-            ease: "power2.out",
-            scrollTrigger: {
-              trigger: cells[0],
-              start: "top 96%",
-              end: "top 72%",
-              scrub: 0.6,
-            },
-          },
-        );
-    }, []),
-    MOTION_MQ,
-  );
-  return (
-    <div ref={ref} className={className}>
       {children}
     </div>
   );

@@ -1,15 +1,26 @@
 "use client";
 
-import { LogoMark } from "@/components/ui/LogoMark";
-import { CompareStage } from "./motion";
+import { type ReactNode, useCallback, useRef } from "react";
+import { Fragment } from "./CompareFragments";
+import type { CompareData } from "./compare-data";
+import { type Gsap, Lazy, MOTION_MQ, useStage } from "./motion";
+import "./compare.css";
 
 /*
- * Compare's rows (Closing.tsx): static, but rendered twice (the desktop table and the phone cards).
- * A client component so the page ships these few lines of code instead of every cell twice more in
- * the RSC payload; the server HTML is unchanged.
+ * Compare's eight rows as two worlds (twelfth pass, see index.ts): on the left of each row what
+ * forge and the analyzer CLIs hand you, as the raw terminal text they print; on the right the same
+ * thing as Luora renders it (CompareFragments, the sample run's own data). A lit seam rides the
+ * edge of the Luora side as it wipes over the raw text with the scroll.
+ *  C1 pin/677228862766302378 (Award OR Free, 'The bill is the bug'): each column states what
+ *     everyone else does in faded type over what they do in bright type → the copy column: the CLI
+ *     line fades back while the Luora line lights up.
+ *  C2 pin/3307399721419408 ('Step Through. Work Smarter.'): two dark masses with one lit gap
+ *     between them, the light spilling at its foot → the seam between the two worlds.
+ *  C3 pin/281543726069847 (EqtyLab 'Verify to Trust AI'): thin curved light lines sweeping into one
+ *     point under the product → the arcs converging on the seam, and the rounded, organic shells.
  */
 
-/** One row: what you get, what Luora shows (a full sentence, R29), what the CLIs give today (null = nothing). */
+/** One row: what you get, what Luora shows (a full sentence), what the CLIs give today (null = nothing). */
 const ROWS: { what: string; luora: string; cli: string | null }[] = [
   {
     what: "Decoded calls, events and cheatcodes",
@@ -53,158 +64,239 @@ const ROWS: { what: string; luora: string; cli: string | null }[] = [
   },
 ];
 
-/** R27 / R29: a check in a small circle (Luora column). */
-function CheckCircle() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 16 16"
-      className="mt-[3px] size-4 flex-none text-fg"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.3"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="8" cy="8" r="7" strokeOpacity="0.55" />
-      <path d="M5 8.2L7.1 10.2L11 6" />
-    </svg>
-  );
+/**
+ * What the CLIs print for each row: the command, then its output. Built from the same run; the two
+ * report excerpts are quoted from foundry/reports/slither.json and aderyn.json, the issue Luora's
+ * exporter merges into one finding (luora-findings.mjs, class 'reentrancy').
+ */
+function raw(d: CompareData): string[][] {
+  const test = d.graph.test.replace("()", "");
+  const debug = `$ forge test --mt ${test} --debug`;
+  return [
+    [`$ forge test --mt ${test} -vvvv`, ...d.tree],
+    [
+      debug,
+      d.tree[0] ?? "",
+      "",
+      "one opcode at a time, source in a side pane",
+      "[j] next  [k] prev  [g] first  [G] last  [q] quit",
+    ],
+    [
+      debug,
+      ...d.ops.map((op, i) => `step ${String(i + 1).padStart(2, " ")}  ${op}`),
+    ],
+    [
+      `$ forge test --mt ${test} -vvvv`,
+      ...d.tree.slice(0, 3),
+      "",
+      "no call graph",
+    ],
+    [
+      "$ cat reports/slither.json",
+      '  "check": "reentrancy-no-eth",',
+      '  "impact": "Medium",',
+      '  "first_markdown_element": "src/LuoraVault.sol#L73-L79"',
+      "$ cat reports/aderyn.json",
+      '  "detector_name": "reentrancy-state-change",',
+      '  "title": "Reentrancy: State change after external call",',
+      '  "line_no": 75',
+    ],
+    [
+      "$ slither . --json reports/slither.json",
+      "",
+      "no triage status, no report",
+    ],
+    [
+      "$ forge coverage",
+      "| File | % Lines | % Branches | % Funcs |",
+      "|------|---------|------------|---------|",
+      `| ${d.cov.file} | ${d.cov.lines} | ${d.cov.branches} | ${d.cov.funcs} |`,
+    ],
+    [`$ vim ${d.sol.file}`, ...d.sol.lines],
+  ];
 }
 
-/** R27 / R28: ✕ where the CLIs have nothing — muted, it is a missing feature, not a finding. */
-function Cross() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 16 16"
-      className="mt-[3px] size-4 flex-none text-white/30"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.3"
-      strokeLinecap="round"
-    >
-      <path d="M5.5 5.5L10.5 10.5M10.5 5.5L5.5 10.5" />
-    </svg>
+/**
+ * The scrubbed motion: the title's lines rise out of their masks; then per row, the Luora side's clip opens from the seam (right to left on wide
+ * screens, top down below 1024px), the seam rides its edge, the raw text dims and the copy swaps
+ * which line is lit (C1). Clip-path, transform and opacity only; static and settled under reduced
+ * motion.
+ */
+function setup(root: HTMLElement, gsap: Gsap, wide: boolean) {
+  gsap.fromTo(
+    root.querySelectorAll("[data-rise]"),
+    { yPercent: 105 },
+    {
+      yPercent: 0,
+      ease: "power2.out",
+      stagger: 0.12,
+      scrollTrigger: {
+        trigger: root,
+        start: "top 92%",
+        end: "top 45%",
+        scrub: 0.6,
+      },
+    },
   );
+  for (const row of root.querySelectorAll<HTMLElement>("[data-cmp]")) {
+    const q = gsap.utils.selector(row);
+    const read = q("[data-read]")[0] as HTMLElement;
+    const tl = gsap.timeline({
+      defaults: { ease: "none" },
+      scrollTrigger: {
+        trigger: row,
+        start: wide ? "top 92%" : "top 90%",
+        end: wide ? "top 50%" : "top 45%",
+        scrub: 0.6,
+        invalidateOnRefresh: true,
+      },
+    });
+    tl.fromTo(
+      read,
+      { clipPath: wide ? "inset(0% 0% 0% 100%)" : "inset(0% 0% 100% 0%)" },
+      { clipPath: "inset(0% 0% 0% 0%)" },
+      0,
+    )
+      .fromTo(q("[data-raw]"), { autoAlpha: 1 }, { autoAlpha: 0.55 }, 0)
+      .fromTo(q("[data-them]"), { autoAlpha: 1 }, { autoAlpha: 0.4 }, 0)
+      .fromTo(
+        q("[data-us]"),
+        { autoAlpha: 0.2, y: 10 },
+        { autoAlpha: 1, y: 0 },
+        0,
+      );
+    if (wide)
+      tl.fromTo(q("[data-seam]"), { x: () => read.offsetWidth }, { x: 0 }, 0);
+  }
 }
 
-/** R29: competitor cells lead with an icon too; a hollow dim ring where the CLIs do have something. */
-function Ring() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 16 16"
-      className="mt-[3px] size-4 flex-none text-white/25"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.3"
-    >
-      <circle cx="8" cy="8" r="3" />
-    </svg>
+export function CompareWorlds({ data }: { data: CompareData }) {
+  const ref = useRef<HTMLDivElement>(null);
+  // one setup per layout, so crossing 1024px reverts one and builds the other
+  useStage(
+    ref,
+    useCallback((r: HTMLElement, g: Gsap) => setup(r, g, true), []),
+    `${MOTION_MQ} and (min-width: 1024px)`,
   );
-}
-
-function CliCell({ cli }: { cli: string | null }) {
-  return cli ? (
-    <>
-      <Ring />
-      <span>{cli}</span>
-    </>
-  ) : (
-    <>
-      <Cross />
-      <span className="sr-only">Not available</span>
-    </>
+  useStage(
+    ref,
+    useCallback((r: HTMLElement, g: Gsap) => setup(r, g, false), []),
+    `${MOTION_MQ} and (max-width: 1023.98px)`,
   );
-}
-
-/** the raised Luora card, the table (desktop) and the stacked cards (phones), see Compare */
-export function CompareTable() {
+  const out = raw(data);
   return (
-    <CompareStage className="relative mt-20 md:ml-[164px]">
-      {/* desktop: three columns, the Luora column one raised card spanning every row (R27); the
-          card is its own element (columns 0.85 / 1.45 / 1 fr) so it can slide up into place */}
-      <div
-        aria-hidden="true"
-        data-lp="card"
-        className="absolute -top-3 -bottom-4 left-[25.76%] hidden w-[43.94%] rounded-card border border-white/[.13] bg-card-grad shadow-[0_0_80px_-12px_rgba(255,255,255,.14),0_24px_48px_rgba(0,0,0,.55)] md:block"
-      />
-      <table className="relative hidden grid-cols-[minmax(0,0.85fr)_minmax(0,1.45fr)_minmax(0,1fr)] grid-rows-[auto_repeat(8,auto)] text-left md:grid">
-        <caption className="sr-only">
-          Luora compared with forge and the analyzer CLIs
-        </caption>
-        <thead className="contents">
-          <tr className="contents">
-            <th className="col-start-1 row-start-1 self-end pb-4 font-normal text-[13px] text-dim">
-              What you get
-            </th>
-            <th className="relative col-start-2 row-start-1 flex items-center gap-2.5 px-6 pt-4 pb-5 font-medium text-[17px] text-fg">
-              <LogoMark />
-              Luora
-            </th>
-            <th className="col-start-3 row-start-1 self-end px-6 pb-4 font-normal text-[13px] text-dim">
-              forge + analyzer CLIs
-            </th>
-          </tr>
-        </thead>
-        <tbody className="contents">
-          {ROWS.map((r, i) => (
-            <tr key={r.what} className="contents">
-              <th
-                scope="row"
-                data-row={i}
-                className="col-start-1 border-white/[.07] border-t py-5 pr-4 font-normal text-[14.5px] text-body"
-                style={{ gridRowStart: i + 2 }}
-              >
-                {r.what}
-              </th>
-              <td
-                data-row={i}
-                className="relative col-start-2 mx-3 flex gap-3 border-white/[.06] border-t px-3 py-5 text-[15px] text-fg leading-snug"
-                style={{ gridRowStart: i + 2 }}
-              >
-                <CheckCircle />
-                {r.luora}
-              </td>
-              <td
-                data-row={i}
-                className="col-start-3 flex gap-3 border-white/[.07] border-t px-6 py-5 text-[13.5px] text-dim leading-snug"
-                style={{ gridRowStart: i + 2 }}
-              >
-                <CliCell cli={r.cli} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {/* mobile: one stacked card per row */}
-      <ul className="space-y-3 md:hidden">
+    <div ref={ref}>
+      {/* C1 + C2: an editorial title, big and light, second line muted; the note at its foot */}
+      <h2 className="font-light text-[clamp(46px,9.4vw,144px)] text-fg leading-[0.94] tracking-[-0.045em]">
+        <span className="lp-cmp-line">
+          <span data-rise>Same run,</span>
+        </span>
+        <span className="lp-cmp-line">
+          <span data-rise className="text-white/40">
+            read differently.
+          </span>
+        </span>
+      </h2>
+      <div className="mt-8 flex flex-col-reverse gap-6 md:mt-10 md:flex-row md:items-end md:justify-between">
+        <p className="flex items-center gap-3 text-[13px] text-dim">
+          What the CLIs print
+          <span
+            aria-hidden="true"
+            className="h-4 w-0.5 rounded-full bg-white shadow-[0_0_12px_2px_rgba(255,255,255,.35)]"
+          />
+          <span className="text-fg">What Luora draws from it</span>
+        </p>
+        <p className="max-w-[420px] text-[16px] text-muted leading-relaxed">
+          Luora does not replace forge or the analyzers. It reads what they
+          already produce and lays it over the contract.
+        </p>
+      </div>
+      <ol className="mt-14 space-y-6 md:mt-20 md:space-y-8">
         {ROWS.map((r, i) => (
           <li
             key={r.what}
-            data-row={`m${i}`}
-            className="rounded-card border border-white/[.07] bg-[#0c0c0d] p-2"
+            data-cmp
+            className="grid gap-5 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:items-center lg:gap-12"
           >
-            <p className="px-3 pt-2 pb-2.5 text-[13px] text-dim">{r.what}</p>
-            <div className="rounded-inner border border-white/[.13] bg-card-grad p-3 shadow-[0_0_40px_-12px_rgba(255,255,255,.14)]">
-              <p className="mb-2 flex items-center gap-2 text-[12.5px] text-muted">
-                <span className="size-1.5 rounded-full bg-white" />
-                Luora
+            <div className="lg:pr-2">
+              <p className="font-mono text-[12.5px] text-dim">
+                {String(i + 1).padStart(2, "0")} / 08
               </p>
-              <p className="flex gap-2.5 text-[14px] text-fg leading-snug">
-                <CheckCircle />
+              <h3 className="mt-2 font-medium text-[19px] text-fg leading-snug tracking-[-0.01em]">
+                {r.what}
+              </h3>
+              {/* C1: what everyone else does (faded) over what Luora does (lit) */}
+              <p
+                data-them
+                className="mt-4 flex gap-2.5 text-[13.5px] text-dim leading-snug"
+              >
+                <Mark on={false} />
+                {r.cli ?? "Not in the CLIs"}
+              </p>
+              <p
+                data-us
+                className="mt-2 flex gap-2.5 text-[15px] text-fg leading-snug"
+              >
+                <Mark on />
                 {r.luora}
               </p>
             </div>
-            <p className="flex gap-2.5 px-3 pt-3 pb-2 text-[13px] text-dim leading-snug">
-              <CliCell cli={r.cli} />
-              {r.cli ? null : <span aria-hidden="true">Not in the CLIs</span>}
-            </p>
+            <World raw={out[i]}>
+              <Fragment i={i} data={data} />
+            </World>
           </li>
         ))}
-      </ul>
-    </CompareStage>
+      </ol>
+    </div>
+  );
+}
+
+/** a small ring: hollow for the CLIs, a lit dot inside for Luora */
+function Mark({ on }: { on: boolean }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 16 16"
+      className="mt-[2px] size-4 flex-none"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.2"
+    >
+      <circle cx="8" cy="8" r="6.5" strokeOpacity={on ? 0.5 : 0.35} />
+      {on ? (
+        <circle cx="8" cy="8" r="2.5" fill="currentColor" stroke="none" />
+      ) : null}
+    </svg>
+  );
+}
+
+/** C2 + C3: the raw world, the lit seam and its arcs, the Luora world clipped open over them */
+function World({ raw, children }: { raw: string[]; children: ReactNode }) {
+  return (
+    <div className="lp-cmp-world">
+      <div data-raw aria-hidden="true" className="lp-cmp-raw">
+        {raw.map((l, j) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: static lines, blanks repeat
+          <span key={j} className={j === 0 ? "text-white/60" : undefined}>
+            {l || " "}
+          </span>
+        ))}
+      </div>
+      <svg
+        aria-hidden="true"
+        className="lp-cmp-arcs"
+        viewBox="0 0 400 200"
+        preserveAspectRatio="none"
+        fill="none"
+      >
+        <path d="M0 40C120 60 230 120 270 200" />
+        <path d="M0 110C110 120 210 160 250 200" />
+        <path d="M400 30C340 70 300 140 290 200" />
+      </svg>
+      <div data-read aria-hidden="true" className="lp-cmp-read">
+        <Lazy className="h-full">{children}</Lazy>
+      </div>
+      <span data-seam aria-hidden="true" className="lp-cmp-seam" />
+    </div>
   );
 }
