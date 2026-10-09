@@ -1,0 +1,211 @@
+/* Hero (Hero.tsx). Thirteenth pass, refs in index.ts (HA–HD). One light path down the middle:
+   beam → lit mark → headline → horizon on the terminal's top edge → hairline into the hub.
+   Only transform / opacity / clip-path animate; every loop sits under [data-tone=hero], so
+   motion.tsx's data-off pauses it off screen. --d = start delay. */
+
+/* HA Triopixels / HB Huly: one shaft of light from the top, landing on the mark. Gradients only. */
+.lh-beam-wrap {
+  mask-image: linear-gradient(#000 72%, transparent);
+}
+.lh-beam {
+  background: radial-gradient(
+    50% 100% at 50% 85%,
+    rgba(255, 255, 255, 0.13),
+    rgba(255, 255, 255, 0.04) 45%,
+    transparent 75%
+  );
+  transform-origin: 50% 0;
+  animation: lh-ignite 1.1s cubic-bezier(0.3, 0.7, 0.2, 1) backwards;
+}
+.lh-beam-core {
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(255, 255, 255, 0.18) 50%,
+    rgba(255, 255, 255, 0.55)
+  );
+  transform-origin: 50% 0;
+  animation: lh-ignite 0.8s cubic-bezier(0.5, 0, 0.2, 1) backwards;
+}
+@keyframes lh-ignite {
+  from {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+}
+
+/* HC Ascend: the mark is the one lit object; its halo breathes slowly once it is lit */
+.lh-halo {
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 255, 255, 0.14),
+    rgba(255, 255, 255, 0.04) 55%,
+    transparent
+  );
+  animation:
+    lh-in 0.9s ease-out 0.45s backwards,
+    lh-breathe 6s ease-in-out 1.4s infinite alternate;
+}
+@keyframes lh-breathe {
+  to {
+    opacity: 0.55;
+    transform: scale(0.92);
+  }
+}
+.lh-mark {
+  animation: lh-mark 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 0.4s backwards;
+}
+@keyframes lh-mark {
+  from {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+}
+/* the flagged square lands last: the mark "finds" something */
+.lh-flag {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: lh-flag 0.5s cubic-bezier(0.3, 1.4, 0.5, 1) 1.15s backwards;
+}
+@keyframes lh-flag {
+  from {
+    opacity: 0;
+    transform: translate(-40%, 40%) scale(0.4);
+  }
+}
+
+@keyframes lh-in {
+  from {
+    opacity: 0;
+  }
+}
+.lh-up {
+  animation: lh-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) var(--d, 0s) backwards;
+}
+@keyframes lh-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* headline: each line rises out of its own mask. Held at opacity 0 by the class (forwards fill),
+   like the old lp-word, so the static subline stays the LCP element. */
+.lh-line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+.lh-line > span {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(105%);
+  animation: lh-rise 1s cubic-bezier(0.2, 0.8, 0.2, 1) var(--d) forwards;
+}
+@keyframes lh-rise {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* wires grow out of the mark to both sides (one clip, no dash animation) */
+.lh-wires {
+  animation: lh-wires 1.2s cubic-bezier(0.6, 0, 0.3, 1) 1s backwards;
+}
+@keyframes lh-wires {
+  from {
+    clip-path: inset(0 50%);
+  }
+  to {
+    clip-path: inset(0 0);
+  }
+}
+.lh-node {
+  animation: lh-up 0.6s ease-out var(--d) backwards;
+}
+
+/* HB Huly / HD Lumina: a horizon riding the terminal's top edge */
+.lh-horizon {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent
+  );
+  animation: lh-horizon 1.1s cubic-bezier(0.6, 0, 0.3, 1) 1.35s backwards;
+}
+.lh-horizon-glow {
+  background: radial-gradient(
+    50% 100% at 50% 100%,
+    rgba(255, 255, 255, 0.08),
+    transparent
+  );
+  animation: lh-in 1s ease-out 1.6s backwards;
+}
+@keyframes lh-horizon {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+/* terminal lines type themselves in: a stepped clip over a shrink-wrapped line */
+.lh-type {
+  display: table;
+  white-space: pre;
+  clip-path: inset(0 100% 0 0);
+  animation: lh-type calc(var(--n) * 0.022s) steps(var(--n)) var(--d) forwards;
+}
+@keyframes lh-type {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+.lh-caret {
+  animation: lh-blink 1s steps(1) infinite;
+}
+@keyframes lh-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* a tick runs down the 'Scroll to explore' line */
+.lh-tick {
+  animation: lh-tick 2.4s cubic-bezier(0.6, 0, 0.4, 1) 2.5s infinite;
+}
+@keyframes lh-tick {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(400%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lh-beam,
+  .lh-beam-core,
+  .lh-halo,
+  .lh-mark,
+  .lh-flag,
+  .lh-up,
+  .lh-line > span,
+  .lh-wires,
+  .lh-node,
+  .lh-horizon,
+  .lh-horizon-glow,
+  .lh-type,
+  .lh-caret,
+  .lh-tick {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    clip-path: none;
+  }
+  .lh-tick,
+  .lh-packet {
+    display: none;
+  }
+}

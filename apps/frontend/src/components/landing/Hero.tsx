@@ -1,3 +1,10 @@
+/*
+ * Hero refs (thirteenth pass, see index.ts):
+ *  HA https://id.pinterest.com/pin/760404718381966789/ — Triopixels: glass pill nav, one shaft of light
+ *  HB https://id.pinterest.com/pin/1125968725514399/ — Huly: the beam lands on the product's top edge
+ *  HC https://id.pinterest.com/pin/4081455908271646/ — Ascend: one big monochrome lit object
+ *  HD https://id.pinterest.com/pin/3307399722549125/ — Lumina: the mark wired to its pieces
+ */
 import Link from "next/link";
 import { LogoText } from "@/components/ui";
 import { ICON_PATH, type IconKey } from "@/features/atlas/utils/icons";
@@ -6,11 +13,18 @@ import { HeroExit } from "./Haze";
 import { ProductTabs } from "./ProductTabs";
 import { ScatterGrow } from "./ScatterGrow";
 import { scenarioDemo, traceFrames } from "./stats";
+import "./hero.css";
 
 export const GITHUB = "https://github.com/0xpochita/luora";
 export const DOCS = `${GITHUB}#readme`;
 
-/** R1 / R3: logo left, one centred pill group with a tiny active pill, a white "Open app" pill right. */
+type Delay = React.CSSProperties & { "--d"?: string; "--n"?: number };
+
+/**
+ * HA pin/760404718381966789 (Triopixels): wordmark left, one glass pill in the middle, a quiet
+ * pill right, a hairline under the bar with '+' at its ends. The glass is a gradient + inner
+ * highlight, not backdrop-filter, so scrolling never re-blurs it.
+ */
 export function Nav() {
   const items = [
     { label: "Product", href: "#product", on: true },
@@ -19,20 +33,23 @@ export function Nav() {
     { label: "GitHub", href: GITHUB },
   ];
   return (
-    <nav className="relative z-20 mx-auto flex h-[76px] max-w-[1240px] items-center justify-between px-4 md:px-6">
-      <Link href="/" className="flex items-center gap-2.5" aria-label="Luora">
-        <LogoText height={28} />
+    <nav className="lh-up relative z-20 mx-auto flex h-[76px] max-w-[1240px] items-center justify-between px-4 md:px-6">
+      <Link href="/" className="flex items-center" aria-label="Luora">
+        <LogoText height={26} />
       </Link>
-      <ul className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-0.5 rounded-full border border-white/[.08] bg-[#0b0b0c]/85 p-1 md:flex">
+      <ul className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-0.5 rounded-full border border-white/[.08] bg-gradient-to-b from-white/[.07] to-white/[.02] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,.08),0_10px_30px_rgba(0,0,0,.45)] md:flex">
         {items.map((i) => (
           <li key={i.label}>
             <a
               href={i.href}
               aria-current={i.on ? "page" : undefined}
-              className={`block rounded-full px-3.5 py-1.5 text-[13px] transition-colors ${
-                i.on ? "bg-white/[.09] text-fg" : "text-muted hover:text-fg"
+              className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] transition-colors ${
+                i.on
+                  ? "bg-white/[.1] text-fg shadow-[inset_0_1px_0_rgba(255,255,255,.1)]"
+                  : "text-muted hover:text-fg"
               }`}
             >
+              {i.on && <span className="size-1 rounded-full bg-white" />}
               {i.label}
             </a>
           </li>
@@ -44,169 +61,210 @@ export function Nav() {
       >
         Open app
       </Link>
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-4 bottom-0 h-px bg-gradient-to-r from-transparent via-white/[.08] to-transparent md:inset-x-6"
+      />
+      {[0, 1].map((k) => (
+        <svg
+          key={k}
+          aria-hidden="true"
+          viewBox="0 0 11 11"
+          className={`pointer-events-none absolute -bottom-[5px] hidden size-[11px] text-white/30 md:block ${k ? "right-6 translate-x-1/2" : "left-6 -translate-x-1/2"}`}
+          stroke="currentColor"
+        >
+          <path d="M0 5.5h11M5.5 0v11" />
+        </svg>
+      ))}
     </nav>
   );
 }
 
-/** R2 vanishing point (also the starburst's centre) in the backdrop's 1440-wide space. */
-const VP = { x: 720, y: 150 };
-const RAYS = [-520, 120, 470, 970, 1320, 1960];
-
 /**
- * R2: hairline perspective lines converging on a thin white starburst; R1: cross markers on the
- * lines. Sliced from the top centre so the mark stays put at every width.
+ * The brand mark redrawn from public/brand/mark-tile.png: starburst, centre square, and the long
+ * NE ray ending in the flagged square. viewBox is shifted so the centre square sits at its centre.
+ * Lit from above (HC): white at the top fading to graphite at the foot.
  */
-function Backdrop() {
-  const { x, y } = VP;
+function Mark({ className = "" }: { className?: string }) {
   return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 1440 960"
-      preserveAspectRatio="xMidYMin slice"
-      className="pointer-events-none absolute inset-x-0 top-0 h-[960px] w-full"
-    >
+    <svg aria-hidden="true" viewBox="-12 7 512 512" className={className}>
       <defs>
-        <radialGradient
-          id="lp-fade"
+        <linearGradient
+          id="lh-lit"
           gradientUnits="userSpaceOnUse"
-          cx={x}
-          cy={y}
-          r="900"
+          x1="0"
+          y1="84"
+          x2="0"
+          y2="434"
         >
-          <stop offset="0.04" stopColor="#000" />
-          <stop offset="0.1" stopColor="#fff" />
-          <stop offset="0.55" stopColor="#fff" stopOpacity="0.5" />
-          <stop offset="1" stopColor="#000" />
-        </radialGradient>
-        <mask id="lp-mask">
-          <rect width="1440" height="960" fill="url(#lp-fade)" />
-        </mask>
+          <stop offset="0" stopColor="#fff" />
+          <stop offset="1" stopColor="#8a8a90" />
+        </linearGradient>
       </defs>
-      <g mask="url(#lp-mask)" stroke="#fff" strokeOpacity="0.11" fill="none">
-        <path d={`M0 ${y}H1440M${x} 0V${y}`} />
-        <path
-          d={`M${x} ${y}L${x - 760} ${y - 760}M${x} ${y}L${x + 760} ${y - 760}`}
-        />
-        {RAYS.map((bx) => (
-          <path key={bx} d={`M${x} ${y}L${bx} 960`} />
-        ))}
+      <g stroke="url(#lh-lit)" strokeWidth="30" fill="none">
+        <path d="M244 124V205M244 322V434M60 263H180M306 263H425M150 178L196 224M146 352L196 302M293 302L345 354M291 213L370 136" />
       </g>
-      <g stroke="#fff" strokeOpacity="0.3">
-        {[
-          [250, y],
-          [1190, y],
-          [120, 600],
-          [1320, 600],
-        ].map(([cx, cy]) => (
-          <path key={cx} d={`M${cx - 5} ${cy}h10M${cx} ${cy - 5}v10`} />
-        ))}
-      </g>
-      <g stroke="#fff" strokeWidth="2.5" transform={`translate(${x} ${y})`}>
-        <g className="lp-breathe">
-          <path d="M0-7V-34M0 7V34M-7 0H-34M7 0H34" />
-          <path d="M6-6L19-19M-6 6L-19 19M-6-6L-19-19M6 6L19 19" />
-        </g>
+      <g fill="url(#lh-lit)">
+        <rect x="219" y="238" width="50" height="50" />
+        <rect className="lh-flag" x="382" y="84" width="42" height="42" />
       </g>
     </svg>
   );
 }
 
-type Orbit = {
+/**
+ * HA/HC: hairline perspective lines meeting at the mark, '+' markers on them. Faded by a radial
+ * gradient stroke rather than a mask (no offscreen mask layer to raster at load).
+ */
+function Backdrop() {
+  const vx = 800;
+  const vy = 100;
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 1600 1000"
+      className="pointer-events-none absolute top-1/2 left-1/2 h-[1000px] w-[1600px] max-w-none -translate-x-1/2 -translate-y-[100px]"
+    >
+      <defs>
+        <radialGradient
+          id="lh-fade"
+          gradientUnits="userSpaceOnUse"
+          cx={vx}
+          cy={vy}
+          r="900"
+        >
+          <stop offset="0.08" stopColor="#fff" stopOpacity="0" />
+          <stop offset="0.18" stopColor="#fff" stopOpacity="0.07" />
+          <stop offset="0.55" stopColor="#fff" stopOpacity="0.035" />
+          <stop offset="1" stopColor="#fff" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <path
+        stroke="url(#lh-fade)"
+        fill="none"
+        d={[-1200, -600, -270, 270, 600, 1200]
+          .map((dx) => `M${vx} ${vy}L${vx + dx} 1000`)
+          .concat(
+            `M${vx} ${vy}L${vx - 1100} -1000M${vx} ${vy}L${vx + 1100} -1000`,
+          )
+          .join("")}
+      />
+      <path
+        stroke="#fff"
+        strokeOpacity="0.22"
+        d={[
+          [587, 420],
+          [1013, 420],
+          [133, 600],
+          [1467, 600],
+        ]
+          .map(([x, y]) => `M${x - 5} ${y}h10M${x} ${y - 5}v10`)
+          .join("")}
+      />
+    </svg>
+  );
+}
+
+type GraphNode = {
   icon: IconKey;
   label: string;
   sub: string;
   x: number;
   y: number;
-  /** wire from the frame edge into the node (R3) */
+  /** wire from the mark's ray (or its flagged square) out to the node */
   d: string;
+  side: "l" | "r";
   bad?: boolean;
 };
 
-/** R3: small labelled nodes on thin lines around the headline, named after real Lab pieces. */
-const ORBITS: Orbit[] = [
+/**
+ * HD Lumina (the mark wired to its pieces) + the sample vault's real pieces, in a 1240×200 box
+ * with the mark at (620, 100): deposit() writes slot 5 (totalShares, forge inspect), prices
+ * through IOracle.getPrice(), and Slither's unchecked-transfer sits on it (the first high, H-01).
+ * The finding hangs off the mark's own flagged square.
+ */
+const NODES: GraphNode[] = [
   {
     icon: "fn",
     label: "deposit()",
     sub: "entry · anyone",
-    x: 180,
-    y: 70,
-    d: "M0 128H60C120 128 110 70 170 70",
+    x: 400,
+    y: 44,
+    d: "M594 76C548 44 480 44 416 44",
+    side: "l",
   },
   {
     icon: "cylinder",
     label: "slot 5 · totalShares",
     sub: "written by deposit",
-    x: 110,
-    y: 290,
-    d: "M0 230H30C70 230 60 290 100 290",
+    x: 230,
+    y: 150,
+    d: "M572 100C470 100 420 150 246 150",
+    side: "l",
+  },
+  {
+    icon: "warn",
+    label: "▲ H-01 · high",
+    sub: "unchecked transfer",
+    x: 840,
+    y: 44,
+    d: "M664 62C716 44 760 44 824 44",
+    side: "r",
+    bad: true,
   },
   {
     icon: "eye",
     label: "IOracle",
     sub: "getPrice()",
-    x: 1060,
-    y: 80,
-    d: "M1240 140H1180C1120 140 1130 80 1070 80",
-  },
-  {
-    icon: "warn",
-    label: "▲ finding",
-    sub: "F-01 · high",
-    x: 1130,
-    y: 300,
-    d: "M1240 250H1210C1170 250 1180 300 1140 300",
-    bad: true,
+    x: 1010,
+    y: 150,
+    d: "M668 100C770 100 820 150 994 150",
+    side: "r",
   },
 ];
 
-function Orbits() {
+function Graph() {
   return (
     <div
       aria-hidden="true"
-      data-lp="hero-body"
-      className="pointer-events-none absolute inset-x-0 top-[190px] mx-auto hidden h-[380px] max-w-[1240px] lg:block"
+      className="pointer-events-none absolute top-1/2 left-1/2 hidden h-[200px] w-[1240px] -translate-x-1/2 -translate-y-1/2 xl:block"
     >
       <svg
         aria-hidden="true"
         data-smil
-        viewBox="0 0 1240 380"
-        preserveAspectRatio="none"
-        className="absolute inset-0 size-full"
+        viewBox="0 0 1240 200"
+        className="lh-wires absolute inset-0 size-full"
         fill="none"
-        stroke="#fff"
-        strokeOpacity="0.18"
       >
-        {ORBITS.map((o) => (
+        {NODES.map((n) => (
           <path
-            key={o.label}
-            d={o.d}
-            pathLength={1}
-            className="lp-draw"
-            vectorEffect="non-scaling-stroke"
+            key={n.label}
+            d={n.d}
+            stroke={n.bad ? "var(--red)" : "#fff"}
+            strokeOpacity={n.bad ? 0.7 : 0.22}
           />
         ))}
-        {ORBITS.map((o, i) => (
+        {NODES.map((n, i) => (
           <circle
-            key={`p-${o.label}`}
+            key={`p-${n.label}`}
             r="2.5"
-            stroke="none"
-            fill={o.bad ? "var(--red)" : "#fff"}
+            fill={n.bad ? "var(--red)" : "#fff"}
             opacity="0"
-            className="lp-packet"
+            className="lh-packet"
           >
             <animate
               attributeName="opacity"
-              dur="4.2s"
-              begin={`${1.8 + i * 1.05}s`}
+              dur="3.6s"
+              begin={`${2.4 + i * 0.9}s`}
               repeatCount="indefinite"
               values="0;1;1;0"
               keyTimes="0;0.1;0.85;1"
             />
             <animateMotion
-              dur="4.2s"
-              begin={`${1.8 + i * 1.05}s`}
+              dur="3.6s"
+              begin={`${2.4 + i * 0.9}s`}
               repeatCount="indefinite"
-              path={o.d}
+              path={n.d}
               keyPoints="0;1"
               keyTimes="0;1"
               calcMode="spline"
@@ -215,16 +273,27 @@ function Orbits() {
           </circle>
         ))}
       </svg>
-      {ORBITS.map((o) => (
+      {NODES.map((n, i) => (
         <div
-          key={o.label}
-          className="lp-fade absolute flex -translate-y-1/2 items-center gap-3 whitespace-nowrap"
-          style={{
-            left: `${(o.x / 1240) * 100}%`,
-            top: `${(o.y / 380) * 100}%`,
-          }}
+          key={n.label}
+          className={`lh-node absolute flex -translate-y-1/2 items-center gap-3 whitespace-nowrap ${
+            n.side === "l"
+              ? "-translate-x-full flex-row-reverse text-right"
+              : ""
+          }`}
+          style={
+            {
+              left: n.side === "l" ? n.x + 16 : n.x - 16,
+              top: n.y,
+              "--d": `${1.7 + i * 0.12}s`,
+            } as Delay
+          }
         >
-          <span className="grid size-8 -translate-x-1/2 place-items-center rounded-full border border-white/15 bg-black text-muted">
+          <span
+            className={`grid size-8 place-items-center rounded-full border bg-[#0b0b0c] ${
+              n.bad ? "border-red/40 text-red" : "border-white/15 text-muted"
+            }`}
+          >
             <svg
               aria-hidden="true"
               viewBox="0 0 24 24"
@@ -235,17 +304,16 @@ function Orbits() {
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <path d={ICON_PATH[o.icon]} />
+              <path d={ICON_PATH[n.icon]} />
             </svg>
           </span>
-          <span className="-ml-3 flex flex-col">
-            <span className="flex items-center gap-1.5 font-mono text-[12.5px] text-text">
-              <span
-                className={`size-1.5 rounded-full ${o.bad ? "bg-red" : "bg-white/70"}`}
-              />
-              {o.label}
+          <span className="flex flex-col">
+            <span
+              className={`font-mono text-[12.5px] ${n.bad ? "text-red" : "text-text"}`}
+            >
+              {n.label}
             </span>
-            <span className="pl-3 text-[12px] text-dim">{o.sub}</span>
+            <span className="text-[12px] text-dim">{n.sub}</span>
           </span>
         </div>
       ))}
@@ -253,96 +321,123 @@ function Orbits() {
   );
 }
 
-/** Headline words rise out of a blur one by one (lp-word); the text stays plain for readers. */
-function Words({ text, from = 0 }: { text: string; from?: number }) {
-  return text.split(" ").map((w, i) => (
-    <span
-      key={w}
-      className="lp-word"
-      style={{ "--i": from + i } as React.CSSProperties}
-    >
-      {w}
-      {i < text.split(" ").length - 1 && "\u00a0"}
-    </span>
-  ));
+/**
+ * The focal band: beam (HA/HB) landing on the lit mark (HC), its halo, the perspective hairlines
+ * meeting there and the contract graph wired out of its rays (HD).
+ */
+function Focus() {
+  return (
+    <div className="relative h-[120px] w-full md:h-[184px]">
+      <Backdrop />
+      <div
+        aria-hidden="true"
+        className="lh-beam-wrap pointer-events-none absolute bottom-[calc(50%-90px)] left-1/2 h-[600px] w-[420px] -ml-[210px]"
+      >
+        <div className="lh-beam absolute inset-0" />
+        <div className="lh-beam-core absolute top-0 bottom-[90px] left-1/2 -ml-px w-0.5" />
+      </div>
+      <div
+        aria-hidden="true"
+        className="lh-halo pointer-events-none absolute top-1/2 left-1/2 -mt-[160px] -ml-[160px] size-[320px]"
+      />
+      <Graph />
+      <Mark className="lh-mark absolute top-1/2 left-1/2 -mt-9 -ml-9 size-[72px] md:-mt-14 md:-ml-14 md:size-[112px]" />
+    </div>
+  );
 }
 
 /** R8 (onorca.dev shows the real agent output): what `node luora-export.mjs` printed for the sample vault. */
 function Terminal({ log }: { log: string[] }) {
   const lines = ["$ node luora-export.mjs", ...log];
-  let d = 1.2;
+  let d = 1.95;
   return (
-    <div className="mt-8 w-full max-w-[560px] overflow-hidden rounded-[14px] border border-white/[.08] bg-[#0a0a0b]/90 text-left shadow-float">
-      <div className="flex items-center gap-1.5 border-white/[.06] border-b px-3.5 py-2">
-        {[0, 1, 2].map((k) => (
-          <span key={k} className="size-2 rounded-full bg-white/15" />
-        ))}
-        <span className="ml-2 font-mono text-[11.5px] text-dim">foundry/</span>
+    <div
+      className="lh-up relative mt-11 w-full max-w-[600px]"
+      style={{ "--d": "1.4s" } as Delay}
+    >
+      {/* HB Huly / HD Lumina: the light lands as a horizon on the terminal's top edge */}
+      <div
+        aria-hidden="true"
+        className="lh-horizon-glow pointer-events-none absolute -inset-x-[20%] bottom-full h-28"
+      />
+      <div
+        aria-hidden="true"
+        className="lh-horizon pointer-events-none absolute -inset-x-[30%] top-0 z-10 h-px"
+      />
+      <div className="overflow-hidden rounded-[14px] border border-white/[.08] bg-gradient-to-b from-[#141416] to-[#0a0a0b] text-left shadow-float">
+        <div className="flex items-center gap-1.5 px-3.5 py-2.5">
+          {[0, 1, 2].map((k) => (
+            <span key={k} className="size-2 rounded-full bg-white/15" />
+          ))}
+          <span className="ml-2 font-mono text-[11.5px] text-dim">
+            foundry/
+          </span>
+          <span className="ml-auto font-mono text-[11.5px] text-dim">zsh</span>
+        </div>
+        <pre className="overflow-x-auto px-4 pt-1 pb-3.5 font-mono text-[11.5px] leading-[1.75] md:text-[12.5px]">
+          {lines.map((l, i) => {
+            const style = { "--n": l.length, "--d": `${d}s` } as Delay;
+            d += l.length * 0.022 + 0.3;
+            return (
+              <span
+                key={l}
+                className={`lh-type ${i === 0 ? "text-fg" : "text-muted"}`}
+                style={style}
+              >
+                {l}
+              </span>
+            );
+          })}
+          <span className="lh-caret inline-block h-3.5 w-[7px] translate-y-0.5 bg-white/60" />
+        </pre>
       </div>
-      <pre className="overflow-x-auto px-4 py-3 font-mono text-[11.5px] leading-[1.75] md:text-[12.5px]">
-        {lines.map((l, i) => {
-          const style = {
-            "--n": l.length,
-            "--d": `${d}s`,
-          } as React.CSSProperties;
-          d += l.length * 0.025 + 0.35;
-          return (
-            <span
-              key={l}
-              className={`lp-type ${i === 0 ? "text-fg" : "text-muted"}`}
-              style={style}
-            >
-              {l}
-            </span>
-          );
-        })}
-        <span className="lp-caret inline-block h-3.5 w-[7px] translate-y-0.5 bg-white/60" />
-      </pre>
     </div>
   );
 }
 
-/** R2 + R1 + R3 + R26 + R8, see index.ts. */
+/**
+ * Thirteenth pass, refs HA–HD (index.ts). Entrance: beam ignites → mark lit → flag lands → lines
+ * rise from their masks → wires grow out of the mark → horizon draws → the export types itself.
+ * The hairline under the terminal hands over to the Works-with hub below (HD).
+ */
 export function Hero({ log }: { log: string[] }) {
   return (
     <HeroExit>
-      <Backdrop />
-      {/* R1: one soft monochrome beam from the top, drifting */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2"
-      >
-        <div className="lp-beam h-[640px] w-[560px]" />
-        <div className="lp-beam-core absolute top-0 left-1/2 -ml-[30px] h-[150px] w-[60px]" />
-      </div>
       <Nav />
-      <Orbits />
 
       <div
         data-lp="hero-body"
-        className="relative z-10 mx-auto flex max-w-[1240px] flex-col items-center px-4 pt-[140px] pb-40 text-center md:pt-[150px] md:pb-56"
+        className="relative z-10 mx-auto flex max-w-[1240px] flex-col items-center px-4 pt-2 pb-40 text-center md:pt-3 md:pb-56"
       >
+        <Focus />
         <a
           href="#product"
-          className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/[.09] bg-white/[.04] py-1 pr-3 pl-1.5 text-[12.5px] text-muted transition-colors hover:text-fg"
+          className="lh-up mt-4 inline-flex items-center gap-2 rounded-full border border-white/[.09] bg-white/[.04] py-1 pr-3 pl-1.5 text-[12.5px] text-muted transition-colors hover:text-fg md:mt-5"
+          style={{ "--d": "0.6s" } as Delay}
         >
           <span className="rounded-full bg-white/[.08] px-2 py-0.5 font-mono text-[11.5px] text-text">
             forge test -vvvv
           </span>
           Reads your local Foundry runs
         </a>
-        <h1 className="max-w-[900px] font-light text-[clamp(40px,7vw,80px)] text-fg leading-[1.02] tracking-[-0.035em]">
-          <Words text="See what your contract" />
-          <br />
-          <span className="text-white/45">
-            <Words text="actually does." from={4} />
+        <h1 className="mt-5 max-w-[920px] font-light text-[clamp(40px,6.4vw,84px)] text-fg leading-[1.02] tracking-[-0.035em]">
+          <span className="lh-line">
+            <span style={{ "--d": "0.7s" } as Delay}>
+              See what your contract
+            </span>
+          </span>
+          <span className="lh-line text-white/45">
+            <span style={{ "--d": "0.84s" } as Delay}>actually does.</span>
           </span>
         </h1>
         <p className="mt-6 max-w-[520px] text-[16px] text-body leading-relaxed md:text-[17px]">
           Decoded traces, a contract graph you can write tests on, and analyzer
           findings you can triage. All from code you are reviewing.
         </p>
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <div
+          className="lh-up mt-7 flex flex-wrap items-center justify-center gap-3"
+          style={{ "--d": "1.05s" } as Delay}
+        >
           <Link
             href="/atlas"
             className="rounded-full bg-primary px-5 py-2.5 font-medium text-[14px] text-primary-fg transition-colors hover:bg-white"
@@ -359,15 +454,23 @@ export function Hero({ log }: { log: string[] }) {
         </div>
 
         <Terminal log={log} />
+        <div
+          aria-hidden="true"
+          className="lh-up h-24 w-px bg-gradient-to-b from-white/25 to-transparent"
+          style={{ "--d": "2.2s" } as Delay}
+        />
       </div>
 
-      {/* R1: vertical scroll label on the right edge */}
+      {/* R1: vertical scroll label on the right edge, a tick running down its line */}
       <a
         href="#product"
-        className="absolute top-[420px] right-5 z-10 hidden items-center gap-3 text-[12px] text-dim [writing-mode:vertical-rl] hover:text-muted xl:flex"
+        className="lh-up absolute top-[440px] right-5 z-10 hidden items-center gap-3 text-[12px] text-dim [writing-mode:vertical-rl] hover:text-muted xl:flex"
+        style={{ "--d": "2s" } as Delay}
       >
         Scroll to explore
-        <span className="h-10 w-px bg-white/20" />
+        <span className="relative h-12 w-px overflow-hidden bg-white/15">
+          <span className="lh-tick absolute inset-x-0 top-0 h-1/4 bg-white/70" />
+        </span>
       </a>
     </HeroExit>
   );

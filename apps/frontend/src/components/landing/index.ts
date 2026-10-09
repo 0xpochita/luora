@@ -210,6 +210,23 @@
  *    reports merged, triage, coverage untested first, the Lab scenario and its .t.sol); the Luora
  *    side wipes open over the raw one with the scroll, the lit seam riding its edge.
 
+ *
+ * Thirteenth pass (2026-10-09, hero restaged: "busy, evenly lit, nodes scattered, terminal an
+ * afterthought"), pins from the Pinterest search 'award winning website hero' (Hero refine),
+ * picked for fit (dark, technical, one light source; fashion / colourful 3D / photo heroes rejected):
+ *  HA pin/760404718381966789 (Triopixels 'Build sites that converts') — pure black, glass pill nav,
+ *     hairline frame with '+' ends, two-tone headline, ONE shaft of light → nav, beam, h1 tones
+ *  HB pin/1125968725514399 (Huly 'Everything App') — the beam lands on the product's top edge
+ *     → the horizon on the terminal's top edge; the terminal moves up into the first screen
+ *  HC pin/4081455908271646 (Ascend 'Powering the next generation') — monochrome, one big lit
+ *     object owns the hero → the brand mark (redrawn SVG, flagged square) lit from above + halo
+ *  HD pin/3307399722549125 (Lumina) — mark tile at the centre wired to its pieces, a hairline
+ *     dropping into the next section → nodes wired out of the mark's rays (the finding off its
+ *     flagged square), the hairline into the Works-with hub (its grain was tried and dropped: an
+ *     feTurbulence background cost ~300 ms of mobile LCP)
+ *  → Hero (Hero.tsx + hero.css): beam ignites → mark lit → flag lands → lines rise from masks →
+ *    wires grow out of the mark → horizon draws → the real export types itself.
+ *
  * No screenshots: every product view on the page is the app's own component rendered live on the
  * sample run (built near the screen only, Lazy). Colour stays per DESIGN.md: grey/white, red only
  * on findings.
