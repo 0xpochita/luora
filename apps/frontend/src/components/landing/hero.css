@@ -38,10 +38,10 @@
     transform: none;
   }
 }
-/* ZERO tints its second line; monochrome here: silver fading to graphite */
+/* ZERO tints its second line pale blue; here the coolest grey the palette allows */
 .lh-tint {
   color: transparent;
-  background: linear-gradient(#e4e7ee, #7d828d);
+  background: linear-gradient(#e3e8f3, #96a0b5);
   -webkit-background-clip: text;
   background-clip: text;
 }

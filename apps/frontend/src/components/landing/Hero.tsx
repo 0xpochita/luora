@@ -8,7 +8,7 @@
  *     from behind (its phone over the rim was tried and dropped). Nothing else.
  */
 import Link from "next/link";
-import { LogoMark, LogoText } from "@/components/ui";
+import { LogoText } from "@/components/ui";
 import { HeroExit } from "./Haze";
 import { ProductTabs } from "./ProductTabs";
 import { ScatterGrow } from "./ScatterGrow";
@@ -158,16 +158,17 @@ export function Hero() {
         className="relative z-10 mx-auto flex min-h-[calc(100svh-76px)] max-w-[1240px] flex-col items-center px-4 pt-[15vh] pb-[42vh] text-center md:pt-[17vh]"
       >
         <div className="relative">
-          {/* HI: two hairlines fall from the top edge onto the headline's shoulders */}
+          {/* HI: two hairlines fall from the top edge down the headline's shoulders, each ending
+              in a spark at the first line's baseline */}
           <span
             aria-hidden="true"
-            className="lh-brace absolute bottom-full left-[-28px] hidden h-[15vh] w-px bg-gradient-to-b from-transparent to-white/30 md:block"
+            className="lh-brace absolute top-[-14vh] bottom-[52%] left-0 hidden w-px bg-gradient-to-b from-transparent via-white/15 to-white/60 after:absolute after:bottom-0 after:left-1/2 after:size-[3px] after:-translate-x-1/2 after:rounded-full after:bg-white after:shadow-[0_0_8px_2px_rgba(255,255,255,.5)] after:content-[''] md:block"
           />
           <span
             aria-hidden="true"
-            className="lh-brace absolute right-[-28px] bottom-full hidden h-[15vh] w-px bg-gradient-to-b from-transparent to-white/30 md:block"
+            className="lh-brace absolute top-[-14vh] right-0 bottom-[52%] hidden w-px bg-gradient-to-b from-transparent via-white/15 to-white/60 after:absolute after:bottom-0 after:left-1/2 after:size-[3px] after:-translate-x-1/2 after:rounded-full after:bg-white after:shadow-[0_0_8px_2px_rgba(255,255,255,.5)] after:content-[''] md:block"
           />
-          <h1 className="font-light text-[clamp(40px,6vw,84px)] text-fg leading-[1.02] tracking-[-0.04em]">
+          <h1 className="font-medium text-[clamp(36px,5vw,72px)] text-fg leading-[1.08] tracking-[-0.03em]">
             <span className="lh-line">
               <span style={{ "--d": "0.45s" } as Delay}>
                 See what your contract
@@ -181,44 +182,46 @@ export function Hero() {
           </h1>
         </div>
         <p
-          className="lh-up mt-5 max-w-[600px] text-[15px] text-body leading-relaxed md:text-[16px]"
+          className="lh-up mt-4 max-w-[600px] text-[14.5px] text-muted leading-relaxed"
           style={{ "--d": "0.85s" } as Delay}
         >
-          Decoded Foundry traces, a contract graph you can write tests on, and
-          analyzer findings you can triage.
+          Decoded traces, a contract graph and analyzer findings, from your own
+          Foundry run.
         </p>
 
-        {/* HI: one App-Store-style button, rules running out from it to the edges */}
+        {/* HI: one small App-Store-style button; rules run out from it to the edges, a spark at
+            each inner end */}
         <div
-          className="lh-up relative mt-9 flex w-full items-center justify-center"
+          className="lh-up relative mt-6 flex w-full items-center justify-center"
           style={{ "--d": "1.05s" } as Delay}
         >
           <span
             aria-hidden="true"
-            className="lh-rule absolute top-1/2 right-[calc(50%+130px)] left-0 hidden h-px origin-right bg-gradient-to-l from-white/25 to-transparent md:block"
+            className="lh-rule absolute top-1/2 right-[calc(50%+104px)] left-0 hidden h-px origin-right bg-gradient-to-l from-white/30 to-transparent md:block"
           />
           <span
             aria-hidden="true"
-            className="lh-rule absolute top-1/2 right-0 left-[calc(50%+130px)] hidden h-px origin-left bg-gradient-to-r from-white/25 to-transparent md:block"
+            className="lh-rule absolute top-1/2 right-0 left-[calc(50%+104px)] hidden h-px origin-left bg-gradient-to-r from-white/30 to-transparent md:block"
           />
           <span
             aria-hidden="true"
-            className="absolute top-1/2 right-[calc(50%+124px)] hidden size-[7px] -translate-y-1/2 rotate-45 border border-white/40 md:block"
+            className="absolute top-1/2 right-[calc(50%+102px)] hidden size-[3px] -translate-y-1/2 rounded-full bg-white shadow-[0_0_6px_1px_rgba(255,255,255,.5)] md:block"
           />
           <span
             aria-hidden="true"
-            className="absolute top-1/2 left-[calc(50%+124px)] hidden size-[7px] -translate-y-1/2 rotate-45 border border-white/40 md:block"
+            className="absolute top-1/2 left-[calc(50%+102px)] hidden size-[3px] -translate-y-1/2 rounded-full bg-white shadow-[0_0_6px_1px_rgba(255,255,255,.5)] md:block"
           />
           <Link
             href="/atlas"
-            className="relative inline-flex items-center gap-3 rounded-full border border-white/[.14] bg-[#0c0c0e] py-1.5 pr-6 pl-1.5 shadow-[0_0_44px_rgba(255,255,255,.1)] transition-[border-color,box-shadow] hover:border-white/30 hover:shadow-[0_0_56px_rgba(255,255,255,.18)]"
+            className="relative inline-flex h-10 items-center gap-2.5 rounded-full border border-white/25 bg-[#0b0b0d] pr-4 pl-3 transition-colors hover:border-white/50 hover:bg-white/[.04]"
           >
-            <LogoMark size={34} />
+            {/* biome-ignore lint/performance/noImgElement: 18px static brand mark */}
+            <img src="/brand/mark-white.png" alt="" width={18} height={18} />
             <span className="flex flex-col items-start text-left leading-none">
-              <span className="font-mono text-[10px] text-dim tracking-[0.08em]">
-                FROM YOUR FORGE RUN
+              <span className="text-[9.5px] text-muted">
+                From your forge run
               </span>
-              <span className="mt-1 font-medium text-[15px] text-fg">
+              <span className="mt-[3px] font-medium text-[13px] text-fg">
                 Open the Lab
               </span>
             </span>
