@@ -6,16 +6,15 @@ import { useStage } from "./motion";
 
 /** where each mark lands when the row scatters, in a 1440-wide viewport (scaled to the real width) */
 const SCATTER = [
-  { x: -400, y: -150, r: -18 },
-  { x: -170, y: 170, r: 12 },
-  { x: 60, y: 215, r: -8 },
-  { x: 250, y: 140, r: 16 },
-  { x: 430, y: -70, r: -12 },
+  { x: -380, y: -130, r: -16 },
+  { x: 30, y: 210, r: 10 },
+  { x: 400, y: -60, r: 14 },
 ];
 const SQ = 56;
 
 /**
- * Genie: a pinned stage (~2.6 viewports). The row of five round icons scatters to random spots,
+ * Genie: a pinned stage (~2.6 viewports). The row of round icons (three here: Foundry, Solidity,
+ * Ethereum) scatters to random spots,
  * gathers back into the centre and fades, a tiny square appears there and grows into the full app
  * mockup, tilted on the way in and landing flat. Here the icons are the tools Luora reads and the
  * mockup is the live app (ProductTabs: Lab / Scenario / Trace / Flow / Map / Findings on the
@@ -156,9 +155,8 @@ export function ScatterGrow({
               className="group flex flex-col items-center gap-2.5"
               aria-label={m.title}
             >
-              <span className="grid size-[84px] place-items-center rounded-full border border-white/[.1] bg-card-grad text-white/60 shadow-soft transition-colors group-hover:border-white/[.2] group-hover:text-white">
-                {m.node}
-              </span>
+              {/* crafted mark (lp-mark): one size, optically centred, a soft inner light (P1) */}
+              <span className="lp-mark">{m.node}</span>
               <span className="text-[13px] text-dim transition-colors group-hover:text-muted">
                 {m.title}
               </span>

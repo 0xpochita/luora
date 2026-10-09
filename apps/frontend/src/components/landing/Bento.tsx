@@ -1,5 +1,8 @@
 import Image from "next/image";
+import Link from "next/link";
+import { BentoMini, type MiniKind } from "./BentoMini";
 import { Reveal } from "./motion";
+import { demoAtlas } from "./stats";
 
 type Card = {
   src: string;
@@ -9,8 +12,10 @@ type Card = {
   lead: string;
   text: string;
   span: string;
-  /** where the capture sits in its window */
-  place: string;
+  /** the app view the card opens */
+  href: string;
+  /** drawn live from the sample run instead of the capture (the capture had to be cropped) */
+  live?: MiniKind;
 };
 
 /** Crops of the real app at 2× (public/landing/b-*.webp), shown at their real size. */
@@ -23,7 +28,8 @@ const CARDS: Card[] = [
     lead: "Findings on the line.",
     text: "Flagged lines turn red in the source, with forge coverage hit counts in the gutter.",
     span: "md:col-span-2",
-    place: "left-6 top-6",
+    href: "/atlas",
+    live: "source",
   },
   {
     src: "/landing/b-graph.webp",
@@ -33,7 +39,7 @@ const CARDS: Card[] = [
     lead: "Call graph.",
     text: "One node per frame, with decoded args, return values and gas.",
     span: "md:col-span-2",
-    place: "left-6 top-6",
+    href: "/trace",
   },
   {
     src: "/landing/b-triage.webp",
@@ -43,7 +49,7 @@ const CARDS: Card[] = [
     lead: "Every detector that agreed.",
     text: "Slither, Aderyn and Luora's own checks on one finding, with a status and a note.",
     span: "md:col-span-2",
-    place: "left-1/2 top-6 -translate-x-1/2",
+    href: "/atlas",
   },
   {
     src: "/landing/b-flow.webp",
@@ -53,7 +59,8 @@ const CARDS: Card[] = [
     lead: "Flow replay.",
     text: "Each entry point as the exact order of checks, reads, external calls and writes. Reverts and CEI breaks are marked.",
     span: "md:col-span-4",
-    place: "left-6 top-6",
+    href: "/atlas",
+    live: "flow",
   },
   {
     src: "/landing/b-search.webp",
@@ -63,7 +70,8 @@ const CARDS: Card[] = [
     lead: "⌘K to anything.",
     text: "Jump to an entry point, event or finding by name.",
     span: "md:col-span-2",
-    place: "left-6 top-1/2 -translate-y-1/2",
+    href: "/atlas",
+    live: "search",
   },
   {
     src: "/landing/b-explorer.webp",
@@ -73,7 +81,7 @@ const CARDS: Card[] = [
     lead: "Explorer.",
     text: "The contract as layers: entry points, access gates, logic, storage, external calls, events and findings.",
     span: "md:col-span-3",
-    place: "left-6 top-1/2 -translate-y-1/2",
+    href: "/atlas",
   },
   {
     src: "/landing/b-code.webp",
@@ -83,18 +91,32 @@ const CARDS: Card[] = [
     lead: "A test you can keep.",
     text: "The Lab writes a forge-std test with setUp, actors and the checks you wired.",
     span: "md:col-span-3",
-    place: "left-6 top-6",
+    href: "/atlas",
   },
 ];
 
-/** R8 (onorca.dev "Agent-first, end to end") + R11 (mixed-size bento with mini UI) + R12 (bold lead, muted rest). */
-export function Bento() {
+/**
+ * R8 (onorca.dev "Agent-first, end to end") + R11 (mixed-size bento) + R12 (bold lead, muted rest).
+ * Seventh pass, every card the same anatomy so nothing is cut off:
+ *  P3 pin/4362930885208241 (Deerflow AIoT dashboard): equal-height tiles, a small '01  Title' row
+ *     on top, the instrument centred in the tile with room around it.
+ *  P2 pin/523191681737169397 (Lore "01 Write / 02 Generate / 03 Share"): the mini UI sits whole
+ *     inside a nested inner card, a two-line caption under it.
+ *  P5 pin/30047522509933052 ("Code / Design / Writing / Building"): one composed monochrome object
+ *     per tile on a dark field, nothing bleeding off the edges.
+ *  Genie "There's more" bento (geniestudio.app): each card a link, lifting on hover; here the
+ *     cards rise from a slight tilt in a scrubbed stagger (Reveal tilt) instead of popping in.
+ * The captures are the real app (public/landing/b-*.webp), fitted whole with object-contain;
+ * Source, Flow and Quick search are drawn live from the sample run instead (BentoMini.tsx).
+ */
+export async function Bento() {
+  const atlas = await demoAtlas();
   return (
     <section
       data-tone="bento"
       className="mx-auto max-w-[1240px] px-4 pb-32 md:px-6"
     >
-      <Reveal className="mb-12 grid gap-6 md:grid-cols-2 md:items-end">
+      <Reveal className="mb-14 grid gap-6 md:grid-cols-2 md:items-end">
         <h2 className="font-medium text-[clamp(32px,4.4vw,54px)] text-fg leading-[1.04] tracking-[-0.03em]">
           One console
           <br />
@@ -105,25 +127,42 @@ export function Bento() {
           and the others follow it.
         </p>
       </Reveal>
-      <div className="grid gap-3 md:grid-cols-6">
+      <div className="grid gap-4 md:grid-cols-6">
         {CARDS.map((c, i) => (
-          <Reveal key={c.src} delay={(i % 3) * 0.08} className={c.span}>
-            <article className="group h-full overflow-hidden rounded-[20px] border border-white/[.07] bg-[#0c0c0d] transition-colors hover:border-white/[.14]">
-              <div className="dot-grid relative h-[260px] overflow-hidden border-white/[.05] border-b bg-[#0c0c0d] [mask-image:linear-gradient(to_bottom,#000_70%,transparent)] md:h-[300px]">
-                <Image
-                  src={c.src}
-                  alt={c.alt}
-                  width={c.w}
-                  height={c.h}
-                  sizes={`${c.w / 2}px`}
-                  style={{ width: c.w / 2, maxWidth: "none" }}
-                  className={`absolute rounded-[12px] shadow-float transition-transform duration-700 ease-out group-hover:scale-[1.015] ${c.place}`}
-                />
-              </div>
-              <p className="px-6 py-5 text-[14px] text-dim leading-relaxed">
-                <span className="text-fg">{c.lead}</span> {c.text}
+          <Reveal key={c.src} delay={(i % 3) * 0.06} tilt className={c.span}>
+            <Link href={c.href} className="lp-bento group">
+              <p className="flex items-baseline gap-3 px-5 pt-5 pb-4">
+                <span className="font-mono text-[12.5px] text-dim">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span className="text-[15px] text-fg">
+                  {c.lead.replace(/\.$/, "")}
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="ml-auto text-dim transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-fg"
+                >
+                  →
+                </span>
               </p>
-            </article>
+              <div className="dot-grid mx-2 flex h-[230px] items-center justify-center overflow-hidden rounded-inner border border-white/[.05] bg-inner-grad p-6 md:h-[260px]">
+                {c.live ? (
+                  <BentoMini atlas={atlas} kind={c.live} />
+                ) : (
+                  <Image
+                    src={c.src}
+                    alt={c.alt}
+                    width={c.w}
+                    height={c.h}
+                    sizes={`${c.w / 2}px`}
+                    className="h-auto max-h-full w-auto max-w-full rounded-[10px] shadow-float transition-transform duration-700 ease-out group-hover:scale-[1.025]"
+                  />
+                )}
+              </div>
+              <p className="px-5 pt-4 pb-5 text-[13.5px] text-dim leading-relaxed">
+                {c.text}
+              </p>
+            </Link>
           </Reveal>
         ))}
       </div>

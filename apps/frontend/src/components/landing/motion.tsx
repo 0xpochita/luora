@@ -3,7 +3,13 @@
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
-import { type ReactNode, type RefObject, useEffect, useRef } from "react";
+import {
+  type ReactNode,
+  type RefObject,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import "lenis/dist/lenis.css";
 
 if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger);
@@ -59,6 +65,14 @@ const TONES: Record<
   finale: { bg: [0, 0, 0], glow: 0, x: 50, y: 100 },
 };
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+/** the page's Lenis instance while SmoothScroll is mounted (none under reduced motion) */
+let lenisNow: Lenis | undefined;
+/** scroll the page to `y` through Lenis when it runs, so a jump stays smooth and in sync */
+export function scrollToY(y: number) {
+  if (lenisNow) lenisNow.scrollTo(y, { duration: 1.2 });
+  else scrollTo({ top: y });
+}
 
 function useBackdrop() {
   useEffect(() => {
@@ -121,16 +135,33 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     const raf = (t: number) => lenis?.raf(t * 1000);
     if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
       lenis = new Lenis({ autoRaf: false, anchors: true, lerp: 0.1 });
+      lenisNow = lenis;
       lenis.on("scroll", ScrollTrigger.update);
       gsap.ticker.add(raf);
       gsap.ticker.lagSmoothing(0);
     }
     ScrollTrigger.refresh();
     document.fonts?.ready.then(() => ScrollTrigger.refresh());
+    // widgets that size themselves after mount (Lab graph, fitted mini UIs) change the page height
+    // after the first refresh; re-measure once it settles so no trigger fires late
+    let h = document.body.scrollHeight;
+    let t = 0;
+    const ro = new ResizeObserver(() => {
+      if (document.body.scrollHeight === h) return;
+      clearTimeout(t);
+      t = window.setTimeout(() => {
+        ScrollTrigger.refresh();
+        h = document.body.scrollHeight;
+      }, 250);
+    });
+    ro.observe(document.body);
     return () => {
+      ro.disconnect();
+      clearTimeout(t);
       gsap.ticker.remove(raf);
       gsap.ticker.lagSmoothing(500, 33);
       lenis?.destroy();
+      lenisNow = undefined;
     };
   }, []);
   return (
@@ -148,10 +179,13 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
 export function Reveal({
   children,
   delay = 0,
+  tilt = false,
   className = "",
 }: {
   children: ReactNode;
   delay?: number;
+  /** also tips up from a slight backward tilt and scale (cards rising into place) */
+  tilt?: boolean;
   className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -162,11 +196,22 @@ export function Reveal({
     mm.add(MOTION_MQ, () => {
       gsap.fromTo(
         el,
-        { autoAlpha: 0, y: 64 },
+        tilt
+          ? {
+              autoAlpha: 0,
+              y: 96,
+              scale: 0.94,
+              rotateX: 14,
+              transformPerspective: 1200,
+              transformOrigin: "50% 100%",
+            }
+          : { autoAlpha: 0, y: 64 },
         {
           autoAlpha: 1,
           y: 0,
-          ease: "none",
+          scale: 1,
+          rotateX: 0,
+          ease: tilt ? "power2.out" : "none",
           scrollTrigger: {
             trigger: el,
             start: `top ${96 - delay * 80}%`,
@@ -183,7 +228,7 @@ export function Reveal({
       el.dataset.in = "";
     });
     return () => mm.revert();
-  }, [delay]);
+  }, [delay, tilt]);
   return (
     <div ref={ref} className={`lp-reveal ${className}`}>
       {children}
@@ -219,6 +264,71 @@ export function Exit({ children }: { children: ReactNode }) {
   }, []);
   return (
     <div ref={ref} className="origin-bottom">
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Compare's scrubbed entrance (seventh pass). Genie's pricing card rises into place as you scroll
+ * to it; here the raised Luora card (data-lp="card") slides up from below while the rows
+ * (cells sharing data-row) reveal one after another, both scrubbed so they play back on the way up.
+ */
+export function CompareStage({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useStage(
+    ref,
+    useCallback((root: HTMLElement) => {
+      const q = gsap.utils.selector(root);
+      gsap.fromTo(
+        q("[data-lp=card]"),
+        { y: 180, autoAlpha: 0, scale: 0.96 },
+        {
+          y: 0,
+          autoAlpha: 1,
+          scale: 1,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: root,
+            start: "top 90%",
+            end: "top 35%",
+            scrub: 0.6,
+          },
+        },
+      );
+      // each row on its own trigger, so a long (phone) list never hides rows already on screen
+      const rows = new Map<string, HTMLElement[]>();
+      for (const el of q("[data-row]") as HTMLElement[]) {
+        const k = el.dataset.row ?? "";
+        rows.set(k, [...(rows.get(k) ?? []), el]);
+      }
+      for (const cells of rows.values())
+        gsap.fromTo(
+          cells,
+          { y: 28, autoAlpha: 0 },
+          {
+            y: 0,
+            autoAlpha: 1,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: cells[0],
+              start: "top 96%",
+              end: "top 72%",
+              scrub: 0.6,
+            },
+          },
+        );
+    }, []),
+    MOTION_MQ,
+  );
+  return (
+    <div ref={ref} className={className}>
       {children}
     </div>
   );

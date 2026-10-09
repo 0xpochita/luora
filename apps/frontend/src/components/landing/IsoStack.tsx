@@ -38,7 +38,7 @@ const MID_Y = round(S / 2);
 
 export const plateTop = (i: number) => Y0 + i * GAP;
 /** where the leader leaves the lit plate (screen units of the stack's viewBox) */
-export const leaderY = (i: number) => plateTop(i) + MID_Y + round(T / 2);
+const leaderY = (i: number) => plateTop(i) + MID_Y + round(T / 2);
 
 export type StackData = {
   ran: PillarData["ran"];
@@ -47,8 +47,6 @@ export type StackData = {
   findings: PillarData["findings"];
   fns: PillarData["fns"];
 };
-
-export const STEP_LABELS = ["Run", "Trace", "Lab", "Findings & coverage"];
 
 /** 01 Run: one row per forge test, a dot then one cell per decoded frame (red = reverted). */
 function RunTexture({ ran }: { ran: StackData["ran"] }) {
@@ -385,7 +383,13 @@ export function IsoStack({
         </filter>
       </defs>
       {/* R22: dashed vertical guides running through the gaps */}
-      <g stroke="#fff" strokeOpacity="0.16" strokeDasharray="3 5" fill="none">
+      <g
+        data-lp="guides"
+        stroke="#fff"
+        strokeOpacity="0.16"
+        strokeDasharray="3 5"
+        fill="none"
+      >
         {guideX.map((x) => (
           <path
             key={x}
@@ -393,40 +397,35 @@ export function IsoStack({
           />
         ))}
       </g>
-      {/* back to front so the nearer plate covers the guides of the one behind */}
+      {/* back to front so the nearer plate covers the guides of the one behind; each plate travels
+          with its label (HowItWorks scrubs the data-lp="plate" groups apart and together) */}
       {textures.map((t, i) => (
-        <Plate
-          // biome-ignore lint/suspicious/noArrayIndexKey: four fixed plates
-          key={i}
-          i={i}
-          on={i === active}
-          idle={active < 0}
-        >
-          {t}
-        </Plate>
-      ))}
-      {/* R24: idle plates keep a short line out to a bullet label */}
-      {STEP_LABELS.map((label, i) =>
-        i === active || active < 0 ? null : (
-          <g
-            key={label}
-            className="lp-fadein"
-            transform={`translate(${CX + SIDE_X + 14} ${leaderY(i)})`}
-          >
-            <path d="M0 0h22" stroke="#fff" strokeOpacity="0.2" />
-            <circle cx="30" r="2.5" fill="#fff" fillOpacity="0.4" />
-            <text
-              x="40"
-              y="4"
-              fill="var(--dim)"
-              fontSize="12.5"
-              fontFamily="var(--font-geist-mono)"
+        // biome-ignore lint/suspicious/noArrayIndexKey: four fixed plates
+        <g key={i} data-lp="plate">
+          <Plate i={i} on={i === active} idle={active < 0}>
+            {t}
+          </Plate>
+          {/* R24: idle plates keep a short line out to a bullet label */}
+          {i === active || active < 0 ? null : (
+            <g
+              className="lp-fadein"
+              transform={`translate(${CX + SIDE_X + 14} ${leaderY(i)})`}
             >
-              {`0${i + 1}`}
-            </text>
-          </g>
-        ),
-      )}
+              <path d="M0 0h22" stroke="#fff" strokeOpacity="0.2" />
+              <circle cx="30" r="2.5" fill="#fff" fillOpacity="0.4" />
+              <text
+                x="40"
+                y="4"
+                fill="var(--dim)"
+                fontSize="12.5"
+                fontFamily="var(--font-geist-mono)"
+              >
+                {`0${i + 1}`}
+              </text>
+            </g>
+          )}
+        </g>
+      ))}
     </svg>
   );
 }

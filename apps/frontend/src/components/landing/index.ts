@@ -106,7 +106,7 @@
  *                                           sentence, tiles around it (Run pill, scenario cards)
  *  BigWords ('Trace' / 'Test' / 'Triage') → 'Create' / 'Like' / 'Magic', letters dropping in one
  *                                           by one, mascots beside them (icon badges)
- *  Features ('How Luora works')           → (kept: sticky R22 stack)
+ *  Features ('How Luora works')           → pinned + scrubbed since the seventh pass (below)
  *  Findings (FindingsWheel.tsx, pinned)   → arc of style cards turning like a wheel, 'Hover to …'
  *  Tests (TestDrift.tsx)                  → testimonial rows drifting sideways (real test names,
  *                                           no quotes)
@@ -114,6 +114,37 @@
  *                                           Compare sinks back under Statement (Exit)
  *  Finale (Haze.tsx FinaleRise)           → footer closed by clouds rising again: the city rises
  * Phones (<768px) and reduced motion: no pins, static readable layout (STAGE_MQ, landing.css).
+ *
+ * Seventh pass (2026-10-09, "make it feel Awwwards-level"). Genie re-studied by scrolling it top to
+ * bottom; Pinterest pins studied 2026-10-09 (id.pinterest.com: 'awwwards dark landing page',
+ * 'awwwards site of the day dark saas', 'scroll storytelling website dark', 'awwwards dark
+ * comparison table landing', 'awwwards dark ai assistant code editor ui'):
+ *  P1 pin/120823202500504610 ("Insights that actually tell you something") — monochrome objects lit
+ *     from above inside dark rounded shells, a faint halo → the tools row marks (.lp-mark).
+ *  P2 pin/523191681737169397 (Lore "01 Write / 02 Generate / 03 Share") — equal step cards, dim
+ *     index + bright name, the mini UI whole inside a nested inner card, two-line caption
+ *     → `Bento` card anatomy; the How Luora works index + step name.
+ *  P3 pin/4362930885208241 (Deerflow AIoT dashboard) — equal-height tiles, a small index/title row,
+ *     the instrument centred with air around it, a lit edge → `Bento` grid + hover edge.
+ *  P4 pin/449163762860877017 ("Pricing page with comparison table") — quiet rows with air, values
+ *     larger than the row labels → `Compare` type scale and spacing.
+ *  P5 pin/30047522509933052 ("Code / Design / Writing / Building") — one composed monochrome object
+ *     per tile, nothing bleeding off → live, fitted mini UIs in `Bento` (BentoMini.tsx).
+ *  P6 pin/36169603254422786 ("AI Assistant - SaaS & UX UI Dashboard Design") — near-black panel,
+ *     one soft beam from the top, glassy prompt box, chips → `Ask` window (.lp-askwin, .lp-glass).
+ *  Section (file)                         → reference
+ *  Tools row (Hero Product, ScatterGrow)  → Foundry, Solidity, Ethereum only (Slither/Aderyn
+ *                                           logos removed); P1 marks; Genie scatter → grow kept
+ *  How Luora works (HowItWorks, IsoStack) → Genie pinned scrubbed scene: plates assemble from a
+ *                                           slab, swap note + widget in place (rise + blur),
+ *                                           close up at the end; R25 + P2 odometer index;
+ *                                           R22's boxed frame/grid removed for open space
+ *  Bento (Bento, BentoMini)               → P2 / P3 / P5 cards; Genie "There's more" lift on
+ *                                           hover; Reveal tilt = scrubbed staggered rise
+ *  Ask (AskDemo)                          → P6 window; answers always render whole (CSS stagger
+ *                                           replaces the interval that stalled at 'Checklist')
+ *  Compare (Closing, CompareStage)        → P4 rows; Genie pricing card rising into place: the
+ *                                           Luora card slides up, rows reveal one by one
  *
  * Product shots in public/landing/ (b-*.webp, Bento) are real captures of /trace and /atlas from a
  * local `node luora-export.mjs` run, never mock UI; the hero and 'How Luora works' render the app live. Colour stays per DESIGN.md: grey/white,

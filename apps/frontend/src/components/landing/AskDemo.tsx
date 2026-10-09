@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { type CSSProperties, useState } from "react";
 import type { AiQuestion, AtlasData, Piece } from "@/features/atlas/types";
 import { aiAnswer, CHECKLIST } from "@/features/atlas/utils/ai";
 import { pieceAtLine } from "@/features/atlas/utils/audit";
@@ -16,8 +16,13 @@ import { tokenize } from "@/features/trace/utils/highlight";
  * R17 (pin 51158145762280588, IDE + 'New Chat'): inline diagnostics on code lines, a 'thinking'
  *   row, a prompt bar with a context chip at the bottom.
  * R18 (pin 58546863902250323, 'Tables · Query'): the selected line carries an accent bar on the left.
- * R19 (pin 453737731231960606, 'Coder IDE Component'): the window floats on a soft glow over a
- *   perspective floor grid. All monochrome here; red only for findings.
+ * R19 (pin 453737731231960606, 'Coder IDE Component'): the window floats on a soft glow.
+ * P6 (pin 36169603254422786, 'AI Assistant - SaaS & UX UI Dashboard Design'): a near-black panel
+ *   lit by one soft beam from the top, a glassy prompt box with a hairline edge, suggestion chips.
+ *   All monochrome here; red only for findings.
+ * Seventh pass: the answer used to be stepped in by a setInterval, which stalled after the first
+ * block (only 'Checklist' showed). Every block now renders at once and a CSS stagger (lp-ans)
+ * reveals it, so an answer can never be left half empty.
  * Every answer comes from the app's own data for the piece that owns the clicked line.
  */
 
@@ -26,31 +31,8 @@ const QUESTIONS: { q: AiQuestion; label: string; ask: string }[] = [
   { q: "risks", label: "What to check", ask: "What should I check here?" },
   { q: "test", label: "Write a test", ask: "Write a test that pins this" },
 ];
-const WINDOW = 14;
+const WINDOW = 19;
 const SEV = { high: "High", med: "Medium", low: "Low", info: "Info" } as const;
-
-/** Reveals answer blocks one by one; instant with reduced motion. */
-function useReveal(key: string, total: number) {
-  const [n, setN] = useState(total);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `key` restarts the reveal when the line or question changes
-  useEffect(() => {
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setN(total);
-      return;
-    }
-    setN(0);
-    const id = setInterval(
-      () =>
-        setN((v) => {
-          if (v >= total) clearInterval(id);
-          return Math.min(total, v + 1);
-        }),
-      90,
-    );
-    return () => clearInterval(id);
-  }, [key, total]);
-  return n;
-}
 
 function findingsOf(model: AtlasModel, p: Piece) {
   return p.sys === "vulns"
@@ -69,7 +51,9 @@ type Block =
 function blocks(model: AtlasModel, p: Piece, q: AiQuestion): Block[] {
   const out: Block[] = [];
   if (q === "explain") {
-    const [lead, ...rest] = aiAnswer(model, p, q).split("\n\n");
+    const [lead, ...rest] = aiAnswer(model, p, q)
+      .split("\n\n")
+      .filter((t) => t.trim());
     out.push({ k: "p", t: lead });
     for (const r of rest)
       if (r.startsWith("Connected to: ")) {
@@ -125,7 +109,6 @@ export function AskDemo({ atlas }: { atlas: AtlasData }) {
   const id = pieceAtLine(model, line);
   const piece = id ? model.byId[id] : null;
   const answer = piece ? blocks(model, piece, q) : [];
-  const shown = useReveal(`${line}:${q}`, answer.length);
   const ask = QUESTIONS.find((x) => x.q === q);
   const linked = piece ? findingsOf(model, piece).length : 0;
 
@@ -136,30 +119,27 @@ export function AskDemo({ atlas }: { atlas: AtlasData }) {
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-[10%] top-0 h-[70%] rounded-full bg-white/[.06] blur-[90px]"
       />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-[180px] [mask-image:linear-gradient(to_top,transparent,black_60%)] [perspective:600px]"
-      >
-        <div className="absolute inset-x-[-20%] bottom-0 h-[300px] origin-bottom bg-[linear-gradient(rgba(255,255,255,.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.07)_1px,transparent_1px)] bg-[size:48px_48px] [transform:rotateX(62deg)]" />
-      </div>
-
       {/* R16: one editor window */}
-      <div className="relative overflow-hidden rounded-[18px] border border-white/[.09] bg-[#0d0d0f] shadow-[0_30px_80px_-20px_rgba(0,0,0,.9)]">
-        <div className="flex items-center gap-2 border-white/[.06] border-b px-4 py-2.5">
-          <span className="flex gap-1.5">
-            <span className="size-2.5 rounded-full bg-white/[.12]" />
-            <span className="size-2.5 rounded-full bg-white/[.12]" />
-            <span className="size-2.5 rounded-full bg-white/[.12]" />
+      <div className="lp-askwin relative overflow-hidden rounded-[20px]">
+        <div className="flex items-center gap-2 px-4 py-3">
+          <span aria-hidden="true" className="flex gap-1.5">
+            <span className="size-2.5 rounded-full bg-white/[.14]" />
+            <span className="size-2.5 rounded-full bg-white/[.1]" />
+            <span className="size-2.5 rounded-full bg-white/[.07]" />
           </span>
-          <span className="ml-4 rounded-md bg-white/[.06] px-2.5 py-1 text-[12px] text-text">
+          <span className="ml-4 flex items-center gap-2 rounded-lg border border-white/[.06] bg-white/[.04] px-2.5 py-1 font-mono text-[11.5px] text-text">
             {model.file.split("/").pop()}
           </span>
-          <span className="ml-auto text-[12px] text-dim">Ask Luora</span>
+          <span className="ml-auto flex items-center gap-2 text-[12.5px] text-muted">
+            <span className="size-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,.8)]" />
+            Ask Luora
+          </span>
         </div>
 
-        <div className="grid md:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
+        {/* two inner panes 8px inside the window (DESIGN: 20 outer → 12 inner) */}
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-2 px-2 pb-2 md:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
           {/* code: click a line; R18 accent bar on the selection, R17 inline diagnostics */}
-          <ol className="border-white/[.06] py-3 font-mono text-[12.5px] leading-[2.05] md:border-r">
+          <ol className="rounded-inner border border-white/[.05] bg-[#0b0b0d] py-3 font-mono text-[12.5px] leading-[2.05]">
             {lines.map((l) => {
               const on = l.n === line;
               const owner = pieceAtLine(model, l.n);
@@ -206,17 +186,24 @@ export function AskDemo({ atlas }: { atlas: AtlasData }) {
             })}
           </ol>
 
-          {/* assistant panel */}
-          <div className="flex h-[520px] min-w-0 flex-col p-4">
+          {/* assistant panel, lit by one soft beam from the top (P6) */}
+          <div className="relative flex h-[520px] min-w-0 flex-col overflow-hidden rounded-inner border border-white/[.05] bg-[#0b0b0d] p-4">
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-[15%] -top-24 h-48 rounded-full bg-white/[.07] blur-[50px]"
+            />
             {/* R16: the question as the user's bubble */}
-            <div className="ml-auto max-w-[88%] rounded-2xl rounded-br-md bg-white/[.07] px-3.5 py-2 text-[13px] text-fg">
+            <div
+              key={`ask:${line}:${q}`}
+              className="lp-ans relative ml-auto max-w-[88%] rounded-2xl rounded-br-md border border-white/[.06] bg-white/[.07] px-3.5 py-2 text-[13px] text-fg"
+            >
               {ask?.ask}
               <span className="text-white/40"> · L{line + 1}</span>
             </div>
 
             {/* R17: a thinking row showing what the line resolved to */}
             {piece && (
-              <p className="mt-4 flex flex-wrap items-center gap-x-1.5 text-[12px] text-dim">
+              <p className="relative mt-4 flex flex-wrap items-center gap-x-1.5 text-[12px] text-dim">
                 <span className="size-1.5 rounded-full bg-white/50" />
                 Mapped L{line + 1} to
                 <span className="font-mono text-white/70">{piece.name}</span>·{" "}
@@ -225,21 +212,33 @@ export function AskDemo({ atlas }: { atlas: AtlasData }) {
               </p>
             )}
 
-            <div className="lp-scroll mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1 text-[13.5px] text-body leading-relaxed">
-              {answer.slice(0, shown).map((b, i) => {
+            <div
+              key={`${line}:${q}`}
+              className="lp-scroll relative mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1 text-[13.5px] text-body leading-relaxed"
+            >
+              {answer.map((b, i) => {
                 const key = `${i}:${b.t.slice(0, 24)}`;
+                /* lp-ans: each block rises out of a blur after the one before it */
+                const a = {
+                  style: { "--i": i + 1 } as CSSProperties,
+                };
                 if (b.k === "h")
                   return (
                     <p
                       key={key}
-                      className="pt-2 font-medium text-[12.5px] text-fg"
+                      {...a}
+                      className="lp-ans pt-2 font-medium text-[12.5px] text-fg"
                     >
                       {b.t}
                     </p>
                   );
                 if (b.k === "li")
                   return (
-                    <p key={key} className="flex gap-2 text-white/70">
+                    <p
+                      key={key}
+                      {...a}
+                      className="lp-ans flex gap-2 text-white/70"
+                    >
                       <span className="mt-[9px] size-1 shrink-0 rounded-full bg-white/30" />
                       {b.t}
                     </p>
@@ -248,7 +247,8 @@ export function AskDemo({ atlas }: { atlas: AtlasData }) {
                   return (
                     <p
                       key={key}
-                      className="flex items-start gap-2 rounded-lg bg-white/[.03] px-2.5 py-1.5 text-white/80"
+                      {...a}
+                      className="lp-ans flex items-start gap-2 rounded-lg border border-white/[.05] bg-white/[.03] px-2.5 py-1.5 text-white/80"
                     >
                       <span
                         className={`mt-[3px] shrink-0 rounded px-1.5 text-[10.5px] leading-[16px] ${b.risk === "high" || b.risk === "med" ? "bg-red/[.14] text-red" : "bg-white/[.08] text-muted"}`}
@@ -262,13 +262,18 @@ export function AskDemo({ atlas }: { atlas: AtlasData }) {
                   return (
                     <pre
                       key={key}
-                      className="whitespace-pre-wrap break-words rounded-lg border border-white/[.06] bg-black/50 p-3 font-mono text-[11.5px] text-white/75 leading-relaxed"
+                      {...a}
+                      className="lp-ans whitespace-pre-wrap break-words rounded-lg border border-white/[.06] bg-black/50 p-3 font-mono text-[11.5px] text-white/75 leading-relaxed"
                     >
                       {b.t}
                     </pre>
                   );
                 return (
-                  <p key={key} className="whitespace-pre-wrap break-words">
+                  <p
+                    key={key}
+                    {...a}
+                    className="lp-ans whitespace-pre-wrap break-words"
+                  >
                     {b.t}
                   </p>
                 );
@@ -276,7 +281,7 @@ export function AskDemo({ atlas }: { atlas: AtlasData }) {
             </div>
 
             {/* R17 prompt bar: the line as a context chip, the three questions as tiles */}
-            <div className="mt-3 rounded-xl border border-white/[.08] bg-white/[.03] p-2">
+            <div className="lp-glass relative mt-3 rounded-xl p-2">
               <span className="inline-flex items-center gap-1.5 rounded-md bg-white/[.06] px-2 py-0.5 font-mono text-[11px] text-white/70">
                 L{line + 1} · {piece?.name ?? "—"}
               </span>

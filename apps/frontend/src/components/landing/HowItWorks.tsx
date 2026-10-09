@@ -1,6 +1,8 @@
 "use client";
 
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import gsap from "gsap";
+import type { ScrollTrigger } from "gsap/ScrollTrigger";
+import { type ReactNode, useCallback, useRef, useState } from "react";
 import { TestList } from "@/components/(main)/trace/TestList";
 import type { AtlasData } from "@/features/atlas/types";
 import { ICON_PATH, type IconKey } from "@/features/atlas/utils/icons";
@@ -11,14 +13,8 @@ import {
   LabWidget,
   TraceWidget,
 } from "./FeatureWidgets";
-import {
-  IsoStack,
-  leaderY,
-  STACK_H,
-  STACK_W,
-  STEP_LABELS,
-  type StackData,
-} from "./IsoStack";
+import { IsoStack, STACK_H, STACK_W, type StackData } from "./IsoStack";
+import { scrollToY, useStage } from "./motion";
 import type { LabDemo } from "./stats";
 import { Window } from "./Window";
 
@@ -59,6 +55,17 @@ const STEPS: Step[] = [
   },
 ];
 
+/** the pinned stage only runs where its three columns fit (same query as `.lp-how-*` in landing.css) */
+const HOW_MQ =
+  "(min-width: 1024px) and (prefers-reduced-motion: no-preference)";
+/** timeline units: the plates assemble, then each step holds STEP, then the plates close up again */
+const ASSEMBLE = 1.2;
+const STEP = 2.4;
+const XF = 0.45; // half the crossfade between two steps
+const TOTAL = ASSEMBLE + STEP * STEPS.length + 0.8;
+/** where step `i` starts on the timeline */
+const stepAt = (i: number) => ASSEMBLE + STEP * i;
+
 function Icon({ k, className = "size-4" }: { k: IconKey; className?: string }) {
   return (
     <svg
@@ -77,20 +84,19 @@ function Icon({ k, className = "size-4" }: { k: IconKey; className?: string }) {
 }
 
 /**
- * 'How Luora works': one tall section, a sticky stage and four scroll steps.
+ * 'How Luora works' — seventh pass, restaged like Genie's pinned scenes.
  *
- * R22 (pin 774124931585644, Valley Engine): a hairline frame split into columns over a faint grid;
- * numbered steps with small icons in the left column; the exploded plate stack in the middle with
- * the active plate lit; a dashed leader out to an annotation with a thin vertical accent bar sitting
- * on the column divider, an icon, a title and two lines of copy.
- * R23 (pin 246501779599303620, Dante): the stack runs down the centre, the side cells line up with
- * it, small square markers where the cell lines meet the dividers.
- * R25 (pin 700661654577045083, S7 Interface Module 01): one huge index number for the open step.
- * Under the active step the real product, smaller: TestList, TraceWidget, LabWidget, Findings +
- * Coverage (the app's own components on the sample data).
- *
- * IntersectionObserver on four invisible bands picks the step; no animation library. Below lg the
- * stage is not sticky: the stack shows once, then the steps stack with their widgets.
+ * Genie (geniestudio.app, studied 2026-10-09): the section pins for several viewports and the
+ * scroll scrubs one timeline — things assemble as you arrive, swap in place while pinned, and
+ * close up before the next scene takes over (its 'Create visuals' prompt scene and the style
+ * wheel). Here: the four R22 plates fly together from a collapsed slab, each step lifts its plate,
+ * crossfades its note and its product widget (rise + blur, scrubbed, so it plays back on the way
+ * up), and the slab closes again at the end.
+ * R25 (pin 700661654577045083) + P2 (pin 523191681737169397, Lore "01 Write / 02 Generate"): one
+ * huge index that rolls like an odometer, the number dim and the step name bright beside it.
+ * R22's boxed hairline frame and grid are gone: three columns on open space, one thin progress
+ * track per step instead of cell borders.
+ * Phones, tablets and reduced motion: the static list (stack once, then each step + widget).
  */
 export function HowItWorks({
   stack,
@@ -107,29 +113,96 @@ export function HowItWorks({
   lab: LabDemo | null;
   atlas: AtlasData;
 }) {
+  const ref = useRef<HTMLElement>(null);
+  const trigger = useRef<ScrollTrigger | null>(null);
   const [at, setAt] = useState(0);
-  const bands = useRef<(HTMLDivElement | null)[]>([]);
 
-  useEffect(() => {
-    const io = new IntersectionObserver(
-      (es) => {
-        for (const e of es)
-          if (e.isIntersecting)
-            setAt(Number((e.target as HTMLElement).dataset.step));
+  const setup = useCallback((root: HTMLElement) => {
+    const q = gsap.utils.selector(root);
+    const plates = q("[data-lp=plate]");
+    const notes = q("[data-lp=note]");
+    const widgets = q("[data-lp=widget]");
+    const bars = q("[data-lp=bar]");
+    const tl = gsap.timeline({
+      defaults: { ease: "power2.inOut" },
+      scrollTrigger: {
+        trigger: q("[data-lp=stage]")[0],
+        start: "top top",
+        end: "+=420%",
+        pin: true,
+        scrub: 0.6,
+        onUpdate: (self) => {
+          const t = self.progress * TOTAL;
+          let i = 0;
+          while (i < STEPS.length - 1 && t >= stepAt(i + 1)) i++;
+          setAt(i);
+        },
       },
-      { rootMargin: "-50% 0px -50% 0px" },
-    );
-    for (const b of bands.current) if (b) io.observe(b);
-    return () => io.disconnect();
-  }, []);
-
-  const go = (i: number) =>
-    bands.current[i]?.scrollIntoView({
-      block: "center",
-      behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
-        ? "auto"
-        : "smooth",
     });
+    trigger.current = tl.scrollTrigger ?? null;
+    // 1. the plates fly apart out of one collapsed slab; the first note and widget rise in
+    tl.fromTo(
+      plates,
+      { y: (i) => (1.5 - i) * 150, autoAlpha: 0 },
+      { y: 0, autoAlpha: 1, duration: ASSEMBLE, stagger: 0.08 },
+      0,
+    )
+      .fromTo(
+        q("[data-lp=guides]"),
+        { autoAlpha: 0 },
+        { autoAlpha: 1, duration: ASSEMBLE * 0.6 },
+        ASSEMBLE * 0.5,
+      )
+      .fromTo(
+        [notes[0], widgets[0]],
+        { autoAlpha: 0, y: 40, filter: "blur(8px)" },
+        { autoAlpha: 1, y: 0, filter: "blur(0px)", duration: ASSEMBLE * 0.8 },
+        ASSEMBLE * 0.3,
+      );
+    // 2. each step: the progress track fills; at the hand-over the note and widget swap in place
+    STEPS.forEach((_, i) => {
+      tl.fromTo(
+        bars[i],
+        { scaleX: 0 },
+        { scaleX: 1, duration: STEP, ease: "none" },
+        stepAt(i),
+      );
+      if (!i) return;
+      const h = stepAt(i) - XF;
+      tl.to(
+        [notes[i - 1], widgets[i - 1]],
+        { autoAlpha: 0, y: -40, filter: "blur(8px)", duration: XF * 2 },
+        h,
+      )
+        .fromTo(
+          [notes[i], widgets[i]],
+          { autoAlpha: 0, y: 48, filter: "blur(8px)" },
+          { autoAlpha: 1, y: 0, filter: "blur(0px)", duration: XF * 2 },
+          h,
+        )
+        // the big index rolls one number up, like an odometer
+        .to(
+          q("[data-lp=digits]"),
+          { yPercent: (-100 * i) / STEPS.length, duration: XF * 2 },
+          h,
+        );
+    });
+    // 3. the slab closes up again as the next scene comes in
+    tl.to(
+      plates,
+      { y: (i) => (1.5 - i) * 60, duration: 0.8, ease: "power2.in" },
+      stepAt(STEPS.length),
+    );
+  }, []);
+  useStage(ref, setup, HOW_MQ);
+
+  const go = (i: number) => {
+    const st = trigger.current;
+    if (!st) return;
+    scrollToY(
+      st.start + ((stepAt(i) + STEP * 0.5) / TOTAL) * (st.end - st.start),
+    );
+  };
 
   const widgets: ReactNode[] = [
     <Window
@@ -150,128 +223,123 @@ export function HowItWorks({
     </div>,
   ];
 
-  return (
-    <section id="how-it-works" data-tone="how" className="pb-32">
-      <div className="mx-auto max-w-[1240px] px-4 md:px-6">
-        <p className="flex items-center gap-2 text-[13px] text-text">
-          <span className="size-1.5 rounded-full bg-white" />
-          How Luora works
-        </p>
-        <h2 className="mt-4 max-w-[640px] font-medium text-[clamp(30px,3.6vw,44px)] text-fg leading-[1.06] tracking-[-0.025em]">
-          Four layers, one local run.
-        </h2>
-      </div>
+  const head = (
+    <>
+      <p className="flex items-center gap-2 text-[13px] text-text">
+        <span className="size-1.5 rounded-full bg-white" />
+        How Luora works
+      </p>
+      <h2 className="mt-4 font-medium text-[clamp(30px,3.2vw,44px)] text-fg leading-[1.06] tracking-[-0.025em]">
+        Four layers,
+        <br />
+        <span className="text-white/45">one local run.</span>
+      </h2>
+    </>
+  );
 
-      {/* lg+: sticky stage driven by four scroll bands */}
-      <div className="relative mt-10 hidden h-[400vh] lg:block">
-        {[0, 1, 2, 3].map((i) => (
-          <div
-            key={i}
-            ref={(el) => {
-              bands.current[i] = el;
-            }}
-            data-step={i}
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 h-[100vh]"
-            style={{ top: `${i * 100}vh` }}
-          />
-        ))}
-        <div className="sticky top-0 h-screen py-6">
-          <div className="lp-frame relative mx-auto flex h-full max-w-[1240px] border-white/[.08] border-y">
-            {/* left: numbered steps (R22), the open one shows the real UI */}
-            <ol
-              className="lp-steps grid w-[460px] flex-none border-white/[.08] border-x"
-              style={{
-                gridTemplateRows: [0, 1, 2, 3]
-                  .map((i) => (i === at ? "1fr" : "56px"))
-                  .join(" "),
-              }}
-            >
+  return (
+    <section ref={ref} id="how-it-works" data-tone="how">
+      {/* lg+ with motion: one pinned screen, the timeline above drives everything in it */}
+      <div data-lp="stage" className="lp-how-stage">
+        <div className="mx-auto grid h-full max-w-[1320px] grid-cols-[minmax(0,330px)_auto_minmax(0,1fr)] items-center gap-10 px-8">
+          {/* left: heading, rolling index, the open step's note, the step tracks */}
+          <div className="flex h-full flex-col justify-center py-[9vh]">
+            {head}
+            <div className="mt-[6vh] flex items-end gap-3">
+              <span className="relative block h-[1em] overflow-hidden font-light text-[clamp(112px,9vw,160px)] leading-none tracking-[-0.06em]">
+                <span data-lp="digits" className="block">
+                  {STEPS.map((s, i) => (
+                    <span
+                      key={s.title}
+                      className="block h-[1em] bg-[linear-gradient(180deg,rgba(255,255,255,.92),rgba(255,255,255,.06)_92%)] bg-clip-text text-transparent"
+                    >
+                      {`0${i + 1}`}
+                    </span>
+                  ))}
+                </span>
+              </span>
+              <span className="mb-3 font-mono text-[12.5px] text-dim">
+                / 0{STEPS.length}
+              </span>
+            </div>
+            <div className="relative mt-6 h-[150px]">
               {STEPS.map((s, i) => (
-                <li
+                <div
                   key={s.title}
-                  className="relative min-h-0 overflow-hidden border-white/[.08] border-b last:border-b-0"
+                  data-lp="note"
+                  aria-hidden={i !== at}
+                  className="lp-how-note absolute inset-x-0 top-0"
                 >
-                  {/* R23: small square marker where the cell line meets the divider */}
-                  <span className="absolute -right-[3px] bottom-0 size-[5px] translate-y-1/2 bg-white/40" />
+                  <h3 className="flex items-center gap-2.5 text-[22px] text-fg leading-tight tracking-[-0.01em]">
+                    <Icon k={s.icon} className="size-[18px] text-muted" />
+                    {s.title}
+                  </h3>
+                  <p className="mt-3 text-[15px] text-body leading-relaxed">
+                    {s.copy[0]} <span className="text-muted">{s.copy[1]}</span>
+                  </p>
+                </div>
+              ))}
+            </div>
+            <ol className="mt-4 grid grid-cols-4 gap-3">
+              {STEPS.map((s, i) => (
+                <li key={s.title}>
                   <button
                     type="button"
                     onClick={() => go(i)}
                     aria-current={i === at ? "step" : undefined}
-                    className={`flex h-14 w-full items-center gap-3 px-6 text-left transition-colors ${i === at ? "text-fg" : "text-dim hover:text-muted"}`}
+                    aria-label={`Step ${i + 1}: ${s.title}`}
+                    className={`group block w-full pt-3 text-left transition-colors ${i === at ? "text-fg" : "text-dim hover:text-muted"}`}
                   >
-                    <span className="font-mono text-[12.5px]">{`0${i + 1}`}</span>
-                    <Icon k={s.icon} />
-                    <span className="text-[15px]">{s.title}</span>
+                    <span className="relative block h-px w-full bg-white/[.1]">
+                      <span
+                        data-lp="bar"
+                        className="absolute inset-0 origin-left scale-x-0 bg-white/80"
+                      />
+                    </span>
+                    <span className="mt-2.5 block font-mono text-[12.5px]">{`0${i + 1}`}</span>
                   </button>
-                  <div
-                    inert={i !== at}
-                    className={`flex justify-center px-5 pb-6 transition-opacity duration-500 motion-reduce:transition-none ${i === at ? "opacity-100" : "opacity-0"}`}
-                  >
-                    {widgets[i]}
-                  </div>
                 </li>
               ))}
             </ol>
+          </div>
 
-            {/* centre: the exploded stack (R22 / R23 / R24) */}
-            <div className="relative h-full flex-none py-6">
+          {/* centre: the plates (R22 / R23 / R24) */}
+          <div
+            className="relative h-[84vh]"
+            style={{ aspectRatio: `${STACK_W} / ${STACK_H}` }}
+          >
+            <IsoStack data={stack} active={at} />
+          </div>
+
+          {/* right: the open step's product widget, swapped in place */}
+          <div className="relative h-[84vh]">
+            {widgets.map((w, i) => (
               <div
-                className="relative h-full"
-                style={{ aspectRatio: `${STACK_W} / ${STACK_H}` }}
+                // biome-ignore lint/suspicious/noArrayIndexKey: one widget per fixed step
+                key={i}
+                data-lp="widget"
+                inert={i !== at}
+                className="lp-how-widget absolute inset-0 flex items-center justify-center"
               >
-                <IsoStack data={stack} active={at} />
+                {w}
               </div>
-            </div>
-
-            {/* right: annotation on the divider (R22) + huge index (R25) */}
-            <div className="relative min-w-0 flex-1 border-white/[.08] border-x py-6">
-              <span
-                aria-hidden="true"
-                className="absolute top-2 right-6 font-light text-[168px] text-white/[.05] leading-none tracking-[-0.06em]"
-              >
-                {`0${at + 1}`}
-              </span>
-              <div className="relative h-full">
-                <div
-                  key={at}
-                  className="lp-note lp-fadein absolute left-0 w-full max-w-[300px] -translate-y-1/2 py-8 pr-6 pl-7"
-                  style={{ top: `${(leaderY(at) / STACK_H) * 100}%` }}
-                >
-                  <span className="absolute inset-y-0 -left-px w-[2px] bg-[linear-gradient(to_bottom,transparent,#fff_30%,#fff_55%,rgba(255,255,255,.12))]" />
-                  <span className="grid size-8 place-items-center rounded-tile border border-white/[.1] bg-raised text-text">
-                    <Icon k={STEPS[at].icon} className="size-[15px]" />
-                  </span>
-                  <p className="mt-5 font-mono text-[12.5px] text-dim">
-                    {`0${at + 1} · ${STEP_LABELS[at]}`}
-                  </p>
-                  <h3 className="mt-1.5 text-[22px] text-fg leading-tight tracking-[-0.01em]">
-                    {STEPS[at].title}
-                  </h3>
-                  <p className="mt-3 text-[14.5px] text-body leading-relaxed">
-                    {STEPS[at].copy[0]}
-                    <br />
-                    <span className="text-muted">{STEPS[at].copy[1]}</span>
-                  </p>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* below lg: the stack once, then each step with its widget */}
-      <div className="mx-auto mt-10 max-w-[640px] px-4 lg:hidden">
-        <div className="mx-auto w-full max-w-[340px]">
+      {/* phones, tablets, reduced motion: the stack once, then each step with its widget */}
+      <div className="lp-how-static mx-auto max-w-[640px] px-4 pb-32">
+        {head}
+        <div className="mx-auto mt-10 w-full max-w-[340px]">
           <IsoStack data={stack} active={-1} />
         </div>
         <ol className="mt-10 flex flex-col gap-14">
           {STEPS.map((s, i) => (
-            <li key={s.title} className="border-white/[.08] border-t pt-6">
-              <p className="flex items-center gap-3 text-fg">
-                <span className="font-mono text-[12.5px] text-dim">{`0${i + 1}`}</span>
-                <Icon k={s.icon} />
-                <span className="text-[17px]">{s.title}</span>
+            <li key={s.title} className="pt-2">
+              <p className="flex items-baseline gap-3 text-fg">
+                <span className="font-light text-[40px] text-white/30 leading-none tracking-[-0.04em]">{`0${i + 1}`}</span>
+                <span className="text-[19px]">{s.title}</span>
               </p>
               <p className="mt-3 text-[15px] text-body leading-relaxed">
                 {s.copy[0]} <span className="text-muted">{s.copy[1]}</span>

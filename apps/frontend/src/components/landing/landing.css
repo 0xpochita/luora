@@ -176,42 +176,22 @@
   scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
 }
 
-/* How Luora works (R22): faint hairline grid behind the frame; the lit plate and its note lift,
-   the steps column eases its rows. Reduced motion keeps the highlight, drops the movement. */
-.lp-frame {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
-  background-size: 64px 64px;
-  background-position: -1px -1px;
-}
+/* How Luora works (R22): the lit plate lifts. Reduced motion keeps the highlight, drops the movement. */
 .lp-plate {
   transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 .lp-plate[data-on] {
   transform: translateY(-14px);
 }
-.lp-note {
-  margin-top: -14px;
-  transition: top 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-.lp-steps {
-  transition: grid-template-rows 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
-}
 .lp-fadein {
   animation: lp-fade 0.5s ease-out both;
 }
 @media (prefers-reduced-motion: reduce) {
-  .lp-plate,
-  .lp-steps,
-  .lp-note {
+  .lp-plate {
     transition: none;
   }
   .lp-plate[data-on] {
     transform: none;
-  }
-  .lp-note {
-    margin-top: 0;
   }
   .lp-fadein {
     animation: none;
@@ -441,5 +421,164 @@
     position: absolute;
     inset-inline: 0;
     top: calc(52vh + 150px);
+  }
+}
+
+/* Tools row marks (seventh pass). P1 pin/120823202500504610 ("Insights that actually tell you
+   something"): monochrome objects lit from above inside a dark rounded shell, a faint halo around
+   them. One 96px shell for every mark, the art in a 40px box so the three read the same size. */
+.lp-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  background:
+    radial-gradient(
+      70% 60% at 50% 18%,
+      rgba(255, 255, 255, 0.11),
+      transparent 70%
+    ),
+    linear-gradient(180deg, var(--card-top), var(--card-bot));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    inset 0 -12px 26px rgba(0, 0, 0, 0.4),
+    0 22px 44px -14px rgba(0, 0, 0, 0.8);
+  transition:
+    border-color 0.3s,
+    color 0.3s,
+    box-shadow 0.3s,
+    transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.lp-mark::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  pointer-events: none;
+}
+.lp-mark > * {
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.22));
+}
+/* the Foundry avatar is black art on an opaque white disc: invert it, then screen it so the
+   (now black) disc drops out and only the white art stays on the graphite */
+.lp-mark > img {
+  filter: invert(1) drop-shadow(0 0 10px rgba(255, 255, 255, 0.22));
+  mix-blend-mode: screen;
+}
+a:hover > .lp-mark {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-3px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -12px 26px rgba(0, 0, 0, 0.4),
+    0 0 40px -8px rgba(255, 255, 255, 0.22),
+    0 22px 44px -14px rgba(0, 0, 0, 0.8);
+}
+
+/* How Luora works (seventh pass): the pinned three-column stage only where it fits and motion is
+   on; everywhere else the static list. Before GSAP runs, only the first note / widget shows. */
+.lp-how-stage {
+  display: none;
+}
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  .lp-how-stage {
+    display: block;
+    height: 100vh;
+  }
+  .lp-how-static {
+    display: none;
+  }
+  .lp-how-note:not(:first-child),
+  .lp-how-widget:not(:first-child) {
+    visibility: hidden;
+    opacity: 0;
+  }
+}
+
+/* Bento cards (seventh pass): graphite card, lifts on hover with a lit top edge and a soft glow
+   (Genie's "There's more" cards lift; P3 Deerflow tiles carry the lit edge). */
+.lp-bento {
+  position: relative;
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--card-top), var(--card-bot));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  transition:
+    transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1),
+    border-color 0.3s,
+    box-shadow 0.45s;
+}
+.lp-bento::before {
+  content: "";
+  position: absolute;
+  inset: -1px 18% auto;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.7),
+    transparent
+  );
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.lp-bento:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-strong);
+  box-shadow:
+    0 0 60px -18px rgba(255, 255, 255, 0.16),
+    0 24px 48px rgba(0, 0, 0, 0.55);
+}
+.lp-bento:hover::before {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-bento,
+  .lp-bento:hover {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* Ask window (seventh pass, P6 pin/36169603254422786): a near-black window with a lit top edge
+   and soft depth, a glassy prompt box, answer blocks rising out of a blur one after another. */
+.lp-askwin {
+  background: linear-gradient(180deg, #151517, #0e0e10 40%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 0 0 1px rgba(0, 0, 0, 0.6),
+    0 0 90px -30px rgba(255, 255, 255, 0.12),
+    0 40px 90px -24px rgba(0, 0, 0, 0.95);
+}
+.lp-glass {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+}
+.lp-ans {
+  animation: lp-ans 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+@keyframes lp-ans {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+    filter: blur(4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-ans {
+    animation: none;
   }
 }

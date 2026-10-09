@@ -373,42 +373,17 @@ export function Hero({ log }: { log: string[] }) {
   );
 }
 
-/** R3: the logo strip under the hero — only what Luora really reads, as plain wordmarks. */
 /** simple-icons paths (CC0) for the two marks that ship as SVG */
 const SOLIDITY =
   "M4.409 6.608L7.981.255l3.572 6.353H4.409zM8.411 0l3.569 6.348L15.552 0H8.411zm4.036 17.392l3.572 6.354 3.575-6.354h-7.147zm-.608-10.284h-7.43l3.715 6.605 3.715-6.605zm.428-.25h7.428L15.982.255l-3.715 6.603zM15.589 24l-3.569-6.349L8.448 24h7.141zm-3.856-6.858H4.306l3.712 6.603 3.715-6.603zm.428-.25h7.433l-3.718-6.605-3.715 6.605z";
 const ETHEREUM =
   "M11.944 17.97L4.58 13.62 11.943 24l7.37-10.38-7.372 4.35h.003zM12.056 0L4.69 12.223l7.365 4.354 7.365-4.35L12.056 0z";
 
-/** a PNG logo shown as a monochrome mark: `invert` for black-on-white art, `silhouette` for transparent colour art,
- *  `mono` for colour art on an opaque white background (it turns black and melts into the page) */
-function Png({
-  src,
-  alt,
-  mode,
-  h,
-}: {
-  src: string;
-  alt: string;
-  mode: "invert" | "silhouette" | "mono";
-  h: number;
-}) {
-  return (
-    // biome-ignore lint/performance/noImgElement: tiny static logos inside a CSS marquee
-    <img
-      src={src}
-      alt={alt}
-      style={{ height: h }}
-      className={`w-auto opacity-60 transition-opacity hover:opacity-100 ${mode === "invert" ? "invert" : mode === "mono" ? "grayscale invert" : "brightness-0 invert"}`}
-    />
-  );
-}
-
 /**
- * R3 logo strip: only tools Luora really reads, official marks from each project (foundry-rs org
- * avatar, crytic/slither logo.png, Cyfrin/aderyn logo) and simple-icons for Solidity / Ethereum,
- * shown monochrome. Genie: these are the row of round icons that scatter before the product
- * grows out of a square in the middle (ScatterGrow.tsx), with the live app tabs (ProductTabs).
+ * R3 logo strip: the stack Luora reads its runs from, official marks only (foundry-rs org avatar,
+ * simple-icons for Solidity / Ethereum), shown monochrome. Seventh pass: just these three; the
+ * analyzers are named where their findings show up (Findings, Compare), not as logos.
+ * Genie: these are the row of round icons that scatter before the product grows out of a square in the middle (ScatterGrow.tsx), with the live app tabs (ProductTabs).
  */
 export async function Product() {
   const [atlas, trace, scenario] = await Promise.all([
@@ -419,7 +394,7 @@ export async function Product() {
   const icon = (d: string) => (
     <svg
       viewBox="0 0 24 24"
-      className="size-7"
+      className="size-[30px]"
       fill="currentColor"
       aria-hidden="true"
     >
@@ -430,24 +405,15 @@ export async function Product() {
     {
       title: "Foundry",
       href: "https://getfoundry.sh",
-      node: <Png src="/logos/tools/foundry.png" alt="" mode="invert" h={34} />,
+      node: (
+        // biome-ignore lint/performance/noImgElement: one tiny static logo, inverted by .lp-mark
+        <img src="/logos/tools/foundry.png" alt="" className="size-[40px]" />
+      ),
     },
     {
       title: "Solidity",
       href: "https://soliditylang.org",
       node: icon(SOLIDITY),
-    },
-    {
-      title: "Slither",
-      href: "https://github.com/crytic/slither",
-      node: (
-        <Png src="/logos/tools/slither.png" alt="" mode="silhouette" h={44} />
-      ),
-    },
-    {
-      title: "Aderyn",
-      href: "https://github.com/Cyfrin/aderyn",
-      node: <Png src="/logos/tools/aderyn.png" alt="" mode="mono" h={30} />,
     },
     { title: "Ethereum", href: "https://ethereum.org", node: icon(ETHEREUM) },
   ];

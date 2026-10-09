@@ -5,7 +5,7 @@ import { CityHorizon } from "./CityHorizon";
 import { GitHubMark } from "./GitHubMark";
 import { FinaleRise } from "./Haze";
 import { DOCS, GITHUB } from "./Hero";
-import { Exit, Reveal } from "./motion";
+import { CompareStage, Exit, Reveal } from "./motion";
 
 /** One row: what you get, what Luora shows (a full sentence, R29), what the CLIs give today (null = nothing). */
 const ROWS: { what: string; luora: string; cli: string | null }[] = [
@@ -125,6 +125,10 @@ function CliCell({ cli }: { cli: string | null }) {
  * product name, checks in small circles, ✕ for missing.
  * R29 (pin/36028865764245218, Ageeva "Constructor vs Legacy vs Building In-House"): every cell a
  * short full sentence behind a leading icon. Mobile: one stacked card per row.
+ * Seventh pass: P4 (pin/449163762860877017, "Pricing page with comparison table"): quiet rows with
+ * more air, values in a larger size than the row labels, the heading at the section scale.
+ * Genie (its pricing card rising into place): the Luora card slides up and the rows reveal one by
+ * one, scrubbed (CompareStage).
  */
 export function Compare() {
   return (
@@ -144,7 +148,7 @@ export function Compare() {
             <span className="font-mono text-[15px] text-muted md:text-[22px] md:text-fg md:leading-[1.2]">
               [007]
             </span>
-            <h2 className="font-medium text-[clamp(30px,3.6vw,46px)] text-fg leading-[1.04] tracking-[-0.03em]">
+            <h2 className="font-medium text-[clamp(32px,4.4vw,54px)] text-fg leading-[1.04] tracking-[-0.03em]">
               Same run,
               <br />
               <span className="text-white/45">read differently.</span>
@@ -156,9 +160,15 @@ export function Compare() {
           </div>
         </Reveal>
 
-        <Reveal delay={0.08} className="mt-16 md:ml-[164px]">
-          {/* desktop: three columns, the Luora column one raised card spanning every row (R27) */}
-          <table className="relative hidden grid-cols-[minmax(0,0.85fr)_minmax(0,1.45fr)_minmax(0,1fr)] grid-rows-[auto_repeat(8,auto)] text-left before:col-start-2 before:row-start-1 before:row-end-[-1] before:-mt-3 before:-mb-4 before:rounded-card before:border before:border-white/[.13] before:bg-card-grad before:shadow-[0_0_80px_-12px_rgba(255,255,255,.14),0_24px_48px_rgba(0,0,0,.55)] md:grid">
+        <CompareStage className="relative mt-20 md:ml-[164px]">
+          {/* desktop: three columns, the Luora column one raised card spanning every row (R27); the
+              card is its own element (columns 0.85 / 1.45 / 1 fr) so it can slide up into place */}
+          <div
+            aria-hidden="true"
+            data-lp="card"
+            className="absolute -top-3 -bottom-4 left-[25.76%] hidden w-[43.94%] rounded-card border border-white/[.13] bg-card-grad shadow-[0_0_80px_-12px_rgba(255,255,255,.14),0_24px_48px_rgba(0,0,0,.55)] md:block"
+          />
+          <table className="relative hidden grid-cols-[minmax(0,0.85fr)_minmax(0,1.45fr)_minmax(0,1fr)] grid-rows-[auto_repeat(8,auto)] text-left md:grid">
             <caption className="sr-only">
               Luora compared with forge and the analyzer CLIs
             </caption>
@@ -181,20 +191,23 @@ export function Compare() {
                 <tr key={r.what} className="contents">
                   <th
                     scope="row"
-                    className="col-start-1 border-white/[.07] border-t py-4 pr-4 font-normal text-[14px] text-body"
+                    data-row={i}
+                    className="col-start-1 border-white/[.07] border-t py-5 pr-4 font-normal text-[14.5px] text-body"
                     style={{ gridRowStart: i + 2 }}
                   >
                     {r.what}
                   </th>
                   <td
-                    className="relative col-start-2 mx-3 flex gap-3 border-white/[.06] border-t px-3 py-4 text-[14px] text-fg leading-snug"
+                    data-row={i}
+                    className="relative col-start-2 mx-3 flex gap-3 border-white/[.06] border-t px-3 py-5 text-[15px] text-fg leading-snug"
                     style={{ gridRowStart: i + 2 }}
                   >
                     <CheckCircle />
                     {r.luora}
                   </td>
                   <td
-                    className="col-start-3 flex gap-3 border-white/[.07] border-t px-6 py-4 text-[13px] text-dim leading-snug"
+                    data-row={i}
+                    className="col-start-3 flex gap-3 border-white/[.07] border-t px-6 py-5 text-[13.5px] text-dim leading-snug"
                     style={{ gridRowStart: i + 2 }}
                   >
                     <CliCell cli={r.cli} />
@@ -206,9 +219,10 @@ export function Compare() {
 
           {/* mobile: one stacked card per row */}
           <ul className="space-y-3 md:hidden">
-            {ROWS.map((r) => (
+            {ROWS.map((r, i) => (
               <li
                 key={r.what}
+                data-row={`m${i}`}
                 className="rounded-card border border-white/[.07] bg-[#0c0c0d] p-2"
               >
                 <p className="px-3 pt-2 pb-2.5 text-[13px] text-dim">
@@ -233,7 +247,7 @@ export function Compare() {
               </li>
             ))}
           </ul>
-        </Reveal>
+        </CompareStage>
       </Exit>
     </section>
   );
