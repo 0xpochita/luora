@@ -1,0 +1,31 @@
+/* Ask (Genie 'Prompts in. Magic out.'): cards slide on transforms written by AskDemo's one rAF
+   driver; the question types in word by word and the answer rises block by block. Opacity and
+   transform only, nothing animates under reduced motion. */
+.lp-ask-track {
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 18%,
+    #000 82%,
+    transparent
+  );
+  touch-action: pan-y;
+}
+.lp-ask-card {
+  will-change: transform, opacity;
+}
+.lp-ask-in {
+  animation: lp-ask-in 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+@keyframes lp-ask-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-ask-in {
+    animation: none;
+  }
+}
