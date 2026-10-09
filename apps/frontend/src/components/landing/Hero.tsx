@@ -189,11 +189,12 @@ export async function Hero() {
             return (
               <span
                 key={`${b.fn}-${b.gas}-${i}`}
-                className={`lh-bar relative w-px ${flag ? "bg-white" : "bg-white/[.22]"}`}
+                className={`lh-bar relative w-px bg-white ${flag ? "lh-flag" : ""}`}
                 style={
                   {
                     height: `${pct(b.gas)}%`,
                     "--d": `${0.3 + i * 0.016}s`,
+                    "--n": i,
                   } as Delay
                 }
               >
@@ -205,7 +206,9 @@ export async function Hero() {
                     <span className="whitespace-nowrap font-mono text-[11px] text-muted [writing-mode:vertical-rl] rotate-180">
                       {b.fn}() · {Math.round(b.gas / 1000)}k gas
                     </span>
-                    <span className="size-[7px] rounded-full bg-red shadow-[0_0_10px_rgba(255,80,80,.6)]" />
+                    <span className="relative size-[7px] rounded-full bg-red shadow-[0_0_10px_rgba(255,80,80,.6)]">
+                      <span className="lh-ping absolute inset-[-3px] rounded-full border border-red/70" />
+                    </span>
                   </span>
                 )}
               </span>

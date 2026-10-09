@@ -1,5 +1,6 @@
 /* Hero (Hero.tsx). Eighteenth pass, HK Memory Library: the copy fades up, then the bars grow out
-   of the floor left to right, the flagged bar's label last. Only transform / opacity animate;
+   of the floor left to right, the flagged bar's label last; then two quiet loops, a brightening
+   rolling across the bars and the finding's dot breathing. Only transform / opacity animate;
    every loop sits under [data-tone=hero], so motion.tsx's data-off pauses it off screen.
    --d = start delay. */
 
@@ -13,9 +14,17 @@
   }
 }
 
-/* one bar per source line, standing up from the bottom edge */
+/* one bar per call frame, standing up from the bottom edge; once up, a slow brightening rolls
+   across them left to right (--n = bar index), the flagged bar stays lit */
 .lh-bar {
+  opacity: 0.22;
   transform-origin: bottom;
+  animation:
+    lh-bar 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) var(--d, 0s) backwards,
+    lh-wave 7s ease-in-out calc(1.6s + var(--n, 0) * 60ms) infinite;
+}
+.lh-flag {
+  opacity: 1;
   animation: lh-bar 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) var(--d, 0s) backwards;
 }
 @keyframes lh-bar {
@@ -23,12 +32,43 @@
     transform: scaleY(0);
   }
 }
+@keyframes lh-wave {
+  0%,
+  18%,
+  100% {
+    opacity: 0.22;
+  }
+  7% {
+    opacity: 0.6;
+  }
+}
+/* the finding's dot breathes: a ring widening out of it */
+.lh-ping {
+  animation: lh-ping 2.8s ease-out 2s infinite;
+}
+@keyframes lh-ping {
+  from {
+    opacity: 1;
+    transform: scale(0.5);
+  }
+  70%,
+  to {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .lh-up,
-  .lh-bar {
+  .lh-bar,
+  .lh-ping {
     animation: none;
-    opacity: 1;
     transform: none;
+  }
+  .lh-up {
+    opacity: 1;
+  }
+  .lh-ping {
+    display: none;
   }
 }
