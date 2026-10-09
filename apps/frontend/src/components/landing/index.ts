@@ -141,7 +141,7 @@
  *                                           R22's boxed frame/grid removed for open space
  *  Ask (AskDemo)                          → P6 window; answers always render whole (CSS stagger
  *                                           replaces the interval that stalled at 'Checklist')
- *  Compare (Closing, CompareStage)        → P4 rows; Genie pricing card rising into place: the
+  *  Compare (Closing, CompareTable)        → P4 rows; Genie pricing card rising into place: the
  *                                           Luora card slides up, rows reveal one by one
  *
  *
