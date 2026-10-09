@@ -1,0 +1,46 @@
+/* How Luora works (eighth pass, HowItWorks.tsx). The stage / static switch and the first-note /
+   first-widget defaults stay in landing.css (.lp-how-*); before GSAP runs only step 1 shows here. */
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  .lp-how-io:not(:first-child),
+  .lp-how-edge {
+    visibility: hidden;
+    opacity: 0;
+  }
+}
+
+/* the big index (H2): thin numerals fading out downwards */
+.lp-how-num {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.92),
+    rgba(255, 255, 255, 0.06) 92%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* the lit edge riding each wipe (H3): one hairline at the top of a full-height layer, so the
+   layer moves by transform only; the soft spill above it is a static gradient, never animated */
+.lp-how-edge::before,
+.lp-how-edge::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+}
+.lp-how-edge::before {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.85) 30%,
+    rgba(255, 255, 255, 0.85) 70%,
+    transparent
+  );
+}
+.lp-how-edge::after {
+  height: 90px;
+  transform: translateY(-100%);
+  background: linear-gradient(0deg, rgba(255, 255, 255, 0.07), transparent);
+}
