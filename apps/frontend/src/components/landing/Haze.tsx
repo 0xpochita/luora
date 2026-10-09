@@ -28,9 +28,10 @@ function heroExit(root: HTMLElement, gsap: Gsap) {
         scrub: 0.5,
       },
     })
+    // starts below the hero's horizon (HI), so the first screen is only the lit rim
     .fromTo(
       q("[data-lp=haze]"),
-      { yPercent: 30 },
+      { yPercent: 80 },
       { yPercent: -8, ease: "none" },
       0,
     )
@@ -44,7 +45,8 @@ function heroExit(root: HTMLElement, gsap: Gsap) {
       q("[data-lp=hero-body]"),
       { y: -140, autoAlpha: 0, scale: 0.96, ease: "power1.in" },
       0,
-    );
+    )
+    .to(q("[data-lp=hero-horizon]"), { y: 160, autoAlpha: 0 }, 0);
 }
 
 export function HeroExit({ children }: { children: ReactNode }) {

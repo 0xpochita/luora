@@ -246,6 +246,17 @@
  *       sample's real findings (id, title, every tool that reported it, severity, lines) and
  *       the totals (findings, high, line coverage)
  *
+ * Sixteenth pass (2026-10-10, "terlalu banyak komponen di hero, saya butuh yg minimalis"):
+ *  HI pin/933300722780733209 (ZERO by Freede, the shot R13's closing scene came from) — wordmark
+ *     + one pill, a two-line centred headline with the second line tinted, one subline, one
+ *     App-Store-style button (icon, small label over the big one), two hairlines dropping from
+ *     the top edge onto the headline, two rules running out from the button with small diamonds,
+ *     a curved horizon lit from behind, the product peeking over its rim. Nothing else.
+ *     → Hero: the same five pieces and nothing more. 'actually does.' in silver, the Lab button
+ *       with the brand tile as its icon, the horizon an ellipse with a gradient rim over a dawn
+ *       glow, the brand tile standing on the rim. Rail, deck, pipeline and the big mark are gone;
+ *       the haze now starts below the rim and the Works-with hub is the first product view.
+ *
  * No screenshots: every product view on the page is the app's own component rendered live on the
  * sample run (built near the screen only, Lazy). Colour stays per DESIGN.md: grey/white, red only
  * on findings.

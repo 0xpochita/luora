@@ -1,30 +1,7 @@
-/* Hero (Hero.tsx). Fifteenth pass, Awwwards refs in Hero.tsx (HF Cerebrium, HG Aspen, HH
-   Evervault): rail → headline → lit mark behind the right half → product deck → hairline.
-   Only transform / opacity / clip-path animate; every loop sits under [data-tone=hero], so
-   motion.tsx's data-off pauses it off screen. --d = start delay. */
-
-/* HC Ascend: the mark is the one lit object; its halo breathes slowly once it is lit */
-.lh-mark {
-  animation: lh-mark 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 0.4s backwards;
-}
-@keyframes lh-mark {
-  from {
-    opacity: 0;
-    transform: scale(0.86);
-  }
-}
-/* the flagged square lands last: the mark "finds" something */
-.lh-flag {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: lh-flag 0.5s cubic-bezier(0.3, 1.4, 0.5, 1) 1.15s backwards;
-}
-@keyframes lh-flag {
-  from {
-    opacity: 0;
-    transform: translate(-40%, 40%) scale(0.4);
-  }
-}
+/* Hero (Hero.tsx). Sixteenth pass, HI ZERO by Freede: hairlines drop onto the headline → lines
+   rise → subline → the button with its rules → the horizon lights up. Only transform / opacity
+   animate; every loop sits under [data-tone=hero], so motion.tsx's data-off pauses it off
+   screen. --d = start delay. */
 
 @keyframes lh-in {
   from {
@@ -61,89 +38,67 @@
     transform: none;
   }
 }
-
-/* wires grow out of the mark to both sides (one clip, no dash animation) */
-.lh-wires {
-  animation: lh-wires 1.2s cubic-bezier(0.6, 0, 0.3, 1) 1s backwards;
-}
-@keyframes lh-wires {
-  from {
-    clip-path: inset(0 50%);
-  }
-  to {
-    clip-path: inset(0 0);
-  }
-}
-.lh-node {
-  animation: lh-up 0.6s ease-out var(--d) backwards;
+/* ZERO tints its second line; monochrome here: silver fading to graphite */
+.lh-tint {
+  color: transparent;
+  background: linear-gradient(#e4e7ee, #7d828d);
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 
-/* a tick runs down the 'Scroll to explore' line */
-.lh-tick {
-  animation: lh-tick 2.4s cubic-bezier(0.6, 0, 0.4, 1) 2.5s infinite;
+/* the two hairlines grow down onto the headline, the rules grow out of the button */
+.lh-brace {
+  transform-origin: top;
+  animation: lh-brace 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 0.2s backwards;
 }
-@keyframes lh-tick {
+@keyframes lh-brace {
   from {
-    transform: translateY(-100%);
+    transform: scaleY(0);
   }
-  to {
-    transform: translateY(400%);
+}
+.lh-rule {
+  animation: lh-rule 1s cubic-bezier(0.2, 0.7, 0.2, 1) 1.25s backwards;
+}
+@keyframes lh-rule {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+/* the horizon lights up from below, the tile lands on its rim last */
+.lh-horizon {
+  animation: lh-horizon 1.6s ease-out 0.1s backwards;
+}
+@keyframes lh-horizon {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+}
+.lh-tile {
+  /* on the rim: the ellipse tops out 310 viewBox units above the svg's bottom edge, and the
+     slice scale is width- or height-driven (h = min(62vh, 580px) / 640) */
+  bottom: max(19.375vw, min(30.03vh, 281px));
+  animation: lh-tile 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) 1.2s backwards;
+}
+@keyframes lh-tile {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 110%);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lh-mark,
-  .lh-flag,
   .lh-up,
   .lh-line > span,
-  .lh-wires,
-  .lh-node,
-  .lh-tick {
+  .lh-brace,
+  .lh-rule,
+  .lh-horizon {
     animation: none;
     opacity: 1;
     transform: none;
-    clip-path: none;
   }
-  .lh-tick,
-  .lh-packet {
-    display: none;
-  }
-}
-
-/* HG Aspen halftone + HC lit object: a dot field only around the big mark, both fading towards
-   the foot so the deck under them stays readable */
-.lh-field {
-  background:
-    radial-gradient(circle, rgba(255, 255, 255, 0.22) 0.8px, transparent 1.3px)
-    0 0 / 10px 10px;
-  mask-image: radial-gradient(62% 62% at 50% 42%, #000 20%, transparent 78%);
-  animation: lh-in 1.4s ease-out 0.3s backwards;
-}
-.lh-bigmark {
-  opacity: 0.55;
-  mask-image: linear-gradient(#000 35%, transparent 92%);
-  animation: lh-bigmark 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) 0.5s backwards;
-}
-@keyframes lh-bigmark {
-  from {
-    opacity: 0;
-    transform: scale(0.94) translateY(16px);
-  }
-}
-/* HH Evervault: the product deck rises in under the headline */
-.lh-deck {
-  animation: lh-deck 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 1.15s backwards;
-}
-@keyframes lh-deck {
-  from {
-    opacity: 0;
-    transform: translateY(28px);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .lh-field,
-  .lh-bigmark,
-  .lh-deck {
+  .lh-tile {
     animation: none;
   }
 }
