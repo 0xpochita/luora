@@ -29,7 +29,7 @@ type Delay = React.CSSProperties & { "--d"?: string; "--n"?: number };
 
 /**
  * HA pin/760404718381966789 (Triopixels): wordmark left, one glass pill in the middle, a quiet
- * pill right, a hairline under the bar with '+' at its ends. The glass is a gradient + inner
+ * pill right, a hairline under the bar with '+' at its ends. (The active item's dot was dropped.) The glass is a gradient + inner
  * highlight, not backdrop-filter, so scrolling never re-blurs it.
  */
 export function Nav() {
@@ -50,13 +50,12 @@ export function Nav() {
             <a
               href={i.href}
               aria-current={i.on ? "page" : undefined}
-              className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] transition-colors ${
+              className={`flex items-center rounded-full px-3.5 py-1.5 text-[13px] transition-colors ${
                 i.on
                   ? "bg-white/[.1] text-fg shadow-[inset_0_1px_0_rgba(255,255,255,.1)]"
                   : "text-muted hover:text-fg"
               }`}
             >
-              {i.on && <span className="size-1 rounded-full bg-white" />}
               {i.label}
             </a>
           </li>
