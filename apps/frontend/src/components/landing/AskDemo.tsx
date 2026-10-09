@@ -163,17 +163,20 @@ export function AskDemo({ atlas }: { atlas: AtlasData }) {
                     <span
                       className={`min-w-0 flex-1 truncate whitespace-pre ${on ? "text-white" : "text-white/55"}`}
                     >
-                      {tokenize(l.text).map((t, k) => (
-                        <span
-                          // biome-ignore lint/suspicious/noArrayIndexKey: tokens of one static line
-                          key={k}
-                          className={
-                            on && t.type !== "plain" ? `tok-${t.type}` : ""
-                          }
-                        >
-                          {t.text}
-                        </span>
-                      ))}
+                      {/* only the selected line is highlighted, the rest is plain text */}
+                      {on
+                        ? tokenize(l.text).map((t, k) => (
+                            <span
+                              // biome-ignore lint/suspicious/noArrayIndexKey: tokens of one static line
+                              key={k}
+                              className={
+                                t.type !== "plain" ? `tok-${t.type}` : ""
+                              }
+                            >
+                              {t.text}
+                            </span>
+                          ))
+                        : l.text}
                     </span>
                     {d && (
                       <span className="shrink-0 rounded-md bg-red/[.12] px-1.5 font-sans text-[10.5px] text-red leading-[18px]">

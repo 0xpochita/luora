@@ -1,9 +1,8 @@
 "use client";
 
-import gsap from "gsap";
 import { useRef } from "react";
 import { ICON_PATH, type IconKey } from "@/features/atlas/utils/icons";
-import { MOTION_MQ, useStage } from "./motion";
+import { type Gsap, MOTION_MQ, useStage } from "./motion";
 
 type Word = {
   word: string;
@@ -48,7 +47,7 @@ const TILT = [-14, 9, -6, 12, -10, 16];
  * the three things Luora does, with monochrome icon badges for mascots (the only red is on the
  * finding glyph). Not pinned: it hands straight over to 'How Luora works'.
  */
-function bigWords(root: HTMLElement) {
+function bigWords(root: HTMLElement, gsap: Gsap) {
   for (const block of gsap.utils.toArray<HTMLElement>("[data-lp=word]", root)) {
     const q = gsap.utils.selector(block);
     const letters = q("[data-lp=letter]");

@@ -1,8 +1,7 @@
 "use client";
 
-import gsap from "gsap";
 import { type ReactNode, useRef } from "react";
-import { useStage } from "./motion";
+import { type Gsap, useStage } from "./motion";
 
 /** where each mark lands when the row scatters, in a 1440-wide viewport (scaled to the real width) */
 const SCATTER = [
@@ -20,7 +19,7 @@ const SQ = 56;
  * mockup is the live app (ProductTabs: Lab / Scenario / Trace / Flow / Map / Findings on the
  * sample run), whose view tabs fade in once the window has landed: one move from hero to product.
  */
-function scatterGrow(root: HTMLElement) {
+function scatterGrow(root: HTMLElement, gsap: Gsap) {
   const q = gsap.utils.selector(root);
   const marks = q("[data-lp=mark]");
   const shot = q("[data-lp=frame]")[0] as HTMLElement;

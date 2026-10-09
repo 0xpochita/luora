@@ -1,8 +1,12 @@
+"use client";
+
 /**
  * R13 (ZERO by Freede, user ref): a full-bleed closing scene where a curved horizon at the bottom
  * glows from behind, with hairlines and '+' markers framing the headline.
  * R14 (SurveilTrack 'Unit map', user ref): the horizon is a dark city. Graphite blocks, sparse lit
  * windows, square map markers. Drawn as one deterministic SVG, so it is identical on every render.
+ * A client component on purpose: the few lines of code that draw it ship instead of its markup
+ * twice (the HTML and the RSC payload).
  */
 
 const W = 1600;
@@ -74,6 +78,30 @@ const roof = (b: Bld) => `M${r1(b.x)} ${r1(b.y)}h${r1(b.w)}`;
 const rimAlpha = (b: Bld) =>
   r1((0.12 + (1 - Math.abs(b.x + b.w / 2 - CX) / CX) * 0.5) * 100) / 100;
 
+/**
+ * Few nodes, same picture: each layer is one path, and roofs / windows are grouped into one path
+ * per alpha step (0.04 apart, below what reads on black) instead of one element each.
+ */
+function byAlpha<T>(items: T[], alpha: (t: T) => number, d: (t: T) => string) {
+  const out = new Map<number, string>();
+  for (const t of items) {
+    const a = Math.round(alpha(t) * 25) / 25;
+    out.set(a, (out.get(a) ?? "") + d(t));
+  }
+  return [...out];
+}
+const FAR_D = FAR.map(block).join("");
+const NEAR_D = NEAR.map(block).join("");
+const ROOFS = byAlpha(NEAR, rimAlpha, roof);
+const MASTS = NEAR.filter((b) => b.mast)
+  .map((b) => `M${r1(b.x + b.w / 2)} ${r1(b.y)}v-18`)
+  .join("");
+const LIT = byAlpha(
+  WINDOWS,
+  (w) => w.o,
+  (w) => `M${w.x} ${w.y}h1.6v1.6h-1.6z`,
+);
+
 export function CityHorizon() {
   return (
     <svg
@@ -104,42 +132,17 @@ export function CityHorizon() {
       <rect y={TOP} width={W} height="150" fill="url(#lp-fadein)" />
 
       {/* R14: far layer, then the near city with lit roofs and windows */}
-      <g fill="#0b0b0d">
-        {FAR.map((b) => (
-          <path key={`f${b.x}`} d={block(b)} />
-        ))}
-      </g>
-      <g fill="url(#lp-ground)">
-        {NEAR.map((b) => (
-          <path key={`n${b.x}`} d={block(b)} />
-        ))}
-      </g>
+      <path fill="#0b0b0d" d={FAR_D} />
+      <path fill="url(#lp-ground)" d={NEAR_D} />
       <g strokeWidth="1">
-        {NEAR.map((b) => (
-          <path
-            key={`r${b.x}`}
-            d={roof(b)}
-            stroke={`rgba(255,255,255,${rimAlpha(b)})`}
-          />
+        {ROOFS.map(([a, d]) => (
+          <path key={a} d={d} stroke={`rgba(255,255,255,${a})`} />
         ))}
-        {NEAR.filter((b) => b.mast).map((b) => (
-          <path
-            key={`m${b.x}`}
-            d={`M${r1(b.x + b.w / 2)} ${r1(b.y)}v-18`}
-            stroke="rgba(255,255,255,.35)"
-          />
-        ))}
+        <path d={MASTS} stroke="rgba(255,255,255,.35)" />
       </g>
       <g fill="#fff">
-        {WINDOWS.map((w) => (
-          <rect
-            key={`w${w.x},${w.y}`}
-            x={w.x}
-            y={w.y}
-            width="1.6"
-            height="1.6"
-            opacity={w.o}
-          />
+        {LIT.map(([a, d]) => (
+          <path key={a} d={d} opacity={a} />
         ))}
       </g>
       <g>

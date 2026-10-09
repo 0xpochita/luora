@@ -1,8 +1,7 @@
 "use client";
 
-import gsap from "gsap";
 import { type ReactNode, useRef } from "react";
-import { MOTION_MQ, useStage } from "./motion";
+import { type Gsap, MOTION_MQ, useStage } from "./motion";
 
 /**
  * Luora's stand-in for Genie's clouds: a rising perspective grid in a graphite haze. Used twice,
@@ -12,13 +11,13 @@ export function Haze({ className = "" }: { className?: string }) {
   return (
     <div aria-hidden="true" data-lp="haze" className={`lp-haze ${className}`}>
       <div className="lp-haze-grid" />
-      <div className="lp-haze-mist" />
+      <div data-lp-bg className="lp-haze-mist" />
     </div>
   );
 }
 
 /** Genie: the hero is swallowed by big clouds rising from below as you scroll into the next section. */
-function heroExit(root: HTMLElement) {
+function heroExit(root: HTMLElement, gsap: Gsap) {
   const q = gsap.utils.selector(root);
   gsap
     .timeline({
@@ -63,7 +62,7 @@ export function HeroExit({ children }: { children: ReactNode }) {
  * Genie: the footer is closed by clouds rising again, mirroring the hero. Here the backlit city
  * skyline (CityHorizon) climbs up with the last screens of scroll, the same haze rising behind it.
  */
-function finaleRise(root: HTMLElement) {
+function finaleRise(root: HTMLElement, gsap: Gsap) {
   const q = gsap.utils.selector(root);
   gsap
     .timeline({

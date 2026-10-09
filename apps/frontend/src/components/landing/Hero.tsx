@@ -169,6 +169,7 @@ function Orbits() {
     >
       <svg
         aria-hidden="true"
+        data-smil
         viewBox="0 0 1240 380"
         preserveAspectRatio="none"
         className="absolute inset-0 size-full"

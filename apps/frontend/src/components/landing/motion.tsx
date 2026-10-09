@@ -1,18 +1,49 @@
 "use client";
 
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import Lenis from "lenis";
+import type { gsap as GsapNs } from "gsap";
+import type { ScrollTrigger as ScrollTriggerNs } from "gsap/ScrollTrigger";
+import type Lenis from "lenis";
 import {
   type ReactNode,
   type RefObject,
   useCallback,
   useEffect,
   useRef,
+  useState,
 } from "react";
 import "lenis/dist/lenis.css";
 
-if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger);
+export type Gsap = typeof GsapNs;
+type Motion = { gsap: Gsap; ScrollTrigger: typeof ScrollTriggerNs };
+let motion: Promise<Motion> | undefined;
+/**
+ * GSAP + ScrollTrigger as their own chunk, out of the page's first script: requested as soon as
+ * this module runs in the browser (in parallel with hydration), awaited by every stage. All stages
+ * wait on the same promise, so their setups still run in page order, before SmoothScroll refreshes.
+ */
+export function loadMotion() {
+  motion ??= Promise.all([import("gsap"), import("gsap/ScrollTrigger")]).then(
+    ([g, s]) => {
+      g.gsap.registerPlugin(s.ScrollTrigger);
+      return { gsap: g.gsap, ScrollTrigger: s.ScrollTrigger };
+    },
+  );
+  return motion;
+}
+if (typeof window !== "undefined") void loadMotion();
+
+/** runs `fn` with GSAP once it has loaded, unless the effect was cleaned up first; returns the cleanup */
+function withMotion(fn: (m: Motion) => (() => void) | undefined) {
+  let undo: (() => void) | undefined;
+  let dead = false;
+  void loadMotion().then((m) => {
+    if (!dead) undo = fn(m);
+  });
+  return () => {
+    dead = true;
+    undo?.();
+  };
+}
 
 /**
  * Pinned, scrubbed stages only run here. Below md, or with reduced motion, every stage is its
@@ -24,28 +55,32 @@ export const STAGE_MQ =
 export const MOTION_MQ = "(prefers-reduced-motion: no-preference)";
 
 /**
- * Runs a module-level `setup(root)` inside gsap.matchMedia scoped to `root`, so every tween and
- * ScrollTrigger it makes is reverted on unmount or when the query stops matching.
+ * Runs a module-level `setup(root, gsap)` inside gsap.matchMedia scoped to `root`, so every tween
+ * and ScrollTrigger it makes is reverted on unmount or when the query stops matching.
  */
 export function useStage(
   ref: RefObject<HTMLElement | null>,
-  setup: (root: HTMLElement) => void,
+  setup: (root: HTMLElement, gsap: Gsap) => void,
   mq = STAGE_MQ,
 ) {
   useEffect(() => {
     const root = ref.current;
     if (!root) return;
-    const mm = gsap.matchMedia(root);
-    mm.add(mq, () => setup(root));
-    return () => mm.revert();
+    return withMotion(({ gsap }) => {
+      const mm = gsap.matchMedia(root);
+      mm.add(mq, () => setup(root, gsap));
+      return () => mm.revert();
+    });
   }, [ref, setup, mq]);
 }
 
 /**
  * Genie: one background that never cuts, its colour drifting between sections. Each landing section
  * carries `data-tone`; while the next section's top climbs the last viewport height to the top
- * edge, the backdrop blends into its tone. Written to :root as --lp-bg / --lp-glow / --lp-gx / --lp-gy
- * so anything that has to melt into the page (collars, fades) can use var(--lp-bg).
+ * edge, the backdrop blends into its tone. Written as --lp-bg / --lp-glow / --lp-gx / --lp-gy on the
+ * backdrop itself, and --lp-bg on every `[data-lp-bg]` element that has to melt into the page
+ * (collars, fades). Never on :root: an inherited property changing there restyles the whole page
+ * on every scroll frame.
  */
 const TONES: Record<
   string,
@@ -66,7 +101,7 @@ const TONES: Record<
 };
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-/** the page's Lenis instance while SmoothScroll is mounted (none under reduced motion) */
+/** the page's Lenis instance while SmoothScroll is mounted (none under reduced motion or on touch) */
 let lenisNow: Lenis | undefined;
 /** scroll the page to `y` through Lenis when it runs, so a jump stays smooth and in sync */
 export function scrollToY(y: number) {
@@ -74,10 +109,13 @@ export function scrollToY(y: number) {
   else scrollTo({ top: y });
 }
 
-function useBackdrop() {
+function useBackdrop(ref: RefObject<HTMLDivElement | null>) {
   useEffect(() => {
-    const root = document.documentElement;
+    const backdrop = ref.current;
+    if (!backdrop) return;
     let marks: { top: number; tone: string }[] = [];
+    let melts: HTMLElement[] = [];
+    let last = "";
     const paint = (y: number) => {
       const vh = innerHeight;
       let t = TONES[marks[0]?.tone] ?? TONES.hero;
@@ -93,55 +131,85 @@ function useBackdrop() {
           y: lerp(cur.y, t.y, k),
         };
       }
-      root.style.setProperty(
-        "--lp-bg",
-        `rgb(${cur.bg.map(Math.round).join(" ")})`,
-      );
-      root.style.setProperty("--lp-glow", cur.glow.toFixed(3));
-      root.style.setProperty("--lp-gx", `${cur.x.toFixed(1)}%`);
-      root.style.setProperty("--lp-gy", `${cur.y.toFixed(1)}%`);
+      const bg = `rgb(${cur.bg.map(Math.round).join(" ")})`;
+      const key = `${bg}|${cur.glow.toFixed(3)}|${cur.x.toFixed(1)}|${cur.y.toFixed(1)}`;
+      // most of the page sits inside one tone: nothing to write
+      if (key === last) return;
+      last = key;
+      backdrop.style.setProperty("--lp-bg", bg);
+      backdrop.style.setProperty("--lp-glow", cur.glow.toFixed(3));
+      backdrop.style.setProperty("--lp-gx", `${cur.x.toFixed(1)}%`);
+      backdrop.style.setProperty("--lp-gy", `${cur.y.toFixed(1)}%`);
+      for (const el of melts) el.style.setProperty("--lp-bg", bg);
     };
-    const st = ScrollTrigger.create({
-      start: 0,
-      end: "max",
-      onRefresh: (self) => {
-        marks = [...document.querySelectorAll<HTMLElement>("[data-tone]")].map(
-          (el) => ({
+    return withMotion(({ ScrollTrigger }) => {
+      const st = ScrollTrigger.create({
+        start: 0,
+        end: "max",
+        onRefresh: (self) => {
+          marks = [
+            ...document.querySelectorAll<HTMLElement>("[data-tone]"),
+          ].map((el) => ({
             top: el.getBoundingClientRect().top + scrollY,
             tone: el.dataset.tone ?? "",
-          }),
-        );
-        paint(self.scroll());
-      },
-      onUpdate: (self) => paint(self.scroll()),
+          }));
+          melts = [...document.querySelectorAll<HTMLElement>("[data-lp-bg]")];
+          last = "";
+          paint(self.scroll());
+        },
+        onUpdate: (self) => paint(self.scroll()),
+      });
+      return () => {
+        st.kill();
+        for (const el of melts) el.style.removeProperty("--lp-bg");
+      };
     });
-    return () => {
-      st.kill();
-      for (const p of ["--lp-bg", "--lp-glow", "--lp-gx", "--lp-gy"])
-        root.style.removeProperty(p);
-    };
-  }, []);
+  }, [ref]);
 }
 
 /**
  * Genie: Lenis smooth scroll driven by the GSAP ticker so ScrollTrigger reads the same frame.
- * Landing only (mounted by app/page.tsx); off under reduced motion. Also owns the fixed backdrop
- * and refreshes ScrollTrigger once every section below has created its pins.
+ * Landing only (mounted by app/page.tsx); off under reduced motion and on touch screens. Also owns
+ * the fixed backdrop and refreshes ScrollTrigger once every section below has created its pins.
  */
 export function SmoothScroll({ children }: { children: ReactNode }) {
-  useBackdrop();
+  const backdrop = useRef<HTMLDivElement>(null);
+  useBackdrop(backdrop);
   useEffect(() => {
-    let lenis: Lenis | undefined;
-    const raf = (t: number) => lenis?.raf(t * 1000);
-    if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      lenis = new Lenis({ autoRaf: false, anchors: true, lerp: 0.1 });
-      lenisNow = lenis;
-      lenis.on("scroll", ScrollTrigger.update);
-      gsap.ticker.add(raf);
-      gsap.ticker.lagSmoothing(0);
-    }
-    ScrollTrigger.refresh();
-    document.fonts?.ready.then(() => ScrollTrigger.refresh());
+    let refresh = () => {};
+    // touch screens keep their native (compositor) scroll: Lenis would only add main-thread work
+    // there, so they never even download it
+    const smooth = !matchMedia(
+      "(prefers-reduced-motion: reduce), (pointer: coarse)",
+    ).matches;
+    let dead = false;
+    let undo = () => {};
+    void Promise.all([loadMotion(), smooth ? import("lenis") : null]).then(
+      ([{ gsap, ScrollTrigger }, mod]) => {
+        if (dead) return;
+        refresh = () => ScrollTrigger.refresh();
+        if (mod) {
+          const lenis = new mod.default({
+            autoRaf: false,
+            anchors: true,
+            lerp: 0.1,
+          });
+          const raf = (t: number) => lenis.raf(t * 1000);
+          lenisNow = lenis;
+          lenis.on("scroll", ScrollTrigger.update);
+          gsap.ticker.add(raf);
+          gsap.ticker.lagSmoothing(0);
+          undo = () => {
+            gsap.ticker.remove(raf);
+            gsap.ticker.lagSmoothing(500, 33);
+            lenis.destroy();
+            lenisNow = undefined;
+          };
+        }
+        refresh();
+        document.fonts?.ready.then(() => refresh());
+      },
+    );
     // widgets that size themselves after mount (Lab graph, fitted mini UIs) change the page height
     // after the first refresh; re-measure once it settles so no trigger fires late
     let h = document.body.scrollHeight;
@@ -150,26 +218,69 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
       if (document.body.scrollHeight === h) return;
       clearTimeout(t);
       t = window.setTimeout(() => {
-        ScrollTrigger.refresh();
+        refresh();
         h = document.body.scrollHeight;
       }, 250);
     });
-    ro.observe(document.body);
+    // <body> is h-full (always one viewport tall): watch the page's own wrapper, which grows
+    ro.observe(backdrop.current?.parentElement ?? document.body);
+    // ambient loops (beam drift, starburst, carets, SMIL packets) stop while their section is
+    // off screen, so scrolling elsewhere never repaints them (landing.css `[data-off]`)
+    const io = new IntersectionObserver((es) => {
+      for (const e of es) {
+        const el = e.target as HTMLElement;
+        el.toggleAttribute("data-off", !e.isIntersecting);
+        for (const svg of el.querySelectorAll<SVGSVGElement>("svg[data-smil]"))
+          if (e.isIntersecting) svg.unpauseAnimations();
+          else svg.pauseAnimations();
+      }
+    });
+    for (const el of document.querySelectorAll("[data-tone]")) io.observe(el);
     return () => {
+      dead = true;
+      undo();
+      io.disconnect();
       ro.disconnect();
       clearTimeout(t);
-      gsap.ticker.remove(raf);
-      gsap.ticker.lagSmoothing(500, 33);
-      lenis?.destroy();
-      lenisNow = undefined;
     };
   }, []);
   return (
     <>
-      <div aria-hidden="true" className="lp-backdrop" />
+      <div ref={backdrop} aria-hidden="true" className="lp-backdrop" />
       {children}
     </>
   );
+}
+
+/**
+ * Mounts heavy live UI only once its spot comes within `margin` of the screen, so the server HTML
+ * and the first hydration skip it. A spot under display:none (the other of two responsive layouts)
+ * never intersects, so that copy is never built. Until then `className` sizes the empty spot.
+ */
+export function Lazy({
+  children,
+  className,
+  margin = "100% 0px",
+}: {
+  children: ReactNode;
+  className?: string;
+  margin?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (on || !el) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) setOn(true);
+      },
+      { rootMargin: margin },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [on, margin]);
+  return on ? children : <div ref={ref} className={className} />;
 }
 
 /**
@@ -192,42 +303,44 @@ export function Reveal({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const mm = gsap.matchMedia(el);
-    mm.add(MOTION_MQ, () => {
-      gsap.fromTo(
-        el,
-        tilt
-          ? {
-              autoAlpha: 0,
-              y: 96,
-              scale: 0.94,
-              rotateX: 14,
-              transformPerspective: 1200,
-              transformOrigin: "50% 100%",
-            }
-          : { autoAlpha: 0, y: 64 },
-        {
-          autoAlpha: 1,
-          y: 0,
-          scale: 1,
-          rotateX: 0,
-          ease: tilt ? "power2.out" : "none",
-          scrollTrigger: {
-            trigger: el,
-            start: `top ${96 - delay * 80}%`,
-            end: `top ${62 - delay * 80}%`,
-            scrub: 0.6,
-            onEnter: () => {
-              el.dataset.in = "";
+    return withMotion(({ gsap }) => {
+      const mm = gsap.matchMedia(el);
+      mm.add(MOTION_MQ, () => {
+        gsap.fromTo(
+          el,
+          tilt
+            ? {
+                autoAlpha: 0,
+                y: 96,
+                scale: 0.94,
+                rotateX: 14,
+                transformPerspective: 1200,
+                transformOrigin: "50% 100%",
+              }
+            : { autoAlpha: 0, y: 64 },
+          {
+            autoAlpha: 1,
+            y: 0,
+            scale: 1,
+            rotateX: 0,
+            ease: tilt ? "power2.out" : "none",
+            scrollTrigger: {
+              trigger: el,
+              start: `top ${96 - delay * 80}%`,
+              end: `top ${62 - delay * 80}%`,
+              scrub: 0.6,
+              onEnter: () => {
+                el.dataset.in = "";
+              },
             },
           },
-        },
-      );
+        );
+      });
+      mm.add("(prefers-reduced-motion: reduce)", () => {
+        el.dataset.in = "";
+      });
+      return () => mm.revert();
     });
-    mm.add("(prefers-reduced-motion: reduce)", () => {
-      el.dataset.in = "";
-    });
-    return () => mm.revert();
   }, [delay, tilt]);
   return (
     <div ref={ref} className={`lp-reveal ${className}`}>
@@ -245,22 +358,24 @@ export function Exit({ children }: { children: ReactNode }) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const mm = gsap.matchMedia(el);
-    mm.add(MOTION_MQ, () => {
-      gsap.to(el, {
-        autoAlpha: 0.12,
-        scale: 0.96,
-        y: -60,
-        ease: "power1.in",
-        scrollTrigger: {
-          trigger: el,
-          start: "bottom 75%",
-          end: "bottom 15%",
-          scrub: 0.6,
-        },
+    return withMotion(({ gsap }) => {
+      const mm = gsap.matchMedia(el);
+      mm.add(MOTION_MQ, () => {
+        gsap.to(el, {
+          autoAlpha: 0.12,
+          scale: 0.96,
+          y: -60,
+          ease: "power1.in",
+          scrollTrigger: {
+            trigger: el,
+            start: "bottom 75%",
+            end: "bottom 15%",
+            scrub: 0.6,
+          },
+        });
       });
+      return () => mm.revert();
     });
-    return () => mm.revert();
   }, []);
   return (
     <div ref={ref} className="origin-bottom">
@@ -284,7 +399,7 @@ export function CompareStage({
   const ref = useRef<HTMLDivElement>(null);
   useStage(
     ref,
-    useCallback((root: HTMLElement) => {
+    useCallback((root: HTMLElement, gsap: Gsap) => {
       const q = gsap.utils.selector(root);
       gsap.fromTo(
         q("[data-lp=card]"),

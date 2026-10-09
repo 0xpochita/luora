@@ -1,8 +1,7 @@
 "use client";
 
-import gsap from "gsap";
 import { useRef } from "react";
-import { MOTION_MQ, useStage } from "./motion";
+import { type Gsap, MOTION_MQ, useStage } from "./motion";
 
 export type DriftTest = { name: string; suite: string; ok: boolean };
 
@@ -10,7 +9,7 @@ export type DriftTest = { name: string; suite: string; ok: boolean };
  * Genie: two rows of testimonial cards drifting sideways in opposite directions with the scroll.
  * No quotes here: the rows are the sample run's real forge tests (suite, name, pass / fail dot).
  */
-function testDrift(root: HTMLElement) {
+function testDrift(root: HTMLElement, gsap: Gsap) {
   gsap.utils.toArray<HTMLElement>("[data-lp=drift]", root).forEach((row, i) => {
     gsap.fromTo(
       row,

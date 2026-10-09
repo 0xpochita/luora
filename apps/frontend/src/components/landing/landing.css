@@ -170,6 +170,11 @@
   }
 }
 
+/* a section off screen (motion.tsx sets data-off) holds its loops; the tab progress keeps time */
+[data-off] :not(.lp-progress) {
+  animation-play-state: paused;
+}
+
 /* Ask demo: thin scrollbar for long answers */
 .lp-scroll {
   scrollbar-width: thin;

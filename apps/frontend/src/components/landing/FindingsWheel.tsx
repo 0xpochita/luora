@@ -1,10 +1,9 @@
 "use client";
 
-import gsap from "gsap";
 import { useEffect, useRef, useState } from "react";
 import { Chip } from "@/components/ui";
 import type { Risk } from "@/features/atlas/types";
-import { useStage } from "./motion";
+import { type Gsap, useStage } from "./motion";
 
 export type WheelFinding = {
   id: string;
@@ -24,7 +23,7 @@ const STEP = 17;
  * information' under it. Here the cards are the sample vault's real findings (severity chip, the
  * analyzers that reported it, detector and lines) and hovering one reads it out under the arc.
  */
-function findingsWheel(root: HTMLElement) {
+function findingsWheel(root: HTMLElement, gsap: Gsap) {
   const q = gsap.utils.selector(root);
   const wheel = q("[data-lp=wheel]")[0];
   const n = wheel.children.length;

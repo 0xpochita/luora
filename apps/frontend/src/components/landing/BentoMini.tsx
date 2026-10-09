@@ -10,6 +10,7 @@ import { flowLayout } from "@/features/atlas/utils/flow-layout";
 import { createAtlasModel } from "@/features/atlas/utils/model";
 import { unitCode } from "@/features/atlas/utils/units";
 import { tokenize } from "@/features/trace/utils/highlight";
+import { Lazy } from "./motion";
 
 /**
  * Bento mini-UIs drawn live from the sample run, where a capture of the app had to be cropped
@@ -263,13 +264,16 @@ function MiniSearch({ model }: { model: Model }) {
   );
 }
 
-export function BentoMini({
-  atlas,
-  kind,
-}: {
-  atlas: AtlasData;
-  kind: MiniKind;
-}) {
+/** built only once its card comes near the screen (Lazy): the card box keeps its size meanwhile */
+export function BentoMini(props: { atlas: AtlasData; kind: MiniKind }) {
+  return (
+    <Lazy className="size-full">
+      <Mini {...props} />
+    </Lazy>
+  );
+}
+
+function Mini({ atlas, kind }: { atlas: AtlasData; kind: MiniKind }) {
   const model = useMemo(() => createAtlasModel(atlas), [atlas]);
   const ui =
     kind === "source" ? (

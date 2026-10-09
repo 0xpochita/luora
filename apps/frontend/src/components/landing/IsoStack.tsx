@@ -48,60 +48,75 @@ export type StackData = {
   fns: PillarData["fns"];
 };
 
-/** 01 Run: one row per forge test, a dot then one cell per decoded frame (red = reverted). */
-function RunTexture({ ran }: { ran: StackData["ran"] }) {
-  return ran.slice(0, 7).map((row, i) => {
-    const y = 32 + i * 19;
+/**
+ * Many small marks in one stroked path per colour / opacity / pen, instead of one element each:
+ * `M x y h0` with a round cap is a dot as wide as the pen, a round-capped line a pill, and a 2×2
+ * square stroked with a pen of 2 (round joins) a 4×4 cell with corners rounded by 1.
+ */
+type Mark = [color: string, opacity: number, pen: number, d: string];
+function Ink({ marks }: { marks: Mark[] }) {
+  const by = new Map<string, string>();
+  for (const [c, o, w, d] of marks) {
+    const k = `${c}|${o}|${w}`;
+    by.set(k, (by.get(k) ?? "") + d);
+  }
+  return [...by].map(([k, d]) => {
+    const [c, o, w] = k.split("|");
     return (
-      // biome-ignore lint/suspicious/noArrayIndexKey: one row per test, order is fixed
-      <g key={i}>
-        <circle
-          cx="32"
-          cy={y + 2}
-          r="3"
-          fill={row.includes("revert") ? "var(--red)" : "#fff"}
-          fillOpacity={row.includes("revert") ? 1 : 0.85}
-        />
-        {row.slice(0, 20).map((c, j) => (
-          <rect
-            // biome-ignore lint/suspicious/noArrayIndexKey: one cell per frame
-            key={j}
-            x={44 + j * 6}
-            y={y}
-            width="4"
-            height="4"
-            rx="1"
-            fill={c === "revert" ? "var(--red)" : "#fff"}
-            fillOpacity={
-              c === "revert" ? 1 : c === "src" ? 0.6 : c === "ext" ? 0.32 : 0.16
-            }
-          />
-        ))}
-      </g>
+      <path
+        key={k}
+        d={d}
+        fill="none"
+        stroke={c}
+        strokeOpacity={o}
+        strokeWidth={w}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     );
   });
+}
+const RED = "var(--red)";
+/** a dot at (x, y), as wide as its pen */
+const dot = (x: number, y: number) => `M${x} ${y}h0`;
+/** a pill of height h from (x, y), w wide */
+const pill = (x: number, y: number, w: number, h: number) =>
+  `M${x + h / 2} ${y + h / 2}h${Math.max(0, w - h)}`;
+
+/** 01 Run: one row per forge test, a dot then one cell per decoded frame (red = reverted). */
+function RunTexture({ ran }: { ran: StackData["ran"] }) {
+  const marks: Mark[] = [];
+  ran.slice(0, 7).forEach((row, i) => {
+    const y = 32 + i * 19;
+    const rev = row.includes("revert");
+    marks.push([rev ? RED : "#fff", rev ? 1 : 0.85, 6, dot(32, y + 2)]);
+    row.slice(0, 20).forEach((c, j) => {
+      marks.push([
+        c === "revert" ? RED : "#fff",
+        c === "revert" ? 1 : c === "src" ? 0.6 : c === "ext" ? 0.32 : 0.16,
+        2,
+        `M${45 + j * 6} ${y + 1}h2v2h-2z`,
+      ]);
+    });
+  });
+  return <Ink marks={marks} />;
 }
 
 /** 02 Trace: decoded frame lines, indented by call depth, length from the call's name. */
 function TraceTexture({ frames }: { frames: Frame[] }) {
   const top = Math.min(...frames.map((f) => f.d));
-  return frames.slice(0, 11).map((f, i) => {
+  const marks: Mark[] = [];
+  frames.slice(0, 11).forEach((f, i) => {
     const x = 30 + (f.d - top) * 14;
-    return (
-      <g key={`${i}${f.fn}`}>
-        <circle cx={x} cy={33 + i * 12} r="1.6" fill="#fff" fillOpacity="0.5" />
-        <rect
-          x={x + 6}
-          y={32 + i * 12}
-          width={Math.min(160 - x - 6, 18 + f.fn.length * 5)}
-          height="3"
-          rx="1.5"
-          fill={f.ok ? "#fff" : "var(--red)"}
-          fillOpacity={f.ok ? (f.kind === "EVENT" ? 0.25 : 0.55) : 1}
-        />
-      </g>
-    );
+    marks.push(["#fff", 0.5, 3.2, dot(x, 33 + i * 12)]);
+    marks.push([
+      f.ok ? "#fff" : RED,
+      f.ok ? (f.kind === "EVENT" ? 0.25 : 0.55) : 1,
+      3,
+      pill(x + 6, 32 + i * 12, Math.min(160 - x - 6, 18 + f.fn.length * 5), 3),
+    ]);
   });
+  return <Ink marks={marks} />;
 }
 
 /** 03 Lab: the Lab widget's three cards scaled onto the plate, with its first wire. */
@@ -175,47 +190,18 @@ function FindingsTexture({
   findings,
   fns,
 }: Pick<StackData, "findings" | "fns">) {
-  return (
-    <>
-      {findings.slice(0, 12).map((f, i) => (
-        <circle
-          // biome-ignore lint/suspicious/noArrayIndexKey: findings sorted by severity
-          key={i}
-          cx={32 + i * 11}
-          cy="34"
-          r="3.2"
-          fill={f === "high" || f === "med" ? "var(--red)" : "#fff"}
-          fillOpacity={f === "high" || f === "med" ? 1 : 0.35}
-        />
-      ))}
-      {fns.slice(0, 8).map((f, i) => {
-        const y = 50 + i * 14;
-        const k = f.lines[1] ? f.lines[0] / f.lines[1] : 0;
-        return (
-          <g key={f.name}>
-            <rect
-              x="30"
-              y={y}
-              width="128"
-              height="4"
-              rx="2"
-              fill="#fff"
-              fillOpacity="0.1"
-            />
-            <rect
-              x="30"
-              y={y}
-              width={round(128 * k)}
-              height="4"
-              rx="2"
-              fill="#fff"
-              fillOpacity="0.6"
-            />
-          </g>
-        );
-      })}
-    </>
-  );
+  const marks: Mark[] = [];
+  findings.slice(0, 12).forEach((f, i) => {
+    const bad = f === "high" || f === "med";
+    marks.push([bad ? RED : "#fff", bad ? 1 : 0.35, 6.4, dot(32 + i * 11, 34)]);
+  });
+  fns.slice(0, 8).forEach((f, i) => {
+    const y = 50 + i * 14;
+    const w = round(128 * (f.lines[1] ? f.lines[0] / f.lines[1] : 0));
+    marks.push(["#fff", 0.1, 4, pill(30, y, 128, 4)]);
+    if (w) marks.push(["#fff", 0.6, 4, pill(30, y, w, 4)]);
+  });
+  return <Ink marks={marks} />;
 }
 
 function Plate({
@@ -261,11 +247,11 @@ function Plate({
           stroke="#fff"
           strokeOpacity={edge * 0.5}
         />
-        <g stroke="#fff" strokeOpacity={lit ? 0.3 : 0.12}>
-          {vents.map(([x, y]) => (
-            <path key={`${x}${y}`} d={`M${x} ${y + 5}v${T - 9}`} />
-          ))}
-        </g>
+        <path
+          stroke="#fff"
+          strokeOpacity={lit ? 0.3 : 0.12}
+          d={vents.map(([x, y]) => `M${x} ${y + 5}v${T - 9}`).join("")}
+        />
         {/* lit top edge glow (R22) */}
         {on && (
           <rect
@@ -302,21 +288,14 @@ function Plate({
             vectorEffect="non-scaling-stroke"
           />
           {/* R23: a dot on each corner of the top */}
-          {[
-            [9, 9],
-            [S - 9, 9],
-            [9, S - 9],
-            [S - 9, S - 9],
-          ].map(([u, v]) => (
-            <circle
-              key={`${u}${v}`}
-              cx={u}
-              cy={v}
-              r="2.4"
-              fill="#fff"
-              fillOpacity={lit ? 0.9 : 0.3}
-            />
-          ))}
+          <Ink
+            marks={[
+              [9, 9],
+              [S - 9, 9],
+              [9, S - 9],
+              [S - 9, S - 9],
+            ].map(([u, v]) => ["#fff", lit ? 0.9 : 0.3, 4.8, dot(u, v)])}
+          />
           <g opacity={on ? 1 : idle ? 0.75 : 0.28}>{children}</g>
         </g>
         {/* R22: dashed leader out of the lit plate, a small square terminal at the plate end */}

@@ -1,10 +1,9 @@
 "use client";
 
-import gsap from "gsap";
 import { useEffect, useRef, useState } from "react";
 import { nodeHeight } from "@/features/atlas/utils/lab-graph";
 import { LabGraph } from "./FeatureWidgets";
-import { useStage } from "./motion";
+import { type Gsap, useStage } from "./motion";
 import type { LabDemo } from "./stats";
 
 /**
@@ -26,7 +25,7 @@ const FLOAT = [
  * sentence rises out of the way, Run is pressed, the cards settle into the scenario graph, its
  * wires draw in and the run result badges appear.
  */
-function runSentence(root: HTMLElement) {
+function runSentence(root: HTMLElement, gsap: Gsap) {
   const q = gsap.utils.selector(root);
   const graph = q("[data-lp=graph]")[0] as HTMLElement;
   const w = Number(graph.dataset.w);

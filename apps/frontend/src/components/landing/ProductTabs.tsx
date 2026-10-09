@@ -1,10 +1,7 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { FindingsTab } from "@/components/(main)/atlas/FindingsTab";
-import { FlowView } from "@/components/(main)/atlas/flow/FlowView";
-import { MapView } from "@/components/(main)/atlas/map/MapView";
-import { TraceRow } from "@/components/(main)/trace/TraceRow";
 import { useStepSim, useTriage } from "@/features/atlas";
 import type { AtlasData } from "@/features/atlas/types";
 import { contractGraph } from "@/features/atlas/utils/lab-graph";
@@ -14,6 +11,20 @@ import { LabGraph } from "./FeatureWidgets";
 import type { LabDemo } from "./stats";
 import { Window } from "./Window";
 import "@/components/(main)/atlas/atlas.css";
+
+// only the Lab (first view) is in the page's own bundle; the others load as the tabs come up to them
+const FindingsTab = dynamic(() =>
+  import("@/components/(main)/atlas/FindingsTab").then((m) => m.FindingsTab),
+);
+const FlowView = dynamic(() =>
+  import("@/components/(main)/atlas/flow/FlowView").then((m) => m.FlowView),
+);
+const MapView = dynamic(() =>
+  import("@/components/(main)/atlas/map/MapView").then((m) => m.MapView),
+);
+const TraceRow = dynamic(() =>
+  import("@/components/(main)/trace/TraceRow").then((m) => m.TraceRow),
+);
 
 const VIEWS = [
   { id: "lab", route: "/atlas · Lab", label: "Lab" },
@@ -38,6 +49,8 @@ const WORLD = { w: 1440, h: 900 };
  * Flow = FlowView, Map = MapView, Findings = FindingsTab. The close-up is a picture of the app, so
  * it takes no pointer input (pan / zoom canvases would otherwise eat the page scroll).
  * Crossfade without ghosting: the outgoing view is gone (200ms) before the incoming one starts.
+ * Only views already shown (and the one after the active view, so it is ready) are mounted, and
+ * none before the section comes near the screen: the server HTML carries the frame alone.
  */
 export function ProductTabs({
   atlas,
@@ -59,13 +72,35 @@ export function ProductTabs({
   const sim = useStepSim(model, null);
   const triage = useTriage(model.contract);
   const view = VIEWS[at];
+  const [seen, setSeen] = useState<ReadonlySet<number>>(() => new Set());
+  // the section sits below the fold (and its window starts clipped to a square): views mount once
+  // it comes near the screen, then the one after the active view stays mounted so it fades in ready
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    const el = tabs.current;
+    if (near || !el) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) setNear(true);
+      },
+      { rootMargin: "100% 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [near]);
+  useEffect(() => {
+    if (!near) return;
+    const next = (at + 1) % VIEWS.length;
+    setSeen((s) => (s.has(at) && s.has(next) ? s : new Set([...s, at, next])));
+  }, [at, near]);
 
   useEffect(() => {
     setAuto(!matchMedia("(prefers-reduced-motion: reduce)").matches);
   }, []);
   // biome-ignore lint/correctness/useExhaustiveDependencies: `at` / `tick` restart the dwell after every switch
   useEffect(() => {
-    if (!auto || paused) return;
+    // no auto-advance before the section is near: arrive on the Lab, never on an unbuilt view
+    if (!auto || paused || !near) return;
     const t = setTimeout(() => {
       // while ScatterGrow still hides the tabs (the window is growing in) stay on the Lab
       if (
@@ -77,7 +112,7 @@ export function ProductTabs({
       } else setAt((i) => (i + 1) % VIEWS.length);
     }, DWELL);
     return () => clearTimeout(t);
-  }, [at, tick, auto, paused]);
+  }, [at, tick, auto, paused, near]);
 
   const maxGas = Math.max(1, ...frames.map((f) => f.gas ?? 0));
   const none = () => {};
@@ -226,7 +261,7 @@ export function ProductTabs({
                       : "opacity-0 duration-200"
                   }`}
                 >
-                  {content[s.id]}
+                  {seen.has(i) && content[s.id]}
                 </div>
               ))}
             </div>

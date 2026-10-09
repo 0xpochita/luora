@@ -1,6 +1,5 @@
 "use client";
 
-import gsap from "gsap";
 import type { ScrollTrigger } from "gsap/ScrollTrigger";
 import { type ReactNode, useCallback, useRef, useState } from "react";
 import { TestList } from "@/components/(main)/trace/TestList";
@@ -14,7 +13,7 @@ import {
   TraceWidget,
 } from "./FeatureWidgets";
 import { IsoStack, STACK_H, STACK_W, type StackData } from "./IsoStack";
-import { scrollToY, useStage } from "./motion";
+import { type Gsap, Lazy, scrollToY, useStage } from "./motion";
 import type { LabDemo } from "./stats";
 import { Window } from "./Window";
 
@@ -97,6 +96,8 @@ function Icon({ k, className = "size-4" }: { k: IconKey; className?: string }) {
  * R22's boxed hairline frame and grid are gone: three columns on open space, one thin progress
  * track per step instead of cell borders.
  * Phones, tablets and reduced motion: the static list (stack once, then each step + widget).
+ * Both layouts are in the HTML, but their widgets (and the static stack) mount only near the
+ * screen (Lazy), so the layout that is display:none never builds them.
  */
 export function HowItWorks({
   stack,
@@ -117,7 +118,7 @@ export function HowItWorks({
   const trigger = useRef<ScrollTrigger | null>(null);
   const [at, setAt] = useState(0);
 
-  const setup = useCallback((root: HTMLElement) => {
+  const setup = useCallback((root: HTMLElement, gsap: Gsap) => {
     const q = gsap.utils.selector(root);
     const plates = q("[data-lp=plate]");
     const notes = q("[data-lp=note]");
@@ -321,7 +322,7 @@ export function HowItWorks({
                 inert={i !== at}
                 className="lp-how-widget absolute inset-0 flex items-center justify-center"
               >
-                {w}
+                <Lazy className="size-full">{w}</Lazy>
               </div>
             ))}
           </div>
@@ -332,7 +333,9 @@ export function HowItWorks({
       <div className="lp-how-static mx-auto max-w-[640px] px-4 pb-32">
         {head}
         <div className="mx-auto mt-10 w-full max-w-[340px]">
-          <IsoStack data={stack} active={-1} />
+          <Lazy className="aspect-[500/830] w-full">
+            <IsoStack data={stack} active={-1} />
+          </Lazy>
         </div>
         <ol className="mt-10 flex flex-col gap-14">
           {STEPS.map((s, i) => (
@@ -344,7 +347,9 @@ export function HowItWorks({
               <p className="mt-3 text-[15px] text-body leading-relaxed">
                 {s.copy[0]} <span className="text-muted">{s.copy[1]}</span>
               </p>
-              <div className="mt-6 flex justify-center">{widgets[i]}</div>
+              <div className="mt-6 flex justify-center">
+                <Lazy className="h-[320px] w-full">{widgets[i]}</Lazy>
+              </div>
             </li>
           ))}
         </ol>
