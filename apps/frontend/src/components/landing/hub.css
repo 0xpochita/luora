@@ -2,11 +2,12 @@
    W1 id.pinterest.com/pin/56858014040806247/   (Integrations Wheel) — concentric rings around one
       core, the tools sitting on the orbit → .lp-hub-ring, the marks on the arms
    W2 id.pinterest.com/pin/1076360379685275188/ (MagicWand 'Everything for your website') — rings
-      with tick marks and one lit arc, short labels on the leaders → the ticks ring, the lit arc,
-      .lp-hub-io
+      with tick marks and one lit arc, short labels on the leaders → one ring kept (the ticks
+      ring, the lit arc and the leader labels were dropped in the nineteenth pass)
    W3 id.pinterest.com/pin/1150880879804919385/ (zsearch 'Turn years of work into instant
       context') — round marks wired into ONE rounded square with lit corner pins, a light streak
-      through it → .lp-hub-core (the same 56px square that later grows into the Lab), the wires
+      through it → .lp-hub-core (the wordmark's tile, 56px tall, that later hands over to the square
+      growing into the Lab), the wires
    B1 id.pinterest.com/pin/23432860626141831/   — graphite fine grid under a soft centre light
    B2 id.pinterest.com/pin/70437490488374/      — black dot field, a few dots lit → .lp-hub-bg
    Geometry: the origin (.lp-hub-o) is the hub's centre; in the pinned stage that is the stage
@@ -16,7 +17,8 @@
   --hx: 124px; /* side arms (Foundry, Ethereum) */
   --hy: 150px; /* bottom arm (Solidity) */
   --m: 36px; /* half a mark */
-  --c: 28px; /* half the core */
+  --c: 28px; /* half the core's height, and where the wires start */
+  --cw: 62px; /* half the core's width: the wordmark sits in it */
   --oy: 210px;
   --r1: 84px;
   --r2: 190px;
@@ -101,26 +103,6 @@
   border-radius: 9999px;
   border: 1px solid rgb(255 255 255 / 0.07);
 }
-.lp-hub-ring:nth-child(2) {
-  --r: var(--r2);
-  border: 0;
-  background: repeating-conic-gradient(
-    rgb(255 255 255 / 0.2) 0 0.35deg,
-    transparent 0.35deg 5deg
-  );
-  mask-image: radial-gradient(
-    closest-side,
-    transparent calc(100% - 7px),
-    #000 calc(100% - 6px) 100%,
-    transparent 100%
-  );
-}
-.lp-hub-ring:nth-child(3) {
-  --r: var(--r3);
-  border-color: rgb(255 255 255 / 0.05);
-  border-top-color: rgb(255 255 255 / 0.28);
-}
-
 /* W3: the light streak through the core, and the wires from each mark into it */
 .lp-hub-axis {
   left: calc(var(--hx) * -1 - 160px);
@@ -201,11 +183,11 @@
 
 /* W3 core: the 56px square the Lab later grows from, lit corner pins */
 .lp-hub-core {
-  left: calc(var(--c) * -1);
+  left: calc(var(--cw) * -1);
   top: calc(var(--c) * -1);
   display: grid;
   place-items: center;
-  width: calc(var(--c) * 2);
+  width: calc(var(--cw) * 2);
   height: calc(var(--c) * 2);
   border-radius: 14px;
   border: 1px solid rgb(255 255 255 / 0.16);
@@ -224,13 +206,6 @@
     var(--pin) 100% 0 / 6px 6px no-repeat,
     var(--pin) 0 100% / 6px 6px no-repeat,
     var(--pin) 100% 100% / 6px 6px no-repeat;
-}
-.lp-hub-core > p {
-  position: absolute;
-  bottom: calc(100% + 14px);
-  left: 50%;
-  translate: -50% 0;
-  white-space: nowrap;
 }
 
 /* the marks on the arms; the labels (what each hands Luora) on the wire, under the name on phones */
@@ -256,32 +231,4 @@
 .lp-hub .lp-mark {
   width: calc(var(--m) * 2);
   height: calc(var(--m) * 2);
-}
-.lp-hub-io {
-  display: block;
-  width: 120px;
-  text-align: center;
-}
-@media (min-width: 768px) {
-  .lp-hub-io {
-    position: absolute;
-    top: calc(var(--m) - 9px);
-    translate: 0 -100%;
-    width: calc(var(--hx) - var(--m) - var(--c) - 40px);
-    text-align: left;
-  }
-  li:nth-child(1) > a > .lp-hub-io {
-    left: calc(100% + 22px);
-  }
-  li:nth-child(3) > a > .lp-hub-io {
-    right: calc(100% + 22px);
-    text-align: right;
-  }
-  li:nth-child(2) > a > .lp-hub-io {
-    top: auto;
-    bottom: calc(100% + 18px);
-    left: calc(50% + 12px);
-    translate: none;
-    width: max-content;
-  }
 }

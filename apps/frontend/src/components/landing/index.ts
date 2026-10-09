@@ -285,6 +285,9 @@
  *       sits in, its name and gas rotated above a red dot. Bars grow out of the floor left to
  *       right. (Coverage hits per line were tried first: a log scale of 1…126k fuzz hits gave
  *       three plateaus, a barcode, not a ramp.) VEX's sky, stars, glint, notches, chip gone.
+ *  Works-with hub (ScatterGrow / hub.css) thinned the same day ("terlalu banyak komponen dan
+ *  teks"): the eyebrow, the three wire labels, the core's file name, the ticks ring and the
+ *  lit-arc ring are gone; one ring, three named marks, the wires and the grid remain.
  *
  * No screenshots: every product view on the page is the app's own component rendered live on the
  * sample run (built near the screen only, Lazy). Colour stays per DESIGN.md: grey/white, red only

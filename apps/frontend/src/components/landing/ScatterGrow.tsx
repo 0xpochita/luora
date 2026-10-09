@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode, useEffect, useRef } from "react";
-import { LogoMark } from "@/components/ui";
+import { LogoText } from "@/components/ui";
 import { type Gsap, useStage } from "./motion";
 import "./hub.css";
 
@@ -11,17 +11,13 @@ const SCATTER = [
   { x: 150, y: 50, r: 10 },
   { x: 190, y: -60, r: 14 },
 ];
-/** what each tool hands Luora, in the page's own words (HowItWorks / Closing copy) */
-const HANDS: Record<string, string> = {
-  Foundry: "forge test -vvvv · forge coverage",
-  Solidity: "your own ABIs",
-  Ethereum: "calls & events · one local run",
-};
 const SQ = 56;
 
 /**
  * Tenth pass: before it scatters, the row is a hub (hub.css, refs W1–W3, B1–B2): the three marks
- * on arms wired into the Luora core, what each hands over on its wire, rings and a lit grid behind.
+ * on arms wired into the Luora core, one ring and a lit grid behind. (Nineteenth pass, "terlalu
+ * banyak komponen dan teks": the eyebrow, the wire labels, the core's file name, the ticks ring
+ * and the lit-arc ring were dropped; the marks' names stay.)
  * Genie: a pinned stage (~2.6 viewports). The row of round icons (three here: Foundry, Solidity,
  * Ethereum) scatters to random spots,
  * gathers back into the centre and fades, a tiny square appears there and grows into the full app
@@ -71,7 +67,7 @@ function scatterGrow(root: HTMLElement, gsap: Gsap) {
     // 1. the hub comes apart: labels and wires go, the rings turn and open, the marks scatter
     // (fromTo everywhere: invalidateOnRefresh must never record a later state)
     .fromTo(
-      q("[data-lp=io], [data-lp=wire]"),
+      q("[data-lp=wire]"),
       { autoAlpha: 1 },
       { autoAlpha: 0, duration: 0.9 },
     )
@@ -196,8 +192,7 @@ export function ScatterGrow({
   return (
     <section ref={ref} id="product" data-tone="product" className="lp-sg">
       <div data-lp="head" className="lp-sg-head px-4 text-center">
-        <p className="text-[13px] text-dim">Works with</p>
-        <h2 className="mt-3 font-medium text-[clamp(30px,4vw,50px)] text-fg leading-[1.04] tracking-[-0.03em]">
+        <h2 className="font-medium text-[clamp(30px,4vw,50px)] text-fg leading-[1.04] tracking-[-0.03em]">
           Start from your own run,
           <br />
           <span className="text-white/45">not a blank file.</span>
@@ -207,8 +202,6 @@ export function ScatterGrow({
         <div aria-hidden="true" data-lp="bg" className="lp-hub-bg" />
         <div className="lp-hub-o">
           <div aria-hidden="true" data-lp="rings" className="lp-hub-rings">
-            <span className="lp-hub-ring" />
-            <span className="lp-hub-ring" />
             <span className="lp-hub-ring" />
           </div>
           <span aria-hidden="true" data-lp="wire" className="lp-hub-axis" />
@@ -228,10 +221,7 @@ export function ScatterGrow({
             </span>
           ))}
           <div data-lp="core" className="lp-hub-core">
-            <LogoMark />
-            <p data-lp="io" className="font-mono text-[11px] text-white/40">
-              luora-data.json
-            </p>
+            <LogoText height={20} />
           </div>
           <ul aria-label="Tools Luora works with" className="lp-hub-marks">
             {marks.map((m) => (
@@ -245,12 +235,6 @@ export function ScatterGrow({
                   <span className="lp-mark">{m.node}</span>
                   <span className="whitespace-nowrap text-[13px] text-dim transition-colors group-hover:text-muted">
                     {m.title}
-                  </span>
-                  <span
-                    data-lp="io"
-                    className="lp-hub-io font-mono text-[10.5px] text-white/40 leading-[1.5]"
-                  >
-                    {HANDS[m.title]}
                   </span>
                 </a>
               </li>
