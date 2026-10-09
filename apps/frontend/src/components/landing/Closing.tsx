@@ -6,13 +6,13 @@ import { compareData } from "./compare-data";
 import { GitHubMark } from "./GitHubMark";
 import { FinaleRise } from "./Haze";
 import { DOCS, GITHUB } from "./Hero";
-import { Exit, Reveal } from "./motion";
+import { Reveal } from "./motion";
 
 /**
  * Twelfth pass (C1–C3 in CompareTable.tsx, index.ts): an editorial title over eight rows, each one
  * two worlds, the raw text forge and the analyzer CLIs print beside the same run as Luora renders
- * it, a lit seam wiping from one to the other with the scroll. The block sinks back (Exit) as the
- * FAQ rises over it.
+ * it, a lit seam wiping from one to the other with the scroll; on wide screens the block pins and
+ * the rows take turns (CompareTable staged()).
  */
 export async function Compare() {
   const data = await compareData();
@@ -21,9 +21,8 @@ export async function Compare() {
       data-tone="compare"
       className="mx-auto max-w-[1240px] px-4 pb-32 md:px-6"
     >
-      <Exit>
-        <CompareWorlds data={data} />
-      </Exit>
+      {/* no Exit wrapper here: its transform would make the stage's position:fixed pin scroll */}
+      <CompareWorlds data={data} />
     </section>
   );
 }

@@ -143,3 +143,24 @@
 .lp-cmp-line > span {
   display: block;
 }
+
+/* the pinned stage (CompareTable staged()): one screen, the rows stacked in one slot; the same
+   query the stage runs under, so without motion the rows keep flowing down the page */
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  .lp-cmp-stage {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100vh;
+  }
+  .lp-cmp-stage .lp-cmp-rows {
+    position: relative;
+    height: 290px;
+    margin-top: 40px;
+  }
+  .lp-cmp-stage .lp-cmp-rows > li {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+  }
+}

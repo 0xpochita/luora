@@ -288,6 +288,10 @@
  *  Works-with hub (ScatterGrow / hub.css) thinned the same day ("terlalu banyak komponen dan
  *  teks"): the eyebrow, the three wire labels, the core's file name, the ticks ring and the
  *  lit-arc ring are gone; one ring, three named marks, the wires and the grid remain.
+ *  Compare (CompareTable staged()): on wide screens the block now pins and its eight rows take
+ *  one slot in turn, each wipe finishing and holding before the next row rises in ("buatlah jeda
+ *  jadi pas scroll tunggu animasi selesai baru bisa scroll down"); below 1024px, and without
+ *  motion, the rows still flow down the page.
  *
  * No screenshots: every product view on the page is the app's own component rendered live on the
  * sample run (built near the screen only, Lazy). Colour stays per DESIGN.md: grey/white, red only

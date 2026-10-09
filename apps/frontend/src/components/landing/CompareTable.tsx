@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useCallback, useRef } from "react";
+import { type ReactNode, useRef } from "react";
 import { Fragment } from "./CompareFragments";
 import type { CompareData } from "./compare-data";
 import { type Gsap, Lazy, MOTION_MQ, useStage } from "./motion";
@@ -116,13 +116,8 @@ function raw(d: CompareData): string[][] {
   ];
 }
 
-/**
- * The scrubbed motion: the title's lines rise out of their masks; then per row, the Luora side's clip opens from the seam (right to left on wide
- * screens, top down below 1024px), the seam rides its edge, the raw text dims and the copy swaps
- * which line is lit (C1). Clip-path, transform and opacity only; static and settled under reduced
- * motion.
- */
-function setup(root: HTMLElement, gsap: Gsap, wide: boolean) {
+/** the title's lines rise out of their masks as the block approaches */
+function rise(root: HTMLElement, gsap: Gsap) {
   gsap.fromTo(
     root.querySelectorAll("[data-rise]"),
     { yPercent: 105 },
@@ -138,56 +133,125 @@ function setup(root: HTMLElement, gsap: Gsap, wide: boolean) {
       },
     },
   );
+}
+
+/** one row's wipe: the Luora side's clip opens from the seam, the raw text dims, the copy swaps */
+function wipe(
+  gsap: Gsap,
+  tl: ReturnType<Gsap["timeline"]>,
+  row: HTMLElement,
+  wide: boolean,
+  at: string | number,
+  duration: number,
+) {
+  const q = gsap.utils.selector(row);
+  const read = q("[data-read]")[0] as HTMLElement;
+  tl.fromTo(
+    read,
+    { clipPath: wide ? "inset(0% 0% 0% 100%)" : "inset(0% 0% 100% 0%)" },
+    { clipPath: "inset(0% 0% 0% 0%)", duration },
+    at,
+  )
+    .fromTo(
+      q("[data-raw]"),
+      { autoAlpha: 1 },
+      { autoAlpha: 0.55, duration },
+      at,
+    )
+    .fromTo(
+      q("[data-them]"),
+      { autoAlpha: 1 },
+      { autoAlpha: 0.4, duration },
+      at,
+    )
+    .fromTo(
+      q("[data-us]"),
+      { autoAlpha: 0.2, y: 10 },
+      { autoAlpha: 1, y: 0, duration },
+      at,
+    );
+  if (wide)
+    tl.fromTo(
+      q("[data-seam]"),
+      { x: () => read.offsetWidth },
+      { x: 0, duration },
+      at,
+    );
+}
+
+/**
+ * Below 1024px (and under reduced motion the rows just sit there): the rows flow down the page,
+ * each wiping as it climbs the screen.
+ */
+function flow(root: HTMLElement, gsap: Gsap) {
+  rise(root, gsap);
   for (const row of root.querySelectorAll<HTMLElement>("[data-cmp]")) {
-    const q = gsap.utils.selector(row);
-    const read = q("[data-read]")[0] as HTMLElement;
     const tl = gsap.timeline({
       defaults: { ease: "none" },
       scrollTrigger: {
         trigger: row,
-        start: wide ? "top 92%" : "top 90%",
-        end: wide ? "top 50%" : "top 45%",
+        start: "top 90%",
+        end: "top 45%",
         scrub: 0.6,
         invalidateOnRefresh: true,
       },
     });
-    tl.fromTo(
-      read,
-      { clipPath: wide ? "inset(0% 0% 0% 100%)" : "inset(0% 0% 100% 0%)" },
-      { clipPath: "inset(0% 0% 0% 0%)" },
-      0,
-    )
-      .fromTo(q("[data-raw]"), { autoAlpha: 1 }, { autoAlpha: 0.55 }, 0)
-      .fromTo(q("[data-them]"), { autoAlpha: 1 }, { autoAlpha: 0.4 }, 0)
-      .fromTo(
-        q("[data-us]"),
-        { autoAlpha: 0.2, y: 10 },
-        { autoAlpha: 1, y: 0 },
-        0,
-      );
-    if (wide)
-      tl.fromTo(q("[data-seam]"), { x: () => read.offsetWidth }, { x: 0 }, 0);
+    wipe(gsap, tl, row, false, 0, 1);
   }
+}
+
+/**
+ * Wide screens: the block pins and the eight rows take the same slot one at a time ("buatlah jeda
+ * jadi pas scroll tunggu animasi selesai baru bisa scroll down"): a row arrives, its wipe runs with
+ * the scroll, it holds finished, then it lifts away as the next one rises in. Nothing else moves
+ * until the last row has wiped, so the page never shows eight half-open rows at once.
+ */
+function staged(root: HTMLElement, gsap: Gsap) {
+  rise(root, gsap);
+  const rows = [...root.querySelectorAll<HTMLElement>("[data-cmp]")];
+  const tl = gsap.timeline({
+    defaults: { ease: "none" },
+    scrollTrigger: {
+      trigger: root,
+      start: "top top",
+      end: () => `+=${rows.length * 70}%`,
+      pin: true,
+      scrub: 0.5,
+      invalidateOnRefresh: true,
+    },
+  });
+  rows.forEach((row, i) => {
+    const at = `r${i}`;
+    tl.addLabel(at);
+    if (i > 0) {
+      tl.to(
+        rows[i - 1],
+        { autoAlpha: 0, y: -36, duration: 0.3, ease: "power1.in" },
+        at,
+      ).fromTo(
+        row,
+        { autoAlpha: 0, y: 36 },
+        { autoAlpha: 1, y: 0, duration: 0.3, ease: "power1.out" },
+        `${at}+=0.25`,
+      );
+    }
+    wipe(gsap, tl, row, true, i > 0 ? `${at}+=0.6` : at, 1);
+    // the finished row holds before the next one takes its place
+    tl.to({}, { duration: 0.45 });
+  });
 }
 
 export function CompareWorlds({ data }: { data: CompareData }) {
   const ref = useRef<HTMLDivElement>(null);
-  // one setup per layout, so crossing 1024px reverts one and builds the other
-  useStage(
-    ref,
-    useCallback((r: HTMLElement, g: Gsap) => setup(r, g, true), []),
-    `${MOTION_MQ} and (min-width: 1024px)`,
-  );
-  useStage(
-    ref,
-    useCallback((r: HTMLElement, g: Gsap) => setup(r, g, false), []),
-    `${MOTION_MQ} and (max-width: 1023.98px)`,
-  );
+  // one setup per layout, so crossing 1024px reverts one and builds the other (compare.css stacks
+  // the rows under the same query the pinned stage runs in)
+  useStage(ref, staged, `${MOTION_MQ} and (min-width: 1024px)`);
+  useStage(ref, flow, `${MOTION_MQ} and (max-width: 1023.98px)`);
   const out = raw(data);
   return (
-    <div ref={ref}>
+    <div ref={ref} className="lp-cmp-stage">
       {/* C1 + C2: an editorial title, big and light, second line muted; the note at its foot */}
-      <h2 className="font-light text-[clamp(46px,9.4vw,144px)] text-fg leading-[0.94] tracking-[-0.045em]">
+      <h2 className="font-light text-[clamp(40px,6.4vw,88px)] text-fg leading-[0.94] tracking-[-0.045em]">
         <span className="lp-cmp-line">
           <span data-rise>Same run,</span>
         </span>
@@ -211,7 +275,7 @@ export function CompareWorlds({ data }: { data: CompareData }) {
           already produce and lays it over the contract.
         </p>
       </div>
-      <ol className="mt-14 space-y-6 md:mt-20 md:space-y-8">
+      <ol className="lp-cmp-rows mt-14 space-y-6 md:mt-20 md:space-y-8">
         {ROWS.map((r, i) => (
           <li
             key={r.what}
