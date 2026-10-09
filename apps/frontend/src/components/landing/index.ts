@@ -170,6 +170,17 @@
  *  H3 pin/3307399722549125 (Lumina) — one lit hairline between blocks → the edge riding the wipe
  *  H4 pin/5207355814660740 (GRFN 'How it works' 1 → 2 → 3) → the circled step rail (HowItWorks.tsx)
  *
+ * Tenth pass (2026-10-09, 'Works with' read as three circles on an empty screen), pins from
+ * id.pinterest.com ('integrations hub orbit website dark', 'dark website background grid texture'):
+ *  W1 pin/56858014040806247 (Integrations Wheel) — rings around one core, tools on the orbit
+ *  W2 pin/1076360379685275188 (MagicWand) — tick ring, one lit arc, short labels on the leaders
+ *  W3 pin/1150880879804919385 (zsearch) — round marks wired into one lit-cornered square
+ *  B1 pin/23432860626141831 / B2 pin/70437490488374 — graphite grid under a soft light, lit dots
+ *  → ScatterGrow.tsx + hub.css: Foundry / Solidity / Ethereum on arms wired into the Luora core,
+ *    what each hands over on its wire (forge test -vvvv · forge coverage, your own ABIs, calls &
+ *    events · one local run), packets riding in, masked grid behind; the hub comes apart into the
+ *    scatter and the core lands where the square grows into the Lab.
+ *
  * No screenshots: every product view on the page is the app's own component rendered live on the
  * sample run (built near the screen only, Lazy). Colour stays per DESIGN.md: grey/white, red only
  * on findings.

@@ -1,0 +1,287 @@
+/* 'Works with' hub (ScatterGrow.tsx), tenth pass. Pins studied 2026-10-09:
+   W1 id.pinterest.com/pin/56858014040806247/   (Integrations Wheel) — concentric rings around one
+      core, the tools sitting on the orbit → .lp-hub-ring, the marks on the arms
+   W2 id.pinterest.com/pin/1076360379685275188/ (MagicWand 'Everything for your website') — rings
+      with tick marks and one lit arc, short labels on the leaders → the ticks ring, the lit arc,
+      .lp-hub-io
+   W3 id.pinterest.com/pin/1150880879804919385/ (zsearch 'Turn years of work into instant
+      context') — round marks wired into ONE rounded square with lit corner pins, a light streak
+      through it → .lp-hub-core (the same 56px square that later grows into the Lab), the wires
+   B1 id.pinterest.com/pin/23432860626141831/   — graphite fine grid under a soft centre light
+   B2 id.pinterest.com/pin/70437490488374/      — black dot field, a few dots lit → .lp-hub-bg
+   Geometry: the origin (.lp-hub-o) is the hub's centre; in the pinned stage that is the stage
+   centre, where the square appears. Everything static is drawn here; GSAP only moves transform /
+   opacity, the packets are one CSS transform loop paused off-screen. */
+.lp-hub {
+  --hx: 124px; /* side arms (Foundry, Ethereum) */
+  --hy: 150px; /* bottom arm (Solidity) */
+  --m: 36px; /* half a mark */
+  --c: 28px; /* half the core */
+  --oy: 210px;
+  --r1: 84px;
+  --r2: 190px;
+  --r3: 290px;
+  position: relative;
+  height: 440px;
+  margin: 8px -16px 0;
+  overflow: hidden;
+}
+@media (min-width: 768px) {
+  .lp-hub {
+    --hx: min(340px, 30vw);
+    --hy: 220px;
+    --m: 48px;
+    --oy: 300px;
+    --r1: 150px;
+    --r2: 270px;
+    --r3: 400px;
+    height: 620px;
+    margin-inline: 0;
+  }
+}
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .lp-hub {
+    position: absolute;
+    inset: 0;
+    height: auto;
+    margin: 0;
+    --oy: 50%;
+  }
+}
+
+/* B1 + B2: hairline grid every 48px through the origin, a lit dot on every third crossing, one
+   soft light on the core; masked to nothing at the edges so the page's backdrop never shows a seam */
+.lp-hub-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  --at: 50% var(--oy);
+  background:
+    radial-gradient(
+      circle at var(--at),
+      rgb(255 255 255 / 0.06),
+      transparent 340px
+    )
+    no-repeat,
+    radial-gradient(circle, rgb(255 255 255 / 0.2) 1px, transparent 1.6px) 50%
+    calc(var(--oy) - 72px) / 144px 144px,
+    linear-gradient(rgb(255 255 255 / 0.04) 1px, transparent 1px) 0 var(--oy) /
+    48px 48px,
+    linear-gradient(90deg, rgb(255 255 255 / 0.04) 1px, transparent 1px)
+    calc(50% + 24px) 0 / 48px 48px;
+  mask-image: radial-gradient(
+    ellipse 62% 58% at var(--at),
+    #000 25%,
+    transparent 100%
+  );
+}
+
+.lp-hub-o {
+  position: absolute;
+  left: 50%;
+  top: var(--oy);
+  width: 0;
+  height: 0;
+}
+.lp-hub-o > * {
+  position: absolute;
+}
+
+/* W1 / W2 rings: one plain, one of ticks, one with a lit arc on top */
+.lp-hub-rings {
+  inset: 0;
+}
+.lp-hub-ring {
+  --r: var(--r1);
+  left: calc(var(--r) * -1);
+  top: calc(var(--r) * -1);
+  position: absolute;
+  width: calc(var(--r) * 2);
+  height: calc(var(--r) * 2);
+  border-radius: 9999px;
+  border: 1px solid rgb(255 255 255 / 0.07);
+}
+.lp-hub-ring:nth-child(2) {
+  --r: var(--r2);
+  border: 0;
+  background: repeating-conic-gradient(
+    rgb(255 255 255 / 0.2) 0 0.35deg,
+    transparent 0.35deg 5deg
+  );
+  mask-image: radial-gradient(
+    closest-side,
+    transparent calc(100% - 7px),
+    #000 calc(100% - 6px) 100%,
+    transparent 100%
+  );
+}
+.lp-hub-ring:nth-child(3) {
+  --r: var(--r3);
+  border-color: rgb(255 255 255 / 0.05);
+  border-top-color: rgb(255 255 255 / 0.28);
+}
+
+/* W3: the light streak through the core, and the wires from each mark into it */
+.lp-hub-axis {
+  left: calc(var(--hx) * -1 - 160px);
+  width: calc(var(--hx) * 2 + 320px);
+  top: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.1) 30%,
+    rgb(255 255 255 / 0.1) 70%,
+    transparent
+  );
+}
+.lp-hub-wire {
+  --arm: var(--hx);
+  left: 0;
+  top: 0;
+  height: 1px;
+  width: calc(var(--arm) - var(--m) - var(--c) - 16px);
+  transform-origin: 0 50%;
+  transform: rotate(var(--a)) translateX(calc(var(--c) + 8px));
+  background: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0.32),
+    rgb(255 255 255 / 0.1)
+  );
+}
+.lp-hub-wire::after {
+  content: "";
+  position: absolute;
+  right: -3px;
+  top: -2px;
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  border: 1px solid rgb(255 255 255 / 0.35);
+  background: #0b0b0c;
+}
+/* a packet rides each wire into the core: transform + opacity only */
+.lp-hub-wire > i {
+  position: absolute;
+  inset: 0;
+  animation: lp-packet 3.2s cubic-bezier(0.5, 0, 0.3, 1) infinite;
+}
+.lp-hub-wire > i::after {
+  content: "";
+  position: absolute;
+  left: 100%;
+  top: -1px;
+  width: 26px;
+  height: 3px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #fff, transparent);
+}
+@keyframes lp-packet {
+  from {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  15%,
+  80% {
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+.lp-sg:not([data-live]) .lp-hub-wire > i {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-hub-wire > i {
+    display: none;
+  }
+}
+
+/* W3 core: the 56px square the Lab later grows from, lit corner pins */
+.lp-hub-core {
+  left: calc(var(--c) * -1);
+  top: calc(var(--c) * -1);
+  display: grid;
+  place-items: center;
+  width: calc(var(--c) * 2);
+  height: calc(var(--c) * 2);
+  border-radius: 14px;
+  border: 1px solid rgb(255 255 255 / 0.16);
+  background: linear-gradient(180deg, #1b1c1e, #0c0c0d);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.1),
+    0 0 48px -8px rgb(255 255 255 / 0.2);
+}
+.lp-hub-core::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  --pin: radial-gradient(circle, #fff 0.8px, transparent 1.8px);
+  background:
+    var(--pin) 0 0 / 6px 6px no-repeat,
+    var(--pin) 100% 0 / 6px 6px no-repeat,
+    var(--pin) 0 100% / 6px 6px no-repeat,
+    var(--pin) 100% 100% / 6px 6px no-repeat;
+}
+.lp-hub-core > p {
+  position: absolute;
+  bottom: calc(100% + 14px);
+  left: 50%;
+  translate: -50% 0;
+  white-space: nowrap;
+}
+
+/* the marks on the arms; the labels (what each hands Luora) on the wire, under the name on phones */
+.lp-hub-marks {
+  left: 0;
+  top: 0;
+}
+.lp-hub-marks > li {
+  --x: calc(var(--hx) * -1);
+  --y: 0px;
+  position: absolute;
+  left: calc(var(--x) - var(--m));
+  top: calc(var(--y) - var(--m));
+  width: calc(var(--m) * 2);
+}
+.lp-hub-marks > li:nth-child(2) {
+  --x: 0px;
+  --y: var(--hy);
+}
+.lp-hub-marks > li:nth-child(3) {
+  --x: var(--hx);
+}
+.lp-hub .lp-mark {
+  width: calc(var(--m) * 2);
+  height: calc(var(--m) * 2);
+}
+.lp-hub-io {
+  display: block;
+  width: 120px;
+  text-align: center;
+}
+@media (min-width: 768px) {
+  .lp-hub-io {
+    position: absolute;
+    top: calc(var(--m) - 9px);
+    translate: 0 -100%;
+    width: calc(var(--hx) - var(--m) - var(--c) - 40px);
+    text-align: left;
+  }
+  li:nth-child(1) > a > .lp-hub-io {
+    left: calc(100% + 22px);
+  }
+  li:nth-child(3) > a > .lp-hub-io {
+    right: calc(100% + 22px);
+    text-align: right;
+  }
+  li:nth-child(2) > a > .lp-hub-io {
+    top: auto;
+    bottom: calc(100% + 18px);
+    left: calc(50% + 12px);
+    translate: none;
+    width: max-content;
+  }
+}
