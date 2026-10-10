@@ -266,7 +266,7 @@ function layoutAt(p: Protocol, maxH: number) {
     for (const r of n.rows) {
       const t = byId.get(r.to);
       if (!t) continue;
-      const a = { x: n.x + MAP.w - 2, y: r.y };
+      const a = { x: n.x + MAP.w, y: r.y };
       const ty = t.y + MAP.title + 27;
       const base = { from: n.id, to: t.id, kind: r.kinds[0], a };
       if (t.col > n.col) {
