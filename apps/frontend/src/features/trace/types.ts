@@ -61,4 +61,7 @@ export type DisplayKind = FrameKind | "VM" | "REVERT";
 
 export type TraceMode = "trace" | "graph";
 
-export type TraceSource = { data: LuoraData; origin: "local" | "sample" };
+/** Where the shown data came from: the server's luora-data.json, the bundled sample, or a file dropped in the browser. */
+export type RunOrigin = "local" | "sample" | "file";
+
+export type TraceSource = { data: LuoraData; origin: RunOrigin };
