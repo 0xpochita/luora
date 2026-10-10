@@ -279,14 +279,17 @@ export function HowItWorks({
           h + d * 0.7,
         );
 
-    // 1. on the way in (before the pin): the board rises, the first step wipes up into the core
+    // 1. on the way in (before the pin): the board rises, the first step wipes up into the core.
+    // Scrubbed with no lag (Lenis already smooths the scroll): a lagging scrub kept rendering step
+    // 1 as shown after the pinned timeline below had hidden it, so on a first fast pass step 1's
+    // note and pills stayed on top of the later steps.
     const enter = gsap.timeline({
       defaults: { ease: "power2.out" },
       scrollTrigger: {
         trigger: stage,
         start: "top 85%",
         end: "top top",
-        scrub: 0.6,
+        scrub: true,
       },
     });
     enter
@@ -296,16 +299,18 @@ export function HowItWorks({
         { y: 0, scale: 1, autoAlpha: 1, duration: 1 },
         0,
       )
+      // step 1 is visible from the start (landing.css); only its wipe plays here, so this
+      // timeline never re-shows it once the pinned one has handed over to step 2
       .fromTo(
         widgets[0],
-        { clipPath: SHUT, autoAlpha: 1 },
-        { clipPath: OPEN, autoAlpha: 1, duration: 0.7, ease: "power2.inOut" },
+        { clipPath: SHUT },
+        { clipPath: OPEN, duration: 0.7, ease: "power2.inOut" },
         0.3,
       )
       .fromTo(
         notes[0],
-        { clipPath: SHUT, y: 32, autoAlpha: 1 },
-        { clipPath: OPEN, autoAlpha: 1, y: 0, duration: 0.6 },
+        { clipPath: SHUT, y: 32 },
+        { clipPath: OPEN, y: 0, duration: 0.6 },
         0.4,
       )
       .fromTo(
