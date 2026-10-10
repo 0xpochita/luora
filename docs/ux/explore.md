@@ -88,12 +88,30 @@ their role, flows with steps, auditor checks) plus the protocol's own `forge bui
 - between contracts: **calls** (external calls on a typed contract), **delegates** (explicit library
   calls), **holds** (state variables and immutables of a contract type), **deploys** (`new X`),
   **inherits** (direct bases), with the member names called;
-- every flow step is checked against the AST (the function exists in that contract) and gets its
-  line; a step that doesn't resolve fails the build.
+- every flow step is checked against the AST (the function exists in that contract or its bases) and
+  gets its file and line; a step that doesn't resolve fails the build;
+- a few relations the AST can't see (Comet's assembly `delegatecall` to its extension) are listed
+  in the spec and marked `manual`.
 
-Licences: BUSL-1.1 (Aave v3, Uniswap v3-core, Morpho Blue, Compound III) are stored as structure
-only: no `source`, and the one-line `find` anchors are replaced by names; lines link to GitHub.
-GPL / MIT code (Uniswap v3-periphery, MetaMorpho) keeps its source for the Lab.
+Releases: Aave v3.5.0 (aave-v3-origin), Uniswap v3-core v1.0.0 + v3-periphery v1.0.0, Morpho Blue
+v1.0.0 + MetaMorpho v1.0.0, Compound III main at f766f51 (no release tags). Curve is not included:
+its pools are Vyper, and the Atlas reads solc ASTs. Lido is not included yet: its core mixes
+solc 0.4.24 (Aragon) with 0.8.x and needs the Aragon packages to build.
+
+Regenerate (clones live outside the repo):
+
+```sh
+forge build --ast --extra-output storageLayout          # in each clone, see each spec's builds
+node foundry/luora-protocol.mjs foundry/explore/aave-v3.json /path/to/clones
+```
+
+Licences are read **per file** from the SPDX header, not per repo: a file under MIT / GPL / LGPL /
+Apache / BSD / MPL keeps its source for the Lab; BUSL-1.1, UNLICENSED or no header is **structure
+only** (no `source`, the one-line `find` anchors replaced by names) and links to GitHub at the pinned
+commit. So Uniswap v3-core (BUSL) is structure only while v3-periphery and TickMath (GPL) keep their
+source; Morpho.sol (BUSL) is structure only while its GPL libraries and MetaMorpho keep theirs; Aave
+v3 and Compound III are structure only. Files from git submodules or node_modules of another project
+(`vendored`) get no link.
 
 Atlas findings (the hygiene heuristics) are dropped: these protocols are audited, and a heuristic
 "finding" on Uniswap would read as a claim we can't stand behind.

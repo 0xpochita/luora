@@ -20,7 +20,7 @@ const list = xs => xs.length > 1 ? `${xs.slice(0, -1).join(', ')} and ${xs.at(-1
 
 // out dir → its artifacts, read once per process (luora-protocol.mjs maps many contracts from one build)
 const ARTIFACTS = new Map();
-function artifacts(OUT) {
+export function artifacts(OUT) {
   if (!ARTIFACTS.has(OUT)) {
     const list = [];
     for (const dir of readdirSync(OUT)) {
@@ -94,7 +94,7 @@ export function buildAtlas({ root = process.cwd(), contract = process.env.LUORA_
   const index = (n, m) => { if (Array.isArray(n)) n.forEach(x => index(x, m)); else if (n && typeof n === 'object') { if (typeof n.id === 'number' && n.nodeType) m.set(n.id, n); Object.values(n).forEach(x => index(x, m)); } };
   index(group, anyDecl);
   if (crossFile) for (const [k, v] of anyDecl) decl.set(k, v); else index(unit, decl);
-  const bases = C.linearizedBaseContracts.map(id => decl.get(id)).filter(Boolean);
+  const bases = C.linearizedBaseContracts.map(id => decl.get(id)).filter(b => b?.nodeType === 'ContractDefinition');
   const members = type => bases.flatMap(b => b.nodes.filter(n => n.nodeType === type));
   const overridden = new Set(members('FunctionDefinition').flatMap(f => f.baseFunctions ?? []));
   const fns = members('FunctionDefinition').filter(f => f.implemented && !overridden.has(f.id));
