@@ -59,6 +59,11 @@ export function HeroLab({
       ref={root}
       className="dot-grid relative h-full overflow-hidden rounded-t-[24px] border border-white/[.08] border-b-0 bg-[#0b0b0d]"
     >
+      {/* LB: one soft light over the canvas, as the ref's blur behind its nodes (monochrome) */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(45%_55%_at_78%_0%,rgba(255,255,255,.07),transparent_70%)]"
+      />
       {/* the Lab's own top bar: the Contract | Scenario switch, the route, the way in */}
       <div className="absolute inset-x-0 top-0 z-10 flex items-center gap-3 p-3 md:p-4">
         <div

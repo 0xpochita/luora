@@ -290,6 +290,10 @@
  *  Lab itself (HeroLab): the app's contract graph and its 'Non-owner cannot setOracle' scenario
  *  in the Lab's own cards, the Contract | Scenario switch flipping between them, the run bar and
  *  'Open the Lab' in the window.
+ *  LB pin/19773685859738910 (Jaim, node editor 'image generation v3') + pin/14918242512526975
+ *     (workflow 'Check form') — glassy node cards with a lit top edge, an icon tile in the card
+ *     header, glowing port dots, a coloured glow under the active node, one soft light over the
+ *     canvas → hero.css restyles the hero's Lab cards (cosmetic only, the app keeps its own).
  *  Works-with hub (ScatterGrow / hub.css) thinned the same day ("terlalu banyak komponen dan
  *  teks"): the eyebrow, the three wire labels, the core's file name, the ticks ring and the
  *  lit-arc ring are gone; one ring, three named marks, the wires and the grid remain.
