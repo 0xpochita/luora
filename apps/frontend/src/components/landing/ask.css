@@ -32,8 +32,25 @@
     transform: translateY(6px);
   }
 }
+/* the idle prompt box's caret (Genie's empty input) */
+.lp-ask-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-right: 8px;
+  vertical-align: -0.14em;
+  border-radius: 1px;
+  background: rgb(255 255 255 / 0.65);
+  animation: lp-ask-caret 1.1s steps(1) infinite;
+}
+@keyframes lp-ask-caret {
+  50% {
+    opacity: 0;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  .lp-ask-in {
+  .lp-ask-in,
+  .lp-ask-caret {
     animation: none;
   }
 }

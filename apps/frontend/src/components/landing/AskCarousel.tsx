@@ -15,9 +15,12 @@ import "./ask.css";
  * centre one is larger, lifted and fully opaque while the sides shrink and fade toward the edges,
  * over one big rounded prompt box (prompt in large type, a meta line bottom-left, a round sparkle
  * button and a white '+ Create' pill bottom-right) that always shows the centre card's prompt.
- * Here every card is one piece of the sample contract (its lines, red ▲ on flagged lines), the
- * prompt is the question about it, the pills are the three questions and the answer opens in an
- * inner card below, built from the app's own aiAnswer / CHECKLIST / findings.
+ * Here every card is one piece of the sample contract (its lines, red ▲ on flagged lines). The box
+ * idles like Genie's ('Describe your wish to get started': a blinking caret, a grey placeholder,
+ * the meta bottom-left, the actions bottom-right), the placeholder naming the centre card's piece
+ * and line; a pill (or the placeholder) asks one of the three questions, which types in white and
+ * opens the answer in an inner card below, built from the app's own aiAnswer / CHECKLIST /
+ * findings. Moving to another card puts the box back to its placeholder.
  * Motion: one rAF driver eases the row (transform + opacity only) and stops when it settles;
  * the question types in word by word, the answer rises block by block (ask.css). Click a side
  * card, drag / swipe, or ←/→ on the focused row; auto-advance pauses on hover, focus, off screen
@@ -166,7 +169,8 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
   );
 
   const [at, setAt] = useState(first);
-  const [q, setQ] = useState<AiQuestion>("risks");
+  /** null = the box idles on its placeholder */
+  const [q, setQ] = useState<AiQuestion | null>(null);
   /** the server HTML carries the centre card and its two neighbours, the rest mount right after */
   const [live, setLive] = useState(false);
   useEffect(() => setLive(true), []);
@@ -210,6 +214,7 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
       target = Math.round(target + wrap(i - target, n));
       idle = performance.now();
       setAt(((target % n) + n) % n);
+      setQ(null);
       if (reduce.matches) {
         pos = target;
         paint();
@@ -314,8 +319,10 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
 
   const card = cards[at];
   const line = card.at + 1;
-  const text = question(q, card.p.name, line);
-  const answer = blocks(model, card.p, q);
+  const text = q && question(q, card.p.name, line);
+  const answer = q ? blocks(model, card.p, q) : [];
+  /** the pill drawn as the primary action: the asked question, else the default one */
+  const lit = q ?? "risks";
   /** where the second column starts: the second heading, or the test's code */
   const split = answer.findIndex(
     (b, i) => i > 0 && (b.k === "h" || b.k === "code"),
@@ -399,28 +406,45 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
         })}
       </section>
 
-      {/* Genie's prompt box: the question in big type, meta bottom-left, actions bottom-right; it
-          takes the height left under the row and the answer fills what it does not use */}
-      <div className="relative mx-auto mt-[clamp(6px,1.6svh,24px)] flex min-h-0 w-full max-w-[920px] flex-1 flex-col rounded-card md:flex-initial border border-border bg-card-grad p-2 shadow-[0_48px_96px_-32px_rgba(0,0,0,.9),0_20px_40px_-20px_rgba(0,0,0,.7)]">
-        <div className="shrink-0 px-3 pt-[clamp(6px,1.2svh,16px)] pb-1.5 md:px-4">
-          <p
-            key={`${at}:${q}`}
-            aria-live="polite"
-            className="text-[clamp(17px,min(2.4vw,2.9svh),28px)] text-fg leading-[1.25] tracking-[-0.02em]"
-          >
-            {text.split(" ").map((w, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: words of one fixed sentence
-              <span key={i}>
-                <span
-                  className="lp-ask-in inline-block"
-                  style={{ "--i": i } as CSSProperties}
-                >
-                  {w}
-                </span>{" "}
-              </span>
-            ))}
-          </p>
-          <div className="mt-[clamp(6px,1.4svh,16px)] flex flex-wrap items-center gap-x-3 gap-y-2">
+      {/* Genie's prompt box: a chat box that idles on a placeholder (caret, grey text), the meta
+          bottom-left, the actions bottom-right; once asked, the question in big type and the
+          answer under it, taking the height left under the row */}
+      <div
+        className={`relative mx-auto mt-[clamp(6px,1.6svh,24px)] flex min-h-0 w-full max-w-[920px] flex-col rounded-[28px] border border-border bg-card-grad p-2 shadow-[0_48px_96px_-32px_rgba(0,0,0,.9),0_20px_40px_-20px_rgba(0,0,0,.7)] md:flex-initial ${q ? "flex-1" : ""}`}
+      >
+        <div className="shrink-0 px-3 pt-[clamp(8px,1.6svh,22px)] pb-2 md:px-5">
+          <div className="min-h-[clamp(52px,8svh,96px)]">
+            {text ? (
+              <p
+                key={`${at}:${q}`}
+                aria-live="polite"
+                className="text-[clamp(17px,min(2.4vw,2.9svh),28px)] text-fg leading-[1.25] tracking-[-0.02em]"
+              >
+                {text.split(" ").map((w, i) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: words of one fixed sentence
+                  <span key={i}>
+                    <span
+                      className="lp-ask-in inline-block"
+                      style={{ "--i": i } as CSSProperties}
+                    >
+                      {w}
+                    </span>{" "}
+                  </span>
+                ))}
+              </p>
+            ) : (
+              <button
+                key={`ph:${at}`}
+                type="button"
+                onClick={() => setQ("risks")}
+                className="lp-ask-in block w-full cursor-pointer text-left text-[clamp(17px,min(2.4vw,2.9svh),28px)] text-white/30 leading-[1.25] tracking-[-0.02em] transition-colors hover:text-white/45"
+              >
+                <span aria-hidden="true" className="lp-ask-caret" />
+                Ask about {card.p.name} on line {line}…
+              </button>
+            )}
+          </div>
+          <div className="mt-[clamp(6px,1.2svh,14px)] flex flex-wrap items-center gap-x-3 gap-y-2">
             <span className="hidden min-w-0 items-center gap-2 text-[13px] text-dim md:flex">
               <span
                 className={`size-1.5 shrink-0 rounded-full ${card.found ? "bg-red" : "bg-white/40"}`}
@@ -432,12 +456,13 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
             </span>
             <div className="flex flex-wrap items-center gap-1.5 md:ml-auto">
               {QUESTIONS.map((x) =>
-                x.q === q ? (
+                x.q === lit ? (
                   <button
                     key={x.q}
                     type="button"
-                    aria-pressed="true"
-                    className="flex h-[clamp(32px,4.4svh,40px)] cursor-pointer items-center gap-1.5 rounded-full bg-primary px-4 text-[14px] text-primary-fg"
+                    aria-pressed={x.q === q}
+                    onClick={() => setQ(x.q)}
+                    className="flex h-[clamp(32px,4.4svh,40px)] cursor-pointer items-center gap-1.5 rounded-full bg-primary px-4 text-[14px] text-primary-fg transition-colors hover:bg-white"
                   >
                     <span aria-hidden="true">✦</span>
                     {x.label}
@@ -461,97 +486,99 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
         {/* the answer: an inner card 8px in, every block rendered at once, revealed by CSS. Wide
             screens split it in two columns at its second part (findings, connections, the test),
             so it fits the box; it scrolls only when the screen is too short for it */}
-        <div
-          key={`a:${at}:${q}`}
-          className={`lp-scroll grid min-h-0 flex-1 content-start md:h-[clamp(200px,30svh,340px)] md:flex-initial gap-x-6 gap-y-2 overflow-y-auto rounded-inner border border-border bg-inner-grad p-2.5 text-[12px] text-body leading-normal md:text-[clamp(12px,1.55svh,13.5px)] md:p-[clamp(10px,1.6svh,16px)] md:leading-[1.55] ${split > 0 ? "md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]" : ""}`}
-        >
-          {[
-            answer.slice(0, split > 0 ? split : undefined),
-            split > 0 ? answer.slice(split) : [],
-          ]
-            .filter((col) => col.length)
-            .map((col, c) => (
-              <div
-                key={col[0].t}
-                className={
-                  col.some((b) => b.k === "c")
-                    ? "flex min-w-0 flex-wrap content-start gap-1.5"
-                    : "min-w-0 space-y-1.5 md:space-y-2"
-                }
-              >
-                {col.map((b, j) => {
-                  const i = j + (c ? split : 0);
-                  const key = `${i}:${b.t.slice(0, 24)}`;
-                  const a = { style: { "--i": i + 4 } as CSSProperties };
-                  if (b.k === "h")
-                    return (
-                      <p
-                        key={key}
-                        {...a}
-                        className="lp-ask-in w-full pt-1 font-medium text-[12.5px] text-fg"
-                      >
-                        {b.t}
-                      </p>
-                    );
-                  if (b.k === "li")
-                    return (
-                      <p
-                        key={key}
-                        {...a}
-                        className="lp-ask-in flex gap-2 text-white/70"
-                      >
-                        <span className="mt-[0.7em] size-1 shrink-0 rounded-full bg-white/30" />
-                        {b.t}
-                      </p>
-                    );
-                  if (b.k === "c")
-                    return (
-                      <span
-                        key={key}
-                        {...a}
-                        className="lp-ask-in inline-block rounded-full border border-white/[.06] bg-white/[.04] px-2.5 font-mono text-[0.9em] text-white/75 leading-[1.75]"
-                      >
-                        {b.t}
-                      </span>
-                    );
-                  if (b.k === "f")
-                    return (
-                      <p
-                        key={key}
-                        {...a}
-                        className="lp-ask-in flex items-start gap-2 rounded-lg border border-white/[.05] bg-white/[.03] px-2.5 py-1.5 text-white/80"
-                      >
-                        <span
-                          className={`mt-[3px] shrink-0 rounded px-1.5 text-[10.5px] leading-[16px] ${b.risk === "high" || b.risk === "med" ? "bg-red/[.14] text-red" : "bg-white/[.08] text-muted"}`}
+        {q && (
+          <div
+            key={`a:${at}:${q}`}
+            className={`lp-scroll grid min-h-0 flex-1 content-start md:h-[clamp(200px,30svh,340px)] md:flex-initial gap-x-6 gap-y-2 overflow-y-auto rounded-inner border border-border bg-inner-grad p-2.5 text-[12px] text-body leading-normal md:text-[clamp(12px,1.55svh,13.5px)] md:p-[clamp(10px,1.6svh,16px)] md:leading-[1.55] ${split > 0 ? "md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]" : ""}`}
+          >
+            {[
+              answer.slice(0, split > 0 ? split : undefined),
+              split > 0 ? answer.slice(split) : [],
+            ]
+              .filter((col) => col.length)
+              .map((col, c) => (
+                <div
+                  key={col[0].t}
+                  className={
+                    col.some((b) => b.k === "c")
+                      ? "flex min-w-0 flex-wrap content-start gap-1.5"
+                      : "min-w-0 space-y-1.5 md:space-y-2"
+                  }
+                >
+                  {col.map((b, j) => {
+                    const i = j + (c ? split : 0);
+                    const key = `${i}:${b.t.slice(0, 24)}`;
+                    const a = { style: { "--i": i + 4 } as CSSProperties };
+                    if (b.k === "h")
+                      return (
+                        <p
+                          key={key}
+                          {...a}
+                          className="lp-ask-in w-full pt-1 font-medium text-[12.5px] text-fg"
                         >
-                          {SEV[b.risk ?? "low"]}
+                          {b.t}
+                        </p>
+                      );
+                    if (b.k === "li")
+                      return (
+                        <p
+                          key={key}
+                          {...a}
+                          className="lp-ask-in flex gap-2 text-white/70"
+                        >
+                          <span className="mt-[0.7em] size-1 shrink-0 rounded-full bg-white/30" />
+                          {b.t}
+                        </p>
+                      );
+                    if (b.k === "c")
+                      return (
+                        <span
+                          key={key}
+                          {...a}
+                          className="lp-ask-in inline-block rounded-full border border-white/[.06] bg-white/[.04] px-2.5 font-mono text-[0.9em] text-white/75 leading-[1.75]"
+                        >
+                          {b.t}
                         </span>
+                      );
+                    if (b.k === "f")
+                      return (
+                        <p
+                          key={key}
+                          {...a}
+                          className="lp-ask-in flex items-start gap-2 rounded-lg border border-white/[.05] bg-white/[.03] px-2.5 py-1.5 text-white/80"
+                        >
+                          <span
+                            className={`mt-[3px] shrink-0 rounded px-1.5 text-[10.5px] leading-[16px] ${b.risk === "high" || b.risk === "med" ? "bg-red/[.14] text-red" : "bg-white/[.08] text-muted"}`}
+                          >
+                            {SEV[b.risk ?? "low"]}
+                          </span>
+                          {b.t}
+                        </p>
+                      );
+                    if (b.k === "code")
+                      return (
+                        <pre
+                          key={key}
+                          {...a}
+                          className="lp-ask-in whitespace-pre-wrap break-words rounded-lg border border-white/[.06] bg-black/50 p-[clamp(8px,1.2svh,12px)] font-mono text-[10px] md:text-[clamp(10.5px,1.35svh,11.5px)] text-white/75 leading-[1.5]"
+                        >
+                          {b.t}
+                        </pre>
+                      );
+                    return (
+                      <p
+                        key={key}
+                        {...a}
+                        className="lp-ask-in whitespace-pre-wrap break-words"
+                      >
                         {b.t}
                       </p>
                     );
-                  if (b.k === "code")
-                    return (
-                      <pre
-                        key={key}
-                        {...a}
-                        className="lp-ask-in whitespace-pre-wrap break-words rounded-lg border border-white/[.06] bg-black/50 p-[clamp(8px,1.2svh,12px)] font-mono text-[10px] md:text-[clamp(10.5px,1.35svh,11.5px)] text-white/75 leading-[1.5]"
-                      >
-                        {b.t}
-                      </pre>
-                    );
-                  return (
-                    <p
-                      key={key}
-                      {...a}
-                      className="lp-ask-in whitespace-pre-wrap break-words"
-                    >
-                      {b.t}
-                    </p>
-                  );
-                })}
-              </div>
-            ))}
-        </div>
+                  })}
+                </div>
+              ))}
+          </div>
+        )}
       </div>
     </div>
   );

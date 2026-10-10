@@ -23,8 +23,8 @@ function Live() {
 /**
  * Ask's carousel + prompt box (AskCarousel.tsx). It draws from the sample atlas, which is not
  * inlined in the page (atlas.ts), so the server HTML carries this empty frame of the same size:
- * the card row's band and the prompt box with its three questions, the carousel filling it in
- * once it nears the screen.
+ * the card row's band and the idle prompt box (placeholder + its three questions), the carousel
+ * filling it in once it nears the screen.
  */
 export function AskDemo() {
   return (
@@ -33,10 +33,12 @@ export function AskDemo() {
       fallback={
         <div className="relative pb-16">
           <div className="h-[300px]" />
-          <div className="relative mx-auto mt-6 max-w-[780px] rounded-card border border-border bg-card-grad p-2 shadow-float">
-            <div className="px-3 pt-3 pb-2 md:px-4 md:pt-4">
-              <p className="min-h-[3.75em] text-[clamp(21px,2.4vw,28px)] leading-[1.25] md:min-h-[2.5em]" />
-              <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-3">
+          <div className="relative mx-auto mt-6 max-w-[920px] rounded-[28px] border border-border bg-card-grad p-2 shadow-float">
+            <div className="px-3 pt-4 pb-2 md:px-5">
+              <p className="min-h-[clamp(52px,8svh,96px)] text-[clamp(17px,min(2.4vw,2.9svh),28px)] text-white/30 leading-[1.25]">
+                Ask about a line…
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-3">
                 <span className="text-[13px]">&nbsp;</span>
                 <div className="ml-auto flex flex-wrap items-center gap-1.5">
                   {QUESTIONS.map((x) =>
@@ -60,7 +62,6 @@ export function AskDemo() {
                 </div>
               </div>
             </div>
-            <div className="mt-2 h-[300px] rounded-inner border border-border bg-inner-grad" />
           </div>
         </div>
       }
