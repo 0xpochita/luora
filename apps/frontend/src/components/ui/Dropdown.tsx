@@ -44,6 +44,8 @@ const TRIGGER = {
     "inline-flex h-9 items-center gap-2 rounded-tile border border-border bg-inset px-3 text-[13px] text-[#f0f0f2] transition-colors hover:border-border-strong",
   /** a Lab card widget (lab.css .dd-card) */
   card: "dd-card",
+  /** the right half of a split capsule (header.css .hdr-pill.split), which styles it */
+  bare: "text-[12px] text-dim hover:text-fg",
   /** a small capsule in a composer's footer (the chat's model chip) */
   chip: "inline-flex h-7 items-center gap-1.5 rounded-full border border-white/[.08] px-2.5 text-[12px] text-body transition-colors hover:text-fg",
 } as const;

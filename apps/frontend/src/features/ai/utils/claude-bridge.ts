@@ -123,9 +123,9 @@ export function parseLine(line: string): BridgeEvent {
 const LOCAL = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
 /**
- * Only this app's own pages on this machine may use the bridge: the Host is a loopback name
- * (stops DNS rebinding), the Origin, when sent, is this same host (stops other websites), and a
- * hosted deployment never runs it. Returns why not, or null.
+ * Only this app's own pages on this machine may use the bridge (and Start test, api/test-run):
+ * the Host is a loopback name (stops DNS rebinding), the Origin, when sent, is this same host
+ * (stops other websites), and a hosted deployment never runs it. Returns why not, or null.
  */
 export function refuse(h: {
   host: string | null;
@@ -134,12 +134,12 @@ export function refuse(h: {
   hosted: boolean;
   method: string;
 }): string | null {
-  if (h.hosted) return "The Claude bridge only runs in a local Luora.";
+  if (h.hosted) return "This only runs in a local Luora.";
   const host = h.host ?? "";
   const name = host.startsWith("[")
     ? host.slice(0, host.indexOf("]") + 1)
     : host.split(":")[0];
-  if (!LOCAL.has(name)) return "Open Luora at localhost to use your Claude.";
+  if (!LOCAL.has(name)) return "Open Luora at localhost to use this.";
   if (h.origin && h.origin !== `http://${host}`)
     return "Requests from other sites are refused.";
   if (h.method !== "GET" && !h.origin)

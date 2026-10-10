@@ -5,4 +5,10 @@ export {
   useRun,
   useShownSource,
 } from "./hooks/useRun";
+export {
+  type RunLine,
+  type TestRun,
+  type TestRunState,
+  useTestRun,
+} from "./hooks/useTestRun";
 export { type ParseResult, parseRun, type RunFile } from "./utils/parse-run";

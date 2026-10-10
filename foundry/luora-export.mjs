@@ -13,7 +13,7 @@
 import { execFile, execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { availableParallelism, tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildAtlas } from './luora-atlas.mjs';
 import { forkKeys, latestBlock, resolveChain } from './luora-chains.mjs';
@@ -50,9 +50,21 @@ if (chainKey) {
   chain = { key: c.key, name: c.name, family: c.family, id: c.id, block };
   console.log(`luora: forking ${c.name} at block ${block}`);
 }
-const sh = (cmd, args) => execFileSync(cmd, args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 512 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
+// a failed forge command ends the export with forge's own message (a compiler error, a bad
+// flag), not Node's dump of the whole error; `failOk` keeps the output of a run that exits 1
+const sh = (cmd, args, { failOk = false } = {}) => {
+  try {
+    return execFileSync(cmd, args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 512 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
+  } catch (e) {
+    if (failOk && e.stdout?.includes('{')) return e.stdout;
+    console.error(`luora: ${cmd} ${args[0]} failed`);
+    console.error(String(e.stderr || e.message).trim().slice(0, 4000));
+    process.exit(1);
+  }
+};
 
 // ---------- artifacts: selectors, events, bytecode → contract, source maps ----------
+console.log('luora: building (forge build)');
 sh('forge', ['build']);
 const OUT = join(ROOT, 'out'), artifacts = [];
 const builds = existsSync(join(OUT, 'build-info')) ? readdirSync(join(OUT, 'build-info')).map(f => JSON.parse(readFileSync(join(OUT, 'build-info', f), 'utf8')).source_id_to_path || {}) : [];
@@ -83,7 +95,10 @@ for (const a of artifacts) if (!a.file.startsWith('lib/') && existsSync(join(ROO
 }
 
 // ---------- run tests ----------
-const raw = sh('forge', ['test', '--json', '-vvvv', ...extra]);
+// a failing test makes forge exit 1; its JSON is still the whole run, and failures are what an
+// auditor came to see, so only a run without JSON (a build or flag error) stops the export
+console.log('luora: running forge test');
+const raw = sh('forge', ['test', '--json', '-vvvv', ...extra], { failOk: true });
 const results = JSON.parse(raw.slice(raw.indexOf('{')));
 const CHEAT = '0x7109709ecfa91a80626ff3989d68f67f5b1dd12d';
 
@@ -97,6 +112,7 @@ for (const [suiteId, suite] of Object.entries(results)) for (const [testName, t]
   const [file, contract] = suiteId.split(':'), dump = join(TMP, `${jobs.length}.json`);
   jobs.push({ key: suiteId + '#' + testName, dump, args: ['test', '--debug', '--mp', file, '--mc', `^${esc(contract)}$`, '--mt', `^${esc(testName)}$`, '--dump', dump, ...passthrough] });
 }
+console.log(`luora: tracing ${jobs.length} unit tests step by step`);
 await Promise.all(Array.from({ length: Math.min(availableParallelism(), jobs.length) }, async () => {
   // failing tests exit non-zero but still dump, so errors are ignored and the file decides
   for (let j; (j = jobs.shift());) await new Promise(res => execFile('forge', j.args, { cwd: ROOT, maxBuffer: 64 * 1024 * 1024 }, () => res()))
@@ -246,8 +262,10 @@ function otherContracts(root, skip) {
 
 let atlas = null;
 // a fork run is only its traces (the --forks parent keeps the atlas, findings and coverage)
-if (!TRACE_ONLY)
+if (!TRACE_ONLY) {
+  console.log('luora: mapping the contract (atlas, findings, coverage)');
   try { atlas = buildAtlas({ root: ROOT }); } catch (e) { console.warn(`luora: atlas skipped — ${e.message}`); }
+}
 // the project's other contracts, so the Atlas can switch between them; the app marks mocks.
 // ponytail: one build per contract and no coverage / report findings for them (the main contract
 // keeps those); share one AST pass if exports of big projects get slow
@@ -286,4 +304,4 @@ if (forksArg) {
 }
 writeFileSync(OUT_FILE, JSON.stringify(data, null, 1));
 const traced = tests.reduce((n, t) => n + t.frames.filter(f => f.lines).length, 0);
-console.log(`luora: ${tests.length} tests, ${tests.reduce((n, t) => n + t.frames.length, 0)} frames (${traced} with source lines) → luora-data.json`);
+console.log(`luora: ${tests.length} tests, ${tests.reduce((n, t) => n + t.frames.length, 0)} frames (${traced} with source lines) → ${TRACE_ONLY ? 'the fork run' : basename(OUT_FILE)}`);

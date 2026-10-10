@@ -134,3 +134,47 @@ button.hdr-pill:focus-visible,
     transition: none;
   }
 }
+/* Start test (Trace sidebar): the lit capsule in green, the one control that runs something.
+   Same capsule as the row above (T1/T2), its ring and glow in the pass colour. */
+.hdr-pill.go,
+button.hdr-pill.go:hover {
+  border: 1px solid transparent;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.1),
+    0 6px 18px -6px rgb(0 0 0 / 0.7),
+    0 0 18px -6px rgb(74 222 128 / 0.35);
+  color: var(--fg);
+}
+.hdr-pill.go {
+  background:
+    linear-gradient(180deg, #1f2922, #161b17) padding-box,
+    linear-gradient(
+      135deg,
+      rgb(74 222 128 / 0.6),
+      rgb(74 222 128 / 0.08) 45%,
+      rgb(74 222 128 / 0.4)
+    )
+    border-box;
+}
+button.hdr-pill.go:hover {
+  background:
+    linear-gradient(180deg, #24302a, #1a201b) padding-box,
+    linear-gradient(
+      135deg,
+      rgb(74 222 128 / 0.8),
+      rgb(74 222 128 / 0.12) 45%,
+      rgb(74 222 128 / 0.55)
+    )
+    border-box;
+}
+.hdr-pill.go.split > button {
+  box-shadow: inset 1px 0 0 rgb(74 222 128 / 0.2);
+}
+/* a split capsule whose left half is a button too (Start test | where it runs) */
+.hdr-pill.split > button.lead {
+  flex: 1;
+  min-width: 0;
+  padding: 0 12px 0 14px;
+  border-radius: 9999px 0 0 9999px;
+  box-shadow: none;
+}

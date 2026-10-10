@@ -3,7 +3,14 @@ import { PH, PhIcon } from "@/components/ui";
 import { CopyPill } from "./CopyPill";
 import { ReloadButton } from "./ReloadButton";
 
-export function Sidebar({ children }: { children: ReactNode }) {
+export function Sidebar({
+  children,
+  after,
+}: {
+  children: ReactNode;
+  /** under Re-run: Start test (TestRunPanel) */
+  after?: ReactNode;
+}) {
   return (
     <aside className="flex w-[272px] flex-none flex-col overflow-auto rounded-card border border-border bg-card-grad p-2.5 shadow-soft">
       <ReloadButton />
@@ -22,6 +29,7 @@ export function Sidebar({ children }: { children: ReactNode }) {
           <CopyPill text="node luora-export.mjs --mt test_x" />
         </div>
       </section>
+      {after}
     </aside>
   );
 }

@@ -1,15 +1,23 @@
 "use client";
 
 import { AnimatePresence, animate, motion } from "motion/react";
+import { useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { EASE, ENTER, PH, PhIcon, SegmentedControl } from "@/components/ui";
 import { type AtlasSource, createAtlasModel } from "@/features/atlas";
 import { atlasSource } from "@/features/atlas/utils/atlas-source";
-import { type RunFile, useRun, useShownSource } from "@/features/run";
+import {
+  type RunFile,
+  type TestRun,
+  useRun,
+  useShownSource,
+  useTestRun,
+} from "@/features/run";
 import {
   type CallRange,
   type DisplayKind,
   displayKind,
+  type ForkRun,
   locateFrame,
   parseRange,
   rangeParam,
@@ -21,6 +29,7 @@ import { CallGraph } from "../graph/CallGraph";
 import { StartHere } from "../onboarding/StartHere";
 import { ForkPicker } from "../shell/ForkPicker";
 import { Sidebar } from "../shell/Sidebar";
+import { TestRunPanel } from "../shell/TestRunPanel";
 import { SourcePanel } from "../source/SourcePanel";
 import { AskPanel, useAskThread } from "./AskPanel";
 import { BalancePanels } from "./BalancePanels";
@@ -39,7 +48,15 @@ export function TraceWorkspace({
   atlas: AtlasSource;
 }) {
   const shown = useShownSource(source, fromFile);
-  const { run, fork, setFork } = useRun();
+  const { run, fork, setFork, setRun } = useRun();
+  const router = useRouter();
+  // Start test's fresh luora-data.json: a live local run re-reads it from disk; the sample or a
+  // dropped file is replaced by it, in this tab only, like a drop
+  const testRun = useTestRun((data) =>
+    shown.origin === "local"
+      ? router.refresh()
+      : setRun({ data, name: "luora-data.json", stamp: Date.now() }),
+  );
   // the same run's atlas (for the Scenario tab): the dropped file's, else the server's when it
   // comes from the same place as the trace (a local trace without an atlas gets none)
   const runAtlas = run
@@ -68,6 +85,9 @@ export function TraceWorkspace({
       source={view}
       atlas={runAtlas}
       forkPicker={<ForkPicker forks={forks} value={fork} onChange={setFork} />}
+      testRun={testRun}
+      fork={fork}
+      forks={forks}
     />
   );
 }
@@ -77,10 +97,16 @@ function TraceBody({
   source,
   atlas,
   forkPicker,
+  testRun,
+  fork,
+  forks,
 }: {
   source: TraceSource;
   atlas: AtlasSource | null;
   forkPicker: ReactNode;
+  testRun: TestRun;
+  fork: string;
+  forks: Record<string, ForkRun>;
 }) {
   const { data } = source;
   const model = useMemo(
@@ -200,6 +226,16 @@ function TraceBody({
     else url.searchParams.set("call", call);
     history.replaceState(history.state, "", url);
   }, [test, call]);
+
+  /** show test `i` from its top (the test list, or a Start test result) */
+  const openTest = (i: number) => {
+    if (i < 0) return;
+    setTestIdx(i);
+    setFrameIdx(null);
+    setAnchor(null);
+    setFolded(new Set());
+    thread.clear();
+  };
 
   /** select a call; `extend` (Shift) keeps the range's start and moves its end here */
   const selectFrame = (i: number, extend = false) => {
@@ -421,17 +457,26 @@ function TraceBody({
             transition={{ duration: 0.26, ease: EASE }}
             className="flex flex-none overflow-hidden"
           >
-            <Sidebar>
+            <Sidebar
+              after={
+                <TestRunPanel
+                  run={testRun}
+                  fork={fork}
+                  forks={forks}
+                  onOpen={(suite, name) =>
+                    openTest(
+                      data.tests.findIndex(
+                        (t) => t.suite === suite && t.name === name,
+                      ),
+                    )
+                  }
+                />
+              }
+            >
               <TestList
                 tests={data.tests}
                 selected={testIdx}
-                onSelect={(i) => {
-                  setTestIdx(i);
-                  setFrameIdx(null);
-                  setAnchor(null);
-                  setFolded(new Set());
-                  thread.clear();
-                }}
+                onSelect={openTest}
               />
             </Sidebar>
           </motion.div>

@@ -1,0 +1,70 @@
+// node --experimental-strip-types src/features/run/utils/test-run.check.ts
+import assert from "node:assert/strict";
+import type { TestResult } from "../../trace/types.ts";
+import {
+  clock,
+  exportArgs,
+  kindDetail,
+  parseEvent,
+  summarize,
+} from "./test-run.ts";
+
+// only the local run or one well-formed fork key: never a flag, a path or a list
+assert.deepEqual(exportArgs({}), []);
+assert.deepEqual(exportArgs({ fork: "" }), []);
+assert.deepEqual(exportArgs({ fork: "base-sepolia" }), [
+  "--forks",
+  "base-sepolia",
+]);
+for (const fork of [
+  "--mt",
+  "-x",
+  "all,sepolia",
+  "../x",
+  "Base",
+  "a b",
+  7,
+  ["sepolia"],
+])
+  assert.equal(typeof exportArgs({ fork }), "string", String(fork));
+assert.equal(typeof exportArgs(null), "string");
+assert.equal(typeof exportArgs([]), "string");
+
+assert.equal(kindDetail({ Unit: { gas: 107704 } }), "gas: 107,704");
+assert.equal(
+  kindDetail({ Invariant: { runs: 256, calls: 128000, reverts: 110 } }),
+  "runs: 256, calls: 128,000, reverts: 110",
+);
+
+const t = (name: string, status: string, reason: string | null = null) =>
+  ({
+    suite: "S",
+    file: "f",
+    name,
+    status,
+    kind: { Unit: { gas: 1 } },
+    reason,
+    frames: [],
+    transfers: [],
+  }) as TestResult;
+const s = summarize([
+  t("a()", "Success"),
+  t("b()", "Skipped"),
+  t("c()", "Failure", "1 != 2"),
+]);
+assert.deepEqual(
+  s.rows.map((r) => r.name),
+  ["c()", "a()", "b()"],
+  "failures first",
+);
+assert.deepEqual([s.passed, s.failed, s.skipped], [1, 1, 1]);
+assert.equal(s.rows[0].reason, "1 != 2");
+
+assert.deepEqual(parseEvent('{"log":"luora: x","at":3}'), {
+  log: "luora: x",
+  at: 3,
+});
+assert.equal(parseEvent("not json"), null);
+assert.equal(parseEvent('{"other":1}'), null);
+assert.equal(clock(83), "1:23");
+console.log("test-run ok");
