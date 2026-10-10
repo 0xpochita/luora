@@ -11,7 +11,6 @@ import {
 import { Button, IconButton } from "@/components/ui";
 import { parseRun, useRun } from "@/features/run";
 
-
 const REPO_WEB = "https://github.com/0xpochita/luora/blob/main";
 const STEPS = ["Welcome", "Export your run", "Load it", "Where to look"];
 
