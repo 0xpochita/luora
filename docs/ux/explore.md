@@ -90,11 +90,15 @@ like inside. Studied:
 
 | Id | Pin | Taken |
 |---|---|---|
-| Q1 | 837880705720916025 (Naxion web3 landing, "Projects" grid) | the section's title is the grid's first tile, so the grid is one block; the last tile says what is missing (Curve, Lido) instead of a hole |
-| Q2 | 137008013661144911 (iaroslove, bento feature cards) | each card: title and two lines on top, a live miniature of the real product in an inset below. Here: the protocol's own map, from the same `mapLayout` as its Map view (cards as blocks, outside contracts with a blue bar, wires brighten on hover) |
+| L1 | 339740365654699588 (Dribbble, shared screens list) | one centred column under a title and one line; each protocol a raised row: thumbnail left, name, purpose and flows in the middle, counts on the right, a chevron; the hovered row lifts |
+| Q2 | 137008013661144911 (iaroslove, bento feature cards) | the thumbnail is a live miniature of the real product. Here: the protocol's own map, from the same `mapLayout` as its Map view (cards as blocks, outside contracts with a blue bar, wires brighten on hover) |
 | — | 128774870591905379 (LayerZero Scan, protocol details) | looked at, not taken: a chart-first detail page; we have no measured series to chart |
 
-Each card also lists its flows by name (Supply · Borrow · Liquidation …) above the counts, so the
+A first try took the title-as-a-tile grid of pin 837880705720916025 (Naxion "Projects"): with four
+protocols it left a tall empty title tile and a ragged second row, and read as odd. Replaced by L1's
+list, which fits any count and scans top to bottom.
+
+Each row also lists its flows by name (Supply · Borrow · Liquidation …) above the counts, so the
 business actions are visible before opening the protocol.
 
 ## Data
