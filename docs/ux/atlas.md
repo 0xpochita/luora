@@ -103,3 +103,27 @@ Atlas give it their own context.
   questions are copied with their context for a coding agent.
 - **Defensive only**: the same system prompt; suggested questions are checked in
   `features/atlas/utils/ai.check.ts`.
+
+## Graph untangled, contract picker, Paths top to bottom (same day)
+
+"The graph is packed like tangled cables; let me select the contract; Paths runs everything to
+the right and is hard for a security researcher to read. Read references first."
+
+| Ref | Finding | Applied |
+|---|---|---|
+| NN/g, "Horizontal attention leans left" / "Scrolling and attention" | 80% of viewing time on the left half; 20% of attention below the fold but only 1% past it horizontally | Paths reads downwards, left-aligned |
+| Audit practice (sequence diagrams of successful and failing flows; Sherlock's protocol mapping by who can call) | a function is read as an ordered list of checks, effects and interactions, with who may call it | one function at a time, caller and gates first, checks where they can revert |
+| P1 pin 2814818513185996 (vertical stepper) | a word per step on the left, a node on one vertical line, the detail on the right | the Paths rows |
+| Trace's test list and trace | master list on the left, detail on the right | functions list beside the path |
+
+- **Graph**: a storage, external or event card sits level with the first port wired into it (its
+  first use, in reading order), and the columns are 240px apart; wires from a function to what it
+  first touches run flat. Before, every column was packed from the top.
+- **Contract picker**: the file name in the header is a dropdown when the export has several
+  contracts (`luora-export.mjs` now also maps every other concrete contract into `atlases`; mocks
+  are grouped as test helpers). The sample carries its four mocks.
+- **Paths**: entry points on the left (caller, test coverage, findings); the chosen function's path
+  on the right as rows: Entry, Access, then Read / Call / Write / Emit with each Check placed right
+  after the step it follows, ending in Return. Every row carries its source line. External calls
+  say whether they are read-only; writes after a state-changing call are flagged; lines no test
+  ran are marked; the findings on the path close it. Replay highlights the current row.

@@ -1,7 +1,13 @@
 // node --experimental-strip-types src/features/atlas/utils/flow-layout.check.ts
 import assert from "node:assert/strict";
 import type { AtlasData, Piece, Step } from "../types.ts";
-import { checkReason, FLOW, flowLayout, signatureOf } from "./flow-layout.ts";
+import {
+  checkReason,
+  FLOW,
+  flowLayout,
+  pathOf,
+  signatureOf,
+} from "./flow-layout.ts";
 import { resolveStepLines } from "./step-lines.ts";
 
 const source = `contract V {
@@ -218,5 +224,20 @@ for (let i = 0; i < circles.length; i++)
 for (let i = 1; i < L.lanes.length; i++)
   assert.ok(L.lanes[i].y >= L.lanes[i - 1].y + L.lanes[i - 1].h);
 assert.ok(circles.every((c) => c.x + c.r <= L.w && c.y + c.r <= L.h));
+
+// one function's path, top to bottom: entry, access, then steps with each check right after
+// the step it follows (modifier check first, body check after the reads before it)
+const path = pathOf(model, "withdraw");
+assert.ok(path);
+const kinds = path.rows.map((r) => (r.kind === "check" ? `check:${r.reason}` : r.kind));
+assert.deepEqual(kinds.slice(0, 2), ["entry", "access"]);
+assert.ok(kinds.includes("check:paused") && kinds.includes("check:!shares"), kinds.join(","));
+assert.ok(kinds.indexOf("check:paused") < kinds.indexOf("c"), "the modifier check comes before the call");
+assert.ok(kinds.indexOf("check:!shares") < kinds.indexOf("c"), "the body check comes before the call");
+assert.equal(kinds.at(-1), "ret");
+const late = path.rows.find((r) => r.kind === "w");
+assert.ok(late && "late" in late && late.late, "the write after the call is flagged (CEI)");
+assert.deepEqual(path.findings, ["f1"]);
+assert.equal(pathOf(model, "nope"), null);
 
 console.log("flow-layout ok");

@@ -32,9 +32,9 @@ import { StartHere } from "../onboarding/StartHere";
 import { AtlasAsk } from "./AtlasAsk";
 import { ContractSource } from "./ContractSource";
 import { CoverageSummary } from "./CoverageSummary";
-import { FlowView } from "./flow/FlowView";
 import { LabView } from "./lab/LabView";
 import { PieceInspector } from "./PieceInspector";
+import { PathsView } from "./paths/PathsView";
 import { openQuickSearch, QuickSearch } from "./QuickSearch";
 import "./atlas.css";
 
@@ -119,7 +119,12 @@ function AtlasBody({ source }: { source: AtlasSource }) {
   const [tab, setTab] = useState<"details" | "ask">("details");
   const [askFocus, setAskFocus] = useState(0);
   const thread = useAiThread();
-  const sim = useStepSim(model, view === "flow" ? selected : null);
+  // the function Paths shows (its own choice, so selecting a step for the inspector keeps it)
+  const [lane, setLane] = useState<string | null>(null);
+  const sim = useStepSim(
+    model,
+    view === "flow" ? (lane ?? model.entry[0] ?? null) : null,
+  );
   const triage = useTriage(model.contract);
   const keys = useRef({
     selected: false,
@@ -215,6 +220,7 @@ function AtlasBody({ source }: { source: AtlasSource }) {
               onChange={(c) => {
                 // another contract: a fresh selection, panel and conversation
                 setName(c);
+                setLane(null);
                 setSelected(null);
                 setSummary(false);
                 thread.clear();
@@ -305,11 +311,12 @@ function AtlasBody({ source }: { source: AtlasSource }) {
           className={view === "flow" ? "stage" : "stage flex flex-col"}
         >
           {view === "flow" ? (
-            <FlowView
+            <PathsView
               model={model}
-              selected={selected}
-              onSelect={select}
+              lane={lane}
+              onLane={setLane}
               sim={sim}
+              onSelect={select}
             />
           ) : (
             <LabView

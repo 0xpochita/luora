@@ -349,3 +349,50 @@ export function flowLayout(m: Model): FlowLayout {
     h: Math.round(h),
   };
 }
+
+/** One row of a function's path, top to bottom (the Paths view). */
+export type PathRow =
+  | (Omit<FlowNode, "x" | "y" | "key"> & { key: string })
+  | { key: string; kind: "check"; id: string; reason: string; line: number };
+
+/**
+ * One function's path as rows in execution order: entry, access, then every step with the checks
+ * that can revert placed right after the step they follow (the same anchoring as the lanes), and
+ * the findings on what it touches, worst first.
+ */
+export function pathOf(
+  m: Model,
+  id: string,
+): {
+  sig: string;
+  gates: string[];
+  rows: PathRow[];
+  findings: string[];
+} | null {
+  const lane = flowLayout(m).lanes.find((l) => l.id === id);
+  if (!lane) return null;
+  const rows = [
+    ...lane.nodes.map((n) => ({ at: n.x, row: n })),
+    ...lane.reverts.map((v) => ({
+      at: v.stem,
+      row: {
+        key: v.key,
+        kind: "check" as const,
+        id,
+        reason: v.reason,
+        line: v.line,
+      },
+    })),
+  ]
+    .sort((a, b) => a.at - b.at)
+    .map(({ row }) => {
+      const { x: _x, y: _y, ...rest } = row as FlowNode;
+      return ("reason" in row ? row : rest) as PathRow;
+    });
+  return {
+    sig: lane.sig,
+    gates: lane.gates,
+    rows,
+    findings: lane.findings.map((f) => f.id),
+  };
+}

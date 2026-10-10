@@ -16,8 +16,8 @@ import "@/components/(main)/atlas/atlas.css";
 const FindingsTab = dynamic(() =>
   import("@/components/(main)/atlas/FindingsTab").then((m) => m.FindingsTab),
 );
-const FlowView = dynamic(() =>
-  import("@/components/(main)/atlas/flow/FlowView").then((m) => m.FlowView),
+const PathsView = dynamic(() =>
+  import("@/components/(main)/atlas/paths/PathsView").then((m) => m.PathsView),
 );
 const TraceRow = dynamic(() =>
   import("@/components/(main)/trace/TraceRow").then((m) => m.TraceRow),
@@ -42,7 +42,8 @@ export function Views({
 }) {
   const model = useMemo(() => createAtlasModel(atlas), [atlas]);
   const graph = useMemo(() => contractGraph(model), [model]);
-  const sim = useStepSim(model, null);
+  // Paths shows the vault's withdraw(): checks, an external call, then the writes after it
+  const sim = useStepSim(model, model.entry.includes("withdraw") ? "withdraw" : (model.entry[0] ?? null));
   const triage = useTriage(model.contract);
   const maxGas = Math.max(1, ...frames.map((f) => f.gas ?? 0));
   const none = () => {};
@@ -93,7 +94,13 @@ export function Views({
     flow: (
       <div className="atlas absolute inset-0">
         <section className="stage h-full">
-          <FlowView model={model} selected={null} onSelect={none} sim={sim} />
+          <PathsView
+            model={model}
+            lane={sim.entry}
+            onLane={none}
+            sim={sim}
+            onSelect={none}
+          />
         </section>
       </div>
     ),
