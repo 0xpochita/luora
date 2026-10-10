@@ -321,9 +321,9 @@ export function entryPorts(m: PlayModel, fn: string) {
   return { inputs, outputs };
 }
 
-/** card widths and column x: 160px between columns so wires have room to curve */
+/** card widths and column x: 240px between columns so wires curve gently instead of bunching */
 const W = { entry: 360, target: 270 } as const;
-const COL_GAP = 160;
+const COL_GAP = 240;
 export const COL = {
   entry: 0,
   slot: W.entry + COL_GAP,
@@ -388,14 +388,18 @@ export function contractGraph(m: PlayModel): { nodes: GNode[]; wires: Wire[] } {
     }
   }
 
-  // targets, ordered by the mean y of the cards wired into them
-  const entryY = new Map(nodes.map((n) => [n.id, n.y]));
-  const mean = (id: string) => {
-    const ys = wires
-      .filter((w) => w.to.node === id)
-      .map((w) => entryY.get(w.from.node) ?? 0);
-    return ys.length ? ys.reduce((a, b) => a + b, 0) / ys.length : 1e9;
-  };
+  // a target sits level with the first port wired into it (its first use, in reading order), so
+  // that wire runs flat and the column fills from the top instead of piling up or sinking
+  const entryById = new Map(nodes.map((n) => [n.id, n]));
+  const mean = (id: string) =>
+    Math.min(
+      ...wires
+        .filter((w) => w.to.node === id)
+        .map((w) => {
+          const from = entryById.get(w.from.node);
+          return from ? portPos(from, w.from.port, "out").y : 0;
+        }),
+    );
   const touching = (op: string, id: string) =>
     m.entry.filter((fn) =>
       (m.seq[fn] ?? []).some(([k, t]) => k === op && t === id),
@@ -470,18 +474,18 @@ export function contractGraph(m: PlayModel): { nodes: GNode[]; wires: Wire[] } {
       .filter((p) => sys.includes(p.sys))
       .map(target)
       .filter((n): n is GNode => !!n)
-      .sort(
-        (a, b) =>
-          sys.indexOf(m.byId[a.id].sys) - sys.indexOf(m.byId[b.id].sys) ||
-          mean(a.id) - mean(b.id),
-      );
+      .map((n) => ({ n, want: mean(n.id) }))
+      .sort((a, b) => a.want - b.want);
+    // top to bottom: each card as close to where it wants to be as the card above allows;
+    // unwired cards (read-only config, unused events) close the column
     let cy = 0;
-    for (const n of ns) {
+    for (const { n, want } of ns) {
       n.x = x;
-      n.y = cy;
-      cy += nodeHeight(n) + GAP;
+      const inY = portPos({ ...n, y: 0 }, "in", "in").y;
+      n.y = Number.isFinite(want) ? Math.max(cy, Math.round(want - inY)) : cy;
+      cy = n.y + nodeHeight(n) + GAP;
     }
-    return ns;
+    return ns.map(({ n }) => n);
   };
   nodes.push(
     ...column(["storage"], COL.slot),

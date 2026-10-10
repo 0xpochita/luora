@@ -128,6 +128,10 @@ export type AtlasSource = {
   origin: RunOrigin;
   /** calls the forge tests made into the contract (luora-data.json `tests`), for real values in Lab runs */
   calls?: TraceCall[];
+  /** the project's other contracts (luora-data.json `atlases`, mocks included), for the contract picker */
+  contracts?: AtlasData[];
+  /** `calls`, for each of the other contracts */
+  callsBy?: Record<string, TraceCall[]>;
   /** scenarios an AI client proposed through foundry/luora-mcp.mjs (luora-scenarios.json), unvalidated */
   proposed?: unknown[];
 };

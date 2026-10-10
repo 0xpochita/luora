@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Dropdown,
   EASE,
   ENTER,
   Panel,
@@ -101,7 +102,12 @@ const VIEWS: {
 
 /** Smart-contract visual: graph, paths and scenarios, sharing one selection. */
 function AtlasBody({ source }: { source: AtlasSource }) {
-  const model = useMemo(() => createAtlasModel(source.data), [source.data]);
+  // the contract on screen: the export's main one, or another the project deploys (mocks too)
+  const all = [source.data, ...(source.contracts ?? [])];
+  const [name, setName] = useState(source.data.contract);
+  const data = all.find((c) => c.contract === name) ?? source.data;
+  const main = data === source.data;
+  const model = useMemo(() => createAtlasModel(data), [data]);
   const [view, setView] = useState<AtlasView>("lab");
   const [selected, setSelected] = useState<string | null>(null);
   const [summary, setSummary] = useState(false);
@@ -199,10 +205,38 @@ function AtlasBody({ source }: { source: AtlasSource }) {
             icon: <PhIcon d={v.icon} className="size-[15px]" />,
           }))}
         />
-        <span className="ml-auto inline-flex items-center gap-1.5 font-mono text-[12.5px] text-muted">
-          <SolidityLogo className="size-3.5 text-body" />
-          {model.file.split("/").pop()}
-        </span>
+        {all.length > 1 ? (
+          <div className="ml-auto">
+            <Dropdown
+              variant="pill"
+              mono
+              ariaLabel="Contract"
+              value={name}
+              onChange={(c) => {
+                // another contract: a fresh selection, panel and conversation
+                setName(c);
+                setSelected(null);
+                setSummary(false);
+                thread.clear();
+              }}
+              options={all.map((c) => ({
+                value: c.contract,
+                label: c.contract,
+                text: c.contract,
+                title: c.file,
+                icon: <SolidityLogo className="size-3.5 text-body" />,
+                group: /(^|\/)mocks?\//.test(c.file)
+                  ? "Mocks · test helpers"
+                  : "Contracts",
+              }))}
+            />
+          </div>
+        ) : (
+          <span className="ml-auto inline-flex items-center gap-1.5 font-mono text-[12.5px] text-muted">
+            <SolidityLogo className="size-3.5 text-body" />
+            {model.file.split("/").pop()}
+          </span>
+        )}
         {/* M1: the contract's key numbers as one quiet line; it opens the summary */}
         <button
           type="button"
@@ -266,7 +300,7 @@ function AtlasBody({ source }: { source: AtlasSource }) {
       </header>
       <div className="body">
         <motion.section
-          key={view}
+          key={`${view}:${name}`}
           {...ENTER}
           className={view === "flow" ? "stage" : "stage flex flex-col"}
         >
@@ -280,8 +314,8 @@ function AtlasBody({ source }: { source: AtlasSource }) {
           ) : (
             <LabView
               model={model}
-              calls={source.calls}
-              proposed={source.proposed}
+              calls={main ? source.calls : source.callsBy?.[name]}
+              proposed={main ? source.proposed : undefined}
               selected={selected}
               onSelect={select}
               only={view === "scenario" ? "scenario" : "contract"}

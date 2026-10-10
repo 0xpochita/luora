@@ -4,7 +4,8 @@ import path from "node:path";
 import { connection } from "next/server";
 import { LUORA_DATA_EXPLICIT, LUORA_DATA_PATH } from "@/config/env.server";
 import { SAMPLE_ATLAS } from "../fixtures/sample-atlas";
-import type { AtlasSource } from "../types";
+import SAMPLE_CONTRACTS from "../fixtures/sample-contracts.json";
+import type { AtlasData, AtlasSource } from "../types";
 import { atlasSource } from "../utils/atlas-source";
 
 /**
@@ -48,6 +49,8 @@ export async function loadAtlas(): Promise<AtlasSource> {
     } catch {}
   return {
     data: SAMPLE_ATLAS,
+    // the sample project's mocks, mapped by luora-atlas.mjs, for the contract picker
+    contracts: SAMPLE_CONTRACTS as unknown as AtlasData[],
     origin: "none",
     proposed: await loadProposed(SAMPLE_ATLAS.contract),
   };

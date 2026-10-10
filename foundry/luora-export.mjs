@@ -199,8 +199,32 @@ for (const [suiteId, suite] of Object.entries(results)) {
 }
 rmSync(TMP, { recursive: true, force: true });
 
+/** Every other concrete contract outside lib/, test/ and script/ (mocks included): the Atlas's contract picker. */
+function otherContracts(root, skip) {
+  const out = join(root, 'out'), names = new Set();
+  for (const dir of existsSync(out) ? readdirSync(out) : []) {
+    if (!dir.endsWith('.sol')) continue;
+    for (const f of readdirSync(join(out, dir))) {
+      let ast;
+      try { ast = JSON.parse(readFileSync(join(out, dir, f), 'utf8')).ast; } catch { continue; }
+      if (!ast || /^(lib|test|script)\//.test(ast.absolutePath) || ast.absolutePath.endsWith('.t.sol')) continue;
+      for (const c of ast.nodes ?? [])
+        if (c.nodeType === 'ContractDefinition' && c.contractKind === 'contract' && !c.abstract && c.name !== skip) names.add(c.name);
+    }
+  }
+  return [...names].sort();
+}
+
 let atlas = null;
 try { atlas = buildAtlas({ root: ROOT }); } catch (e) { console.warn(`luora: atlas skipped — ${e.message}`); }
+// the project's other contracts, so the Atlas can switch between them; the app marks mocks.
+// ponytail: one build per contract and no coverage / report findings for them (the main contract
+// keeps those); share one AST pass if exports of big projects get slow
+const atlases = [];
+if (atlas)
+  for (const name of otherContracts(ROOT, atlas.contract))
+    try { atlases.push(buildAtlas({ root: ROOT, contract: name })); } catch (e) { console.warn(`luora: atlas ${name} skipped — ${e.message}`); }
+if (atlases.length) console.log(`luora: atlas also maps ${atlases.map(a => a.contract).join(', ')}`);
 if (atlas) {
   const files = reportFiles(ROOT, process.argv.slice(2));
   mergeFindings(atlas, loadReports(files));
@@ -210,6 +234,6 @@ if (atlas) {
 if (atlas) try { atlas.coverage = buildCoverage({ root: ROOT, atlas, args: passthrough }); } catch (e) { console.warn(`luora: coverage skipped — ${e.message.split('\n')[0]}`); }
 
 const forgeVersion = sh('forge', ['--version']).split('\n')[0];
-writeFileSync(join(ROOT, 'luora-data.json'), JSON.stringify({ generatedAt: new Date().toISOString(), forgeVersion, command: ['forge', 'test', '--json', '-vvvv', ...extra].join(' '), tests, sources, atlas }, null, 1));
+writeFileSync(join(ROOT, 'luora-data.json'), JSON.stringify({ generatedAt: new Date().toISOString(), forgeVersion, command: ['forge', 'test', '--json', '-vvvv', ...extra].join(' '), tests, sources, atlas, atlases }, null, 1));
 const traced = tests.reduce((n, t) => n + t.frames.filter(f => f.lines).length, 0);
 console.log(`luora: ${tests.length} tests, ${tests.reduce((n, t) => n + t.frames.length, 0)} frames (${traced} with source lines) → luora-data.json`);
