@@ -1,3 +1,4 @@
+import type { RunOrigin } from "../trace/types";
 import type { TraceCall } from "./utils/playground";
 
 export type SystemKey =
@@ -124,7 +125,7 @@ export type AtlasCoverage = {
 
 export type AtlasSource = {
   data: AtlasData;
-  origin: "local" | "sample";
+  origin: RunOrigin;
   /** calls the forge tests made into the contract (luora-data.json `tests`), for real values in Lab runs */
   calls?: TraceCall[];
 };

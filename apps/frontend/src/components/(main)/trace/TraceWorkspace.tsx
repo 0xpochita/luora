@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { type RunFile, useShownSource } from "@/features/run";
 import {
   type DisplayKind,
   locateFrame,
@@ -17,9 +18,17 @@ import { TestList } from "./TestList";
 import { TraceHeader } from "./TraceHeader";
 import { TraceList } from "./TraceList";
 
-/** Client root of the trace page: owns test / frame / mode / filter selection. */
+const fromFile = (data: RunFile): TraceSource => ({ data, origin: "file" });
+
+/** Client root of the trace page: a dropped luora-data.json wins over the server's. */
 export function TraceWorkspace({ source }: { source: TraceSource }) {
-  const { data, origin } = source;
+  const shown = useShownSource(source, fromFile);
+  return shown.source && <TraceBody key={shown.key} source={shown.source} />;
+}
+
+/** Owns test / frame / mode / filter selection. */
+function TraceBody({ source }: { source: TraceSource }) {
+  const { data } = source;
   const files = Object.keys(data.sources);
   const [testIdx, setTestIdx] = useState(() =>
     Math.max(
@@ -70,7 +79,6 @@ export function TraceWorkspace({ source }: { source: TraceSource }) {
           tests={data.tests.length}
           sources={files.length}
           forgeVersion={data.forgeVersion}
-          origin={origin}
         />
         <div className="flex min-h-0 flex-1 gap-3">
           <main className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-card border border-border bg-card-grad shadow-soft">
