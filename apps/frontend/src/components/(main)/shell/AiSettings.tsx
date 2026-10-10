@@ -39,6 +39,12 @@ const NOTE: Record<Mode, string> = {
 };
 
 type Test = { state: "idle" | "busy" | "ok" | "bad"; text?: string };
+/** signing Claude Code in or out: confirm = asked to sign out, waiting = finishing on claude.ai */
+type Auth = {
+  step: "idle" | "confirm" | "busy" | "waiting";
+  url?: string | null;
+  error?: string;
+};
 /** what app/api/claude says about the Claude Code on this machine */
 type ClaudeStatus = {
   available: boolean;
@@ -60,13 +66,16 @@ export function AiSettings() {
   const [draft, setDraft] = useState<AiConfig>(NO_AI);
   const [test, setTest] = useState<Test>({ state: "idle" });
   const [claude, setClaude] = useState<ClaudeStatus>(null);
+  const [tick, setTick] = useState(0);
+  const [auth, setAuth] = useState<Auth>({ step: "idle" });
   const mode = modeOf(draft.kind);
-  // ask the local bridge whether Claude Code is here and signed in, each time "Your Claude" is shown
+  // ask the local bridge whether Claude Code is here and signed in, each time "Your Claude" is
+  // shown and after signing in or out
   useEffect(() => {
     if (mode !== "claude") return;
     let live = true;
-    setClaude(null);
-    fetch(PROVIDERS.claude.baseUrl)
+    if (!tick) setClaude(null);
+    fetch(PROVIDERS.claude.baseUrl, { cache: "no-store" })
       .then((r) => r.json())
       .then((s: ClaudeStatus) => live && setClaude(s))
       .catch(
@@ -82,7 +91,34 @@ export function AiSettings() {
     return () => {
       live = false;
     };
-  }, [mode]);
+  }, [mode, tick]);
+  // while you finish signing in on claude.ai, look again every two seconds
+  useEffect(() => {
+    if (auth.step !== "waiting") return;
+    if (claude?.loggedIn) return setAuth({ step: "idle" });
+    const id = setInterval(() => setTick((t) => t + 1), 2000);
+    return () => clearInterval(id);
+  }, [auth.step, claude?.loggedIn]);
+  /** Claude Code's own sign-in / sign-out, run on this laptop by app/api/claude/auth */
+  const authOp = async (op: "login" | "logout") => {
+    setAuth({ step: "busy" });
+    try {
+      const r = await fetch(`${PROVIDERS.claude.baseUrl}/auth`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ op }),
+      });
+      const j = (await r.json()) as { error?: string; url?: string | null };
+      if (!r.ok) return setAuth({ step: "idle", error: j.error });
+      setTest({ state: "idle" });
+      setAuth(
+        op === "login" ? { step: "waiting", url: j.url } : { step: "idle" },
+      );
+      setTick((t) => t + 1);
+    } catch (e) {
+      setAuth({ step: "idle", error: (e as Error).message });
+    }
+  };
   const edit = (patch: Partial<AiConfig>) => {
     setDraft({ ...draft, ...patch });
     setTest({ state: "idle" });
@@ -223,7 +259,15 @@ export function AiSettings() {
                   />
                 </Row>
               )}
-              {mode === "claude" && <ClaudeLine s={claude} />}
+              {mode === "claude" && (
+                <ClaudeLine
+                  s={claude}
+                  auth={auth}
+                  onAuth={setAuth}
+                  onSignIn={() => authOp("login")}
+                  onSignOut={() => authOp("logout")}
+                />
+              )}
               <Row label="Model">
                 {mode === "claude" ? (
                   <Dropdown
@@ -294,6 +338,27 @@ export function AiSettings() {
             {NOTE[mode]}
           </p>
           <div className="flex justify-end gap-1.5">
+            {/* stop using the connected AI in Luora; for Your Claude it does not sign Claude Code out */}
+            {connected && (
+              <Button
+                variant="ghost"
+                className="mr-auto"
+                title={
+                  saved.kind === "claude"
+                    ? "Stop using your Claude in Luora (Claude Code stays signed in)"
+                    : "Stop using this AI in Luora and forget its key"
+                }
+                onClick={() => {
+                  saveAiConfig(NO_AI);
+                  setDraft(NO_AI);
+                  setTest({ state: "idle" });
+                  dialog.current?.close();
+                }}
+              >
+                <span className="size-1.5 rounded-full bg-red" />
+                Disconnect
+              </Button>
+            )}
             <Button variant="ghost" onClick={() => dialog.current?.close()}>
               Cancel
             </Button>
@@ -311,42 +376,125 @@ export function AiSettings() {
   );
 }
 
-/** Claude Code on this machine: found and signed in (with which plan), or what to do. */
-function ClaudeLine({ s }: { s: ClaudeStatus }) {
+/**
+ * Claude Code on this machine: found and signed in (with which plan), or what to do, plus its own
+ * sign-in and sign-out. Signing out is Claude Code's, for the whole laptop, so it asks first.
+ */
+function ClaudeLine({
+  s,
+  auth,
+  onAuth,
+  onSignIn,
+  onSignOut,
+}: {
+  s: ClaudeStatus;
+  auth: Auth;
+  onAuth: (a: Auth) => void;
+  onSignIn: () => void;
+  onSignOut: () => void;
+}) {
   const ok = !!s?.available && s.loggedIn;
   const text = !s
     ? "Looking for Claude Code on this laptop…"
     : ok
       ? `Claude Code ${s.version?.split(" ")[0] ?? ""} · signed in${s.authMethod === "claude.ai" ? ` with your Claude${s.plan ? ` ${s.plan}` : ""} plan` : ""}`
       : s.available
-        ? (s.error ??
-          "Claude Code is here but not signed in. Run `claude` once in a terminal and sign in.")
+        ? "Claude Code is here but not signed in."
         : (s.error ?? "Claude Code is not installed.");
+  const busy = auth.step === "busy";
   return (
-    <p className="flex items-start gap-2 text-[12.5px] text-body leading-normal">
-      <span
-        className={`mt-1.5 size-1.5 flex-none rounded-full ${!s ? "bg-dim" : ok ? "bg-green" : "bg-red"}`}
-      />
-      <span>
-        {text}
-        {s && !s.available && (
-          <>
-            {" "}
-            Install it from{" "}
-            <a
-              href="https://docs.claude.com/en/docs/claude-code/setup"
-              target="_blank"
-              rel="noreferrer"
-              className="underline decoration-white/30 underline-offset-2 hover:decoration-white"
+    <div className="flex flex-col gap-2">
+      <p className="flex items-start gap-2 text-[12.5px] text-body leading-normal">
+        <span
+          className={`mt-1.5 size-1.5 flex-none rounded-full ${!s || auth.step === "waiting" ? "bg-dim" : ok ? "bg-green" : "bg-red"}`}
+        />
+        <span>
+          {text}
+          {s && !s.available && (
+            <>
+              {" "}
+              Install it from{" "}
+              <a
+                href="https://docs.claude.com/en/docs/claude-code/setup"
+                target="_blank"
+                rel="noreferrer"
+                className="underline decoration-white/30 underline-offset-2 hover:decoration-white"
+              >
+                the Claude Code docs
+              </a>
+              , then reopen this.
+            </>
+          )}
+        </span>
+      </p>
+
+      {auth.step === "confirm" ? (
+        <div className="rounded-tile border border-border bg-inset p-2.5 text-[12.5px] text-body leading-normal">
+          Sign Claude Code out on this laptop? This is Claude Code's own
+          sign-out: every terminal and app that uses Claude Code here (Orca
+          included) is signed out too, not only Luora.
+          <div className="mt-2 flex gap-1.5">
+            <Button size="sm" onClick={onSignOut}>
+              <span className="size-1.5 rounded-full bg-red" />
+              Sign out of Claude
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onAuth({ step: "idle" })}
             >
-              the Claude Code docs
-            </a>
-            , run <code className="font-mono">claude</code> once to sign in,
-            then reopen this.
-          </>
-        )}
-      </span>
-    </p>
+              Keep signed in
+            </Button>
+          </div>
+        </div>
+      ) : auth.step === "waiting" ? (
+        <p className="text-[12.5px] text-muted leading-normal">
+          Finish signing in on the claude.ai page that opened in your browser;
+          this updates by itself.
+          {auth.url && (
+            <>
+              {" "}
+              No page?{" "}
+              <a
+                href={auth.url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-fg underline decoration-white/30 underline-offset-2 hover:decoration-white"
+              >
+                Open the sign-in page
+              </a>
+              .
+            </>
+          )}
+        </p>
+      ) : (
+        s?.available && (
+          <div className="flex items-center gap-1.5">
+            {ok ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={busy}
+                onClick={() => onAuth({ step: "confirm" })}
+                title="Claude Code's own sign-out, for this whole laptop"
+              >
+                Sign out of Claude
+              </Button>
+            ) : (
+              <Button size="sm" disabled={busy} onClick={onSignIn}>
+                {busy ? "Opening…" : "Sign in with Claude"}
+              </Button>
+            )}
+          </div>
+        )
+      )}
+      {auth.error && (
+        <p className="flex items-start gap-2 text-[12.5px] text-body">
+          <span className="mt-1.5 size-1.5 flex-none rounded-full bg-red" />
+          {auth.error}
+        </p>
+      )}
+    </div>
   );
 }
 

@@ -60,6 +60,17 @@ for, reads or stores your Claude login: it runs the unmodified `claude` program,
    in (e.g. *signed in with your Claude max plan*). Pick a model (Default, Fable 5.1, Opus 5.5,
    Sonnet 5, Haiku 4.5; also from the chip under the Ask box) and **Test connection**.
 
+**Disconnect** (bottom left of the dialog) only stops Luora using your Claude; Claude Code stays
+signed in. **Sign out of Claude** (in the Your Claude panel, after a confirm) runs Claude Code's own
+`claude auth logout`: that signs Claude Code out on the whole laptop, terminals and Orca included.
+**Sign in with Claude** runs `claude auth login --claudeai`, which opens claude.ai's sign-in page in
+your browser; the dialog updates by itself when you finish there (`app/api/claude/auth`, same local
+guard as the bridge).
+
+**Only on your laptop.** A hosted Luora (e.g. on Vercel) cannot use your Claude: the `claude` program
+and its login live on your machine, and the route is switched off there. Use Own API key on a hosted
+Luora, or run Luora locally.
+
 How it works: the page posts the question with its context to `app/api/claude`, which runs
 
 ```sh
