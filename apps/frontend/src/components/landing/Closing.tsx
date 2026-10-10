@@ -74,7 +74,8 @@ const FAQ: [Cat, string, string][] = [
  * FAQ pill over the heading, a short line to its right; below, a card of category tabs on the
  * left with a 'Got questions?' card at its foot, and the questions as separate rounded cards on
  * the right, each with a chevron in a ring. Still no JS: the tabs are radios, the filter is CSS
- * (landing.css .lp-faq), every question a native <details>.
+ * (landing.css .lp-faq), every question a native <details> whose body eases open and shut
+ * (::details-content height + the answer fading in, CSS only).
  */
 export function Faq() {
   return (
@@ -89,10 +90,9 @@ export function Faq() {
             <span className="size-1.5 rounded-full bg-white/60" />
             FAQ
           </p>
-          <h2 className="font-medium text-[clamp(32px,4.4vw,54px)] text-fg leading-[1.04] tracking-[-0.03em]">
-            Questions
-            <br />
-            <span className="text-white/45">auditors ask.</span>
+          {/* F1: a regular-weight, one-tone two-line title, as the ref sets it */}
+          <h2 className="max-w-[560px] font-normal text-[clamp(30px,3.4vw,46px)] text-fg leading-[1.12] tracking-[-0.025em]">
+            Answers to the questions auditors ask most.
           </h2>
         </div>
         <p className="max-w-[400px] text-[15px] text-muted leading-relaxed md:justify-self-end">

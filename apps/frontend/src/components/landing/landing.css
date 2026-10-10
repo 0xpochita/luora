@@ -469,6 +469,44 @@ a:hover > .lp-mark {
   }
 }
 
+/* FAQ open / close (Closing.tsx Faq): the <details> body eases between 0 and its own height and
+   the answer fades and drops in. CSS only (::details-content + interpolate-size); where those are
+   missing the body simply opens at once */
+.lp-faq {
+  interpolate-size: allow-keywords;
+}
+.lp-faq details::details-content {
+  block-size: 0;
+  overflow: hidden;
+  transition:
+    block-size 0.4s cubic-bezier(0.2, 0.7, 0.2, 1),
+    content-visibility 0.4s allow-discrete;
+}
+.lp-faq details[open]::details-content {
+  block-size: auto;
+}
+.lp-faq details > p {
+  transition:
+    opacity 0.35s ease,
+    translate 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.lp-faq details:not([open]) > p {
+  opacity: 0;
+  translate: 0 -8px;
+}
+@starting-style {
+  .lp-faq details[open] > p {
+    opacity: 0;
+    translate: 0 -8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-faq details::details-content,
+  .lp-faq details > p {
+    transition: none;
+  }
+}
+
 /* FAQ filter (Closing.tsx Faq, F1): the category radios hide the other questions, no JS */
 .lp-faq:has(input[value="setup"]:checked) details:not([data-cat="setup"]),
 .lp-faq:has(input[value="findings"]:checked) details:not([data-cat="findings"]),
