@@ -10,6 +10,8 @@ const FILE: Record<string, string> = {
   robinhood: "robinhood.webp",
   hyperliquid: "hyperliquid.webp",
   tempo: "tempo.webp",
+  bsc: "bsc.webp",
+  polygon: "polygon.webp",
 };
 
 export function ChainLogo({

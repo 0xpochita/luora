@@ -163,7 +163,8 @@ export function ProtocolWorkspace({ protocol: p }: { protocol: Protocol }) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="flex flex-none items-center gap-3 px-3 pb-2">
+      {/* a row of its own under the app's nav, not pressed against it */}
+      <header className="flex flex-none items-center gap-3 px-3 pt-2.5 pb-3">
         <Link href="/explore" className="hdr-pill sm" title="All protocols">
           <Chevron className="rotate-180" />
           Explore

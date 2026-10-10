@@ -5,14 +5,11 @@ import { wirePath } from "@/features/atlas/utils/lab-graph";
 import { type Flow, LANES, laneLayout } from "@/features/explore";
 
 /*
- * The lane diagram both Explore's flows and the Exploits' attack paths draw (docs/ux/explore.md,
- * docs/ux/exploits.md):
+ * Explore's lane diagram (docs/ux/explore.md):
  *  - P4 pin/10414642884268257 (Workflow plan): steps as numbered pills laid on rows, left to
  *    right; the active one white, the rest graphite
  *  - sequence diagrams: one lane per participant, the actor first; lane names stay put while the
  *    steps scroll under them
- *  - P3 pin/8514686792355593 (VMware Tanzu, security posture): the node where a policy failed
- *    carries a red dot; here a step whose check was missing (`marked`) gets a red ring and dot
  */
 
 const PILL_W = LANES.step - 18;
@@ -23,7 +20,6 @@ export function LaneCanvas({
   step,
   onStep,
   kindOf,
-  marked,
   className = "",
 }: {
   flow: Pick<Flow, "actor" | "steps">;
@@ -31,8 +27,6 @@ export function LaneCanvas({
   onStep: (i: number) => void;
   /** the second line under a lane's name: what the participant is */
   kindOf: (lane: string) => string;
-  /** steps where a check was missing (Exploits) */
-  marked?: (i: number) => boolean;
   className?: string;
 }) {
   const L = useMemo(() => laneLayout(f as Flow), [f]);
@@ -110,7 +104,6 @@ export function LaneCanvas({
           {L.steps.map((at) => {
             const x = f.steps[at.i];
             const on = at.i === step;
-            const bad = marked?.(at.i);
             return (
               <button
                 key={at.i}
@@ -118,7 +111,7 @@ export function LaneCanvas({
                 onClick={() => onStep(at.i)}
                 title={x.say}
                 aria-current={on ? "step" : undefined}
-                className={`absolute flex items-center gap-2 rounded-full px-3 text-left text-[12.5px] transition-colors ${on ? "bg-primary text-primary-fg shadow-soft" : "bg-raised text-text hover:bg-hover"} ${bad ? "ring-1 ring-red/70" : ""}`}
+                className={`absolute flex items-center gap-2 rounded-full px-3 text-left text-[12.5px] transition-colors ${on ? "bg-primary text-primary-fg shadow-soft" : "bg-raised text-text hover:bg-hover"}`}
                 style={{
                   left: at.x,
                   top: at.y + (LANES.lane - PILL_H) / 2,
@@ -129,18 +122,7 @@ export function LaneCanvas({
                 <span className={`font-mono ${on ? "" : "text-dim"}`}>
                   {at.i + 1}
                 </span>
-                <span className="truncate">
-                  {x.fn ?? (x as { label?: string }).label ?? "starts"}
-                </span>
-                {bad && (
-                  <>
-                    <span
-                      aria-hidden="true"
-                      className="ml-auto size-1.5 flex-none rounded-full bg-red shadow-[0_0_8px_var(--red)]"
-                    />
-                    <span className="sr-only">: a check was missing here</span>
-                  </>
-                )}
+                <span className="truncate">{x.fn ?? "starts"}</span>
               </button>
             );
           })}
