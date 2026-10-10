@@ -134,7 +134,7 @@ export function buildProtocol(spec, clones) {
     const license = B.spdx(unit.absolutePath);
     atlas = stripSource(atlas, openLicense(license), p => openLicense(B.spdx(p.file ?? unit.absolutePath)));
     // pieces inherited from another file: that file's path inside its own repo
-    atlas = { ...atlas, pieces: atlas.pieces.map(p => { if (!p.file) return p; const r = B.repoOf(p.file); return { ...p, file: r.path, repo: r.repo }; }) };
+    atlas = { ...atlas, pieces: atlas.pieces.map(p => { if (!p.file) return p; const r = B.repoOf(p.file); return { ...p, file: r.path, repo: r.repo, license: B.spdx(p.file) }; }) };
     // calls and library delegations, from the atlas' call pieces
     const deps = new Map(atlas.pieces.filter(p => p.sys === 'deps').map(p => [p.id, p]));
     for (const p of atlas.pieces.filter(p => p.sys === 'calls')) {
@@ -167,7 +167,11 @@ export function buildProtocol(spec, clones) {
         storage: atlas.pieces.filter(p => p.sys === 'storage').length,
         events: atlas.pieces.filter(p => p.sys === 'events').length,
       },
-      gated: atlas.pieces.filter(p => p.sys === 'entry' && p.caller && p.caller !== 'anyone').map(p => ({ fn: p.name, caller: p.caller })),
+      gated: atlas.pieces.filter(p => p.sys === 'entry' && p.caller && p.caller !== 'anyone').map(p => {
+        // the modifier that gates it reads better than the heuristic's lowercased role
+        const by = (p.links ?? []).find(l => atlas.pieces.some(x => x.id === l && x.sys === 'access'));
+        return { fn: p.name, caller: p.caller, ...(by && { by }) };
+      }),
       atlas: { ...atlas, file: path },
     };
   });
