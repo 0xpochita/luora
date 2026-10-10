@@ -67,7 +67,7 @@ export function TestRunPanel({
   return (
     <div className="mt-1.5 mb-5 flex flex-wrap items-center gap-x-4 gap-y-2">
       {running ? (
-        <div className="hdr-pill go split w-[244px] flex-none">
+        <div className="hdr-pill go split min-w-[244px] flex-none">
           <button
             type="button"
             className="lead"
@@ -91,7 +91,7 @@ export function TestRunPanel({
           </button>
         </div>
       ) : (
-        <div className="hdr-pill go split w-[244px] flex-none">
+        <div className="hdr-pill go split min-w-[244px] flex-none">
           <button
             type="button"
             className="lead"
@@ -103,7 +103,6 @@ export function TestRunPanel({
           </button>
           <Dropdown
             variant="bare"
-            className="max-w-[124px]"
             ariaLabel="Where Start test runs"
             value={target || "local"}
             onChange={(v) => setTarget(v === "local" ? "" : v)}
@@ -116,7 +115,7 @@ export function TestRunPanel({
               },
               ...FORK_CHAINS.map((c) => ({
                 value: c.key as string,
-                label: c.name.replace(/ \(.*\)$/, ""),
+                label: c.name,
                 text: c.name,
                 title: `The local run, then the same tests on a fork of ${c.name} at its latest block (read-only, nothing is sent)`,
                 icon: <ChainLogo family={c.family} className="size-3.5" />,
