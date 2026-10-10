@@ -214,9 +214,11 @@ function staged(root: HTMLElement, gsap: Gsap) {
     scrollTrigger: {
       trigger: root,
       start: "top top",
-      end: () => `+=${rows.length * 70}%`,
+      // ~1.4 screens of scroll per row, so a short flick never skips rows; scrub 1 eases the
+      // catch-up so a row change reads as one slow move
+      end: () => `+=${rows.length * 140}%`,
       pin: true,
-      scrub: 0.5,
+      scrub: 1,
       invalidateOnRefresh: true,
     },
   });
@@ -226,18 +228,18 @@ function staged(root: HTMLElement, gsap: Gsap) {
     if (i > 0) {
       tl.to(
         rows[i - 1],
-        { autoAlpha: 0, y: -36, duration: 0.3, ease: "power1.in" },
+        { autoAlpha: 0, y: -36, duration: 0.45, ease: "power1.in" },
         at,
       ).fromTo(
         row,
         { autoAlpha: 0, y: 36 },
-        { autoAlpha: 1, y: 0, duration: 0.3, ease: "power1.out" },
-        `${at}+=0.25`,
+        { autoAlpha: 1, y: 0, duration: 0.45, ease: "power1.out" },
+        `${at}+=0.35`,
       );
     }
-    wipe(gsap, tl, row, true, i > 0 ? `${at}+=0.6` : at, 1);
-    // the finished row holds before the next one takes its place
-    tl.to({}, { duration: 0.45 });
+    wipe(gsap, tl, row, true, i > 0 ? `${at}+=0.8` : at, 1.2);
+    // the finished row holds a while before the next one takes its place
+    tl.to({}, { duration: 1 });
   });
 }
 
