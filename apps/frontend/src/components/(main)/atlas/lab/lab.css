@@ -123,7 +123,8 @@
   flex-direction: column;
   color: var(--body);
   font: 13px / 1.5 var(--font-outfit);
-  cursor: default;
+  /* every card selects on click (and still drags), so it shows the hand */
+  cursor: pointer;
   user-select: none;
 }
 /* title row above the card: white dot + title left, badges right (8px apart) */
@@ -137,7 +138,7 @@
   margin-bottom: 10px;
   padding: 0 6px;
   color: var(--fg);
-  cursor: move;
+  cursor: pointer;
 }
 .lab-card header .kdot {
   width: 6px;

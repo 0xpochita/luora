@@ -34,6 +34,11 @@
    port). One quiet glass shell around a darker inner card with a lit top edge, the kind icon in a
    small tile, port dots with a soft halo, brighter wires, and the ref's coloured glow under a
    card that ran (green = pass, red = revert). */
+/* the hero's cards are a picture, not a control */
+.lh-lab-graph .lab-card,
+.lh-lab-graph .lab-card header {
+  cursor: default;
+}
 .lh-lab-graph .lab-card .lab-body {
   border-radius: 20px;
   background: linear-gradient(

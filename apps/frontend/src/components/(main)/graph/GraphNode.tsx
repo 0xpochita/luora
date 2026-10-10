@@ -60,7 +60,7 @@ export function GraphNode({
         width: NODE_W,
         animationDelay: `${Math.min(order * 30, 700)}ms`,
       }}
-      className={`group absolute flex animate-pop touch-none select-none flex-col text-left font-mono text-xs ${dragging ? "z-10 cursor-grabbing" : "cursor-grab"}`}
+      className={`group absolute flex animate-pop touch-none select-none flex-col text-left font-mono text-xs ${dragging ? "z-10 cursor-grabbing" : "cursor-pointer"}`}
     >
       <span
         className="flex items-center gap-2 px-1 text-[12.5px]"
