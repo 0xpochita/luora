@@ -122,12 +122,13 @@ export type ProtocolSummary = Pick<
   /** contracts whose source is kept */
   excerpts: number;
   flowTitles: string[];
-  /** the protocol map in miniature, for the gallery card (same layout as the Map view) */
+  /** the entry contract and what it reaches, readable at thumbnail size (gallery card) */
   preview: {
-    w: number;
-    h: number;
-    nodes: { x: number; y: number; h: number; outside: boolean }[];
-    wires: string[];
+    hub: string;
+    role: string;
+    out: { to: string; verb: string; outside: boolean }[];
+    /** targets not shown */
+    more: number;
   };
 };
 

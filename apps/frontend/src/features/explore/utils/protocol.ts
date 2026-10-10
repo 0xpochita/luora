@@ -29,20 +29,43 @@ export function summarize(p: Protocol): ProtocolSummary {
     ].sort(),
     excerpts: p.contracts.filter((c) => c.excerpts).length,
     flowTitles: p.flows.map((f) => f.title),
-    preview: (() => {
-      const m = mapLayout(p);
-      return {
-        w: m.w,
-        h: m.h,
-        nodes: m.nodes.map((n) => ({
-          x: n.x,
-          y: n.y,
-          h: n.h,
-          outside: n.kind === "external",
-        })),
-        wires: m.wires.map((w) => w.d),
-      };
-    })(),
+    preview: hubPreview(p),
+  };
+}
+
+/** what the hub's relations are shown first: the work it hands off, then what it calls */
+const PREVIEW_ORDER: EdgeKind[] = [
+  "delegates",
+  "calls",
+  "deploys",
+  "uses",
+  "holds",
+];
+const PREVIEW_ROWS = 5;
+
+/** The first contract (the entry point) and the contracts it reaches, one row per target. */
+export function hubPreview(p: Protocol): ProtocolSummary["preview"] {
+  const hub = p.contracts[0];
+  const by = new Map<string, EdgeKind[]>();
+  for (const e of p.edges)
+    if (e.from === hub.name && e.kind !== "inherits")
+      by.set(e.to, [...(by.get(e.to) ?? []), e.kind]);
+  const rank = (ks: EdgeKind[]) =>
+    Math.min(...ks.map((k) => PREVIEW_ORDER.indexOf(k)));
+  const out = [...by.entries()]
+    .sort((a, b) => rank(a[1]) - rank(b[1]) || a[0].localeCompare(b[0]))
+    .map(([to, ks]) => ({
+      to,
+      verb: PREVIEW_ORDER.filter((k) => ks.includes(k))
+        .map((k) => EDGE_VERB[k])
+        .join(" · "),
+      outside: p.externals.some((e) => e.name === to),
+    }));
+  return {
+    hub: hub.name,
+    role: hub.role,
+    out: out.slice(0, PREVIEW_ROWS),
+    more: Math.max(0, out.length - PREVIEW_ROWS),
   };
 }
 

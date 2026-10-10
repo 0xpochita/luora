@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Chevron } from "@/components/ui";
 import type { ProtocolSummary } from "@/features/explore";
-import { MAP, sourceLabel } from "@/features/explore";
+import { sourceLabel } from "@/features/explore";
 import { ProtocolLogo } from "./ProtocolLogo";
 
 /*
@@ -15,23 +15,30 @@ import { ProtocolLogo } from "./ProtocolLogo";
  */
 export function ExploreGallery({ items }: { items: ProtocolSummary[] }) {
   return (
-    <main className="min-h-0 flex-1 overflow-y-auto px-4 pt-6 pb-10">
+    <main className="min-h-0 flex-1 overflow-y-auto px-4 pt-10 pb-10">
       <div className="mx-auto w-full max-w-[960px]">
-        <h1 className="font-medium text-[15px] text-fg">Explore</h1>
-        <p className="mt-1 max-w-[640px] text-[13px] text-muted leading-normal">
-          Large DeFi protocols mapped from their own code at a pinned release:
-          which contracts exist, how they call each other, and each business
-          flow step by step. Ask your AI about any of it.
+        {/* H1 pin/42854633948971517 (Slavik Bushko): an eyebrow pill, a large title, one line */}
+        <p className="inline-flex h-7 items-center gap-2 rounded-full border border-border bg-raised px-3 text-[12.5px] text-muted">
+          <span className="size-1.5 rounded-full bg-green" />
+          {items.length} protocols · pinned releases · read from the AST
         </p>
-        <ul className="mt-5 flex flex-col gap-2">
+        <h1 className="mt-4 font-medium text-fg text-ui-display">
+          Explore DeFi protocols
+        </h1>
+        <p className="mt-3 max-w-[620px] text-[14px] text-body leading-relaxed">
+          Each one mapped from its own code: which contracts exist, how they
+          call each other, and every business flow step by step. Open one, then
+          ask your AI about it.
+        </p>
+        <ul className="mt-7 flex flex-col gap-2">
           {items.map((p) => (
             <li key={p.id}>
               <Link
                 href={`/explore/${p.id}`}
                 className="group flex items-center gap-4 rounded-card border border-border bg-card-grad p-2 pr-5 shadow-soft outline-none transition-colors hover:border-border-strong focus-visible:border-border-strong"
               >
-                {/* L1 thumbnail, Q2 miniature: the protocol's own map */}
-                <MiniMap preview={p.preview} />
+                {/* L1 thumbnail: the entry contract and what it reaches, by name */}
+                <HubPreview preview={p.preview} />
                 <span className="min-w-0 flex-1 py-1">
                   <span className="flex items-center gap-2.5">
                     <ProtocolLogo name={p.name} logo={p.logo} size={28} />
@@ -91,51 +98,63 @@ export function ExploreGallery({ items }: { items: ProtocolSummary[] }) {
   );
 }
 
-/** The Map view's layout drawn small: cards as graphite blocks, wires as hairlines. */
-function MiniMap({ preview: m }: { preview: ProtocolSummary["preview"] }) {
-  const pad = 40;
+/**
+ * The entry contract on the left, the contracts it reaches on the right, one wire each: the
+ * protocol's first hop, readable at thumbnail size (names, not boxes).
+ */
+function HubPreview({ preview: m }: { preview: ProtocolSummary["preview"] }) {
+  const rows = m.out.length + (m.more ? 1 : 0);
+  const W = 260;
+  const H = 136;
+  const at = (i: number) => ((i + 0.5) * H) / rows;
   return (
-    <span className="block w-[232px] flex-none self-stretch rounded-inner border border-border bg-canvas/60 px-2 py-2 dot-grid">
+    <span className="relative block w-[260px] flex-none self-stretch overflow-hidden rounded-inner border border-border bg-canvas/60 dot-grid">
       <svg
         aria-hidden="true"
-        viewBox={`${-pad} ${-pad} ${m.w + pad * 2} ${m.h + pad * 2}`}
-        className="block h-full min-h-[116px] w-full"
-        preserveAspectRatio="xMidYMid meet"
+        viewBox={`0 0 ${W} ${H}`}
+        preserveAspectRatio="none"
+        className="absolute inset-0 h-full w-full"
       >
-        {m.wires.map((d) => (
+        {m.out.map((o, i) => (
           <path
-            key={d}
-            d={d}
+            key={o.to}
+            d={`M100,${H / 2} C124,${H / 2} 124,${at(i)} 146,${at(i)}`}
             fill="none"
             stroke="var(--wire)"
-            strokeWidth={3}
-            className="opacity-40 transition-opacity duration-300 group-hover:opacity-80"
+            strokeWidth={1}
+            vectorEffect="non-scaling-stroke"
+            className="opacity-60 transition-opacity duration-300 group-hover:opacity-100"
           />
         ))}
-        {m.nodes.map((n) => (
-          <g key={`${n.x},${n.y}`}>
-            <rect
-              x={n.x}
-              y={n.y + MAP.title}
-              width={MAP.w}
-              height={n.h - MAP.title}
-              rx={18}
-              fill="var(--raised)"
-              stroke="var(--border-strong)"
-              strokeWidth={3}
-            />
-            <rect
-              x={n.x + 4}
-              y={n.y + 6}
-              width={MAP.w * 0.55}
-              height={12}
-              rx={6}
-              fill={n.outside ? "var(--blue)" : "var(--port)"}
-              opacity={n.outside ? 0.55 : 0.45}
-            />
-          </g>
-        ))}
       </svg>
+      {/* the hub: graphite card, title and role */}
+      <span className="absolute top-1/2 left-2.5 flex w-[90px] -translate-y-1/2 flex-col rounded-tile border border-border-strong bg-card-grad px-2 py-1.5 shadow-soft">
+        <span
+          className="truncate font-medium text-[11.5px] text-fg"
+          title={m.hub}
+        >
+          {m.hub}
+        </span>
+        <span className="truncate text-[10.5px] text-dim">{m.role}</span>
+      </span>
+      {/* what it reaches */}
+      <span className="absolute inset-y-0 right-2 left-[146px] flex flex-col justify-around py-1">
+        {m.out.map((o) => (
+          <span
+            key={o.to}
+            title={`${o.verb} ${o.to}`}
+            className="flex h-[19px] items-center gap-1.5 rounded-[6px] border border-border bg-raised px-1.5 text-[10.5px] text-text"
+          >
+            <span
+              className={`size-[5px] flex-none rounded-full ${o.outside ? "bg-blue" : "bg-port"}`}
+            />
+            <span className="truncate">{o.to}</span>
+          </span>
+        ))}
+        {m.more > 0 && (
+          <span className="px-1.5 text-[10.5px] text-dim">+{m.more} more</span>
+        )}
+      </span>
     </span>
   );
 }

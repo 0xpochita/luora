@@ -93,8 +93,19 @@ for (const p of all) {
   // gallery
   const s = summarize(p);
   assert.equal(s.contracts, p.contracts.length);
-  assert.equal(s.preview.nodes.length, p.contracts.length + p.externals.length);
-  assert.equal(s.preview.wires.length, m.wires.length);
+  // gallery preview: the entry contract and real targets, at most five, the rest counted
+  assert.equal(s.preview.hub, p.contracts[0].name);
+  assert.ok(s.preview.out.length <= 5 && s.preview.out.length > 0, p.id);
+  for (const o of s.preview.out)
+    assert.ok(p.edges.some((e) => e.from === s.preview.hub && e.to === o.to));
+  assert.equal(
+    s.preview.out.length + s.preview.more,
+    new Set(
+      p.edges
+        .filter((e) => e.from === s.preview.hub && e.kind !== "inherits")
+        .map((e) => e.to),
+    ).size,
+  );
   assert.deepEqual(
     s.flowTitles,
     p.flows.map((f) => f.title),

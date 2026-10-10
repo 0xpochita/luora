@@ -2836,6 +2836,7 @@
       "build": "blue",
       "group": "Core",
       "role": "Every market",
+      "aliases": ["IMorpho", "IMorphoBase"],
       "summary": "One immutable contract for all markets: createMarket, supply / withdraw, supplyCollateral / withdrawCollateral, borrow / repay, liquidate, flashLoan, setAuthorization. Positions are shares per market; anyone can act for an account that authorized them. Callbacks let the caller act before paying.",
       "repo": "morpho-blue",
       "license": "BUSL-1.1",
@@ -4624,9 +4625,27 @@
   "edges": [
     {
       "from": "MetaMorpho",
+      "to": "Morpho",
+      "kind": "calls",
+      "members": [
+        "accrueInterest",
+        "idToMarketParams",
+        "market",
+        "supply",
+        "withdraw"
+      ]
+    },
+    {
+      "from": "MetaMorpho",
       "to": "IERC20",
       "kind": "calls",
       "members": ["balanceOf"]
+    },
+    {
+      "from": "MetaMorpho",
+      "to": "Morpho",
+      "kind": "holds",
+      "members": ["MORPHO"]
     },
     {
       "from": "MetaMorpho",

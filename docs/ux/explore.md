@@ -98,6 +98,19 @@ A first try took the title-as-a-tile grid of pin 837880705720916025 (Naxion "Pro
 protocols it left a tall empty title tile and a ragged second row, and read as odd. Replaced by L1's
 list, which fits any count and scans top to bottom.
 
+Second round, "the title is too small, and the previews read as blank boxes":
+
+| Id | Pin | Taken |
+|---|---|---|
+| H1 | 42854633948971517 (Slavik Bushko, Stockboard hero) | an eyebrow pill with a status dot, a large title, one line under it. Title now `text-ui-display` (34px, 500, -0.02em; added to DESIGN.md as the one page-title size) |
+
+The whole-map miniature was replaced: at thumbnail size its cards had no readable names. The
+thumbnail now shows the protocol's **first hop**: the entry contract (Pool, SwapRouter,
+MetaMorpho, Comet) on the left and, by name, the contracts it reaches (delegates first, then
+calls), one wire each, "+N more" for the rest; a blue dot marks contracts outside the protocol.
+Doing this exposed a missing `IMorpho` alias in the Morpho spec (MetaMorpho → Morpho was not on
+the map); fixed.
+
 Each row also lists its flows by name (Supply · Borrow · Liquidation …) above the counts, so the
 business actions are visible before opening the protocol.
 
