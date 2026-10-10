@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Chip, LogoText } from "@/components/ui";
 import { RunProvider } from "@/features/run";
 import { DataBadge } from "../onboarding/DataBadge";
+import { GuideButton } from "../onboarding/GuideButton";
 import { RunDialog } from "../onboarding/RunDialog";
 import { AiSettings } from "./AiSettings";
 import { RouteTabs } from "./RouteTabs";
@@ -17,6 +18,7 @@ export function MainShell({ children }: { children: ReactNode }) {
           </span>
           <RouteTabs />
           <div className="ml-auto flex items-center gap-1.5">
+            <GuideButton />
             <DataBadge />
             <AiSettings />
             <Chip>Audit console</Chip>

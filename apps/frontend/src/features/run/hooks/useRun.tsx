@@ -26,7 +26,7 @@ type RunState = {
 };
 
 const RunContext = createContext<RunState | null>(null);
-const WELCOMED = "luora:welcomed";
+const ONBOARDED = "luora:onboarded";
 
 /**
  * Holds a dropped run in memory for this tab. Nothing is uploaded or written to disk: a full
@@ -38,12 +38,13 @@ export function RunProvider({ children }: { children: ReactNode }) {
   const [origin, setOrigin] = useState<RunOrigin | null>(null);
   const [pane, setPane] = useState<RunPane | null>(null);
 
-  // first visit on sample data: say so before anything else
+  // the first session opens once per browser, on the first page that knows what it shows
+  // (sample, the local export or a dropped file): the welcome step says which
   useEffect(() => {
-    if (origin !== "sample") return;
+    if (!origin) return;
     try {
-      if (localStorage.getItem(WELCOMED)) return;
-      localStorage.setItem(WELCOMED, "1");
+      if (localStorage.getItem(ONBOARDED)) return;
+      localStorage.setItem(ONBOARDED, "1");
     } catch {}
     setPane("welcome");
   }, [origin]);

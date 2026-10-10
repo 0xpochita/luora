@@ -1,6 +1,7 @@
 "use client";
 
 import { Tabs, ToggleChip } from "@/components/ui";
+import { useRun } from "@/features/run";
 import type { DisplayKind, TraceMode } from "@/features/trace";
 
 const FILTERS: { kind: DisplayKind; label: string }[] = [
@@ -22,6 +23,7 @@ export function TraceHeader({
   hidden: Set<DisplayKind>;
   onToggle: (k: DisplayKind) => void;
 }) {
+  const { origin } = useRun();
   return (
     <div className="flex-none px-5 pt-4 pb-3">
       <p className="text-dim ui-label">Test call trace</p>
@@ -29,9 +31,17 @@ export function TraceHeader({
         {title}
       </h1>
       <p className="mt-1 text-[13px] text-muted">
-        Decoded call trace from your local{" "}
-        <code className="font-mono text-xs">forge test</code>. Click a frame to
-        jump to its source.
+        {origin === "sample" ? (
+          "Decoded call trace from the bundled sample run."
+        ) : origin === "file" ? (
+          "Decoded call trace from the file you loaded."
+        ) : (
+          <>
+            Decoded call trace from your local{" "}
+            <code className="font-mono text-xs">forge test</code>.
+          </>
+        )}{" "}
+        Click a frame to jump to its source.
       </p>
       <div className="mt-3 flex items-center gap-3">
         <Tabs
