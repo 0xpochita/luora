@@ -198,3 +198,9 @@ button.hdr-pill:disabled {
   cursor: not-allowed;
   transform: none;
 }
+/* a capsule ending in a key (Reload trace ⌘R): the key sits as far in from the end as from the
+   top and bottom, with the label given the rest */
+.hdr-pill.has-kbd {
+  gap: 7px;
+  padding: 0 7px 0 12px;
+}
