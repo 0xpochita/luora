@@ -1,6 +1,7 @@
 import type { AskContext } from "../../ai/types";
-import { SYSTEMS } from "../data/layers";
+import { SYSTEMS } from "../data/layers.ts";
 import type { AiQuestion, Piece, SystemKey } from "../types";
+import { coverageFocus, pctLabel, pieceCoverage, ratio } from "./coverage.ts";
 import type { AtlasModel } from "./model";
 
 // Canned, defensive-only answers: the default when no AI provider is set, and the fallback when one fails.
@@ -127,6 +128,73 @@ export function askContext(m: AtlasModel, p: Piece): AskContext {
     })),
     checklist: CHECKLIST[p.sys],
   };
+}
+
+/** Starting questions in the Atlas chat (Copilot's predefined questions), all defensive. */
+export const CONTRACT_QUESTIONS = [
+  "Explain this contract in plain words",
+  "Who can move funds, and through which functions?",
+  "What should an auditor check first?",
+  "Which untested functions matter most, and why?",
+];
+/** Per piece; each also has a built-in answer (aiAnswer) for when no AI is connected. */
+export const PIECE_QUESTIONS: Record<string, AiQuestion> = {
+  "Explain this piece": "explain",
+  "What should an auditor check here?": "risks",
+  "Write a test that pins its intended behaviour": "test",
+};
+
+const MAX_SOURCE = 400;
+
+/**
+ * The user message for a question about the whole contract: its entry points (who may call them,
+ * what they do, their coverage), state, the contracts it trusts, events, open findings, coverage,
+ * and the source (capped), then the question.
+ */
+export function contractAskPrompt(m: AtlasModel, question: string): string {
+  const of = (sys: SystemKey) => m.pieces.filter((p) => p.sys === sys);
+  const cov = (id: string) => {
+    const c = pieceCoverage(m, id);
+    return c ? ` · tests cover ${pctLabel(c.pct)}` : "";
+  };
+  const list = (xs: string[]) => (xs.length ? xs.join("\n") : "none");
+  const untested = m.coverage ? coverageFocus(m).untested : [];
+  const coverage = m.coverage
+    ? `lines ${pctLabel(ratio(m.coverage.lines))}, branches ${pctLabel(ratio(m.coverage.branches))}, functions ${pctLabel(ratio(m.coverage.functions))}; never run by a test: ${untested.map((x) => m.byId[x.id]?.name).join(", ") || "none"}`
+    : "not measured";
+  const src = m.lines
+    .slice(0, MAX_SOURCE)
+    .map((l, i) => `${String(i + 1).padStart(4)}  ${l}`)
+    .join("\n");
+  return `<context>
+Contract: ${m.contract} (${m.file})${m.compiler ? `, solc ${m.compiler}` : ""}
+
+Entry points (name · who can call · what it does):
+${list(of("entry").map((p) => `- ${p.name} · ${p.caller ?? "anyone"}${cov(p.id)} · ${p.desc}`))}
+
+Access gates:
+${list(of("access").map((p) => `- ${p.name}: ${p.desc}`))}
+
+State:
+${list(of("storage").map((p) => `- ${p.name}${p.slot != null ? ` (slot ${p.slot})` : ""}: ${p.desc}`))}
+
+Contracts it calls or trusts:
+${list(of("deps").map((p) => `- ${p.name}: ${p.desc}`))}
+
+Events:
+${list(of("events").map((p) => `- ${p.name}`))}
+
+Open findings:
+${list(m.findings.map((f) => `- ${f.name} (${RISK_LABEL[f.risk ?? "low"]}): ${f.desc}`))}
+
+Test coverage: ${coverage}
+
+Source${m.lines.length > MAX_SOURCE ? ` (first ${MAX_SOURCE} of ${m.lines.length} lines)` : ""}:
+${src}
+</context>
+
+${question}
+Refer to functions as name() and to findings by their F-number.`;
 }
 
 export { RISK_LABEL };

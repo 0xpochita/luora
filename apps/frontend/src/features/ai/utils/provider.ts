@@ -67,8 +67,8 @@ const ASK: Record<AiQuestion, string> = {
   test: "Write a Foundry test that pins the intended behaviour of this piece.",
 };
 
-/** The user message: the piece's context plus the question. */
-export function askPrompt(c: AskContext, q: AiQuestion): string {
+/** The user message: the piece's context plus the question (a standard one, or the user's own words). */
+export function askPrompt(c: AskContext, q: AiQuestion | string): string {
   const src = c.source.lines
     .map((l, i) => `${String(c.source.from + i).padStart(4)}  ${l}`)
     .join("\n");
@@ -91,7 +91,7 @@ Built-in checklist for this kind of piece:
 ${list(c.checklist.map((x) => `- ${x}`))}
 </context>
 
-${ASK[q]}`;
+${q in ASK ? ASK[q as AiQuestion] : q}`;
 }
 
 /** One chat message; a conversation is these in order, starting and ending with the user. */

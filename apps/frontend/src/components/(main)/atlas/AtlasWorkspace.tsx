@@ -26,7 +26,9 @@ import {
   ratio,
 } from "@/features/atlas/utils/coverage";
 import { type RunFile, useShownSource } from "@/features/run";
+import { useAiThread } from "../ai/AiChat";
 import { StartHere } from "../onboarding/StartHere";
+import { AtlasAsk } from "./AtlasAsk";
 import { ContractSource } from "./ContractSource";
 import { CoverageSummary } from "./CoverageSummary";
 import { FlowView } from "./flow/FlowView";
@@ -107,16 +109,24 @@ function AtlasBody({ source }: { source: AtlasSource }) {
   // whole window (F or Full screen; Esc steps back out)
   const [side, setSide] = useState(true);
   const [full, setFull] = useState(false);
+  // the right panel's two tabs: what the selection is, or the chat about it (as in Trace)
+  const [tab, setTab] = useState<"details" | "ask">("details");
+  const [askFocus, setAskFocus] = useState(0);
+  const thread = useAiThread();
   const sim = useStepSim(model, view === "flow" ? selected : null);
   const triage = useTriage(model.contract);
-  const keys = useRef({ open: false, toggleSide: () => {} });
+  const keys = useRef({
+    selected: false,
+    open: false,
+    toggle: (_t: "details" | "ask") => {},
+  });
+  // a selection brings the panel back (Figma UI3); in the chat it becomes the question's context
   const select = (id: string | null) => {
     setSelected(id);
-    if (id) setSummary(false);
-  };
-  const close = () => {
-    setSelected(null);
-    setSummary(false);
+    if (id) {
+      setSummary(false);
+      setSide(true);
+    }
   };
 
   useEffect(() => {
@@ -128,16 +138,21 @@ function AtlasBody({ source }: { source: AtlasSource }) {
         t.closest("input, textarea, select, [contenteditable='true'], dialog")
       )
         return;
+      const k = keys.current;
       if (e.key === "Escape") {
-        // the selection first, then full screen
-        if (keys.current.open) {
-          setSelected(null);
-          setSummary(false);
-        } else setFull(false);
+        // the selection first, then the panel, then full screen
+        if (k.selected) setSelected(null);
+        else if (k.open) setSide(false);
+        else setFull(false);
+        setSummary(false);
         return;
       }
       if (e.key === "]" || e.code === "BracketRight")
-        return keys.current.toggleSide();
+        return k.toggle("details");
+      if (e.key === "a" || e.key === "A") {
+        e.preventDefault();
+        return k.toggle("ask");
+      }
       if (e.key === "f" || e.key === "F") return setFull((v) => !v);
       const n = Number(e.key);
       if (n >= 1 && n <= VIEWS.length) setView(VIEWS[n - 1].value);
@@ -156,14 +171,17 @@ function AtlasBody({ source }: { source: AtlasSource }) {
       </span>
     </span>
   );
-  const open = side && (selected != null || summary);
-  /** Inspector: put the panel away, or bring it back (the summary when nothing is selected) */
-  const toggleSide = () => {
-    if (open) return setSide(false);
+  const open = side && (tab === "ask" || selected != null || summary);
+  const showTab = (t: "details" | "ask") => {
+    setTab(t);
     setSide(true);
-    if (!selected) setSummary(true);
+    if (t === "details" && !selected) setSummary(true);
+    if (t === "ask") setAskFocus((n) => n + 1);
   };
-  keys.current = { open: selected != null || summary, toggleSide };
+  /** Inspector / Ask AI buttons: open the panel on that tab, or put it away when it is already there */
+  const toggle = (t: "details" | "ask") =>
+    open && tab === t ? setSide(false) : showTab(t);
+  keys.current = { selected: selected != null, open, toggle };
 
   return (
     <div
@@ -217,9 +235,19 @@ function AtlasBody({ source }: { source: AtlasSource }) {
         <button
           type="button"
           className="hdr-pill sm"
-          aria-pressed={open}
+          aria-pressed={open && tab === "ask"}
+          title="Ask AI about the contract or the selected piece  A"
+          onClick={() => toggle("ask")}
+        >
+          <PhIcon d={PH.sparkle} className="size-[15px]" />
+          Ask AI
+        </button>
+        <button
+          type="button"
+          className="hdr-pill sm"
+          aria-pressed={open && tab === "details"}
           title="Show or hide the inspector  ]"
-          onClick={toggleSide}
+          onClick={() => toggle("details")}
         >
           <PhIcon d={PH.sidebar} className="size-[15px] -scale-x-100" />
           Inspector
@@ -273,7 +301,51 @@ function AtlasBody({ source }: { source: AtlasSource }) {
               className="flex flex-none overflow-hidden"
             >
               <aside className="w-[412px] flex-none">
-                {selected ? (
+                {/* Details | Ask AI, as Trace's side panel (Source | Ask AI) */}
+                <div className="flex items-center gap-2 pt-1">
+                  <SegmentedControl
+                    value={tab}
+                    onChange={showTab}
+                    options={[
+                      {
+                        value: "details",
+                        label: "Details",
+                        title: "What the selection is, and its code  ]",
+                        icon: <PhIcon d={PH.code} className="size-[14px]" />,
+                      },
+                      {
+                        value: "ask",
+                        label: "Ask AI",
+                        title:
+                          "Ask about the contract or the selected piece  A",
+                        icon: <PhIcon d={PH.sparkle} className="size-[14px]" />,
+                      },
+                    ]}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setSide(false)}
+                    aria-label="Hide the panel (Esc)"
+                    className="x ml-auto"
+                  >
+                    ✕
+                  </button>
+                </div>
+                {tab === "ask" ? (
+                  // the chat fills the column (aside children are otherwise their own height)
+                  <section
+                    style={{ flex: "1 1 0", minHeight: 0 }}
+                    className="flex flex-col rounded-card border border-border bg-card-grad pt-3 shadow-soft"
+                  >
+                    <AtlasAsk
+                      model={model}
+                      selected={selected}
+                      thread={thread}
+                      focus={askFocus}
+                      onSelect={select}
+                    />
+                  </section>
+                ) : selected ? (
                   <>
                     <PieceInspector
                       key={selected}
@@ -281,6 +353,7 @@ function AtlasBody({ source }: { source: AtlasSource }) {
                       id={selected}
                       onSelect={select}
                       triage={triage}
+                      onAsk={() => showTab("ask")}
                     />
                     <ContractSource
                       model={model}
@@ -291,17 +364,6 @@ function AtlasBody({ source }: { source: AtlasSource }) {
                   </>
                 ) : (
                   <>
-                    <p className="flex items-center px-1 pt-1 text-[13px] text-muted">
-                      Summary
-                      <button
-                        type="button"
-                        onClick={close}
-                        aria-label="Close the summary (Esc)"
-                        className="x ml-auto"
-                      >
-                        ✕
-                      </button>
-                    </p>
                     <CoverageSummary model={model} onSelect={select} />
                     {model.findings.length > 0 && (
                       <Panel

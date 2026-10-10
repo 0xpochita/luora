@@ -81,3 +81,25 @@ What the screen holds now, and where everything else went:
 
 Like Trace, the right panel can be put away (Inspector, `]`) and the canvas can fill the window
 (Full screen, `F`; Esc steps back out).
+
+## Ask AI in the Atlas (same day)
+
+"Add a chat with AI." The Trace's Ask AI (researched in docs/ux/trace-view.md: GitHub Copilot,
+Chrome DevTools "Debug with AI", pins 372109987986003766, 160018593004593469, 112871534413929668,
+449445237837052121) became the app's one chat, `components/(main)/ai/AiChat.tsx`; Trace and
+Atlas give it their own context.
+
+- **Where**: an Ask AI button in the header (`A`), and the right panel's second tab next to
+  Details, as Trace's side panel has Source and Ask AI. The piece inspector's own canned "Luora
+  AI" box is gone; it has one "Ask AI about deposit()" button instead, so there is one place to
+  ask.
+- **Context** (DevTools: the selection is the context): the selected piece (its code, connections,
+  findings, checklist), or the whole contract when nothing is selected (entry points with callers
+  and coverage, gates, state, trusted contracts, events, findings, coverage, the source up to 400
+  lines). Selecting another card while the chat is open changes the context, not the tab.
+- **Answers**: `deposit()` or `F-01` in an answer selects that piece; the label above a question
+  selects it again. Follow-ups on the same context send only the question.
+- **No AI connected**: the three piece questions get the built-in answers they had before; other
+  questions are copied with their context for a coding agent.
+- **Defensive only**: the same system prompt; suggested questions are checked in
+  `features/atlas/utils/ai.check.ts`.

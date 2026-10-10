@@ -554,17 +554,9 @@ function TraceBody({
                   ]}
                 />
                 <span className="ml-auto text-[12.5px] text-dim">
-                  {side === "source"
-                    ? span && `L${span.start + 1}–${span.end + 1}`
-                    : thread.turns.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={thread.clear}
-                          className="hover:text-fg"
-                        >
-                          New chat
-                        </button>
-                      )}
+                  {side === "source" &&
+                    span &&
+                    `L${span.start + 1}–${span.end + 1}`}
                 </span>
               </header>
               <motion.div
