@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Chip, LogoText } from "@/components/ui";
+import { AiSettings } from "./AiSettings";
 import { RouteTabs } from "./RouteTabs";
 
 /** App frame shared by every route: floating brand + route tiles over the dot-grid canvas. */
@@ -12,6 +13,7 @@ export function MainShell({ children }: { children: ReactNode }) {
         </span>
         <RouteTabs />
         <div className="ml-auto flex items-center gap-1.5">
+          <AiSettings />
           <Chip>Audit console</Chip>
           <Chip tone="ok" dot>
             Defensive
