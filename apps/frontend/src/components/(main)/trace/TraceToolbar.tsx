@@ -1,7 +1,7 @@
 "use client";
 
 import type { RefObject } from "react";
-import { Chip, PH, PhIcon, SegmentedControl } from "@/components/ui";
+import { Chip, Dropdown, PH, PhIcon, SegmentedControl } from "@/components/ui";
 import type {
   DisplayKind,
   Frame,
@@ -234,24 +234,20 @@ export function TraceToolbar({
               })}
             </span>
             {mode === "trace" && maxDepth > 1 && (
-              <label className="hdr-pill sm">
-                <span className="text-dim">Depth</span>
-                <select
-                  value={depth}
-                  onChange={(e) => onDepth(Number(e.target.value))}
-                  aria-label="How many call levels to show"
-                  className="cursor-pointer bg-transparent text-fg outline-none"
-                >
-                  <option value={0}>All levels</option>
-                  {Array.from({ length: maxDepth }, (_, i) => i + 1).map(
-                    (d) => (
-                      <option key={d} value={d}>
-                        {d} {d === 1 ? "level" : "levels"}
-                      </option>
-                    ),
-                  )}
-                </select>
-              </label>
+              <Dropdown
+                variant="pill"
+                label="Depth"
+                ariaLabel="How many call levels to show"
+                value={String(depth)}
+                onChange={(v) => onDepth(Number(v))}
+                options={[
+                  { value: "0", label: "All levels" },
+                  ...Array.from({ length: maxDepth }, (_, i) => ({
+                    value: String(i + 1),
+                    label: `${i + 1} ${i ? "levels" : "level"}`,
+                  })),
+                ]}
+              />
             )}
           </>
         )}

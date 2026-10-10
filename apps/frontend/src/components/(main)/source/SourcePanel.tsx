@@ -1,6 +1,6 @@
 "use client";
 
-import { Chevron, Panel, Select } from "@/components/ui";
+import { Chevron, Dropdown, Panel } from "@/components/ui";
 import {
   type Frame,
   human,
@@ -38,18 +38,14 @@ export function SourcePanel({
       className="w-[440px] flex-none"
     >
       <div className="flex-none px-3 pb-2">
-        <Select
+        <Dropdown
+          ariaLabel="Source file"
+          mono
           value={file}
-          onChange={(e) => onFile(e.target.value)}
-          aria-label="Source file"
-          className="h-8 w-full font-mono text-[12px]"
-        >
-          {Object.keys(sources).map((f) => (
-            <option key={f} value={f}>
-              {f}
-            </option>
-          ))}
-        </Select>
+          onChange={onFile}
+          className="h-8 w-full"
+          options={Object.keys(sources).map((f) => ({ value: f, label: f }))}
+        />
       </div>
       {frame ? (
         <div className="mx-3 mb-2 flex-none rounded-inner border border-border bg-inner-grad px-3 py-2.5">

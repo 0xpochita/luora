@@ -4,11 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Button,
   Chip,
+  Dropdown,
   FloatingDock,
   IconButton,
   Input,
   SegmentedControl,
-  Select,
   Toolbar,
 } from "@/components/ui";
 import type { AtlasModel } from "@/features/atlas";
@@ -318,17 +318,16 @@ export function LabView({
               }
             />
           </label>
-          <label className="w">
+          <div className="w">
             <span>role</span>
-            <select
+            <Dropdown
+              variant="card"
+              ariaLabel="Actor role"
               value={n.role}
-              onChange={(e) => patch(n.id, { role: e.target.value })}
-            >
-              {actorRoles(model).map((r) => (
-                <option key={r}>{r}</option>
-              ))}
-            </select>
-          </label>
+              onChange={(role) => patch(n.id, { role })}
+              options={actorRoles(model).map((r) => ({ value: r, label: r }))}
+            />
+          </div>
           <label className="w">
             <span>USDC</span>
             <input
@@ -359,29 +358,32 @@ export function LabView({
         ),
       ];
       return (
-        <label className="w">
+        <div className="w">
           <span>reason</span>
-          <select
-            value={n.reason}
-            onChange={(e) => patch(n.id, { reason: e.target.value })}
-          >
-            <option value="">from wire</option>
-            {reasons.map((r) => (
-              <option key={r}>{r}</option>
-            ))}
-          </select>
-        </label>
+          <Dropdown
+            variant="card"
+            ariaLabel="Expected revert reason"
+            value={n.reason || "__wire"}
+            onChange={(r) => patch(n.id, { reason: r === "__wire" ? "" : r })}
+            options={[
+              { value: "__wire", label: "from wire" },
+              ...reasons.map((r) => ({ value: r, label: r })),
+            ]}
+          />
+        </div>
       );
     }
     if (n.kind === "assert") {
       const opts = assertOptions(model);
       return (
-        <label className="w">
+        <div className="w">
           <span>check</span>
-          <select
+          <Dropdown
+            variant="card"
+            ariaLabel="Assert check"
             value={checkKey(n.check)}
-            onChange={(e) => {
-              const o = opts.find((x) => checkKey(x.check) === e.target.value);
+            onChange={(key) => {
+              const o = opts.find((x) => checkKey(x.check) === key);
               if (o)
                 edit((s) => ({
                   ...s,
@@ -396,32 +398,32 @@ export function LabView({
                         ),
                 }));
             }}
-          >
-            {opts.map((o) => (
-              <option key={checkKey(o.check)} value={checkKey(o.check)}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </label>
+            options={opts.map((o) => ({
+              value: checkKey(o.check),
+              label: o.label,
+            }))}
+          />
+        </div>
       );
     }
     if (n.kind === "snapshot")
       return (
-        <label className="w">
+        <div className="w">
           <span>read</span>
-          <select
+          <Dropdown
+            variant="card"
+            ariaLabel="Value to read"
             value={n.of}
-            onChange={(e) => patch(n.id, { of: e.target.value })}
-          >
-            <option value="balance">USDC balance</option>
-            {publicSlots(model).map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name.split("· ").pop()}
-              </option>
-            ))}
-          </select>
-        </label>
+            onChange={(of) => patch(n.id, { of })}
+            options={[
+              { value: "balance", label: "USDC balance" },
+              ...publicSlots(model).map((p) => ({
+                value: p.id,
+                label: p.name.split("· ").pop() ?? p.name,
+              })),
+            ]}
+          />
+        </div>
       );
     return null;
   };
@@ -523,39 +525,31 @@ export function LabView({
         >
           <FloatingDock>
             <div className="flex flex-wrap items-center gap-1.5">
-              <Select
-                className="max-w-[200px]"
+              <Dropdown
+                className="w-[200px]"
+                ariaLabel="Scenario"
                 value={sc.id}
-                onChange={(e) => {
-                  const p = proposals.find((x) => x.id === e.target.value);
-                  if (!p) return store.select(e.target.value);
+                onChange={(id) => {
+                  const p = proposals.find((x) => x.id === id);
+                  if (!p) return store.select(id);
                   const { name, nodes, wires } = p.s;
                   store.add({ id: p.id, name, nodes, wires, proposed: true });
                   setRun(null);
                 }}
-                aria-label="Scenario"
-              >
-                {store.list.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.proposed ? `AI · ${s.name}` : s.name}
-                  </option>
-                ))}
-                {proposals.length > 0 && (
-                  <optgroup label="Proposed by your AI client">
-                    {proposals.map((p) => (
-                      <option
-                        key={p.id}
-                        value={p.id}
-                        disabled={p.errs.length > 0}
-                        title={p.errs.join("\n") || undefined}
-                      >
-                        {p.errs.length ? "Invalid · " : "AI · "}
-                        {p.s.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-              </Select>
+                options={[
+                  ...store.list.map((s) => ({
+                    value: s.id,
+                    label: s.proposed ? `AI · ${s.name}` : s.name,
+                  })),
+                  ...proposals.map((p) => ({
+                    value: p.id,
+                    label: `${p.errs.length ? "Invalid · " : "AI · "}${p.s.name}`,
+                    disabled: p.errs.length > 0,
+                    title: p.errs.join("\n") || undefined,
+                    group: "Proposed by your AI client",
+                  })),
+                ]}
+              />
               {sc.proposed && (
                 <span title="Proposed by your AI client over MCP: review it before you rely on it">
                   <Chip>AI proposal</Chip>
@@ -569,15 +563,14 @@ export function LabView({
                   edit((s) => ({ ...s, name: e.target.value }), true)
                 }
               />
-              <Select
-                className="max-w-[150px]"
+              <Dropdown
+                className="w-[150px]"
+                ariaLabel="New from template"
+                placeholder="New…"
                 value=""
-                aria-label="New from template"
-                onChange={(e) => {
-                  const t = templates(model).find(
-                    (x) => x.name === e.target.value,
-                  );
-                  if (e.target.value === "blank")
+                onChange={(v) => {
+                  const t = templates(model).find((x) => x.name === v);
+                  if (v === "blank")
                     store.add({
                       id: newId("sc"),
                       name: "New scenario",
@@ -587,15 +580,14 @@ export function LabView({
                   else if (t) store.add(t.build());
                   setRun(null);
                 }}
-              >
-                <option value="">New…</option>
-                <option value="blank">Blank scenario</option>
-                {templates(model).map((t) => (
-                  <option key={t.name} value={t.name}>
-                    Template · {t.name}
-                  </option>
-                ))}
-              </Select>
+                options={[
+                  { value: "blank", label: "Blank scenario" },
+                  ...templates(model).map((t) => ({
+                    value: t.name,
+                    label: `Template · ${t.name}`,
+                  })),
+                ]}
+              />
               <Button
                 variant="accent"
                 onClick={start}

@@ -1,9 +1,10 @@
 export { Button } from "./Button";
 export { CardGradients } from "./CardGradients";
 export { Chip } from "./Chip";
+export { Dropdown, type DropdownOption } from "./Dropdown";
 export { FloatingDock } from "./FloatingDock";
 export { IconButton } from "./IconButton";
-export { Input, Select, Textarea } from "./Input";
+export { Input, Textarea } from "./Input";
 export { KindIcon } from "./KindIcon";
 export { KV } from "./KV";
 export { LogoMark, LogoText } from "./LogoMark";

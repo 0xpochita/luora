@@ -3,11 +3,11 @@
 import { useRef, useState } from "react";
 import {
   Button,
+  Dropdown,
   Input,
   PH,
   PhIcon,
   SegmentedControl,
-  Select,
 } from "@/components/ui";
 import {
   type AiConfig,
@@ -152,18 +152,16 @@ export function AiSettings() {
             <div className="flex flex-col gap-2.5 rounded-inner border border-border bg-inner-grad p-3">
               {mode === "key" && (
                 <Row label="Provider">
-                  <Select
-                    aria-label="Provider"
+                  <Dropdown
+                    ariaLabel="Provider"
                     value={draft.kind}
-                    onChange={(e) => pick(e.target.value as AiKind)}
+                    onChange={(k) => pick(k as AiKind)}
                     className="w-full"
-                  >
-                    {KEYED.map((k) => (
-                      <option key={k} value={k}>
-                        {PROVIDERS[k].label}
-                      </option>
-                    ))}
-                  </Select>
+                    options={KEYED.map((k) => ({
+                      value: k,
+                      label: PROVIDERS[k].label,
+                    }))}
+                  />
                 </Row>
               )}
               {mode === "local" && (

@@ -280,14 +280,15 @@
   gap: 12px;
   height: 44px;
 }
-.lab-card .w span {
+.lab-card .w > span {
   width: 52px;
   flex: none;
   font-size: 13px;
   color: var(--muted);
 }
 .lab-card .w input,
-.lab-card .w select {
+.lab-card .w select,
+.lab-card .w .dd-card {
   flex: 1;
   min-width: 0;
   height: 36px;
@@ -314,13 +315,23 @@
   background-position: right 12px center;
 }
 .lab-card .w input:hover,
-.lab-card .w select:hover {
+.lab-card .w select:hover,
+.lab-card .w .dd-card:hover {
   border-color: var(--border-strong);
 }
 .lab-card .w input:focus,
 .lab-card .w select:focus {
   outline: none;
   border-color: rgba(255, 255, 255, 0.28);
+}
+
+/* the app's dropdown (components/ui/Dropdown) as a card widget: same box as the inputs */
+.lab-card .w .dd-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px 0 12px;
+  text-align: left;
 }
 
 /* port rows: inputs and outputs in two separate columns, 24px apart */
