@@ -16,7 +16,7 @@
    centre, where the square appears. Everything static is drawn here; GSAP only moves transform /
    opacity, the packets are one CSS transform loop paused off-screen. */
 .lp-hub {
-  --hx: 124px; /* side arms (Foundry, Ethereum) */
+  --hx: 124px; /* side arms (Foundry, EVM Chain) */
   --hy: 150px; /* bottom arm (Solidity) */
   --m: 36px; /* half a mark */
   --c: 28px; /* half the core's height, and where the wires start */

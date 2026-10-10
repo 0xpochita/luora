@@ -219,7 +219,13 @@ export async function Product() {
       href: "https://soliditylang.org",
       node: icon(SOLIDITY),
     },
-    { title: "Ethereum", href: "https://ethereum.org", node: icon(ETHEREUM) },
+    {
+      // any EVM chain, not just L1 (the fork picker runs Ethereum, Arbitrum, Base, Robinhood,
+      // HyperEVM and Tempo testnets); the diamond stays as the EVM's own mark
+      title: "EVM Chain",
+      href: "https://ethereum.org/developers/docs/evm/",
+      node: icon(ETHEREUM),
+    },
   ];
   return (
     <ScatterGrow marks={marks}>
