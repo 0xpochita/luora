@@ -1,8 +1,9 @@
+import type { AskContext } from "../../ai/types";
 import { SYSTEMS } from "../data/layers";
 import type { AiQuestion, Piece, SystemKey } from "../types";
 import type { AtlasModel } from "./model";
 
-// ponytail: canned, defensive-only answers; swap for a backend call that sends {piece, source, question} to the model
+// Canned, defensive-only answers: the default when no AI provider is set, and the fallback when one fails.
 const RISK_LABEL = {
   high: "High",
   med: "Medium",
@@ -91,6 +92,41 @@ export function aiAnswer(
         : "\n\nNo open findings on this piece.")
     );
   return `Foundry test to protect this behaviour (run with node luora-export.mjs, results show up in the trace view):\n\n${TESTS[p.id] ?? T_DEFAULT}`;
+}
+
+/** What a user's own AI provider gets for a piece: the same inputs the canned answer uses, plus its source lines. */
+export function askContext(m: AtlasModel, p: Piece): AskContext {
+  const from = m.lineOf(p);
+  const findings =
+    p.sys === "vulns"
+      ? [p]
+      : m.findings.filter((x) => (x.links ?? []).includes(p.id));
+  return {
+    contract: m.contract,
+    file: m.file,
+    piece: {
+      name: p.name,
+      system: SYSTEMS[p.sys].label,
+      desc: p.desc,
+      caller: p.caller,
+    },
+    source: {
+      from: from + 1,
+      lines: m.lines.slice(from, from + Math.min(p.n ?? 1, 120)),
+    },
+    connected: [...m.neighbours(p.id)]
+      .filter((id) => id !== p.id && m.byId[id])
+      .map((id) => ({
+        name: m.byId[id].name,
+        system: SYSTEMS[m.byId[id].sys].label,
+      })),
+    findings: findings.map((f) => ({
+      name: f.name,
+      risk: RISK_LABEL[f.risk ?? "low"],
+      desc: f.desc,
+    })),
+    checklist: CHECKLIST[p.sys],
+  };
 }
 
 export { RISK_LABEL };

@@ -1,7 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Chip, IconButton, Panel } from "@/components/ui";
+import {
+  aiReady,
+  askPrompt,
+  askStream,
+  PROVIDERS,
+  useAiConfig,
+} from "@/features/ai";
 import {
   type AiQuestion,
   type AtlasModel,
@@ -10,7 +17,7 @@ import {
   SYSTEMS,
   type TriageState,
 } from "@/features/atlas";
-import { CHECKLIST } from "@/features/atlas/utils/ai";
+import { askContext, CHECKLIST } from "@/features/atlas/utils/ai";
 import { pctLabel, pieceCoverage } from "@/features/atlas/utils/coverage";
 import { protocolOf } from "@/features/atlas/utils/protocols";
 import { FindingTriage } from "./FindingTriage";
@@ -36,6 +43,12 @@ export function PieceInspector({
   const { byId, findings: FINDINGS, layerOf, neighbours } = model;
   const p = byId[id];
   const [answer, setAnswer] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const ai = useAiConfig();
+  const live = aiReady(ai);
+  const run = useRef<AbortController | null>(null);
+  useEffect(() => () => run.current?.abort(), []);
 
   const findings =
     p.sys === "vulns"
@@ -45,15 +58,44 @@ export function PieceInspector({
   const proto = protocolOf(p);
   const cov = pieceCoverage(model, p.id);
 
-  const ask = (q: AiQuestion) => {
+  const canned = (q: AiQuestion, ctl: AbortController) => {
     const text = aiAnswer(model, p, q);
     let i = 0;
     const tick = () => {
+      if (ctl.signal.aborted) return;
       i += 5;
       setAnswer(text.slice(0, i));
       if (i < text.length) setTimeout(tick, 10);
     };
     tick();
+  };
+
+  const ask = async (q: AiQuestion) => {
+    run.current?.abort();
+    const ctl = new AbortController();
+    run.current = ctl;
+    setError("");
+    setAnswer("");
+    if (!live) return canned(q, ctl);
+    setBusy(true);
+    let text = "";
+    try {
+      for await (const t of askStream(
+        ai,
+        askPrompt(askContext(model, p), q),
+        ctl.signal,
+      )) {
+        text += t;
+        setAnswer(text);
+      }
+      if (!text) throw new Error("The model returned an empty answer.");
+    } catch (e) {
+      if (ctl.signal.aborted) return;
+      setError((e as Error).message);
+      canned(q, ctl);
+    } finally {
+      if (run.current === ctl) setBusy(false);
+    }
   };
 
   return (
@@ -182,14 +224,33 @@ export function PieceInspector({
           ))}
         </ul>
       </Panel>
-      <Panel label="Luora AI" aside="Demo · mock">
+      <Panel
+        label="Luora AI"
+        aside={
+          live
+            ? `${PROVIDERS[ai.kind].label} · ${ai.model}`
+            : "Built-in answers"
+        }
+      >
         <div className="flex flex-wrap gap-1.5 px-4 pt-1 pb-3">
           {QUESTIONS.map(({ q, label }) => (
-            <Button key={q} size="sm" onClick={() => ask(q)}>
+            <Button key={q} size="sm" disabled={busy} onClick={() => ask(q)}>
               {label}
             </Button>
           ))}
         </div>
+        {busy && !answer && (
+          <p className="px-4 pb-3 text-[12.5px] text-dim">Asking {ai.model}…</p>
+        )}
+        {error && (
+          <output className="flex items-start gap-2 break-words px-4 pb-2 text-[12.5px] text-body">
+            <span className="mt-1.5 size-1.5 flex-none rounded-full bg-red" />
+            <span>
+              {PROVIDERS[ai.kind].label} failed ({error}). Showing the built-in
+              answer.
+            </span>
+          </output>
+        )}
         {answer && (
           <div className="m-2 mt-0 whitespace-pre-wrap rounded-inner border border-border bg-inner-grad px-3 py-2.5 text-[13px] text-body leading-normal">
             {answer}
