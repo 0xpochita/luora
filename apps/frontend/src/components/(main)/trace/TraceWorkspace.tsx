@@ -76,6 +76,8 @@ function TraceBody({
   const [frameIdx, setFrameIdx] = useState<number | null>(null);
   const [file, setFile] = useState(files[0] ?? "");
   const [query, setQuery] = useState("");
+  /** calls folded shut (Phalcon's fold boxes); their descendants are hidden */
+  const [folded, setFolded] = useState<Set<number>>(new Set());
   const [depth, setDepth] = useState(0);
   const [panels, setPanels] = useState<Panels>({
     tests: true,
@@ -90,19 +92,43 @@ function TraceBody({
   const frame = frameIdx != null ? frames[frameIdx] : undefined;
   const span = frame ? locateFrame(data, frame) : null;
 
-  // what the call trace shows: filters, depth and search, in that order
+  // what the call trace shows: folds, filters, depth and search, in that order (a search looks
+  // inside folded calls too, so a match is never hidden)
   const q = query.trim().toLowerCase();
-  const rows = frames
-    .map((f, index) => ({ frame: f, index }))
-    .filter(
-      ({ frame: f }) =>
-        !hidden.has(displayKind(f)) &&
-        (!depth || f.d <= depth) &&
-        (!q ||
-          `${f.to}.${f.fn} ${f.contract ?? ""} ${f.args} ${f.ret}`
-            .toLowerCase()
-            .includes(q)),
-    );
+  const hasKids = (i: number) => (frames[i + 1]?.d ?? -1) > frames[i].d;
+  const rows: {
+    frame: (typeof frames)[number];
+    index: number;
+    fold: "open" | "closed" | null;
+  }[] = [];
+  let hideBelow = Number.POSITIVE_INFINITY;
+  for (const [index, f] of frames.entries()) {
+    if (!q) {
+      if (f.d > hideBelow) continue;
+      hideBelow = folded.has(index) ? f.d : Number.POSITIVE_INFINITY;
+    }
+    if (hidden.has(displayKind(f))) continue;
+    if (depth && f.d > depth) continue;
+    if (
+      q &&
+      !`${f.to}.${f.fn} ${f.contract ?? ""} ${f.args} ${f.ret}`
+        .toLowerCase()
+        .includes(q)
+    )
+      continue;
+    rows.push({
+      frame: f,
+      index,
+      fold: hasKids(index) ? (folded.has(index) ? "closed" : "open") : null,
+    });
+  }
+  const fold = (i: number, shut?: boolean) =>
+    setFolded((s) => {
+      const next = new Set(s);
+      if (shut ?? !next.has(i)) next.add(i);
+      else next.delete(i);
+      return next;
+    });
   const counts: Partial<Record<DisplayKind, number>> = {};
   for (const f of frames) {
     const k = displayKind(f);
@@ -112,6 +138,22 @@ function TraceBody({
   const revertAt = frames.findIndex((f) => !f.ok && f.contract !== "vm");
   const revert =
     revertAt >= 0 ? { index: revertAt, frame: frames[revertAt] } : null;
+
+  useEffect(() => {
+    const p = new URLSearchParams(location.search);
+    const t = data.tests.findIndex((x) => x.name === p.get("test"));
+    if (t >= 0) setTestIdx(t);
+    const c = Number(p.get("call"));
+    if (p.has("call") && Number.isInteger(c)) setFrameIdx(c);
+  }, [data.tests]);
+  useEffect(() => {
+    if (!test) return;
+    const url = new URL(location.href);
+    url.searchParams.set("test", test.name);
+    if (frameIdx == null) url.searchParams.delete("call");
+    else url.searchParams.set("call", String(frameIdx));
+    history.replaceState(history.state, "", url);
+  }, [test, frameIdx]);
 
   const selectFrame = (i: number) => {
     setFrameIdx(i);
@@ -157,6 +199,15 @@ function TraceBody({
 
   // keyboard (docs/ux/trace-view.md): ↑ ↓ / j k step, / search, 1 2 3 views, [ ] panels, F full
   const full = panels.full;
+  const foldSelected = (shut: boolean) => {
+    if (frameIdx == null || !frames[frameIdx]) return;
+    if (hasKids(frameIdx) && folded.has(frameIdx) !== shut)
+      return fold(frameIdx, shut);
+    // already folded (or a leaf): ← jumps to the parent call, as tree views do
+    if (shut)
+      for (let i = frameIdx - 1; i >= 0; i--)
+        if (frames[i].d < frames[frameIdx].d) return selectFrame(i);
+  };
   const keys = useRef({
     rows,
     frameIdx,
@@ -166,6 +217,7 @@ function TraceBody({
     toggleFull,
     setFull,
     full,
+    foldSelected,
   });
   keys.current = {
     rows,
@@ -176,6 +228,7 @@ function TraceBody({
     toggleFull,
     setFull,
     full,
+    foldSelected,
   };
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -212,6 +265,16 @@ function TraceBody({
         case "Escape":
           if (k.full) k.setFull(() => false);
           return;
+        case "ArrowLeft":
+        case "h":
+          if (k.mode !== "trace") return;
+          e.preventDefault();
+          return k.foldSelected(true);
+        case "ArrowRight":
+        case "l":
+          if (k.mode !== "trace") return;
+          e.preventDefault();
+          return k.foldSelected(false);
         case "ArrowDown":
         case "j":
           return step(1);
@@ -269,6 +332,7 @@ function TraceBody({
                 onSelect={(i) => {
                   setTestIdx(i);
                   setFrameIdx(null);
+                  setFolded(new Set());
                 }}
               />
             </Sidebar>
@@ -326,13 +390,17 @@ function TraceBody({
                   rows={rows}
                   total={frames.length}
                   maxGas={Math.max(1, ...frames.map((f) => f.gas ?? 0))}
-                  filtered={!!q || depth > 0 || hidden.size > 0}
+                  filtered={
+                    !!q || depth > 0 || hidden.size > 0 || folded.size > 0
+                  }
                   selected={frameIdx}
                   onSelect={selectFrame}
+                  onFold={(i) => fold(i)}
                   onReset={() => {
                     setQuery("");
                     setDepth(0);
                     setHidden(new Set());
+                    setFolded(new Set());
                   }}
                 />
                 <BalancePanels transfers={test.transfers} />
@@ -354,6 +422,7 @@ function TraceBody({
           {(
             [
               [["↑", "↓"], "step through calls"],
+              [["←", "→"], "fold, unfold"],
               [["/"], "search"],
               [["1", "2", "3"], "views"],
               [["[", "]"], "tests, source"],

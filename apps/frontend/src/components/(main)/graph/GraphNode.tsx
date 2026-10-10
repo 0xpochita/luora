@@ -1,6 +1,6 @@
 "use client";
 
-import { KindIcon, TONE_DOT, type Tone } from "@/components/ui";
+import { KindBadge, TONE_DOT, type Tone } from "@/components/ui";
 import { displayKind, type Frame, frameRows, human } from "@/features/trace";
 
 export const NODE_W = 300;
@@ -91,8 +91,7 @@ export function GraphNode({
           className="flex items-center gap-2 px-2.5 font-sans text-[12.5px] text-muted"
           style={{ height: HEAD_H }}
         >
-          <KindIcon kind={kind} size="sm" />
-          {kind.toLowerCase()}
+          <KindBadge kind={kind} size="sm" />
         </span>
         {rows.length > 0 && (
           <span className="mx-2 mb-2 block rounded-inner border border-border bg-inner-grad py-1">

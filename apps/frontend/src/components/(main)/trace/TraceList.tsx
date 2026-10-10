@@ -1,17 +1,7 @@
 "use client";
 
-import { KIND_META } from "@/components/ui";
-import type { DisplayKind, Frame } from "@/features/trace";
+import type { Frame } from "@/features/trace";
 import { TraceRow } from "./TraceRow";
-
-const LEGEND: DisplayKind[] = ["CALL", "STATICCALL", "EVENT", "VM", "REVERT"];
-const SHORT: Partial<Record<DisplayKind, string>> = {
-  CALL: "Call",
-  STATICCALL: "View",
-  EVENT: "Event",
-  VM: "Cheatcode",
-  REVERT: "Revert",
-};
 
 /** The call trace rows the toolbar's filters, depth and search let through. */
 export function TraceList({
@@ -21,15 +11,17 @@ export function TraceList({
   filtered,
   selected,
   onSelect,
+  onFold,
   onReset,
 }: {
-  rows: { frame: Frame; index: number }[];
+  rows: { frame: Frame; index: number; fold: "open" | "closed" | null }[];
   total: number;
   maxGas: number;
   /** a filter, depth or search is on */
   filtered: boolean;
   selected: number | null;
   onSelect: (i: number) => void;
+  onFold: (i: number) => void;
   onReset: () => void;
 }) {
   return (
@@ -50,27 +42,19 @@ export function TraceList({
             Show all
           </button>
         )}
-        {/* the colour key, in Foundry's own palette (KindIcon) */}
-        <span className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted">
-          {LEGEND.map((k) => (
-            <span key={k} className="flex items-center gap-1.5">
-              <span className={`size-2 rounded-full ${KIND_META[k].dot}`} />
-              {SHORT[k]}
-            </span>
-          ))}
-        </span>
       </header>
       {rows.length ? (
-        <div className="space-y-0.5">
-          {rows.map(({ frame, index }, order) => (
+        <div className="space-y-px">
+          {rows.map(({ frame, index, fold }) => (
             <TraceRow
               key={index}
               index={index}
               frame={frame}
               maxGas={maxGas}
-              order={order}
               selected={selected === index}
               onSelect={() => onSelect(index)}
+              fold={fold}
+              onFold={() => onFold(index)}
             />
           ))}
         </div>

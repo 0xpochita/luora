@@ -81,9 +81,10 @@ export function Views({
               index={i}
               frame={f}
               maxGas={maxGas}
-              order={i}
               selected={i === 1}
               onSelect={none}
+              fold={(frames[i + 1]?.d ?? -1) > f.d ? "open" : null}
+              onFold={none}
             />
           ))}
         </div>

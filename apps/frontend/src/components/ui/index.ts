@@ -5,7 +5,7 @@ export { Dropdown, type DropdownOption } from "./Dropdown";
 export { FloatingDock } from "./FloatingDock";
 export { IconButton } from "./IconButton";
 export { Input, Textarea } from "./Input";
-export { KIND_META, KindIcon } from "./KindIcon";
+export { KIND_META, KindBadge } from "./KindBadge";
 export { KV } from "./KV";
 export { LogoMark, LogoText } from "./LogoMark";
 export { Meter } from "./Meter";

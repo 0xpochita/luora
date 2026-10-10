@@ -93,3 +93,20 @@ their terminal (Nielsen: match between system and the real world):
 
 A colour key sits in the Calls header; argument and return chips get a hairline border; the
 function name is semibold; tree guides are brighter.
+
+## Phalcon pass, words not icons (same day)
+
+Studied BlockSec Phalcon Explorer's invocation flow (tx 0xa1f1…b099, `?line=20`) and the request
+"no icons if possible". Taken from it:
+
+| Phalcon | Luora |
+|---|---|
+| Call type as a text badge (CALL, STATICCALL, DELEGATECALL, EVENT) | `KindBadge`: outlined mono badge in Foundry's colours; the tinted icon tiles and the colour key are gone |
+| `Contract.fn(name=value, …)` inline on one line | same, contract `body`, fn semibold `fg`, values `text` |
+| Return value in its own box | return chip after a `›` chevron |
+| ⊟ / ⊞ fold boxes per call with children | `−` / `+` fold boxes; ← folds (or jumps to the parent), → unfolds; search ignores folds |
+| `?line=N` shareable row | `?test=<name>&call=<n>`, kept in the URL; "Copy link" in the Selected call card |
+| Dense rows, depth guides | rows packed with 1px gaps, guides kept |
+
+Not taken: Phalcon's fund-flow and balance-change tabs (a Foundry test run has no on-chain money
+flow to show) and its per-row gas toggle (gas stays a column with a meter).

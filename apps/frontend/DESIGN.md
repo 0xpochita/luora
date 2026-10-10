@@ -173,7 +173,8 @@ Don't
 ## Trace call kinds (exception, 2026-10-10)
 
 The trace view colour-codes frame kinds with Foundry's own `forge test -vvvv` palette (calls
-green, cheatcodes blue, reverts red, events cyan, staticcalls yellow, delegatecalls pink), each a
-Phosphor icon on a 12% tinted tile with a colour key in the Calls header. Auditors read these
-colours in their terminal every day; matching them beats a monochrome legend. Lab node kinds stay
+green, cheatcodes blue, reverts red, events cyan, staticcalls yellow, delegatecalls pink), each an
+outlined mono text badge (CALL, STATICCALL, DELEGATECALL, EVENT, CHEATCODE, REVERT) as in
+Phalcon's invocation flow, no icons. The word names the kind, so no colour key is needed. Auditors
+read these colours in their terminal every day; matching them beats a monochrome legend. Lab node kinds stay
 monochrome. See docs/ux/trace-view.md.

@@ -1,6 +1,7 @@
 "use client";
 
-import { Chevron, Dropdown, Panel } from "@/components/ui";
+import { useState } from "react";
+import { Chevron, Dropdown, Panel, PH, PhIcon } from "@/components/ui";
 import {
   type Frame,
   human,
@@ -87,11 +88,14 @@ export function SourcePanel({
               )}
             </div>
           )}
-          <p className="mt-2 text-[11.5px] text-dim">
-            {frame.callSite
-              ? `Called from ${frame.callSite.file.split("/").pop()}:${frame.callSite.line}`
-              : "Test entry"}
-            {executed > 0 && ` · ${executed} lines executed`}
+          <p className="mt-2 flex items-center gap-2 text-[11.5px] text-muted">
+            <span className="min-w-0 flex-1 truncate">
+              {frame.callSite
+                ? `Called from ${frame.callSite.file.split("/").pop()}:${frame.callSite.line}`
+                : "Test entry"}
+              {executed > 0 && ` · ${executed} lines executed`}
+            </span>
+            <CopyLink />
           </p>
         </div>
       ) : (
@@ -106,5 +110,26 @@ export function SourcePanel({
         className="mx-2 mb-2 rounded-inner border border-border"
       />
     </Panel>
+  );
+}
+
+/** Copies this page's link, which names the test and the call (?test=…&call=…), like Phalcon's ?line=. */
+function CopyLink() {
+  const [done, setDone] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(location.href);
+          setDone(true);
+          setTimeout(() => setDone(false), 1500);
+        } catch {}
+      }}
+      className="flex flex-none items-center gap-1 rounded-chip border border-white/[.08] px-1.5 py-0.5 text-muted hover:border-white/20 hover:text-fg"
+    >
+      <PhIcon d={done ? PH.check : PH.copy} className="size-3" />
+      {done ? "Copied" : "Copy link"}
+    </button>
   );
 }

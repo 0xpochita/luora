@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef, useState } from "react";
 import { CoverageSummary } from "@/components/(main)/atlas/CoverageSummary";
-import { Chip, KindIcon, Meter, Panel, ToggleChip } from "@/components/ui";
+import { Chip, KindBadge, Meter, Panel, ToggleChip } from "@/components/ui";
 import type { AtlasData, FindingTool, Risk } from "@/features/atlas/types";
 import {
   flaggedLines,
@@ -60,7 +60,7 @@ export function TraceWidget({
                 className="tree-guides flex-none self-stretch"
                 style={{ width: (f.d - top) * 18 }}
               />
-              <KindIcon kind={kind} />
+              <KindBadge kind={kind} size="sm" />
               <span className="font-mono text-[13px]">
                 <span className="text-muted">{f.to}</span>
                 <span className="mx-px text-dim">.</span>
