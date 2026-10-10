@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import type { TestResult } from "../../trace/types.ts";
 import {
+  applyProgress,
   clock,
   exportArgs,
   FORK_CHAINS,
@@ -94,4 +95,45 @@ assert.deepEqual(
   ],
 );
 assert.deepEqual(splitChain("Anvil"), ["Anvil", ""]);
+// the log's live tests: planned as running, then each result in place; a fork run after it
+let g = applyProgress([], {
+  run: "local",
+  plan: [
+    { suite: "S", name: "test_a" },
+    { suite: "S", name: "testFuzz_b" },
+  ],
+});
+assert.deepEqual(
+  g[0].rows.map((r) => [r.name, r.outcome]),
+  [
+    ["test_a()", "running"],
+    ["testFuzz_b()", "running"],
+  ],
+);
+g = applyProgress(g, {
+  run: "local",
+  result: {
+    suite: "S",
+    name: "testFuzz_b(uint256)",
+    status: "Failure",
+    reason: "x",
+    kind: { Fuzz: { runs: 1 } },
+  },
+});
+assert.deepEqual(
+  g[0].rows.map((r) => [r.name, r.outcome]),
+  [
+    ["test_a()", "running"],
+    ["testFuzz_b(uint256)", "fail"],
+  ],
+);
+g = applyProgress(g, {
+  run: "base-sepolia",
+  plan: [{ suite: "S", name: "test_a" }],
+});
+assert.deepEqual(
+  g.map((x) => x.run),
+  ["local", "base-sepolia"],
+);
+assert.equal(applyProgress(g, {} as never), g);
 console.log("test-run ok");

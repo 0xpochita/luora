@@ -2,7 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { parseRun, type RunFile } from "../utils/parse-run";
-import { parseEvent, type RunSummary, summarize } from "../utils/test-run";
+import {
+  applyProgress,
+  parseEvent,
+  type RunGroup,
+  type RunSummary,
+  summarize,
+} from "../utils/test-run";
 
 export type RunLine = { log: string; warn?: boolean; at: number };
 export type TestRunState = {
@@ -13,6 +19,9 @@ export type TestRunState = {
   /** when it finished or failed (0 while running) */
   ended: number;
   lines: RunLine[];
+  /** the tests per run (local, then the fork): live while it runs, forge's verdict after */
+  groups: RunGroup[];
+  /** the verdict of the run Start test aimed at (the fork's when there is one) */
   summary: RunSummary | null;
   error: string | null;
 };
@@ -23,6 +32,7 @@ const IDLE: TestRunState = {
   started: 0,
   ended: 0,
   lines: [],
+  groups: [],
   summary: null,
   error: null,
 };
@@ -80,6 +90,13 @@ export function useTestRun(onData: (data: RunFile) => void) {
             setState((s) => ({ ...s, lines: [...s.lines, e] }));
             continue;
           }
+          if ("progress" in e) {
+            setState((s) => ({
+              ...s,
+              groups: applyProgress(s.groups, e.progress),
+            }));
+            continue;
+          }
           if (!e.file) return fail(e.error ?? "The test run stopped.");
           const r = parseRun(e.file);
           if (!r.ok) return fail(`luora-data.json: ${r.error}`);
@@ -89,11 +106,17 @@ export function useTestRun(onData: (data: RunFile) => void) {
             return fail(
               "The fork run was skipped (see the output): the local run is loaded.",
             );
+          const local = summarize(r.data.tests);
+          const summary = fork ? summarize(tests) : local;
           setState((s) => ({
             ...s,
             phase: "done",
             ended: Date.now(),
-            summary: summarize(tests),
+            summary,
+            groups: [
+              { run: "local", rows: local.rows },
+              ...(fork ? [{ run: fork, rows: summary.rows }] : []),
+            ],
           }));
           return;
         }

@@ -52,6 +52,10 @@ if (chainKey) {
 }
 // a failed forge command ends the export with forge's own message (a compiler error, a bad
 // flag), not Node's dump of the whole error; `failOk` keeps the output of a run that exits 1
+// LUORA_PROGRESS (set by the app's Start test, never needed by hand): machine lines `luora:: {…}`
+// beside the human ones, so the app lists the tests before forge reports and marks each result as
+// soon as it is in. Tagged with the run (local, or the fork's chain key).
+const progress = e => process.env.LUORA_PROGRESS && console.log(`luora:: ${JSON.stringify({ run: chainKey || 'local', ...e })}`);
 const sh = (cmd, args, { failOk = false } = {}) => {
   try {
     return execFileSync(cmd, args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 512 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -97,9 +101,16 @@ for (const a of artifacts) if (!a.file.startsWith('lib/') && existsSync(join(ROO
 // ---------- run tests ----------
 // a failing test makes forge exit 1; its JSON is still the whole run, and failures are what an
 // auditor came to see, so only a run without JSON (a build or flag error) stops the export
+if (process.env.LUORA_PROGRESS) try {
+  // what forge is about to run (honours --mt / --mc / --mp), listed without running anything
+  const list = JSON.parse(execFileSync('forge', ['test', '--list', '--json', ...extra], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }));
+  progress({ plan: Object.values(list).flatMap(suites => Object.entries(suites).flatMap(([suite, names]) => names.map(name => ({ suite, name })))) });
+} catch {}
 console.log('luora: running forge test');
 const raw = sh('forge', ['test', '--json', '-vvvv', ...extra], { failOk: true });
 const results = JSON.parse(raw.slice(raw.indexOf('{')));
+for (const [suiteId, suite] of Object.entries(results)) for (const [name, t] of Object.entries(suite.test_results))
+  progress({ result: { suite: suiteId.split(':').pop(), name, status: t.status, reason: t.reason, kind: t.kind } });
 const CHEAT = '0x7109709ecfa91a80626ff3989d68f67f5b1dd12d';
 
 // ---------- step data: one `forge test --debug --dump` per unit test, in parallel ----------

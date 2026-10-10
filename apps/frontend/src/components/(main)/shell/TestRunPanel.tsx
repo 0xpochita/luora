@@ -1,12 +1,14 @@
 "use client";
 
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { PH, PhIcon } from "@/components/ui";
+import { ChainLogo, PH, PhIcon } from "@/components/ui";
 import type { RunLine, TestRun } from "@/features/run";
 import {
   clock,
   FORK_CHAINS,
+  type LiveRow,
   type ResultRow,
+  type RunGroup,
 } from "@/features/run/utils/test-run";
 
 /*
@@ -215,6 +217,9 @@ export function TestRunDialog({
     if (!run.open && d?.open) d.close();
   }, [run.open]);
   const command = `node luora-export.mjs${run.fork ? ` --forks ${run.fork}` : ""}`;
+  const all = run.groups.flatMap((g) => g.rows);
+  const total = all.length;
+  const finished = all.filter((r) => r.outcome !== "running").length;
 
   return (
     <dialog
@@ -266,27 +271,37 @@ export function TestRunDialog({
       </header>
       <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_minmax(0,1fr)] md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] md:grid-rows-1">
         <section className="flex min-h-0 flex-col border-border border-b md:border-r md:border-b-0">
-          <h3 className="flex-none px-4 pt-3 pb-1.5 text-[12.5px] text-muted">
-            Tests {s && <span className="text-dim">{s.rows.length}</span>}
+          <h3 className="flex-none px-4 pt-3 pb-1 text-[12.5px] text-muted">
+            Tests{" "}
+            {total > 0 && (
+              <span className="font-mono text-[12px] text-dim tabular-nums">
+                {finished}/{total}
+              </span>
+            )}
           </h3>
-          {s ? (
-            <ul className="min-h-0 flex-1 overflow-auto pb-2">
-              {s.rows.map((r, _, rows) => (
-                <Row
-                  key={`${r.suite}.${r.name}`}
-                  r={r}
-                  twin={rows.some((o) => o !== r && o.name === r.name)}
-                  onOpen={() => {
-                    run.setOpen(false);
-                    onOpen(r.suite, r.name);
-                  }}
+          {run.groups.length ? (
+            <div className="min-h-0 flex-1 overflow-auto pb-2">
+              {run.groups.map((g) => (
+                <Group
+                  key={g.run}
+                  g={g}
+                  // only the finished run is loaded in the trace: until then a click would open
+                  // the previous run's trace of that test
+                  onOpen={
+                    run.phase === "done"
+                      ? (r) => {
+                          run.setOpen(false);
+                          onOpen(r.suite, r.name);
+                        }
+                      : undefined
+                  }
                 />
               ))}
-            </ul>
+            </div>
           ) : (
             <p className="px-4 py-2 text-[12.5px] text-dim leading-normal">
               {running
-                ? "forge is running the tests. Each one shows here, passed or failed, as soon as the run ends."
+                ? "forge is building the project. Its tests are listed here as soon as it knows them."
                 : "No results: the run ended before forge reported (see the output)."}
             </p>
           )}
@@ -297,39 +312,87 @@ export function TestRunDialog({
   );
 }
 
+/** One run's tests under its name: Local, or the fork's chain, with how many are done. */
+function Group({ g, onOpen }: { g: RunGroup; onOpen?: (r: LiveRow) => void }) {
+  const chain = chainOf(g.run);
+  const done = g.rows.filter((r) => r.outcome !== "running").length;
+  return (
+    <section className="pt-1.5">
+      <p className="flex items-center gap-2 px-4 py-1 text-[11.5px] text-dim">
+        <ChainLogo family={chain?.family ?? "local"} className="size-3.5" />
+        {chain ? `Fork of ${chain.name}` : "Local"}
+        <span className="ml-auto font-mono tabular-nums">
+          {done}/{g.rows.length}
+        </span>
+      </p>
+      <ul>
+        {g.rows.map((r, _, rows) => (
+          <Row
+            key={`${r.suite}.${r.name}`}
+            r={r}
+            twin={rows.some((o) => o !== r && o.name === r.name)}
+            onOpen={onOpen && (() => onOpen(r))}
+          />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function Row({
   r,
   twin,
   onOpen,
 }: {
-  r: ResultRow;
+  r: LiveRow;
   /** another suite has a test of the same name: say which suite this one is */
   twin: boolean;
-  onOpen: () => void;
+  onOpen?: () => void;
 }) {
-  const tag = TAG[r.outcome];
+  const running = r.outcome === "running";
+  const tag = running ? null : TAG[r.outcome as ResultRow["outcome"]];
   const note = r.outcome === "fail" && r.reason ? r.reason : r.detail;
   return (
     <li>
       <button
         type="button"
         onClick={onOpen}
-        title={`Open ${r.suite}.${r.name} in the trace`}
-        className="flex w-full cursor-pointer flex-col gap-0.5 px-4 py-1.5 text-left transition-colors hover:bg-raised"
+        disabled={!onOpen}
+        title={
+          onOpen
+            ? `Open ${r.suite}.${r.name} in the trace`
+            : `${r.suite}.${r.name}`
+        }
+        className="flex w-full flex-col gap-0.5 px-4 py-1.5 text-left transition-colors enabled:cursor-pointer enabled:hover:bg-raised"
       >
         <span className="flex min-w-0 items-center gap-2">
+          {running ? (
+            <span
+              aria-hidden="true"
+              className="-mx-[3px] size-3 flex-none animate-spin rounded-full border-[1.5px] border-white/15 border-t-muted motion-reduce:animate-none"
+            />
+          ) : (
+            <span
+              aria-hidden="true"
+              className={`size-1.5 flex-none rounded-full ${DOT[r.outcome as ResultRow["outcome"]]}`}
+            />
+          )}
           <span
-            aria-hidden="true"
-            className={`size-1.5 flex-none rounded-full ${DOT[r.outcome]}`}
-          />
-          <span className="truncate font-mono text-[12.5px] text-fg">
+            className={`truncate font-mono text-[12.5px] ${running ? "text-muted" : "text-fg"}`}
+          >
             {r.name}
             {twin && <span className="text-dim"> {r.suite}</span>}
           </span>
         </span>
         <span className="break-words pl-3.5 font-mono text-[11.5px] text-dim leading-snug">
-          <span className={tag.cls}>[{tag.label}]</span>{" "}
-          {note && (r.outcome === "fail" ? note : `(${note})`)}
+          {tag ? (
+            <>
+              <span className={tag.cls}>[{tag.label}]</span>{" "}
+              {note && (r.outcome === "fail" ? note : `(${note})`)}
+            </>
+          ) : (
+            "running…"
+          )}
         </span>
       </button>
     </li>

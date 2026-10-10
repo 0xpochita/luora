@@ -65,7 +65,7 @@ export async function POST(req: Request) {
   const child = spawn(process.execPath, ["luora-export.mjs", ...args], {
     cwd,
     // written where the app reads it, whatever LUORA_DATA_PATH names the file
-    env: { ...env, LUORA_OUT: LUORA_DATA_PATH },
+    env: { ...env, LUORA_OUT: LUORA_DATA_PATH, LUORA_PROGRESS: "1" },
     stdio: ["ignore", "pipe", "pipe"],
     detached: true,
   });
@@ -91,10 +91,18 @@ export async function POST(req: Request) {
         stream.on("data", (chunk: string) => {
           buf += chunk;
           const parts = buf.split("\n");
-          buf = (parts.pop() ?? "").slice(-MAX_LINE * 4);
+          // a partial line waits for its end (a progress line can be long: the whole test plan)
+          buf = (parts.pop() ?? "").slice(-262_144);
           for (const raw of parts) {
             const log = raw.trimEnd();
             if (!log) continue;
+            // the exporter's machine lines (LUORA_PROGRESS): the plan and each result, not log
+            if (!warn && log.startsWith("luora:: ")) {
+              try {
+                send({ progress: JSON.parse(log.slice(8)) });
+              } catch {}
+              continue;
+            }
             if (warn && !firstError && /failed|Error\b/.test(log))
               firstError = log.slice(0, MAX_LINE);
             if (++lines > MAX_LINES) continue;

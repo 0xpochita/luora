@@ -72,12 +72,23 @@ export function exportArgs(body: unknown): string[] | string {
 /** One line of the route's NDJSON stream. */
 export type RunEvent =
   | { log: string; warn?: boolean; at: number }
+  | { progress: Progress }
   | { done: true; code: number | null; file?: string; error?: string };
+
+/** The exporter's `luora:: {…}` lines (LUORA_PROGRESS): what forge will run, then each result. */
+export type Progress = {
+  /** "local", or the fork's chain key */
+  run: string;
+  plan?: { suite: string; name: string }[];
+  result?: Pick<TestResult, "suite" | "name" | "status" | "reason" | "kind">;
+};
 
 export function parseEvent(line: string): RunEvent | null {
   try {
     const e = JSON.parse(line);
-    return e && typeof e === "object" && ("log" in e || "done" in e)
+    return e &&
+      typeof e === "object" &&
+      ("log" in e || "done" in e || "progress" in e)
       ? (e as RunEvent)
       : null;
   } catch {
@@ -124,14 +135,16 @@ const OUTCOME: Record<string, Outcome> = {
  * The run as forge reports it: [PASS] / [FAIL] / [SKIP] per test and the suite tally, failures
  * first (what the auditor came to see; GitHub Actions opens a failed step the same way).
  */
+const rowOf = (t: NonNullable<Progress["result"]>): ResultRow => ({
+  suite: t.suite,
+  name: t.name,
+  outcome: OUTCOME[t.status] ?? "fail",
+  reason: t.reason,
+  detail: kindDetail(t.kind),
+});
+
 export function summarize(tests: TestResult[]) {
-  const rows: ResultRow[] = tests.map((t) => ({
-    suite: t.suite,
-    name: t.name,
-    outcome: OUTCOME[t.status] ?? "fail",
-    reason: t.reason,
-    detail: kindDetail(t.kind),
-  }));
+  const rows = tests.map(rowOf);
   const rank: Record<Outcome, number> = { fail: 0, pass: 1, skip: 2 };
   rows.sort((a, b) => rank[a.outcome] - rank[b.outcome]);
   const count = (o: Outcome) => rows.filter((r) => r.outcome === o).length;
@@ -143,6 +156,42 @@ export function summarize(tests: TestResult[]) {
   };
 }
 export type RunSummary = ReturnType<typeof summarize>;
+
+/** A run's tests as the log lists them: still running, or forge's verdict. */
+export type LiveRow = Omit<ResultRow, "outcome"> & {
+  outcome: Outcome | "running";
+};
+export type RunGroup = { run: string; rows: LiveRow[] };
+
+/** a test's name without its parameters: `--list` gives test_x, results test_x(uint256) */
+const bare = (name: string) => name.split("(")[0];
+
+/**
+ * The log's tests while the run goes: the plan lists them all as running, each result replaces its
+ * row; runs (local, then the fork) keep the order they started in.
+ */
+export function applyProgress(groups: RunGroup[], p: Progress): RunGroup[] {
+  if (!p || typeof p.run !== "string") return groups;
+  let rows = groups.find((g) => g.run === p.run)?.rows ?? [];
+  if (Array.isArray(p.plan))
+    rows = p.plan.map((t) => ({
+      suite: t.suite,
+      name: `${t.name}()`,
+      outcome: "running",
+      reason: null,
+      detail: "",
+    }));
+  if (p.result) {
+    const r = rowOf(p.result);
+    const i = rows.findIndex(
+      (x) => x.suite === r.suite && bare(x.name) === bare(r.name),
+    );
+    rows = i < 0 ? [...rows, r] : rows.map((x, k) => (k === i ? r : x));
+  }
+  return groups.some((g) => g.run === p.run)
+    ? groups.map((g) => (g.run === p.run ? { run: p.run, rows } : g))
+    : [...groups, { run: p.run, rows }];
+}
 
 /** 83 → "1:23", the elapsed time a log line and the running button show. */
 export const clock = (s: number) =>
