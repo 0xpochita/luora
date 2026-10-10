@@ -59,7 +59,7 @@ export type LuoraData = {
 /** What a row/node is drawn as (cheatcodes and reverts get their own look). */
 export type DisplayKind = FrameKind | "VM" | "REVERT";
 
-export type TraceMode = "trace" | "graph";
+export type TraceMode = "trace" | "graph" | "scenario";
 
 /** Where the shown data came from: the server's luora-data.json, the bundled sample, or a file dropped in the browser. */
 /** none = nothing loaded yet (the app shows its Start page; `data` then holds the sample, unshown) */

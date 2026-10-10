@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { type RunFile, useShownSource } from "@/features/run";
+import { useMemo, useState } from "react";
+import { type AtlasSource, createAtlasModel } from "@/features/atlas";
+import { atlasSource } from "@/features/atlas/utils/atlas-source";
+import { type RunFile, useRun, useShownSource } from "@/features/run";
 import {
   type DisplayKind,
   locateFrame,
   type TraceMode,
   type TraceSource,
 } from "@/features/trace";
+import { LabView } from "../atlas/lab/LabView";
 import { CallGraph } from "../graph/CallGraph";
 import { StartHere } from "../onboarding/StartHere";
 import { Sidebar } from "../shell/Sidebar";
@@ -22,15 +25,44 @@ import { TraceList } from "./TraceList";
 const fromFile = (data: RunFile): TraceSource => ({ data, origin: "file" });
 
 /** Client root of the trace page: a dropped luora-data.json wins over the server's. */
-export function TraceWorkspace({ source }: { source: TraceSource }) {
+export function TraceWorkspace({
+  source,
+  atlas,
+}: {
+  source: TraceSource;
+  atlas: AtlasSource;
+}) {
   const shown = useShownSource(source, fromFile);
+  const { run } = useRun();
+  // the same run's atlas (for the Scenario tab): the dropped file's, else the server's when it
+  // comes from the same place as the trace (a local trace without an atlas gets none)
+  const runAtlas = run
+    ? atlasSource(run.data, "file")
+    : atlas.origin === source.origin
+      ? atlas
+      : null;
   if (shown.origin === "none") return <StartHere />;
-  return shown.source && <TraceBody key={shown.key} source={shown.source} />;
+  return (
+    shown.source && (
+      <TraceBody key={shown.key} source={shown.source} atlas={runAtlas} />
+    )
+  );
 }
 
 /** Owns test / frame / mode / filter selection. */
-function TraceBody({ source }: { source: TraceSource }) {
+function TraceBody({
+  source,
+  atlas,
+}: {
+  source: TraceSource;
+  atlas: AtlasSource | null;
+}) {
   const { data } = source;
+  const model = useMemo(
+    () => (atlas ? createAtlasModel(atlas.data) : null),
+    [atlas],
+  );
+  const [piece, setPiece] = useState<string | null>(null);
   const files = Object.keys(data.sources);
   const [testIdx, setTestIdx] = useState(() =>
     Math.max(
@@ -90,36 +122,51 @@ function TraceBody({ source }: { source: TraceSource }) {
               onMode={setMode}
               hidden={hidden}
               onToggle={toggle}
+              scenario={!!model}
             />
-            <div
-              className={`flex-1 overflow-auto px-5 pb-5 ${mode === "graph" ? "flex flex-col" : ""}`}
-            >
-              <StatusBar
-                test={test}
-                command={data.command}
-                exportedAt={data.generatedAt}
-              />
-              {mode === "trace" ? (
-                <>
-                  <TraceList
-                    frames={test.frames}
-                    hidden={hidden}
-                    selected={frameIdx}
-                    onSelect={selectFrame}
-                  />
-                  <BalancePanels transfers={test.transfers} />
-                </>
-              ) : (
-                <div className="min-h-0 flex-1">
-                  <CallGraph
-                    frames={test.frames}
-                    hidden={hidden}
-                    selected={frameIdx}
-                    onSelect={selectFrame}
-                  />
-                </div>
-              )}
-            </div>
+            {mode === "scenario" && model ? (
+              // the Atlas Lab's Scenario editor, on this run's contract
+              <div className="relative flex min-h-0 flex-1 flex-col">
+                <LabView
+                  model={model}
+                  calls={atlas?.calls}
+                  proposed={atlas?.proposed}
+                  selected={piece}
+                  onSelect={setPiece}
+                  only="scenario"
+                />
+              </div>
+            ) : (
+              <div
+                className={`flex-1 overflow-auto px-5 pb-5 ${mode === "graph" ? "flex flex-col" : ""}`}
+              >
+                <StatusBar
+                  test={test}
+                  command={data.command}
+                  exportedAt={data.generatedAt}
+                />
+                {mode === "trace" ? (
+                  <>
+                    <TraceList
+                      frames={test.frames}
+                      hidden={hidden}
+                      selected={frameIdx}
+                      onSelect={selectFrame}
+                    />
+                    <BalancePanels transfers={test.transfers} />
+                  </>
+                ) : (
+                  <div className="min-h-0 flex-1">
+                    <CallGraph
+                      frames={test.frames}
+                      hidden={hidden}
+                      selected={frameIdx}
+                      onSelect={selectFrame}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </main>
           <SourcePanel
             sources={data.sources}

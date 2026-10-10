@@ -16,12 +16,15 @@ export function TraceHeader({
   onMode,
   hidden,
   onToggle,
+  scenario,
 }: {
   title: string;
   mode: TraceMode;
   onMode: (m: TraceMode) => void;
   hidden: Set<DisplayKind>;
   onToggle: (k: DisplayKind) => void;
+  /** the run has an atlas, so the Lab's Scenario editor can open here */
+  scenario: boolean;
 }) {
   const { origin } = useRun();
   return (
@@ -51,9 +54,21 @@ export function TraceHeader({
           options={[
             { value: "trace", label: "Trace" },
             { value: "graph", label: "Graph" },
+            ...(scenario
+              ? [
+                  {
+                    value: "scenario" as const,
+                    label: "Scenario",
+                    title:
+                      "Build a test of intended behaviour (the Atlas Lab's Scenario)",
+                  },
+                ]
+              : []),
           ]}
         />
-        <div className="ml-auto flex flex-none items-center gap-1.5">
+        <div
+          className={`ml-auto flex flex-none items-center gap-1.5 ${mode === "scenario" ? "invisible" : ""}`}
+        >
           {FILTERS.map((f) => (
             <ToggleChip
               key={f.kind}

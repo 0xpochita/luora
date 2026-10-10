@@ -93,6 +93,7 @@ export function LabView({
   proposed = [],
   selected,
   onSelect,
+  only,
 }: {
   model: AtlasModel;
   calls?: TraceCall[];
@@ -100,8 +101,10 @@ export function LabView({
   proposed?: unknown[];
   selected: string | null;
   onSelect: (id: string | null) => void;
+  /** pin the Lab to one mode and hide its Contract | Scenario switch (Trace page's Scenario tab) */
+  only?: Mode;
 }) {
-  const [mode, setMode] = useState<Mode>("contract");
+  const [mode, setMode] = useState<Mode>(only ?? "contract");
   const [panel, setPanel] = useState<Panel>(null);
   const [card, setCard] = useState<string | null>(null);
   const [selWire, setSelWire] = useState<string | null>(null);
@@ -437,27 +440,29 @@ export function LabView({
         data-no-pan
         className="lab-chrome absolute top-4 left-4 z-[4] flex flex-col items-start gap-4"
       >
-        <Toolbar>
-          <SegmentedControl
-            value={mode}
-            onChange={(m) => {
-              setMode(m);
-              setCard(null);
-            }}
-            options={[
-              {
-                value: "contract",
-                label: "Contract",
-                title: "Read-only graph of the contract",
-              },
-              {
-                value: "scenario",
-                label: "Scenario",
-                title: "Build a test of intended behaviour",
-              },
-            ]}
-          />
-        </Toolbar>
+        {!only && (
+          <Toolbar>
+            <SegmentedControl
+              value={mode}
+              onChange={(m) => {
+                setMode(m);
+                setCard(null);
+              }}
+              options={[
+                {
+                  value: "contract",
+                  label: "Contract",
+                  title: "Read-only graph of the contract",
+                },
+                {
+                  value: "scenario",
+                  label: "Scenario",
+                  title: "Build a test of intended behaviour",
+                },
+              ]}
+            />
+          </Toolbar>
+        )}
         <nav aria-label="Lab tools">
           <Toolbar vertical>
             {tool(
