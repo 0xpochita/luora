@@ -295,9 +295,17 @@ export function LabView({
   }, [note]);
 
   const pick = (id: string | null) => {
-    setCard(id);
+    const n = id ? graph.nodes.find((g) => g.id === id) : undefined;
     setSelWire(null);
-    const n = graph.nodes.find((g) => g.id === id);
+    // the background, or the selected card clicked again, clears the selection everywhere
+    // (the card, the Atlas's inspector and the graph's focus), not just the card's outline
+    const again =
+      id != null && (card === id || (!!n?.piece && n.piece === selected));
+    if (id == null || again) {
+      setCard(null);
+      return onSelect(null);
+    }
+    setCard(id);
     if (n?.piece) onSelect(n.piece);
   };
 
