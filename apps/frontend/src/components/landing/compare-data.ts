@@ -4,9 +4,6 @@ import { cacheLife } from "next/cache";
 import { LUORA_DATA_PATH } from "@/config/env.server";
 import { SAMPLE_ATLAS } from "@/features/atlas/fixtures/sample-atlas";
 import type { AtlasData } from "@/features/atlas/types";
-import { pieceCoverage } from "@/features/atlas/utils/coverage";
-import { SEVERITY_LABEL, titleOf } from "@/features/atlas/utils/findings";
-import { createAtlasModel } from "@/features/atlas/utils/model";
 import sample from "@/features/trace/fixtures/sample-trace.json";
 import type { Frame, LuoraData } from "@/features/trace/types";
 import { scenarioDemo, scenarioSol } from "./stats";
@@ -34,24 +31,14 @@ export type CallRow = {
   args: string;
   at: string;
 };
-export type SrcLine = { n: number; code: string; ran: boolean; ops: string[] };
 export type CompareData = {
-  /** forge -vvvv's text tree of one call, and the same frames decoded (row 1) */
+  /** the test whose deposit call both sides show */
+  test: string;
+  /** forge -vvvv's text tree of one call, and the same frames decoded (traces) */
   tree: string[];
   calls: CallRow[];
-  /** that call's source lines: which ran, which read or wrote storage (rows 2, 3) */
-  frame: { file: string; head: string; gas: number; lines: SrcLine[] };
-  /** the storage opcodes as forge's debugger steps through them (row 3) */
-  ops: string[];
-  /** who calls whom in the test (row 4) */
-  graph: { test: string; nodes: string[][]; edges: [string, string][] };
-  /** findings to triage, and the report's first line (row 6) */
-  findings: { title: string; risk: string; label: string }[];
-  contract: string;
-  /** forge coverage's file totals, and the functions untested first (row 7) */
+  /** forge coverage's file totals, and the Lab scenario with its exported test (tests) */
   cov: { file: string; lines: string; branches: string; funcs: string };
-  fns: { name: string; pct: number }[];
-  /** the Lab scenario and its exported test (row 8) */
   scenario: { title: string; ok: boolean }[];
   sol: { file: string; lines: string[] };
 };
@@ -73,7 +60,6 @@ export async function compareData(): Promise<CompareData> {
   cacheLife("max");
   const data = await readRun();
   const atlas = data.atlas ?? SAMPLE_ATLAS;
-  const model = createAtlasModel(atlas);
   const t =
     data.tests.find((x) => x.name.startsWith("test_depositThenWithdraw")) ??
     data.tests[0];
@@ -120,85 +106,18 @@ export async function compareData(): Promise<CompareData> {
     at: f.callSite ? `L${f.callSite.line}` : "",
   }));
 
-  // the call's own body: the function's lines in its file, lit where the frame ran them
-  const file = top.file ?? "";
-  const ran = top.lines?.[file] ?? [];
-  const src = (data.sources?.[file] ?? "").split("\n");
-  const head = src.findIndex((l) => l.includes(`function ${top.fn}(`));
-  const close = src.findIndex((l, i) => i > head && /^\s{4}\}/.test(l));
-  const ops = (top.storage ?? []).filter((s) => s.file === file);
-  const lines: SrcLine[] =
-    head < 0
-      ? []
-      : src.slice(head, close + 1).map((code, i) => {
-          const n = head + i + 1;
-          return {
-            n,
-            code: code.slice(4),
-            ran: ran.includes(n),
-            ops: ops.filter((s) => s.line === n).map((s) => s.op),
-          };
-        });
-
-  // call graph of the whole test: who calls whom (cheatcodes left out), one node per function
-  const edges = new Map<string, [string, string]>();
-  const stack: string[] = [];
-  for (const f of t.frames) {
-    if (f.kind === "EVENT" || f.contract === "vm") continue;
-    const me = f.d === 0 ? t.name.replace("()", "") : `${f.contract}.${f.fn}`;
-    stack[f.d] = me;
-    const from = stack[f.d - 1];
-    if (from) edges.set(`${from}>${me}`, [from, me]);
-  }
-  const depth = new Map<string, number>([[t.name.replace("()", ""), 0]]);
-  for (const [a, b] of edges.values())
-    if (!depth.has(b)) depth.set(b, (depth.get(a) ?? 0) + 1);
-  const nodes: string[][] = [];
-  for (const [n, d] of depth) {
-    nodes[d] ??= [];
-    nodes[d].push(n);
-  }
-
-  const sev = { high: 0, med: 1, low: 2, info: 3 };
-  const findings = [...model.findings]
-    .sort((a, b) => sev[a.risk ?? "low"] - sev[b.risk ?? "low"])
-    .slice(0, 3)
-    .map((f) => ({
-      title: titleOf(f),
-      risk: f.risk ?? "low",
-      label: SEVERITY_LABEL[f.risk ?? "low"],
-    }));
-
   const c = atlas.coverage;
-  const fns = atlas.entry
-    .flatMap((id) => {
-      const cv = pieceCoverage(atlas, id);
-      return cv ? [{ name: model.byId[id]?.name ?? id, pct: cv.pct }] : [];
-    })
-    .sort((a, b) => a.pct - b.pct)
-    .slice(0, 4);
-
   const [demo, sol] = await Promise.all([scenarioDemo(), scenarioSol()]);
   return {
+    test: t.name,
     tree,
     calls,
-    frame: {
-      file,
-      head: `${top.contract}.${top.fn}(${top.args})`,
-      gas: top.gas ?? 0,
-      lines,
-    },
-    ops: ops.map((s) => s.op),
-    graph: { test: t.name, nodes, edges: [...edges.values()] },
-    findings,
-    contract: atlas.contract,
     cov: {
       file: atlas.file,
       lines: pct(c?.lines),
       branches: pct(c?.branches),
       funcs: pct(c?.functions),
     },
-    fns,
     scenario: (demo?.nodes ?? []).map((n) => ({
       title: n.title,
       ok: demo?.runs[n.id]?.status !== "fail",

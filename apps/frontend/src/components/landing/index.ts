@@ -292,6 +292,9 @@
  *  one slot in turn, each wipe finishing and holding before the next row rises in ("buatlah jeda
  *  jadi pas scroll tunggu animasi selesai baru bisa scroll down"); below 1024px, and without
  *  motion, the rows still flow down the page.
+ *  Then cut from eight rows to three that sum them up (traces: calls, source lines, storage,
+ *  call graph; findings: merged, triaged, reported; tests: coverage, Lab scenarios), each drawn
+ *  with its most telling fragment (Calls, Merged, Scenario).
  *
  * No screenshots: every product view on the page is the app's own component rendered live on the
  * sample run (built near the screen only, Lazy). Colour stays per DESIGN.md: grey/white, red only

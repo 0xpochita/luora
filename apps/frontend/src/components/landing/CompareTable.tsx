@@ -7,7 +7,7 @@ import { type Gsap, Lazy, MOTION_MQ, useStage } from "./motion";
 import "./compare.css";
 
 /*
- * Compare's eight rows as two worlds (twelfth pass, see index.ts): on the left of each row what
+ * Compare's three rows as two worlds (twelfth pass, see index.ts): on the left of each row what
  * forge and the analyzer CLIs hand you, as the raw terminal text they print; on the right the same
  * thing as Luora renders it (CompareFragments, the sample run's own data). A lit seam rides the
  * edge of the Luora side as it wipes over the raw text with the scroll.
@@ -20,47 +20,30 @@ import "./compare.css";
  *     point under the product → the arcs converging on the seam, and the rounded, organic shells.
  */
 
-/** One row: what you get, what Luora shows (a full sentence), what the CLIs give today (null = nothing). */
-const ROWS: { what: string; luora: string; cli: string | null }[] = [
+/**
+ * One row: what you get, what Luora shows (a full sentence), what the CLIs give today. Three rows,
+ * each summing up what used to be several ("ini kan semuanya ada 8, saya ingin lebih singkat jadi
+ * ada 3 aja tapi udah rangkum semuanya"): the trace (calls, source lines, storage, call graph),
+ * the findings (merged, triaged, reported), the tests (coverage, Lab scenarios).
+ */
+const ROWS: { what: string; luora: string; cli: string }[] = [
   {
-    what: "Decoded calls, events and cheatcodes",
-    luora: "Every call, event and cheatcode decoded with your own ABIs.",
-    cli: "A text tree from forge -vvvv",
+    what: "Traces you can read",
+    luora:
+      "Every call, event and cheatcode decoded, each frame on the source lines and storage it touched, and a call graph per test.",
+    cli: "A text tree from forge -vvvv, the rest one opcode at a time in forge debug",
   },
   {
-    what: "Source lines each frame executed",
-    luora: "Each frame opens on the source lines it ran.",
-    cli: "Step through them in forge debug",
+    what: "One finding per issue, triaged",
+    luora:
+      "Slither and Aderyn merged into one finding per issue, triaged in place and exported as a Markdown report.",
+    cli: "Two separate reports, no triage",
   },
   {
-    what: "Storage reads and writes per line",
-    luora: "Slot reads and writes pinned to the line that made them.",
-    cli: "Step through them in forge debug",
-  },
-  {
-    what: "Call graph per test",
-    luora: "A call graph drawn for every test.",
-    cli: null,
-  },
-  {
-    what: "Slither and Aderyn merged per issue",
-    luora: "Slither and Aderyn merged into one finding per issue.",
-    cli: "Two separate reports",
-  },
-  {
-    what: "Triage status and Markdown report",
-    luora: "Triage each finding, then export a Markdown report.",
-    cli: null,
-  },
-  {
-    what: "Coverage per function, untested first",
-    luora: "Coverage per function, untested ones listed first.",
-    cli: "A per-file table from forge coverage",
-  },
-  {
-    what: "Wire a scenario, export a .t.sol",
-    luora: "Wire actors and calls, export the scenario as a .t.sol.",
-    cli: "Written by hand",
+    what: "Coverage and tests you can wire",
+    luora:
+      "Coverage per function, untested ones first, and Lab scenarios exported as .t.sol tests.",
+    cli: "A per-file table from forge coverage, tests written by hand",
   },
 ];
 
@@ -70,27 +53,9 @@ const ROWS: { what: string; luora: string; cli: string | null }[] = [
  * exporter merges into one finding (luora-findings.mjs, class 'reentrancy').
  */
 function raw(d: CompareData): string[][] {
-  const test = d.graph.test.replace("()", "");
-  const debug = `$ forge test --mt ${test} --debug`;
+  const test = d.test.replace("()", "");
   return [
     [`$ forge test --mt ${test} -vvvv`, ...d.tree],
-    [
-      debug,
-      d.tree[0] ?? "",
-      "",
-      "one opcode at a time, source in a side pane",
-      "[j] next  [k] prev  [g] first  [G] last  [q] quit",
-    ],
-    [
-      debug,
-      ...d.ops.map((op, i) => `step ${String(i + 1).padStart(2, " ")}  ${op}`),
-    ],
-    [
-      `$ forge test --mt ${test} -vvvv`,
-      ...d.tree.slice(0, 3),
-      "",
-      "no call graph",
-    ],
     [
       "$ cat reports/slither.json",
       '  "check": "reentrancy-no-eth",',
@@ -102,17 +67,14 @@ function raw(d: CompareData): string[][] {
       '  "line_no": 75',
     ],
     [
-      "$ slither . --json reports/slither.json",
-      "",
-      "no triage status, no report",
-    ],
-    [
       "$ forge coverage",
       "| File | % Lines | % Branches | % Funcs |",
       "|------|---------|------------|---------|",
       `| ${d.cov.file} | ${d.cov.lines} | ${d.cov.branches} | ${d.cov.funcs} |`,
+      "",
+      `$ vim ${d.sol.file}`,
+      ...d.sol.lines,
     ],
-    [`$ vim ${d.sol.file}`, ...d.sol.lines],
   ];
 }
 
@@ -201,10 +163,10 @@ function flow(root: HTMLElement, gsap: Gsap) {
 }
 
 /**
- * Wide screens: the block pins and the eight rows take the same slot one at a time ("buatlah jeda
+ * Wide screens: the block pins and the three rows take the same slot one at a time ("buatlah jeda
  * jadi pas scroll tunggu animasi selesai baru bisa scroll down"): a row arrives, its wipe runs with
  * the scroll, it holds finished, then it lifts away as the next one rises in. Nothing else moves
- * until the last row has wiped, so the page never shows eight half-open rows at once.
+ * until the last row has wiped, so the page never shows every row half-open at once.
  */
 function staged(root: HTMLElement, gsap: Gsap) {
   rise(root, gsap);
@@ -286,7 +248,8 @@ export function CompareWorlds({ data }: { data: CompareData }) {
           >
             <div className="lg:pr-2">
               <p className="font-mono text-[12.5px] text-dim lg:text-[13.5px]">
-                {String(i + 1).padStart(2, "0")} / 08
+                {String(i + 1).padStart(2, "0")} /{" "}
+                {String(ROWS.length).padStart(2, "0")}
               </p>
               <h3 className="mt-2 font-medium text-[19px] text-fg leading-snug tracking-[-0.01em] lg:text-[25px]">
                 {r.what}
@@ -297,7 +260,7 @@ export function CompareWorlds({ data }: { data: CompareData }) {
                 className="mt-4 flex gap-2.5 text-[13.5px] text-dim leading-snug lg:mt-5 lg:text-[15.5px]"
               >
                 <Mark on={false} />
-                {r.cli ?? "Not in the CLIs"}
+                {r.cli}
               </p>
               <p
                 data-us

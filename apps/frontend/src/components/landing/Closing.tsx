@@ -9,7 +9,7 @@ import { DOCS, GITHUB } from "./Hero";
 import { Reveal } from "./motion";
 
 /**
- * Twelfth pass (C1–C3 in CompareTable.tsx, index.ts): an editorial title over eight rows, each one
+ * Twelfth pass (C1–C3 in CompareTable.tsx, index.ts): an editorial title over three rows, each one
  * two worlds, the raw text forge and the analyzer CLIs print beside the same run as Luora renders
  * it, a lit seam wiping from one to the other with the scroll; on wide screens the block pins and
  * the rows take turns (CompareTable staged()).
