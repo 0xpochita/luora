@@ -10,6 +10,7 @@
       growing into the Lab), the wires
    B1 id.pinterest.com/pin/23432860626141831/   — graphite fine grid under a soft centre light
    B2 id.pinterest.com/pin/70437490488374/      — black dot field, a few dots lit → .lp-hub-bg
+      (its dots were dropped; the fine grid and the centre light remain)
    Geometry: the origin (.lp-hub-o) is the hub's centre; in the pinned stage that is the stage
    centre, where the square appears. Everything static is drawn here; GSAP only moves transform /
    opacity, the packets are one CSS transform loop paused off-screen. */
@@ -65,8 +66,6 @@
       transparent 340px
     )
     no-repeat,
-    radial-gradient(circle, rgb(255 255 255 / 0.2) 1px, transparent 1.6px) 50%
-    calc(var(--oy) - 72px) / 144px 144px,
     linear-gradient(rgb(255 255 255 / 0.04) 1px, transparent 1px) 0 var(--oy) /
     48px 48px,
     linear-gradient(90deg, rgb(255 255 255 / 0.04) 1px, transparent 1px)
