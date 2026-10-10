@@ -25,9 +25,10 @@ export function QuickSearch({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const typing = (e.target as HTMLElement).closest(
-        "input, textarea, [contenteditable]",
-      );
+      // a key sent to the window itself has no element to look up from
+      const typing =
+        e.target instanceof Element &&
+        e.target.closest("input, textarea, [contenteditable]");
       const open =
         (e.key === "/" && !typing) ||
         (e.key.toLowerCase() === "k" && (e.metaKey || e.ctrlKey));

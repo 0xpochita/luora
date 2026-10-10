@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { IconButton, Toolbar } from "@/components/ui";
 
 /**
@@ -9,10 +10,13 @@ export function ZoomToolbar({
   onIn,
   onOut,
   onFit,
+  children,
 }: {
   onIn: () => void;
   onOut: () => void;
   onFit: () => void;
+  /** an action that only matters now (Graph: Reset layout once a card was dragged) */
+  children?: ReactNode;
 }) {
   const stop = (f: () => void) => (e: { stopPropagation: () => void }) => {
     e.stopPropagation();
@@ -35,6 +39,7 @@ export function ZoomToolbar({
         >
           Fit
         </IconButton>
+        {children}
       </Toolbar>
     </div>
   );

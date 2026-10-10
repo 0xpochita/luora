@@ -19,9 +19,6 @@ const FindingsTab = dynamic(() =>
 const FlowView = dynamic(() =>
   import("@/components/(main)/atlas/flow/FlowView").then((m) => m.FlowView),
 );
-const MapView = dynamic(() =>
-  import("@/components/(main)/atlas/map/MapView").then((m) => m.MapView),
-);
 const TraceRow = dynamic(() =>
   import("@/components/(main)/trace/TraceRow").then((m) => m.TraceRow),
 );
@@ -97,18 +94,6 @@ export function Views({
       <div className="atlas absolute inset-0">
         <section className="stage h-full">
           <FlowView model={model} selected={null} onSelect={none} sim={sim} />
-        </section>
-      </div>
-    ),
-    map: (
-      <div className="atlas absolute inset-0">
-        <section className="stage h-full">
-          <MapView
-            model={model}
-            selected={null}
-            onSelect={none}
-            triage={triage}
-          />
         </section>
       </div>
     ),

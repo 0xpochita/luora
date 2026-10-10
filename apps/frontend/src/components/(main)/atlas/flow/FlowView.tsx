@@ -101,24 +101,19 @@ export function FlowView({
 }) {
   const L = useMemo(() => flowLayout(model), [model]);
   const vp = useRef<HTMLDivElement>(null);
-  const { view, zoomAt, fit, moved } = usePanZoom(vp);
+  const { view, setView, zoomAt, moved } = usePanZoom(vp);
   const [hover, setHover] = useState<string | null>(null);
   const [legend, setLegend] = useState(false);
   // a step / play click on another lane selects that lane first; the sim catches up next render
   const pending = useRef<{ lane: string; step: number } | null>(null);
 
+  // a list of paths reads top-down (docs/ux/atlas.md, minimal pass): fill the width, start at
+  // the top and pan down for the rest, instead of shrinking every label to fit the height
   const fitView = () => {
     const el = vp.current;
     if (!el) return;
-    const h = L.h + TOP;
-    fit(L.w, h);
-    const k = Math.min(
-      1.1,
-      (el.clientWidth - 40) / L.w,
-      (el.clientHeight - 40) / h,
-    );
-    const y = Math.max(20, (el.clientHeight - h * k) / 2);
-    if (k < MIN_K) zoomAt(MIN_K / k, 20, y);
+    const k = Math.max(MIN_K, Math.min(1.1, (el.clientWidth - 40) / L.w));
+    setView({ k, x: 20, y: 20 });
   };
   // biome-ignore lint/correctness/useExhaustiveDependencies: refit only when the layout changes
   useEffect(fitView, [L]);

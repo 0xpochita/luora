@@ -70,7 +70,7 @@
  *  R25 pin/700661654577045083 (S7 Interface Module 01) — huge index number → faint '01'..'04'.
  *  R26 pin/3870349674475850 (Alfred workflow editor) — the product as a big, crisp, turned and
  *      tilted close-up bleeding off the frame → `ProductTabs`: the app's own Lab contract graph,
- *      TraceRow, FlowView, MapView and FindingsTab rendered live, no screenshots; R20's flat frame
+ *      TraceRow, FlowView and FindingsTab rendered live, no screenshots; R20's flat frame
  *      and edge beam are gone.
  *
  * Fifth pass (2026-10-09, Compare + Statement restaged; Statement and R30–R32 removed in the eighth

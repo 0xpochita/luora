@@ -60,6 +60,7 @@ export function LabCanvas({
   pulse,
   widgets,
   fitKey,
+  dock,
 }: {
   nodes: GNode[];
   wires: Wire[];
@@ -79,6 +80,8 @@ export function LabCanvas({
   widgets?: (n: GNode) => ReactNode;
   /** refit the view when this changes */
   fitKey: string;
+  /** extra controls in the zoom dock */
+  dock?: ReactNode;
 }) {
   const vp = useRef<HTMLDivElement>(null);
   const { view, setView, zoomAt, moved } = usePanZoom(vp);
@@ -469,7 +472,9 @@ export function LabCanvas({
         onIn={() => zoomAt(1.2)}
         onOut={() => zoomAt(1 / 1.2)}
         onFit={refit}
-      />
+      >
+        {dock}
+      </ZoomToolbar>
     </div>
   );
 }

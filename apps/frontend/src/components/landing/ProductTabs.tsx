@@ -15,7 +15,6 @@ const VIEWS = [
   { id: "scenario", route: "/atlas · Scenarios", label: "Scenarios" },
   { id: "trace", route: "/trace", label: "Trace" },
   { id: "flow", route: "/atlas · Paths", label: "Paths" },
-  { id: "map", route: "/atlas · Overview", label: "Overview" },
   { id: "findings", route: "/atlas · Findings", label: "Findings" },
 ] as const;
 export type ViewId = (typeof VIEWS)[number]["id"];

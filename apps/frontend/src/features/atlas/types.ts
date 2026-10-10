@@ -132,6 +132,6 @@ export type AtlasSource = {
   proposed?: unknown[];
 };
 
-/** lab = Graph, scenario = Scenarios, explorer = Layers, map = Overview, flow = Paths (the tabs' names) */
-export type AtlasView = "lab" | "scenario" | "explorer" | "map" | "flow";
+/** lab = Graph, flow = Paths, scenario = Scenarios (the tabs' names) */
+export type AtlasView = "lab" | "flow" | "scenario";
 export type AiQuestion = "explain" | "risks" | "test";

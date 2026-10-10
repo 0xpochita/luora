@@ -227,9 +227,8 @@ export function LabView({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (
-        (e.target as HTMLElement).closest(
-          "input, textarea, select, [contenteditable]",
-        )
+        e.target instanceof Element &&
+        e.target.closest("input, textarea, select, [contenteditable]")
       )
         return;
       if (e.key === "Escape") {
@@ -465,30 +464,34 @@ export function LabView({
             />
           </Toolbar>
         )}
-        {/* only the tools that work here (docs/ux/atlas.md D2): the read-only graph keeps
-            settings and help; the scenario editor gets add, code, export and share too */}
-        <nav aria-label="Lab tools">
-          <Toolbar vertical>
-            {mode === "scenario" &&
-              tool("add", "Add node", () => toggle("add"), panel === "add")}
-            {mode === "scenario" &&
-              tool(
-                "code",
-                "Generated Foundry test",
-                () => toggle("code"),
-                panel === "code",
+        {/* the read-only Graph has no tool rail (docs/ux/atlas.md, minimal pass); the scenario
+            editor keeps add, code, settings, export, share and help */}
+        {mode === "scenario" && (
+          <nav aria-label="Lab tools">
+            <Toolbar vertical>
+              {mode === "scenario" &&
+                tool("add", "Add node", () => toggle("add"), panel === "add")}
+              {mode === "scenario" &&
+                tool(
+                  "code",
+                  "Generated Foundry test",
+                  () => toggle("code"),
+                  panel === "code",
+                )}
+              {tool(
+                "settings",
+                "Settings",
+                () => toggle("settings"),
+                panel === "settings",
               )}
-            {tool(
-              "settings",
-              "Settings",
-              () => toggle("settings"),
-              panel === "settings",
-            )}
-            {mode === "scenario" && tool("export", "Export .t.sol", exportTest)}
-            {mode === "scenario" && tool("share", "Copy scenario JSON", share)}
-            {tool("help", "Help", () => toggle("help"), panel === "help")}
-          </Toolbar>
-        </nav>
+              {mode === "scenario" &&
+                tool("export", "Export .t.sol", exportTest)}
+              {mode === "scenario" &&
+                tool("share", "Copy scenario JSON", share)}
+              {tool("help", "Help", () => toggle("help"), panel === "help")}
+            </Toolbar>
+          </nav>
+        )}
       </div>
 
       <LabCanvas
@@ -507,12 +510,25 @@ export function LabView({
         pulse={pulse}
         widgets={widgets}
         fitKey={`${mode}:${mode === "scenario" ? sc?.id : model.contract}`}
+        dock={
+          mode === "contract" &&
+          Object.keys(moved).length > 0 && (
+            <IconButton
+              label="Put the cards back where they were"
+              size="sm"
+              className="px-2 text-[11.5px]"
+              onClick={() => setMoved({})}
+            >
+              Reset layout
+            </IconButton>
+          )
+        }
       />
-      <p className="lab-status">
-        {mode === "contract"
-          ? "Read-only · drag cards, drag the background to pan, scroll to zoom"
-          : "Drag from a port to wire it · Delete removes the selection"}
-      </p>
+      {mode === "scenario" && (
+        <p className="lab-status">
+          Drag from a port to wire it · Delete removes the selection
+        </p>
+      )}
 
       {mode === "scenario" && sc && (
         <div

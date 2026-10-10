@@ -55,3 +55,29 @@ An auditor or bug-bounty hunter opening a contract they did not write. In order,
 Not done here: the Entry points / Storage / External / Findings tray under the Graph stays as it
 is (it is the Graph's list view); turning it into a left panel shared by every view is the next
 step if the tray still feels detached.
+
+## Minimal pass (same day)
+
+"Still too many components; make it as minimal and simple as possible; an auditor must never be
+confused." Researched again before cutting:
+
+| Ref | Principle | Applied |
+|---|---|---|
+| NN/g heuristic 8, "Aesthetic and minimalist design" | every extra unit of information competes with the relevant ones | cut everything that repeats what the canvas already shows |
+| Hick's law (Laws of UX) | decision time grows with the number of choices; hide rarely used options until asked | 5 views to 3; panels only on demand |
+| M1 pin 75716837485844383 ("Tool call graph") | one graph, one 3-way switch, a few key numbers under it, no side panels | the header's one line of numbers |
+| Figma UI3 | the properties panel opens on selection | inspector opens on a selection or on the numbers |
+
+What the screen holds now, and where everything else went:
+
+| Was | Now |
+|---|---|
+| 5 view tabs (Overview, Layers, Graph, Paths, Scenarios) | 3 in one segmented control, keys 1–3: **Graph**, **Paths**, **Scenarios** (the same control as Trace). Overview and Layers repeated the Graph and are removed. |
+| file, solc and Findings chips | the file name, then one quiet line "Coverage 80% · Untested 3 · Findings 5" that opens the summary |
+| right panel always open (coverage, layers, source) | closed until a selection (what it is first, then its source) or the numbers (coverage, audit focus, a plain findings list); Esc closes |
+| bottom tray (4 tabs, a toggle, cards) | removed: the Graph cards are the list, the summary holds untested entries and findings, Search finds the rest |
+| icon rail and hint line on the Graph | removed; "Reset layout" appears in the zoom dock only after a card was dragged |
+| Paths shrunk to fit the height | fills the width from the top; pan down for more |
+
+Like Trace, the right panel can be put away (Inspector, `]`) and the canvas can fill the window
+(Full screen, `F`; Esc steps back out).
