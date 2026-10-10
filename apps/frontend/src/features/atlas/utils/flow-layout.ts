@@ -396,3 +396,161 @@ export function pathOf(
     findings: lane.findings.map((f) => f.id),
   };
 }
+
+/** A Paths row, Phalcon-style: a type word, how deep it runs, what it touches. */
+export type TreeKind =
+  | "ENTRY"
+  | "MODIFIER"
+  | "INTERNAL"
+  | "SLOAD"
+  | "SSTORE"
+  | "CALL"
+  | "STATICCALL"
+  | "EMIT"
+  | "REQUIRE"
+  | "RETURN";
+export type TreeRow = {
+  key: string;
+  depth: number;
+  kind: TreeKind;
+  /** piece selected on click */
+  id: string;
+  name: string;
+  /** 0-based source line */
+  line?: number;
+  /** index into the entry's seq (steps only), for replay */
+  step?: number;
+  reason?: string;
+  late?: boolean;
+  untested?: boolean;
+  finding?: boolean;
+  /** a modifier or internal function: the rows under it fold */
+  group?: boolean;
+};
+
+/**
+ * One function's path as an invocation tree (Phalcon's invocation flow, docs/ux/atlas.md): the
+ * steps of `pathOf`, nested under the modifier or internal function whose lines they run in; an
+ * internal function called from another one's body nests under it.
+ */
+export function pathTree(
+  m: Model,
+  id: string,
+): {
+  sig: string;
+  gates: string[];
+  rows: TreeRow[];
+  findings: string[];
+} | null {
+  const path = pathOf(m, id);
+  const entry = m.byId[id];
+  if (!path || !entry) return null;
+  const spanOf = (p: Piece) => {
+    const a = m.lineOf(p);
+    return [a, a + Math.max(1, p.n ?? 1) - 1] as const;
+  };
+  const inside = (p: Piece, line: number) => {
+    const [a, b] = spanOf(p);
+    return line >= a && line <= b;
+  };
+  const scopes = m.pieces.filter(
+    (p) => (p.sys === "access" || p.sys === "logic") && (p.n ?? 0) > 1,
+  );
+  const scopeOf = (line?: number) =>
+    line == null || inside(entry, line)
+      ? null
+      : (scopes
+          .filter((p) => inside(p, line))
+          .sort((a, b) => (a.n ?? 0) - (b.n ?? 0))[0] ?? null);
+  const body = (p: Piece) => {
+    const [a, b] = spanOf(p);
+    return m.lines.slice(a, b + 1).join("\n");
+  };
+  const callName = (p: Piece) =>
+    p.name.replace(/\(\)$/, "").replace(/^modifier\s+/, "");
+
+  const rows: TreeRow[] = [];
+  let stack: Piece[] = [];
+  const open = (p: Piece) => {
+    // nest under the innermost open function that calls it, else directly under the entry
+    while (stack.length && !word(callName(p)).test(body(stack[stack.length - 1])))
+      stack.pop();
+    rows.push({
+      key: `${id}:g${rows.length}`,
+      depth: stack.length + 1,
+      kind: p.sys === "access" ? "MODIFIER" : "INTERNAL",
+      id: p.id,
+      name: p.name,
+      line: m.lineOf(p),
+      group: true,
+    });
+    stack.push(p);
+  };
+  const slot = (p?: Piece) =>
+    p ? (p.name.split("· ").pop() ?? p.name).trim() : "";
+
+  for (const r of path.rows) {
+    if (r.kind === "entry") {
+      rows.push({
+        key: r.key,
+        depth: 0,
+        kind: "ENTRY",
+        id,
+        name: path.sig,
+        line: r.line,
+      });
+      continue;
+    }
+    // the modifier opens as a group when its first line runs; "guarded by" sits in the header
+    if (r.kind === "access") continue;
+    if (r.kind === "ret") {
+      stack = [];
+      rows.push({ key: r.key, depth: 1, kind: "RETURN", id, name: "return" });
+      continue;
+    }
+    const scope = scopeOf(r.line);
+    if (!scope) stack = [];
+    else if (stack[stack.length - 1]?.id !== scope.id) {
+      const at = stack.findIndex((s) => s.id === scope.id);
+      if (at >= 0) stack = stack.slice(0, at + 1);
+      else open(scope);
+    }
+    const depth = stack.length + 1;
+    if (r.kind === "check") {
+      rows.push({
+        key: r.key,
+        depth,
+        kind: "REQUIRE",
+        id,
+        name: r.reason,
+        reason: r.reason,
+        line: r.line,
+      });
+      continue;
+    }
+    const p = m.byId[r.id];
+    const kind: TreeKind =
+      r.kind === "r"
+        ? "SLOAD"
+        : r.kind === "w"
+          ? "SSTORE"
+          : r.kind === "e"
+            ? "EMIT"
+            : p?.view
+              ? "STATICCALL"
+              : "CALL";
+    rows.push({
+      key: r.key,
+      depth,
+      kind,
+      id: r.id,
+      name: kind === "SLOAD" || kind === "SSTORE" ? slot(p) : (p?.name ?? r.id),
+      line: r.line,
+      step: r.step,
+      late: r.late,
+      untested: r.untested,
+      finding: r.finding,
+    });
+  }
+  return { sig: path.sig, gates: path.gates, rows, findings: path.findings };
+}

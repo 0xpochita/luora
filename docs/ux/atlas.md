@@ -127,3 +127,24 @@ the right and is hard for a security researcher to read. Read references first."
   after the step it follows, ending in Return. Every row carries its source line. External calls
   say whether they are read-only; writes after a state-changing call are flagged; lines no test
   ran are marked; the findings on the path close it. Replay highlights the current row.
+
+## Paths as Phalcon's invocation flow (same day)
+
+"Improve Paths; study Phalcon's UI." Studied BlockSec Phalcon Explorer's Invocation Flow
+(tx 0xa1f1…b099, `?line=20`): one dense row per call with a `depth → TYPE` badge
+(CALL, DELEGATECALL, STATICCALL, and with its toggles on, SLOAD / SSTORE), indentation guides,
+⊟ / ⊞ fold boxes, `Contract.fn(args) ▸ (return)` inline, a toolbar of show / hide toggles
+(Static Call, Gas Used, SStore, SLoad) kept in the URL, stable row numbers when rows hide.
+
+Paths now writes a function the same way (and the same way as the Trace's rows):
+
+- `0 › ENTRY LuoraVault.deposit(uint256)`, then `1 › MODIFIER whenNotPaused` with its `SLOAD` and
+  `REQUIRE` under it, `1 › INTERNAL _computeShares()` → `2 › INTERNAL _price()` →
+  `3 › STATICCALL oracle.getSpotPrice`, `1 › CALL asset.transferFrom`, `1 › SSTORE shares[]`
+  (flagged: after an external call), `1 › EMIT Deposit`, `1 › RETURN`.
+- Steps nest under the modifier or internal function whose lines they run in; an internal
+  function called from another one's body nests under it (`pathTree`, checked).
+- Each row: stable number, guides, fold box on groups, the badge, the name, that step's source
+  line dimmed, `Lnn` under a Line column.
+- Show toggles: Reads (SLOAD) and View calls (STATICCALL), with counts; Unfold all when folded.
+- Kept: the functions list, the header (caller, guards, coverage, counts, CEI), Replay / Next.

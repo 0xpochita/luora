@@ -1,45 +1,74 @@
 "use client";
 
 import { motion } from "motion/react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Chip, ENTER, PH, PhIcon } from "@/components/ui";
 import type { AtlasModel, StepSim } from "@/features/atlas";
 import { pctLabel, pieceCoverage } from "@/features/atlas/utils/coverage";
-import { type PathRow, pathOf } from "@/features/atlas/utils/flow-layout";
+import {
+  type PathRow,
+  pathOf,
+  pathTree,
+  type TreeKind,
+  type TreeRow,
+} from "@/features/atlas/utils/flow-layout";
 
 /*
  * Paths, top to bottom (docs/ux/atlas.md, "Paths"). The old view drew every function as one long
  * horizontal lane; auditors read code downwards, and NN/g's eye-tracking puts 80% of attention on
  * the left half and almost none past the right edge. Now:
  *  - master | detail (as Trace's test list | trace): the functions on the left, one path at a time
- *  - P1 pin/2814818513185996 (vertical stepper): a word for each step on the left, a node on one
- *    vertical line, the detail on the right
- *  - each step carries its own source line, so the path reads like annotated code: checks where
+ *  - rows as Phalcon Explorer's invocation flow writes them (the Trace's rows too): a
+ *    "depth › TYPE" badge, indentation guides, fold boxes on modifiers and internal functions,
+ *    the name inline with its source line, Show toggles for reads and view calls
+ *  - every row carries its own source line, so the path reads like annotated code: checks where
  *    they can revert, external calls, writes after them (CEI), lines no test ran
  */
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
-const WORD: Record<PathRow["kind"], string> = {
-  entry: "Entry",
-  access: "Access",
-  check: "Check",
-  r: "Read",
-  w: "Write",
-  c: "Call",
-  e: "Emit",
-  ret: "Return",
-};
-/** node on the line: red = can revert, blue = leaves the contract, white = changes state */
-const DOT: Record<PathRow["kind"], string> = {
-  entry: "bg-fg",
-  access: "bg-muted",
-  check: "border border-red bg-canvas",
-  r: "bg-dim",
-  w: "bg-fg",
-  c: "bg-blue",
-  e: "bg-cyan",
-  ret: "border border-muted bg-canvas",
+/** each step's type as an outlined word (Phalcon; colours as the Trace's KindBadge) */
+const BADGE: Record<TreeKind, { title: string; badge: string }> = {
+  ENTRY: {
+    title: "The function called from outside",
+    badge: "border-green/35 bg-green/[.08] text-green",
+  },
+  MODIFIER: {
+    title: "A modifier: its checks run before the body",
+    badge: "border-blue/35 bg-blue/[.08] text-blue",
+  },
+  INTERNAL: {
+    title: "An internal function the path runs through",
+    badge: "border-white/20 bg-white/[.04] text-body",
+  },
+  SLOAD: {
+    title: "Reads a storage slot",
+    badge: "border-white/15 bg-transparent text-muted",
+  },
+  SSTORE: {
+    title: "Writes a storage slot",
+    badge: "border-white/35 bg-white/[.07] text-fg",
+  },
+  CALL: {
+    title: "Calls another contract; its code runs outside this one",
+    badge: "border-green/35 bg-green/[.08] text-green",
+  },
+  STATICCALL: {
+    title: "A read-only call to another contract",
+    badge: "border-yellow/35 bg-yellow/[.08] text-yellow",
+  },
+  EMIT: {
+    title: "Emits an event",
+    badge: "border-cyan/35 bg-cyan/[.08] text-cyan",
+  },
+  REQUIRE: {
+    title: "A check: the call reverts here when it fails",
+    badge: "border-red/45 bg-red/[.1] text-red",
+  },
+  RETURN: {
+    title: "The function returns",
+    badge: "border-white/15 bg-transparent text-dim",
+  },
 };
 
 export function PathsView({
@@ -58,6 +87,18 @@ export function PathsView({
 }) {
   const id = lane ?? model.entry[0] ?? null;
   const path = useMemo(() => (id ? pathOf(model, id) : null), [model, id]);
+  const tree = useMemo(() => (id ? pathTree(model, id) : null), [model, id]);
+  // Phalcon's show / hide toggles and fold boxes
+  const [hidden, setHidden] = useState<Set<TreeKind>>(new Set());
+  const [folded, setFolded] = useState<Set<string>>(new Set());
+  // rows keep their number when others hide or fold (Phalcon), so #7 always means one step
+  const shown: (TreeRow & { n: number })[] = [];
+  let below = Number.POSITIVE_INFINITY;
+  for (const [n, r] of (tree?.rows ?? []).entries()) {
+    if (r.depth > below) continue;
+    below = folded.has(r.key) ? r.depth : Number.POSITIVE_INFINITY;
+    if (!hidden.has(r.kind)) shown.push({ ...r, n });
+  }
   const fn = id ? model.byId[id] : null;
 
   const caller = (x: string) => model.byId[x]?.caller ?? "anyone";
@@ -67,16 +108,6 @@ export function PathsView({
   const count = (k: PathRow["kind"]) => rows.filter((r) => r.kind === k).length;
   const cei = rows.filter((r) => "late" in r && r.late).length;
 
-  const title = (r: PathRow) => {
-    if (r.kind === "check") return `reverts with "${r.reason}"`;
-    if (r.kind === "entry") return path?.sig ?? fn?.name;
-    if (r.kind === "ret") return "returns";
-    if (r.kind === "access")
-      return path?.gates.length
-        ? path.gates.map((g) => model.byId[g]?.name ?? g).join(", ")
-        : `open · ${caller(r.id)} can call`;
-    return model.byId[r.id]?.name ?? r.id;
-  };
   const code = (line?: number) =>
     line != null ? (model.lines[line] ?? "").trim() : "";
 
@@ -205,81 +236,154 @@ export function PathsView({
               </div>
             </header>
 
+            {/* Phalcon's toolbar: what the flow shows, each a checkbox with its count */}
+            <div className="flex flex-none items-center gap-2 px-5 pt-3">
+              <span className="hdr-pill split sm">
+                <span className="text-dim">Show</span>
+                {(
+                  [
+                    ["SLOAD", "Reads", "Storage reads (SLOAD)"],
+                    [
+                      "STATICCALL",
+                      "View calls",
+                      "Read-only calls (STATICCALL)",
+                    ],
+                  ] as const
+                ).map(([k, label, title], n) => {
+                  const on = !hidden.has(k);
+                  return (
+                    <button
+                      key={k}
+                      type="button"
+                      aria-pressed={on}
+                      title={title}
+                      onClick={() =>
+                        setHidden((h) => {
+                          const next = new Set(h);
+                          if (next.has(k)) next.delete(k);
+                          else next.add(k);
+                          return next;
+                        })
+                      }
+                      className={n === 0 ? "mid" : ""}
+                    >
+                      <PhIcon
+                        d={on ? PH.boxOn : PH.boxOff}
+                        className="size-[14px]"
+                      />
+                      {label}
+                      <span className="font-mono text-[11px] text-dim">
+                        {tree?.rows.filter((r) => r.kind === k).length ?? 0}
+                      </span>
+                    </button>
+                  );
+                })}
+              </span>
+              {folded.size > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setFolded(new Set())}
+                  className="text-[12px] text-muted hover:text-fg"
+                >
+                  Unfold all
+                </button>
+              )}
+              <span className="ml-auto flex items-center gap-2 pr-1 text-[12px] text-dim">
+                <span className="w-10 text-right" title="The source line">
+                  Line
+                </span>
+              </span>
+            </div>
+
+            {/* the invocation flow: one dense row per step, nested under the modifier or internal
+                function it runs in (Phalcon: depth → TYPE badge, guides, fold boxes) */}
             <motion.ol
               key={fn.id}
               {...ENTER}
-              className="min-h-0 flex-1 overflow-y-auto px-5 py-3"
+              className="min-h-0 flex-1 space-y-px overflow-y-auto px-5 pt-1.5 pb-3"
             >
-              {rows.map((r, i) => {
-                const now =
-                  "step" in r && r.step != null && r.step === sim.step;
-                const late = "late" in r && r.late;
-                const untested = "untested" in r && r.untested;
-                const finding = "finding" in r && r.finding;
-                const line = r.line;
-                const piece = model.byId[r.id];
+              {shown.map((r) => {
+                const now = r.step != null && r.step === sim.step;
+                const shut = folded.has(r.key);
+                const text = r.line != null ? code(r.line) : "";
                 return (
-                  <li key={r.key}>
+                  <li
+                    key={r.key}
+                    className={`relative flex min-h-[32px] items-center gap-2 rounded-tile pr-2 pl-1 transition-colors ${now ? "bg-hover shadow-[inset_2px_0_0_var(--fg)]" : r.kind === "REQUIRE" ? "hover:bg-red/[.06]" : "hover:bg-raised"}`}
+                  >
+                    {/* the whole row selects: the piece in the inspector, the step in replay */}
                     <button
                       type="button"
                       onClick={() => {
-                        onSelect(r.kind === "check" ? fn.id : r.id);
-                        if ("step" in r && r.step != null) sim.seek(r.step);
+                        onSelect(r.id);
+                        if (r.step != null) sim.seek(r.step);
                       }}
-                      className={`grid w-full grid-cols-[64px_20px_minmax(0,1fr)] items-start gap-x-3 rounded-tile px-2 text-left transition-colors ${now ? "bg-hover" : "hover:bg-raised"}`}
-                    >
-                      <span
-                        className={`pt-2.5 text-right text-[12px] ${r.kind === "check" ? "text-red" : "text-muted"}`}
+                      aria-label={`${r.kind} ${r.name}`}
+                      className="absolute inset-0 rounded-tile outline-none focus-visible:ring-2 focus-visible:ring-white/25"
+                    />
+                    <span className="pointer-events-none w-[22px] flex-none text-right font-mono text-[11px] text-muted tabular-nums">
+                      {r.n}
+                    </span>
+                    <span
+                      className="tree-guides pointer-events-none flex-none self-stretch"
+                      style={{ width: r.depth * 20 }}
+                    />
+                    {r.group ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFolded((f) => {
+                            const next = new Set(f);
+                            if (next.has(r.key)) next.delete(r.key);
+                            else next.add(r.key);
+                            return next;
+                          })
+                        }
+                        aria-expanded={!shut}
+                        aria-label={shut ? "Unfold" : "Fold"}
+                        className="relative z-10 grid size-4 flex-none place-items-center rounded-[4px] border border-white/20 font-mono text-[11px] text-muted leading-none hover:border-white/40 hover:text-fg"
                       >
-                        {WORD[r.kind]}
+                        {shut ? "+" : "−"}
+                      </button>
+                    ) : (
+                      <span className="w-4 flex-none" />
+                    )}
+                    <span className="pointer-events-none flex min-w-0 flex-1 items-center gap-2.5 whitespace-nowrap py-1">
+                      <span
+                        title={BADGE[r.kind].title}
+                        className={`inline-flex h-[22px] flex-none items-center justify-center rounded-[6px] border px-2 font-medium font-mono text-[10.5px] tracking-wide ${BADGE[r.kind].badge}`}
+                      >
+                        {r.depth} › {r.kind}
                       </span>
-                      {/* the one vertical line, broken only above the first and below the last */}
-                      <span className="relative flex h-full justify-center">
-                        <span
-                          className={`absolute w-px bg-border-strong ${i === 0 ? "top-4" : "top-0"} ${i === rows.length - 1 ? "h-4" : "bottom-0"}`}
-                        />
-                        <span
-                          className={`relative mt-3 size-2.5 rounded-full ${DOT[r.kind]} ${late ? "ring-2 ring-red/60" : ""}`}
-                        />
+                      <span
+                        className={`flex-none font-mono text-[12.5px] ${r.kind === "REQUIRE" ? "text-red" : "font-semibold text-fg"}`}
+                      >
+                        {r.kind === "REQUIRE"
+                          ? `reverts "${r.reason}"`
+                          : r.kind === "ENTRY"
+                            ? `${model.contract}.${r.name}`
+                            : r.name}
                       </span>
-                      <span className="min-w-0 py-1.5">
-                        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                          <span
-                            className={`font-mono text-[13px] ${r.kind === "check" ? "text-red" : "text-fg"}`}
-                          >
-                            {title(r)}
-                          </span>
-                          {r.kind === "c" && (
-                            <span className="text-[12px] text-dim">
-                              {piece?.view
-                                ? "read-only call"
-                                : "runs outside this contract"}
-                            </span>
-                          )}
-                          {late && (
-                            <Chip tone="bad" dot>
-                              after an external call
-                            </Chip>
-                          )}
-                          {finding && (
-                            <Chip tone="bad" dot>
-                              finding
-                            </Chip>
-                          )}
-                          {untested && <Chip>never run by a test</Chip>}
+                      {text && r.kind !== "ENTRY" && !r.group && (
+                        <span className="min-w-0 truncate font-mono text-[12px] text-muted">
+                          {text}
                         </span>
-                        {line != null && (
-                          <span className="mt-0.5 flex min-w-0 gap-2 font-mono text-[12px]">
-                            <span className="flex-none text-dim">
-                              L{line + 1}
-                            </span>
-                            <span className="truncate text-muted">
-                              {code(line)}
-                            </span>
-                          </span>
-                        )}
+                      )}
+                      {r.late && (
+                        <Chip tone="bad" dot>
+                          after an external call
+                        </Chip>
+                      )}
+                      {r.finding && (
+                        <Chip tone="bad" dot>
+                          finding
+                        </Chip>
+                      )}
+                      {r.untested && <Chip>never run by a test</Chip>}
+                      <span className="ml-auto w-10 flex-none pl-2 text-right font-mono text-[11.5px] text-muted tabular-nums">
+                        {r.line != null && `L${r.line + 1}`}
                       </span>
-                    </button>
+                    </span>
                   </li>
                 );
               })}
