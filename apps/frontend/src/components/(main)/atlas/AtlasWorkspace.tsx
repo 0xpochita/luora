@@ -123,12 +123,9 @@ function AtlasBody({ source }: { source: AtlasSource }) {
   const [tab, setTab] = useState<Tab>("details");
   // the Foundry test the Scenarios playground writes, shown live in the Test tab
   const [test, setTest] = useState<FoundryTest | null>(null);
-  // Scenarios opens on its test; leaving it falls back to Details
+  // the Test tab belongs to Scenarios: leaving it falls back to Details
   useEffect(() => {
-    if (view === "scenario") {
-      setTab("test");
-      setSide(true);
-    } else setTab((t) => (t === "test" ? "details" : t));
+    if (view !== "scenario") setTab((t) => (t === "test" ? "details" : t));
   }, [view]);
   const [askFocus, setAskFocus] = useState(0);
   const thread = useAiThread();
@@ -344,6 +341,7 @@ function AtlasBody({ source }: { source: AtlasSource }) {
               onSelect={select}
               only={view === "scenario" ? "scenario" : "contract"}
               onTest={view === "scenario" ? setTest : undefined}
+              onGenerate={() => showTab("test")}
             />
           )}
         </motion.section>

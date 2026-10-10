@@ -98,6 +98,7 @@ export function LabView({
   onSelect,
   only,
   onTest,
+  onGenerate,
 }: {
   model: AtlasModel;
   calls?: TraceCall[];
@@ -109,6 +110,8 @@ export function LabView({
   only?: Mode;
   /** the generated Foundry test, reported whenever the scenario changes (the Atlas's Test panel) */
   onTest?: (test: FoundryTest | null) => void;
+  /** Generate test: show that test in the page's Test panel */
+  onGenerate?: () => void;
 }) {
   const [mode, setMode] = useState<Mode>(only ?? "contract");
   const [panel, setPanel] = useState<Panel>(null);
@@ -635,7 +638,15 @@ export function LabView({
                 </svg>
                 Run
               </Button>
-              <Button onClick={exportTest}>Export .t.sol ↓</Button>
+              {/* with a Test panel beside the canvas, the code is generated there (and downloaded
+                  from there); without one, Export downloads it */}
+              {onGenerate ? (
+                <Button onClick={onGenerate} disabled={!sc.nodes.length}>
+                  Generate test
+                </Button>
+              ) : (
+                <Button onClick={exportTest}>Export .t.sol ↓</Button>
+              )}
             </div>
           </FloatingDock>
         </div>
