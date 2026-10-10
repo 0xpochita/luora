@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { ChainLogo, Dropdown, PH, PhIcon } from "@/components/ui";
 import type { RunLine, TestRun } from "@/features/run";
 import {
@@ -54,92 +54,89 @@ export function TestRunPanel({
   run,
   fork,
   forks,
+  end,
 }: {
   run: TestRun;
   /** the Fork picker's choice, Start test's default target when the run has it */
   fork: string;
   forks: Record<string, unknown>;
+  /** at the row's right end, over the Line / Gas used columns: the Fork picker, saying which
+   *  chain's run is on screen */
+  end?: ReactNode;
 }) {
   const running = run.phase === "running";
   const elapsed = useElapsed(run.started, run.ended);
   const [target, setTarget] = useState(forks[fork] ? fork : "");
 
   return (
-    <div className="mt-1.5 mb-5 flex flex-wrap items-center gap-x-4 gap-y-2">
-      {running ? (
-        <div className="hdr-pill go split flex-none">
-          <button
-            type="button"
-            className="lead"
-            onClick={() => run.setOpen(true)}
-            title="Open the log"
-          >
-            <Spinner />
-            Running tests
-            <span className="ml-auto font-mono text-[12px] text-dim tabular-nums">
-              {clock(elapsed)}
-            </span>
-          </button>
-          <button
-            type="button"
-            className="stop"
-            onClick={run.stop}
-            title="Stop the run: ends the exporter and forge"
-          >
-            <PhIcon d={PH.stop} className="size-[13px]" />
-            Stop
-          </button>
-        </div>
-      ) : (
-        <div className="hdr-pill go split flex-none">
-          <button
-            type="button"
-            className="lead"
-            onClick={() => run.start(target)}
-            title={`Runs node luora-export.mjs${target ? ` --forks ${target}` : ""} in your Foundry project and loads the result`}
-          >
-            <PhIcon d={PH.play} className="size-[15px] text-green" />
-            Start test
-          </button>
-          <Dropdown
-            variant="bare"
-            ariaLabel="Where Start test runs"
-            value={target || "local"}
-            onChange={(v) => setTarget(v === "local" ? "" : v)}
-            options={[
-              {
-                value: "local" as string,
-                label: "Local",
-                text: "Local",
-                title: "forge test on an empty local chain",
-              },
-              ...FORK_CHAINS.map((c) => ({
-                value: c.key as string,
-                label: c.name,
-                text: c.name,
-                title: `The local run, then the same tests on a fork of ${c.name} at its latest block (read-only, nothing is sent)`,
-                icon: <ChainLogo family={c.family} className="size-3.5" />,
-                group: "Local + a testnet fork",
-              })),
-            ]}
-          />
-        </div>
-      )}
-      {run.phase !== "idle" && (
-        // the verdict stays here once the pop-up is closed
-        <>
-          <Verdict run={run} elapsed={elapsed} />
-          {run.summary && <Tally s={run.summary} />}
-          <button
-            type="button"
-            className="hdr-pill sm"
-            onClick={() => run.setOpen(true)}
-          >
-            <PhIcon d={PH.terminal} className="size-[14px]" />
-            Open log
-          </button>
-        </>
-      )}
+    // the run's controls wrap within the left; the Fork picker keeps the top right
+    <div className="mt-1.5 mb-5 flex items-start gap-4">
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-2">
+        {running ? (
+          <div className="hdr-pill go split flex-none">
+            <button
+              type="button"
+              className="lead"
+              onClick={() => run.setOpen(true)}
+              title="Open the log"
+            >
+              <Spinner />
+              Running tests
+              <span className="ml-auto font-mono text-[12px] text-dim tabular-nums">
+                {clock(elapsed)}
+              </span>
+            </button>
+            <button
+              type="button"
+              className="stop"
+              onClick={run.stop}
+              title="Stop the run: ends the exporter and forge"
+            >
+              <PhIcon d={PH.stop} className="size-[13px]" />
+              Stop
+            </button>
+          </div>
+        ) : (
+          <div className="hdr-pill go split flex-none">
+            <button
+              type="button"
+              className="lead"
+              onClick={() => run.start(target)}
+              title={`Runs node luora-export.mjs${target ? ` --forks ${target}` : ""} in your Foundry project and loads the result`}
+            >
+              <PhIcon d={PH.play} className="size-[15px] text-green" />
+              Start test
+            </button>
+            <Dropdown
+              variant="bare"
+              ariaLabel="Where Start test runs"
+              value={target || "local"}
+              onChange={(v) => setTarget(v === "local" ? "" : v)}
+              options={[
+                {
+                  value: "local" as string,
+                  label: "Local",
+                  text: "Local",
+                  title: "forge test on an empty local chain",
+                },
+                ...FORK_CHAINS.map((c) => ({
+                  value: c.key as string,
+                  label: c.name,
+                  text: c.name,
+                  title: `The local run, then the same tests on a fork of ${c.name} at its latest block (read-only, nothing is sent)`,
+                  icon: <ChainLogo family={c.family} className="size-3.5" />,
+                  group: "Local + a testnet fork",
+                })),
+              ]}
+            />
+          </div>
+        )}
+        {run.phase !== "idle" && (
+          // the verdict stays here once the pop-up is closed, as one capsule that reopens it
+          <Status run={run} elapsed={elapsed} />
+        )}
+      </div>
+      {end && <div className="mt-0.5 flex-none">{end}</div>}
     </div>
   );
 }
@@ -169,31 +166,29 @@ const whereOf = (run: TestRun) => {
   return c ? `Local + fork of ${c.name}` : "Local run";
 };
 
-function Verdict({ run, elapsed }: { run: TestRun; elapsed: number }) {
+/** The last run in one capsule: forge's tally (or why it stopped) and its time; opens the log. */
+function Status({ run, elapsed }: { run: TestRun; elapsed: number }) {
   const v = verdictOf(run);
   const error =
     run.phase === "failed" && run.error !== "Stopped." ? run.error : null;
   return (
-    <p className="flex min-w-0 items-center gap-2 text-[13px] text-fg">
+    <button
+      type="button"
+      className="hdr-pill sm min-w-0"
+      onClick={() => run.setOpen(true)}
+      title={`${v.text} · ${whereOf(run)}${error ? ` · ${error}` : ""}. Open the log`}
+    >
       <span className={`hdr-dot ${v.dot}`} aria-hidden="true" />
-      {v.text}
+      {run.summary ? (
+        <Tally s={run.summary} />
+      ) : (
+        <span className="truncate">{v.text}</span>
+      )}
       <span className="font-mono text-[12px] text-dim tabular-nums">
         {clock(elapsed)}
       </span>
-      <span className="truncate text-[12.5px] text-dim">
-        <span className="mr-1.5">·</span>
-        {whereOf(run)}
-      </span>
-      {error && (
-        <span
-          className="truncate text-[12.5px] text-red"
-          title={error ?? undefined}
-        >
-          <span className="mr-1.5">·</span>
-          {error}
-        </span>
-      )}
-    </p>
+      <PhIcon d={PH.terminal} className="size-[14px] text-dim" />
+    </button>
   );
 }
 

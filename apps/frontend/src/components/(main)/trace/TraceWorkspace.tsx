@@ -513,7 +513,6 @@ function TraceBody({
           panels={shown}
           onPanel={onPanel}
           chain={data.chain}
-          forkPicker={forkPicker}
           revert={revert}
           onRevert={jumpToRevert}
         />
@@ -539,7 +538,12 @@ function TraceBody({
             {...ENTER}
             className={`flex-1 overflow-auto px-5 pb-5 ${mode === "graph" ? "flex flex-col" : ""}`}
           >
-            <TestRunPanel run={testRun} fork={fork} forks={forks} />
+            <TestRunPanel
+              run={testRun}
+              fork={fork}
+              forks={forks}
+              end={forkPicker}
+            />
             {mode === "trace" ? (
               <>
                 <TraceList

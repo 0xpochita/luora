@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import type { ReactNode, RefObject } from "react";
+import type { RefObject } from "react";
 import {
   Chip,
   Dropdown,
@@ -72,7 +72,6 @@ export function TraceToolbar({
   revert,
   onRevert,
   chain,
-  forkPicker,
 }: {
   test: TestResult;
   forgeVersion: string;
@@ -96,8 +95,6 @@ export function TraceToolbar({
   onRevert: () => void;
   /** the chain this run was forked from, if any */
   chain?: ChainInfo;
-  /** Local / testnet forks (shell/ForkPicker) */
-  forkPicker?: ReactNode;
 }) {
   const pass = test.status === "Success";
   const icon = (d: string) => <PhIcon d={d} className="size-[15px]" />;
@@ -113,7 +110,6 @@ export function TraceToolbar({
             <Chip tone={pass ? "ok" : "bad"} dot>
               {pass ? "Pass" : "Fail"}
             </Chip>
-            {forkPicker}
           </div>
           <p className="mt-1 truncate text-[12.5px] text-dim">
             <span className="font-mono">{test.file}</span>
