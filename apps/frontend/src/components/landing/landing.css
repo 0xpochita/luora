@@ -468,3 +468,10 @@ a:hover > .lp-mark {
     opacity: 0;
   }
 }
+
+/* FAQ filter (Closing.tsx Faq, F1): the category radios hide the other questions, no JS */
+.lp-faq:has(input[value="setup"]:checked) details:not([data-cat="setup"]),
+.lp-faq:has(input[value="findings"]:checked) details:not([data-cat="findings"]),
+.lp-faq:has(input[value="privacy"]:checked) details:not([data-cat="privacy"]) {
+  display: none;
+}

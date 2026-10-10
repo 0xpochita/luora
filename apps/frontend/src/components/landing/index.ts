@@ -295,6 +295,11 @@
  *  Then cut from eight rows to three that sum them up (traces: calls, source lines, storage,
  *  call graph; findings: merged, triaged, reported; tests: coverage, Lab scenarios), each drawn
  *  with its most telling fragment (Calls, Merged, Scenario).
+ *  F1 pin/310255861851860168 ('FAQ1', Fora 'Answers to the questions that come up most') —
+ *     FAQ pill over the heading, a short line right; a category-tab card on the left with a
+ *     'Got questions?' card at its foot; every question its own rounded card with a chevron in a
+ *     ring → Faq (Closing.tsx): the same layout, tabs as radios filtered in CSS (no JS), the
+ *     foot card pointing at the repository's issues.
  *
  * No screenshots: every product view on the page is the app's own component rendered live on the
  * sample run (built near the screen only, Lazy). Colour stays per DESIGN.md: grey/white, red only

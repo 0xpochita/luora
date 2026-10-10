@@ -27,66 +27,150 @@ export async function Compare() {
   );
 }
 
-const FAQ: [string, string][] = [
+/** the filter tabs; `all` shows every question */
+const CATS = [
+  ["all", "All questions"],
+  ["setup", "Setup"],
+  ["findings", "Findings & Lab"],
+  ["privacy", "Privacy"],
+] as const;
+type Cat = Exclude<(typeof CATS)[number][0], "all">;
+
+const FAQ: [Cat, string, string][] = [
   [
+    "setup",
     "What does Luora need to run?",
     "Node and Foundry. In your Foundry project, node luora-export.mjs runs forge test, decodes the traces with your own ABIs and writes luora-data.json; the app reads that file.",
   ],
   [
+    "findings",
     "Where do Slither and Aderyn come in?",
     "Optional. Point the exporter at their JSON reports (reports/slither.json and reports/aderyn.json by default, or --slither= and --aderyn=) and their results merge into the findings.",
   ],
   [
+    "privacy",
     "Does my code leave my machine?",
     "The exporter and the app read local files. Triage status and notes are kept in your browser, per contract.",
   ],
   [
+    "findings",
     "What does a Lab test check?",
     "Intended behaviour. You wire actors, calls, expected reverts and asserts; a failing assertion in the exported .t.sol is a finding to look at, not an attack.",
   ],
   [
+    "setup",
     "Can I re-run a single test?",
     "Yes. node luora-export.mjs --mt test_x passes the filter through to forge, then reload the page.",
   ],
   [
+    "setup",
     "Which contract does the atlas map?",
     "One per export. Set LUORA_ATLAS=<Contract> to pick it when a project has several.",
   ],
 ];
 
-/** R8 (onorca.dev FAQ): heading left, quiet accordion right. Native <details>, no JS. */
+/**
+ * F1 pin/310255861851860168 ('FAQ1', Fora 'Answers to the questions that come up most'): a small
+ * FAQ pill over the heading, a short line to its right; below, a card of category tabs on the
+ * left with a 'Got questions?' card at its foot, and the questions as separate rounded cards on
+ * the right, each with a chevron in a ring. Still no JS: the tabs are radios, the filter is CSS
+ * (landing.css .lp-faq), every question a native <details>.
+ */
 export function Faq() {
   return (
     <section
       id="faq"
       data-tone="faq"
-      className="mx-auto grid max-w-[1240px] gap-10 px-4 pb-32 md:grid-cols-[5fr_7fr] md:px-6"
+      className="lp-faq mx-auto max-w-[1240px] px-4 pb-32 md:px-6"
     >
-      <Reveal>
-        <h2 className="font-medium text-[clamp(32px,4.4vw,54px)] text-fg leading-[1.04] tracking-[-0.03em]">
-          Questions
-          <br />
-          <span className="text-white/45">auditors ask.</span>
-        </h2>
+      <Reveal className="grid gap-5 md:grid-cols-2 md:items-end md:gap-10">
+        <div>
+          <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/[.08] bg-white/[.04] px-3 py-1 text-[12px] text-muted">
+            <span className="size-1.5 rounded-full bg-white/60" />
+            FAQ
+          </p>
+          <h2 className="font-medium text-[clamp(32px,4.4vw,54px)] text-fg leading-[1.04] tracking-[-0.03em]">
+            Questions
+            <br />
+            <span className="text-white/45">auditors ask.</span>
+          </h2>
+        </div>
+        <p className="max-w-[400px] text-[15px] text-muted leading-relaxed md:justify-self-end">
+          How Luora runs, what it reads from your Foundry project and what stays
+          on your machine.
+        </p>
       </Reveal>
-      <Reveal delay={0.08}>
-        <div className="border-white/[.07] border-t">
-          {FAQ.map(([q, a]) => (
+
+      <Reveal
+        delay={0.08}
+        className="mt-10 grid gap-3 md:mt-14 md:grid-cols-[260px_minmax(0,1fr)] md:grid-rows-[auto_1fr] md:gap-4"
+      >
+        {/* F1: the category tabs (radios, so the filter needs no JS) */}
+        <fieldset className="grid grid-cols-2 gap-1 rounded-[16px] border border-white/[.07] bg-[#0e0e10] p-1.5 md:flex md:flex-col">
+          <legend className="sr-only">Filter the questions</legend>
+          {CATS.map(([id, label]) => (
+            <label
+              key={id}
+              className="flex h-10 cursor-pointer items-center justify-center rounded-[11px] px-3 text-[13.5px] text-muted transition-colors hover:text-fg has-[:checked]:bg-gradient-to-b has-[:checked]:from-white/[.09] has-[:checked]:to-white/[.04] has-[:checked]:text-fg has-[:checked]:shadow-[inset_0_1px_0_rgba(255,255,255,.08)] has-[:focus-visible]:ring-1 has-[:focus-visible]:ring-white/30"
+            >
+              <input
+                type="radio"
+                name="faq-cat"
+                value={id}
+                defaultChecked={id === "all"}
+                className="sr-only"
+              />
+              {label}
+            </label>
+          ))}
+        </fieldset>
+
+        {/* F1: every question its own rounded card, a chevron in a ring */}
+        <div className="space-y-2.5 md:col-start-2 md:row-span-2 md:row-start-1">
+          {FAQ.map(([cat, q, a]) => (
             <details
               key={q}
-              className="group border-white/[.07] border-b py-5 [&_summary::-webkit-details-marker]:hidden"
+              data-cat={cat}
+              className="group rounded-[16px] border border-white/[.07] bg-gradient-to-b from-[#151517] to-[#0f0f11] px-5 transition-colors hover:border-white/[.12] open:border-white/[.12] md:px-6 [&_summary::-webkit-details-marker]:hidden"
             >
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-[16px] text-fg">
+              <summary className="flex min-h-[62px] cursor-pointer list-none items-center justify-between gap-6 py-3 text-[15px] text-fg md:text-[16px]">
                 {q}
-                <span className="grid size-7 flex-none place-items-center rounded-full border border-white/[.1] text-muted transition-transform duration-300 group-open:rotate-45">
-                  +
+                <span className="grid size-8 flex-none place-items-center rounded-full border border-white/[.1] bg-white/[.03] text-muted transition-transform duration-300 group-open:rotate-180">
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 16 16"
+                    className="size-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M4 6l4 4 4-4" />
+                  </svg>
                 </span>
               </summary>
-              <p className="mt-3 max-w-[560px] text-[14px] text-muted leading-relaxed">
+              <p className="max-w-[600px] pb-5 text-[14px] text-muted leading-relaxed">
                 {a}
               </p>
             </details>
           ))}
+        </div>
+
+        {/* F1: 'Got questions?' at the foot of the left column */}
+        <div className="rounded-[16px] border border-white/[.07] bg-[#0e0e10] p-5 md:col-start-1 md:row-start-2 md:self-end">
+          <p className="text-[17px] text-fg">Not answered here?</p>
+          <p className="mt-2 text-[13.5px] text-muted leading-relaxed">
+            Open an issue on the repository with the run and the contract you
+            are looking at.
+          </p>
+          <a
+            href={`${GITHUB}/issues`}
+            className="mt-4 inline-flex items-center gap-1.5 text-[13.5px] text-fg transition-colors hover:text-white"
+          >
+            Open an issue
+            <span aria-hidden="true">→</span>
+          </a>
         </div>
       </Reveal>
     </section>
