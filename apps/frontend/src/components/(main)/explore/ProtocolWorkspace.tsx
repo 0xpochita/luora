@@ -59,6 +59,18 @@ export function ProtocolWorkspace({ protocol: p }: { protocol: Protocol }) {
   const [piece, setPiece] = useState<string | null>(null);
   const [side, setSide] = useState<Side>(null);
   const [focus, setFocus] = useState(0);
+  const [labFull, setLabFull] = useState(false);
+  // Esc leaves full screen first, before the page's own Esc (panel, selection)
+  useEffect(() => {
+    if (!labFull) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.stopPropagation();
+      setLabFull(false);
+    };
+    addEventListener("keydown", onKey, true);
+    return () => removeEventListener("keydown", onKey, true);
+  }, [labFull]);
   const thread = useAiThread();
   const keys = useRef({ active, side, stepBy: (_: number) => {} });
 
@@ -186,6 +198,24 @@ export function ProtocolWorkspace({ protocol: p }: { protocol: Protocol }) {
       go("architecture");
     } else go("overview");
   };
+  const contractPicker = (
+    <Dropdown
+      ariaLabel="Contract"
+      variant="pill"
+      value={lab.name}
+      onChange={(n) => {
+        setSel(n);
+        setPiece(null);
+      }}
+      options={p.contracts.map((x) => ({
+        value: x.name,
+        label: x.name,
+        text: x.name,
+        group: x.group,
+        title: x.role,
+      }))}
+    />
+  );
   const libraries = p.contracts.filter((x) => x.kind === "library").length;
   const excerpts = p.contracts.filter((x) => x.excerpts).length;
 
@@ -405,34 +435,58 @@ export function ProtocolWorkspace({ protocol: p }: { protocol: Protocol }) {
               icon={PH.graph}
               title="Contract"
               meta={
-                <Dropdown
-                  ariaLabel="Contract"
-                  variant="pill"
-                  value={lab.name}
-                  onChange={(n) => {
-                    setSel(n);
-                    setPiece(null);
-                  }}
-                  options={p.contracts.map((x) => ({
-                    value: x.name,
-                    label: x.name,
-                    text: x.name,
-                    group: x.group,
-                    title: x.role,
-                  }))}
-                />
+                <>
+                  {contractPicker}
+                  <button
+                    type="button"
+                    className="hdr-pill sm"
+                    onClick={() => setLabFull(true)}
+                    title="The Lab over the whole window  Esc steps back"
+                  >
+                    <PhIcon d={PH.expand} className="size-[14px]" />
+                    Full screen
+                  </button>
+                </>
               }
               flush
             >
-              <div className="relative h-[640px]">
-                <ContractLab
-                  contract={lab}
-                  selected={piece}
-                  onSelect={(id) => {
-                    setPiece(id);
-                    if (id) setSide((s) => s ?? "about");
-                  }}
-                />
+              {/* full screen: the Lab over the whole window, its contract switch kept (TestPanel's
+                  pattern); Esc steps back out */}
+              <div
+                className={
+                  labFull
+                    ? "dot-grid fixed inset-0 z-[70] flex flex-col bg-canvas p-3"
+                    : "flex h-[640px] flex-col"
+                }
+              >
+                {labFull && (
+                  <div className="flex flex-none items-center gap-3 pb-3">
+                    <ProtocolLogo name={p.name} logo={p.logo} size={24} />
+                    <span className="text-[13px] text-muted">{p.name}</span>
+                    {contractPicker}
+                    <button
+                      type="button"
+                      className="hdr-pill sm ml-auto"
+                      onClick={() => setLabFull(false)}
+                      title="Back to the page  Esc"
+                    >
+                      <PhIcon d={PH.shrink} className="size-[14px]" />
+                      Exit full screen
+                    </button>
+                  </div>
+                )}
+                <div
+                  className={`relative min-h-0 flex-1 ${labFull ? "overflow-hidden rounded-card border border-border" : ""}`}
+                >
+                  <ContractLab
+                    contract={lab}
+                    selected={piece}
+                    onSelect={(id) => {
+                      setPiece(id);
+                      if (id && !labFull) setSide((s) => s ?? "about");
+                    }}
+                  />
+                </div>
               </div>
             </Section>
 
