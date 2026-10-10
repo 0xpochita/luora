@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Chip, PH, PhIcon } from "@/components/ui";
+import { PH, PhIcon } from "@/components/ui";
 import { useRun } from "@/features/run";
 
 /**
@@ -17,31 +17,32 @@ export function DataBadge() {
     setSample(false);
     setPane(null);
   };
+  // T2 / T3: one capsule, what is shown on the left, its Reset inside on the right
   return (
-    <span className="flex items-center gap-1.5">
-      {run ? (
-        <span title="Read in this tab only, never uploaded">
-          <Chip tone="ok" dot className="max-w-64">
-            <span className="text-muted">Viewing</span>
-            <span className="truncate font-mono text-fg">{run.name}</span>
-          </Chip>
+    <span className="hdr-pill split">
+      <span
+        title={run ? "Read in this tab only, never uploaded" : undefined}
+        className="max-w-72"
+      >
+        <span
+          className={`hdr-dot ${run ? "text-green" : "text-yellow"}`}
+          aria-hidden="true"
+        />
+        <span className="text-dim">Viewing</span>
+        <span
+          className={`truncate text-fg ${run ? "font-mono text-[12.5px]" : ""}`}
+        >
+          {run ? run.name : "Sample data"}
         </span>
-      ) : (
-        <Chip tone="warn" dot>
-          <span className="text-muted">Viewing</span>
-          <span className="text-fg">Sample data</span>
-        </Chip>
-      )}
-      <Button
-        size="sm"
-        variant="secondary"
-        className="h-7 gap-1.5 border border-border-strong px-2.5"
+      </span>
+      <button
+        type="button"
         title="Unload and go back to the Start here page"
         onClick={reset}
       >
-        <PhIcon d={PH.reset} className="size-[13px]" />
+        <PhIcon d={PH.reset} className="size-[14px]" />
         Reset
-      </Button>
+      </button>
     </span>
   );
 }

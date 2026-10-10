@@ -1,6 +1,6 @@
 "use client";
 
-import { Chip } from "@/components/ui";
+import { PH, PhIcon } from "@/components/ui";
 import { useRun } from "@/features/run";
 
 /** Header button that reopens the first session (RunDialog); hidden on the Start page, which is the onboarding. */
@@ -11,11 +11,10 @@ export function GuideButton() {
     <button
       type="button"
       onClick={() => setPane("welcome")}
-      className="group rounded-chip outline-none focus-visible:ring-2 focus-visible:ring-white/25"
+      className="hdr-pill"
     >
-      <Chip className="group-hover:bg-hover group-hover:text-fg">
-        Get started
-      </Chip>
+      <PhIcon d={PH.compass} className="size-[15px] text-muted" />
+      Get started
     </button>
   );
 }

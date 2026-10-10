@@ -6,6 +6,7 @@ import { GuideButton } from "../onboarding/GuideButton";
 import { RunDialog } from "../onboarding/RunDialog";
 import { AiSettings } from "./AiSettings";
 import { RouteTabs } from "./RouteTabs";
+import "./header.css";
 
 /** App frame shared by every route: floating brand + route tiles over the dot-grid canvas. */
 export function MainShell({ children }: { children: ReactNode }) {
@@ -17,7 +18,7 @@ export function MainShell({ children }: { children: ReactNode }) {
             <LogoText height={24} />
           </span>
           <RouteTabs />
-          <div className="ml-auto flex items-center gap-1.5">
+          <div className="ml-auto flex items-center gap-2">
             <GuideButton />
             <DataBadge />
             <AiSettings />
