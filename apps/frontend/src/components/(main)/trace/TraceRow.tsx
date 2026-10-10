@@ -40,7 +40,7 @@ export function TraceRow({
             : "hover:bg-raised"
       }`}
     >
-      <span className="w-[22px] flex-none text-right font-mono text-[11px] text-dim">
+      <span className="w-[22px] flex-none text-right font-mono text-[11.5px] text-muted tabular-nums">
         {index}
       </span>
       <span
@@ -49,25 +49,27 @@ export function TraceRow({
       />
       <KindIcon kind={kind} />
       <span className="font-mono text-[13px]">
-        <span className="text-muted">{frame.to}</span>
-        <span className="mx-px text-dim">.</span>
-        <span className="font-medium text-fg">{frame.fn}</span>
+        <span className="text-body">{frame.to}</span>
+        <span className="mx-px text-muted">.</span>
+        <span className="font-semibold text-fg">{frame.fn}</span>
       </span>
       <span className="flex min-w-0 gap-1.5 overflow-hidden">
         {splitArgs(frame.args).map(([k, v]) => (
           <span
             key={k}
-            className="whitespace-nowrap rounded-chip bg-raised px-1.5 py-0.5 font-mono text-[11px] text-fg"
+            className="whitespace-nowrap rounded-chip border border-white/[.06] bg-raised px-1.5 py-0.5 font-mono text-[11.5px] text-fg"
           >
-            <em className="mr-1.5 text-dim not-italic">{k}</em>
+            <em className="mr-1.5 text-muted not-italic">{k}</em>
             {v}
           </span>
         ))}
       </span>
       {frame.ret && (
         <span
-          className={`whitespace-nowrap rounded-chip px-2 py-0.5 font-mono text-[11px] ${
-            frame.ok ? "bg-raised text-muted" : "bg-raised text-red"
+          className={`whitespace-nowrap rounded-chip border px-2 py-0.5 font-mono text-[11.5px] ${
+            frame.ok
+              ? "border-white/[.06] bg-raised text-text"
+              : "border-red/25 bg-red/[.08] text-red"
           }`}
         >
           {frame.ok ? (
@@ -83,7 +85,7 @@ export function TraceRow({
         {frame.callSite && (
           <span
             title={`${frame.callSite.file}:${frame.callSite.line}`}
-            className="font-mono text-[11px] text-dim"
+            className="font-mono text-[11.5px] text-muted tabular-nums"
           >
             L{frame.callSite.line}
           </span>
@@ -91,7 +93,7 @@ export function TraceRow({
         {frame.gas != null && kind !== "EVENT" && (
           <>
             <Meter value={frame.gas / maxGas} />
-            <span className="min-w-[54px] text-right font-mono text-[11px] text-dim">
+            <span className="min-w-[54px] text-right font-mono text-[11.5px] text-body tabular-nums">
               {frame.gas.toLocaleString()}
             </span>
           </>

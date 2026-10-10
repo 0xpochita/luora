@@ -6,7 +6,6 @@ export {
   displayKind,
   edgeLabel,
   frameRows,
-  KIND_ICON,
 } from "./utils/frame";
 export { tokenize } from "./utils/highlight";
 export type { SourceSpan } from "./utils/source";

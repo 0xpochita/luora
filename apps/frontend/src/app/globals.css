@@ -36,6 +36,7 @@
   --yellow: #facc15;
   --red: #f87171;
   --blue: #60a5fa;
+  --cyan: #67e8f9;
   /* the one accent action (Run) and soft glow behind a selected / running card */
   --mint: #86efac;
   --pink: #f472b6;
@@ -66,6 +67,7 @@
   --color-yellow: var(--yellow);
   --color-red: var(--red);
   --color-blue: var(--blue);
+  --color-cyan: var(--cyan);
   --color-mint: var(--mint);
 
   /* radius scale: chip 8 · tile (controls, buttons) 10 · inner card 12 · card 18.
@@ -164,7 +166,7 @@ body {
   background: repeating-linear-gradient(
     90deg,
     transparent 0 13px,
-    var(--raised) 13px 14px,
+    rgb(255 255 255 / 0.09) 13px 14px,
     transparent 14px 24px
   );
 }

@@ -1,7 +1,17 @@
 "use client";
 
-import type { Frame } from "@/features/trace";
+import { KIND_META } from "@/components/ui";
+import type { DisplayKind, Frame } from "@/features/trace";
 import { TraceRow } from "./TraceRow";
+
+const LEGEND: DisplayKind[] = ["CALL", "STATICCALL", "EVENT", "VM", "REVERT"];
+const SHORT: Partial<Record<DisplayKind, string>> = {
+  CALL: "Call",
+  STATICCALL: "View",
+  EVENT: "Event",
+  VM: "Cheatcode",
+  REVERT: "Revert",
+};
 
 /** The call trace rows the toolbar's filters, depth and search let through. */
 export function TraceList({
@@ -26,7 +36,7 @@ export function TraceList({
     <section>
       <header className="flex items-center gap-3 px-1 pb-1.5 text-[13px]">
         <span className="text-fg">Calls</span>
-        <span className="font-mono text-dim text-xs">
+        <span className="font-mono text-muted text-xs">
           {rows.length === total
             ? `${total}`
             : `${rows.length} of ${total} shown`}
@@ -35,11 +45,20 @@ export function TraceList({
           <button
             type="button"
             onClick={onReset}
-            className="text-[12px] text-dim underline-offset-2 hover:text-fg hover:underline"
+            className="text-[12px] text-muted underline-offset-2 hover:text-fg hover:underline"
           >
             Show all
           </button>
         )}
+        {/* the colour key, in Foundry's own palette (KindIcon) */}
+        <span className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted">
+          {LEGEND.map((k) => (
+            <span key={k} className="flex items-center gap-1.5">
+              <span className={`size-2 rounded-full ${KIND_META[k].dot}`} />
+              {SHORT[k]}
+            </span>
+          ))}
+        </span>
       </header>
       {rows.length ? (
         <div className="space-y-0.5">

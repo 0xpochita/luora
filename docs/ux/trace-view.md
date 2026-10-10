@@ -66,3 +66,30 @@ keyboard.
 | A **keyboard legend** at the foot of the trace | 5 | discoverability of the above |
 | **Selected call** card in the source panel: args, return, gas, call site | 8 | Tenderly call information panel |
 | Source file **select** instead of cut-off tabs | 7 | pin 155374255891612555 full file names |
+
+## Legibility pass (same day)
+
+"Icon, colour and type look too dark." Measured on the card (#242427), WCAG AA needs 4.5:1 for
+small text:
+
+| Token | Contrast | Was used for | Now |
+|---|---|---|---|
+| `dim` #6f6f76 | 3.10:1, fails | line index, argument names, gas, `L` refs | `muted` 5.60:1 / `body` 7.92:1 |
+| `muted` #9b9ba1 | 5.60:1 | contract name, kind glyph | contract name `body` 7.92:1 |
+
+Kind glyphs were 12px grey unicode (↗ ◎ ✦ ⚙), told apart only by shape. They are now
+Phosphor icons on a tinted tile in **Foundry's own trace palette**, read from the ANSI output of
+`forge test -vvvv --color always` on the sample project, the colours auditors already know from
+their terminal (Nielsen: match between system and the real world):
+
+| Kind | forge -vvvv | Luora |
+|---|---|---|
+| successful call `Contract::fn` | green (32) | green, chevron-in-circle |
+| cheatcode `VM::` | blue (34) | blue, wrench |
+| revert | red (31) | red, x-circle |
+| event arguments | cyan (36) | cyan, broadcast |
+| `[staticcall]` tag | yellow (33) | yellow, eye |
+| delegatecall | yellow tag | pink, swap (a context switch should stand out) |
+
+A colour key sits in the Calls header; argument and return chips get a hairline border; the
+function name is semibold; tree guides are brighter.

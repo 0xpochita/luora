@@ -6,18 +6,6 @@ export function displayKind(f: Frame): DisplayKind {
   return f.kind;
 }
 
-export const KIND_ICON: Record<DisplayKind, string> = {
-  CALL: "↗",
-  STATICCALL: "◎",
-  DELEGATECALL: "⇄",
-  CALLCODE: "⇄",
-  CREATE: "＋",
-  CREATE2: "＋",
-  EVENT: "✦",
-  VM: "⚙",
-  REVERT: "✕",
-};
-
 export function edgeLabel(child: Frame): string {
   const k = displayKind(child);
   if (k === "EVENT") return "emits";
