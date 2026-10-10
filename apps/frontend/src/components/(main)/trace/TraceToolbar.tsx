@@ -1,7 +1,15 @@
 "use client";
 
+import { AnimatePresence, motion } from "motion/react";
 import type { RefObject } from "react";
-import { Chip, Dropdown, PH, PhIcon, SegmentedControl } from "@/components/ui";
+import {
+  Chip,
+  Dropdown,
+  EASE,
+  PH,
+  PhIcon,
+  SegmentedControl,
+} from "@/components/ui";
 import type {
   DisplayKind,
   Frame,
@@ -254,35 +262,52 @@ export function TraceToolbar({
       </div>
 
       {/* a revert, said up front */}
-      {revert && mode !== "scenario" && (
-        <div className="flex items-center gap-3 rounded-tile border border-red/25 bg-red/[.06] px-3 py-2 text-[12.5px]">
-          <PhIcon d={PH.revert} className="size-[15px] flex-none text-red" />
-          <span className="min-w-0 flex-1 truncate text-body">
-            Call <span className="font-mono text-fg">#{revert.index}</span>{" "}
-            <span className="font-mono text-fg">
-              {revert.frame.to}.{revert.frame.fn}
-            </span>{" "}
-            reverted
-            {revert.frame.ret && (
-              <>
-                : <span className="font-mono text-red">{revert.frame.ret}</span>
-              </>
-            )}
-            <span className="text-dim">
-              {pass
-                ? " · the test passed, so the revert was expected"
-                : " · this is where the test failed"}
-            </span>
-          </span>
-          <button
-            type="button"
-            onClick={onRevert}
-            className="hdr-pill sm flex-none"
+      <AnimatePresence initial={false}>
+        {revert && mode !== "scenario" && (
+          <motion.div
+            key="revert"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.22, ease: EASE }}
+            className="overflow-hidden"
           >
-            Jump to it
-          </button>
-        </div>
-      )}
+            <div className="flex items-center gap-3 rounded-tile border border-red/25 bg-red/[.06] px-3 py-2 text-[12.5px]">
+              <PhIcon
+                d={PH.revert}
+                className="size-[15px] flex-none text-red"
+              />
+              <span className="min-w-0 flex-1 truncate text-body">
+                Call <span className="font-mono text-fg">#{revert.index}</span>{" "}
+                <span className="font-mono text-fg">
+                  {revert.frame.to}.{revert.frame.fn}
+                </span>{" "}
+                reverted
+                {revert.frame.ret && (
+                  <>
+                    :{" "}
+                    <span className="font-mono text-red">
+                      {revert.frame.ret}
+                    </span>
+                  </>
+                )}
+                <span className="text-dim">
+                  {pass
+                    ? " · the test passed, so the revert was expected"
+                    : " · this is where the test failed"}
+                </span>
+              </span>
+              <button
+                type="button"
+                onClick={onRevert}
+                className="hdr-pill sm flex-none"
+              >
+                Jump to it
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

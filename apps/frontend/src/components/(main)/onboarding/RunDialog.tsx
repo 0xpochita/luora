@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "motion/react";
 import Link from "next/link";
 import {
   type DragEvent,
@@ -8,7 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Button, IconButton } from "@/components/ui";
+import { Button, ENTER, IconButton } from "@/components/ui";
 import { parseRun, useRun } from "@/features/run";
 
 const REPO_WEB = "https://github.com/0xpochita/luora/blob/main";
@@ -62,15 +63,17 @@ export function RunDialog() {
           {STEPS.map((t, i) => (
             <li
               key={t}
-              className={`h-1 rounded-full transition-colors ${i <= step ? "bg-fg" : "bg-raised"}`}
+              className={`h-1 rounded-full transition-colors duration-300 ${i <= step ? "bg-fg" : "bg-raised"}`}
             />
           ))}
         </ol>
 
-        {step === 0 && <Welcome />}
-        {step === 1 && <Export />}
-        {step === 2 && <Load onLoaded={() => setStep(3)} />}
-        {step === 3 && <Look />}
+        <motion.div key={step} {...ENTER}>
+          {step === 0 && <Welcome />}
+          {step === 1 && <Export />}
+          {step === 2 && <Load onLoaded={() => setStep(3)} />}
+          {step === 3 && <Look />}
+        </motion.div>
 
         <footer className="mt-3 flex items-center gap-2 px-1 pb-0.5">
           {step === 0 ? (

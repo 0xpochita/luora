@@ -1,7 +1,8 @@
 "use client";
 
+import { motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
-import { Chip, Panel, Tabs } from "@/components/ui";
+import { Chip, ENTER, Panel, Tabs } from "@/components/ui";
 import {
   type AtlasSource,
   type AtlasView,
@@ -91,33 +92,33 @@ function AtlasBody({ source }: { source: AtlasSource }) {
       </header>
       <div className="body">
         {view === "map" ? (
-          <section className="stage">
+          <motion.section key={view} {...ENTER} className="stage">
             <MapView
               model={model}
               selected={selected}
               onSelect={setSelected}
               triage={triage}
             />
-          </section>
+          </motion.section>
         ) : view === "explorer" ? (
-          <section className="stage">
+          <motion.section key={view} {...ENTER} className="stage">
             <ExplorerView
               model={model}
               selected={selected}
               onSelect={setSelected}
             />
-          </section>
+          </motion.section>
         ) : view === "flow" ? (
-          <section className="stage">
+          <motion.section key={view} {...ENTER} className="stage">
             <FlowView
               model={model}
               selected={selected}
               onSelect={setSelected}
               sim={sim}
             />
-          </section>
+          </motion.section>
         ) : (
-          <section className="stage flex flex-col">
+          <motion.section key={view} {...ENTER} className="stage flex flex-col">
             <LabView
               model={model}
               calls={source.calls}
@@ -131,7 +132,7 @@ function AtlasBody({ source }: { source: AtlasSource }) {
               onSelect={setSelected}
               triage={triage}
             />
-          </section>
+          </motion.section>
         )}
         <aside>
           <ContractSource

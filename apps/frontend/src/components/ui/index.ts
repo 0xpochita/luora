@@ -9,6 +9,8 @@ export { KIND_META, KindIcon } from "./KindIcon";
 export { KV } from "./KV";
 export { LogoMark, LogoText } from "./LogoMark";
 export { Meter } from "./Meter";
+export { MotionRoot } from "./MotionRoot";
+export { EASE, ENTER, SLIDE } from "./motion";
 export { Card, Panel } from "./Panel";
 export { Chevron, PH, PhIcon } from "./PhIcon";
 export { SegmentedControl } from "./SegmentedControl";

@@ -1,6 +1,8 @@
 "use client";
 
+import { AnimatePresence, animate, motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { EASE, ENTER } from "@/components/ui";
 import { type AtlasSource, createAtlasModel } from "@/features/atlas";
 import { atlasSource } from "@/features/atlas/utils/atlas-source";
 import { type RunFile, useRun, useShownSource } from "@/features/run";
@@ -126,7 +128,22 @@ function TraceBody({
 
   // full screen = the trace panel fills the app window (not the browser's full screen): the test
   // list, the source and the app header step aside until F or Esc
-  const toggleFull = () => setPanels((p) => ({ ...p, full: !p.full }));
+  // entering or leaving full screen, the panel settles in from a soft scale instead of jumping
+  const setFull = (next: (full: boolean) => boolean) => {
+    setPanels((p) => ({ ...p, full: next(p.full) }));
+    requestAnimationFrame(() => {
+      if (
+        root.current &&
+        !matchMedia("(prefers-reduced-motion: reduce)").matches
+      )
+        animate(
+          root.current,
+          { opacity: [0.6, 1], scale: [0.985, 1] },
+          { duration: 0.28, ease: EASE },
+        );
+    });
+  };
+  const toggleFull = () => setFull((f) => !f);
   const onPanel = (k: keyof Panels) =>
     k === "full" ? toggleFull() : setPanels((p) => ({ ...p, [k]: !p[k] }));
 
@@ -147,9 +164,19 @@ function TraceBody({
     model,
     selectFrame,
     toggleFull,
+    setFull,
     full,
   });
-  keys.current = { rows, frameIdx, mode, model, selectFrame, toggleFull, full };
+  keys.current = {
+    rows,
+    frameIdx,
+    mode,
+    model,
+    selectFrame,
+    toggleFull,
+    setFull,
+    full,
+  };
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -183,7 +210,7 @@ function TraceBody({
               : e.key;
       switch (key) {
         case "Escape":
-          if (k.full) setPanels((p) => ({ ...p, full: false }));
+          if (k.full) k.setFull(() => false);
           return;
         case "ArrowDown":
         case "j":
@@ -224,18 +251,30 @@ function TraceBody({
       ref={root}
       className={`flex min-h-0 flex-1 gap-3 ${full ? "dot-grid fixed inset-0 z-[60] bg-canvas p-3" : "px-3 pb-3"}`}
     >
-      {panels.tests && !full && (
-        <Sidebar>
-          <TestList
-            tests={data.tests}
-            selected={testIdx}
-            onSelect={(i) => {
-              setTestIdx(i);
-              setFrameIdx(null);
-            }}
-          />
-        </Sidebar>
-      )}
+      {/* the test list slides open and shut (its 12px gap folds with it) */}
+      <AnimatePresence initial={false}>
+        {panels.tests && !full && (
+          <motion.div
+            key="tests"
+            initial={{ width: 0, opacity: 0, marginRight: -12 }}
+            animate={{ width: 272, opacity: 1, marginRight: 0 }}
+            exit={{ width: 0, opacity: 0, marginRight: -12 }}
+            transition={{ duration: 0.26, ease: EASE }}
+            className="flex flex-none overflow-hidden"
+          >
+            <Sidebar>
+              <TestList
+                tests={data.tests}
+                selected={testIdx}
+                onSelect={(i) => {
+                  setTestIdx(i);
+                  setFrameIdx(null);
+                }}
+              />
+            </Sidebar>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-card border border-border bg-card-grad shadow-soft">
         <TraceToolbar
           test={test}
@@ -261,7 +300,11 @@ function TraceBody({
         />
         {mode === "scenario" && model ? (
           // the Atlas Lab's Scenario editor, on this run's contract
-          <div className="relative flex min-h-0 flex-1 flex-col">
+          <motion.div
+            key="scenario"
+            {...ENTER}
+            className="relative flex min-h-0 flex-1 flex-col"
+          >
             <LabView
               model={model}
               calls={atlas?.calls}
@@ -270,9 +313,11 @@ function TraceBody({
               onSelect={setPiece}
               only="scenario"
             />
-          </div>
+          </motion.div>
         ) : (
-          <div
+          <motion.div
+            key={mode}
+            {...ENTER}
             className={`flex-1 overflow-auto px-5 pb-5 ${mode === "graph" ? "flex flex-col" : ""}`}
           >
             {mode === "trace" ? (
@@ -302,7 +347,7 @@ function TraceBody({
                 />
               </div>
             )}
-          </div>
+          </motion.div>
         )}
         {/* the keyboard, said once where it is used */}
         <footer className="flex flex-none flex-wrap items-center gap-x-4 gap-y-1 border-border border-t px-5 py-2 text-[12px] text-dim">
@@ -326,16 +371,27 @@ function TraceBody({
           ))}
         </footer>
       </main>
-      {panels.source && !full && (
-        <SourcePanel
-          sources={data.sources}
-          file={file}
-          onFile={setFile}
-          span={span}
-          frame={frame}
-          index={frameIdx}
-        />
-      )}
+      <AnimatePresence initial={false}>
+        {panels.source && !full && (
+          <motion.div
+            key="source"
+            initial={{ width: 0, opacity: 0, marginLeft: -12 }}
+            animate={{ width: 440, opacity: 1, marginLeft: 0 }}
+            exit={{ width: 0, opacity: 0, marginLeft: -12 }}
+            transition={{ duration: 0.26, ease: EASE }}
+            className="flex flex-none overflow-hidden"
+          >
+            <SourcePanel
+              sources={data.sources}
+              file={file}
+              onFile={setFile}
+              span={span}
+              frame={frame}
+              index={frameIdx}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

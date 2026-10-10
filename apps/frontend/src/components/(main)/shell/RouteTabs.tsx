@@ -1,8 +1,9 @@
 "use client";
 
+import { motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { tile } from "@/components/ui";
+import { SLIDE } from "@/components/ui";
 
 const ROUTES = [
   { href: "/trace", label: "Trace" },
@@ -20,8 +21,15 @@ export function RouteTabs() {
             key={r.href}
             href={r.href}
             aria-current={on ? "page" : undefined}
-            className={`${tile(on)} h-9 px-4 text-[14px]`}
+            className={`relative isolate inline-flex h-9 items-center rounded-tile px-4 text-[14px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-white/25 ${on ? "text-primary-fg" : "bg-raised text-muted hover:bg-hover hover:text-fg"}`}
           >
+            {on && (
+              <motion.span
+                layoutId="route-tab"
+                transition={SLIDE}
+                className="absolute inset-0 -z-10 rounded-tile bg-primary shadow-soft"
+              />
+            )}
             {r.label}
           </Link>
         );

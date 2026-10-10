@@ -1,7 +1,8 @@
 "use client";
 
+import { motion } from "motion/react";
 import { useState } from "react";
-import { Button, PH, PhIcon, Tabs } from "@/components/ui";
+import { Button, ENTER, PH, PhIcon, Tabs } from "@/components/ui";
 import { useRun } from "@/features/run";
 import {
   CopyLine,
@@ -73,7 +74,7 @@ export function StartHere() {
           ]}
         />
 
-        <ol className="mt-3 flex flex-col gap-2">
+        <motion.ol key={how} {...ENTER} className="mt-3 flex flex-col gap-2">
           {how === "agent" ? (
             <Step
               n={1}
@@ -133,7 +134,7 @@ export function StartHere() {
           >
             <DropZone onLoaded={() => setPane("look")} />
           </Step>
-        </ol>
+        </motion.ol>
 
         <div className="mt-4 flex flex-wrap items-center gap-3 rounded-inner border border-border bg-inner-grad p-4">
           <div className="min-w-0 flex-1">
