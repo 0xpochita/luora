@@ -110,3 +110,26 @@ Studied BlockSec Phalcon Explorer's invocation flow (tx 0xa1f1…b099, `?line=20
 
 Not taken: Phalcon's fund-flow and balance-change tabs (a Foundry test run has no on-chain money
 flow to show) and its per-row gas toggle (gas stays a column with a meter).
+
+## Ask AI about calls (same day)
+
+"I want to ask AI by clicking the lines." Researched before building:
+
+| Reference | Pattern taken |
+|---|---|
+| GitHub Copilot on a file | click a line number, Shift-click another for a range; the Copilot button sits right of the selection; predefined questions next to free text |
+| Chrome DevTools "Debug with AI" | the selected request is the chat's context and changes when you select another; answers link back to what they name |
+| R1 pin 372109987986003766 (Golo, AI chat in dark) | suggested questions as a list, the context as a strip on top of the composer, the model as a chip at its foot |
+| R2 pin 160018593004593469 (21st.dev prompt input) | two-tier composer, round white send button |
+| R3 pin 112871534413929668 (Julio Caggiano) | the attached selection quoted in an inset strip |
+| R4 pin 449445237837052121 (Onyekachi Mbaike, AI mode) | the assistant as a tab of the side panel beside dense data, question bubble on the right, answer as plain text |
+
+What it does:
+
+- **Select**: click a row; Shift-click (or Shift ↑ ↓) takes every call between. The range is in the URL, `?call=7-11`. Esc drops the range.
+- **Ask**: the row last clicked carries an "Ask AI" pill (with the count for a range) in the row's empty middle, so the gas column never moves. `A`, the toolbar's Ask AI and the side panel's Ask AI tab do the same. Full screen keeps the side panel shut until you ask.
+- **Context sent**: the test and its result, the callers above the selection, each selected call indented by depth with raw arguments, return, gas, call site and storage reads/writes, and the source lines those calls ran (capped). A follow-up on the same calls sends only the question.
+- **Answers**: streamed from the auditor's own AI, straight from the browser. Every `#n` in an answer selects that call; the `#7–#11` above a question selects that range again. Code fences render as code. "New chat" clears; changing test clears.
+- **Trust**: the line under the composer names the provider and what is sent. With no AI connected, the button becomes "Copy prompt": the same question with its context, for Claude Code, Cursor or any chat.
+- **Defensive only**: the system prompt (features/ai) allows explaining, review checklists and tests of intended behaviour, never exploits; suggested questions are checked for that in `features/trace/utils/ask.check.ts`.
+- A click anywhere in the composer box focuses the question, so a near miss never sends letters to the trace shortcuts.

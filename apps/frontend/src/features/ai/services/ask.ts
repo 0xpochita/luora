@@ -1,5 +1,5 @@
 import type { AiConfig } from "../types";
-import { chatRequest, textOf } from "../utils/provider";
+import { type ChatMessage, chatRequest, textOf } from "../utils/provider";
 
 /** Readable error from a failed call; never echoes the request (it carries the key). */
 async function failure(res: Response): Promise<Error> {
@@ -24,7 +24,7 @@ function reach(cfg: AiConfig, e: unknown): Error {
 /** Streams the answer text, browser → provider directly. No Luora server is involved. */
 export async function* askStream(
   cfg: AiConfig,
-  user: string,
+  user: string | ChatMessage[],
   signal?: AbortSignal,
 ): AsyncGenerator<string> {
   const { url, init } = chatRequest(cfg, user);

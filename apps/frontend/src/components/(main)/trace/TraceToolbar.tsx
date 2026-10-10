@@ -26,8 +26,8 @@ import type {
  *  - search calls with a `/` keycap (Phalcon's invocation-flow search; pin 155374255891612555)
  *  - filters as checkboxes with counts (Phalcon's static-call show / hide)
  *  - depth (Phalcon's "Expand: how many levels")
- *  - panels: tests, source, full screen = the trace fills the app window (Phalcon's full-screen
- *    button; pin 363525001193584930)
+ *  - panels: tests, source, Ask AI (the side panel's other tab), full screen = the trace fills
+ *    the app window (Phalcon's full-screen button; pin 363525001193584930)
  *  - a revert banner with a jump (Tenderly: the exact revert point)
  */
 
@@ -41,7 +41,13 @@ const FILTERS: { kind: DisplayKind; label: string; title: string }[] = [
   },
 ];
 
-export type Panels = { tests: boolean; source: boolean; full: boolean };
+/** what is on screen: the test list, the side panel's Source or Ask AI tab, full screen */
+export type Panels = {
+  tests: boolean;
+  source: boolean;
+  ask: boolean;
+  full: boolean;
+};
 
 export function TraceToolbar({
   test,
@@ -136,6 +142,16 @@ export function TraceToolbar({
               </button>
             </>
           )}
+          <button
+            type="button"
+            className="hdr-pill sm"
+            aria-pressed={panels.ask}
+            title="Ask AI about the selected calls  A"
+            onClick={() => onPanel("ask")}
+          >
+            {icon(PH.sparkle)}
+            Ask AI
+          </button>
           <button
             type="button"
             className="hdr-pill sm lit"

@@ -2,14 +2,17 @@
 
 import { AnimatePresence, animate, motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { EASE, ENTER } from "@/components/ui";
+import { EASE, ENTER, PH, PhIcon, SegmentedControl } from "@/components/ui";
 import { type AtlasSource, createAtlasModel } from "@/features/atlas";
 import { atlasSource } from "@/features/atlas/utils/atlas-source";
 import { type RunFile, useRun, useShownSource } from "@/features/run";
 import {
+  type CallRange,
   type DisplayKind,
   displayKind,
   locateFrame,
+  parseRange,
+  rangeParam,
   type TraceMode,
   type TraceSource,
 } from "@/features/trace";
@@ -18,6 +21,7 @@ import { CallGraph } from "../graph/CallGraph";
 import { StartHere } from "../onboarding/StartHere";
 import { Sidebar } from "../shell/Sidebar";
 import { SourcePanel } from "../source/SourcePanel";
+import { AskPanel, useAskThread } from "./AskPanel";
 import { BalancePanels } from "./BalancePanels";
 import { TestList } from "./TestList";
 import { TraceList } from "./TraceList";
@@ -74,16 +78,23 @@ function TraceBody({
   const [mode, setMode] = useState<TraceMode>("trace");
   const [hidden, setHidden] = useState<Set<DisplayKind>>(new Set());
   const [frameIdx, setFrameIdx] = useState<number | null>(null);
+  /** where a Shift-click range started; the calls from it to frameIdx are selected */
+  const [anchor, setAnchor] = useState<number | null>(null);
   const [file, setFile] = useState(files[0] ?? "");
   const [query, setQuery] = useState("");
   /** calls folded shut (Phalcon's fold boxes); their descendants are hidden */
   const [folded, setFolded] = useState<Set<number>>(new Set());
   const [depth, setDepth] = useState(0);
-  const [panels, setPanels] = useState<Panels>({
+  const [panels, setPanels] = useState({
     tests: true,
     source: true,
     full: false,
   });
+  // the side panel: Source or Ask AI. Full screen starts without it; asking brings it back.
+  const [side, setSide] = useState<"source" | "ask">("source");
+  const [fullSide, setFullSide] = useState(false);
+  const [askFocus, setAskFocus] = useState(0);
+  const thread = useAskThread();
   const root = useRef<HTMLDivElement>(null);
   const search = useRef<HTMLInputElement>(null);
 
@@ -91,6 +102,16 @@ function TraceBody({
   const frames = test?.frames ?? [];
   const frame = frameIdx != null ? frames[frameIdx] : undefined;
   const span = frame ? locateFrame(data, frame) : null;
+  const range: CallRange | null =
+    frameIdx == null || !frame
+      ? null
+      : {
+          from: Math.min(anchor ?? frameIdx, frameIdx),
+          to: Math.min(
+            frames.length - 1,
+            Math.max(anchor ?? frameIdx, frameIdx),
+          ),
+        };
 
   // what the call trace shows: folds, filters, depth and search, in that order (a search looks
   // inside folded calls too, so a match is never hidden)
@@ -143,22 +164,33 @@ function TraceBody({
     const p = new URLSearchParams(location.search);
     const t = data.tests.findIndex((x) => x.name === p.get("test"));
     if (t >= 0) setTestIdx(t);
-    const c = Number(p.get("call"));
-    if (p.has("call") && Number.isInteger(c)) setFrameIdx(c);
+    // ?call=7 or a range, ?call=7-11
+    const r = parseRange(p.get("call"));
+    if (r) {
+      setFrameIdx(r.to);
+      setAnchor(r.from === r.to ? null : r.from);
+    }
   }, [data.tests]);
+  const call = range && rangeParam(range);
   useEffect(() => {
     if (!test) return;
     const url = new URL(location.href);
     url.searchParams.set("test", test.name);
-    if (frameIdx == null) url.searchParams.delete("call");
-    else url.searchParams.set("call", String(frameIdx));
+    if (!call) url.searchParams.delete("call");
+    else url.searchParams.set("call", call);
     history.replaceState(history.state, "", url);
-  }, [test, frameIdx]);
+  }, [test, call]);
 
-  const selectFrame = (i: number) => {
+  /** select a call; `extend` (Shift) keeps the range's start and moves its end here */
+  const selectFrame = (i: number, extend = false) => {
+    setAnchor(extend ? (a) => a ?? frameIdx : null);
     setFrameIdx(i);
     const s = locateFrame(data, frames[i]);
     if (s) setFile(s.file);
+  };
+  const selectRange = (r: CallRange) => {
+    selectFrame(r.to);
+    setAnchor(r.from === r.to ? null : r.from);
   };
   const toggle = (k: DisplayKind) =>
     setHidden((h) => {
@@ -186,8 +218,35 @@ function TraceBody({
     });
   };
   const toggleFull = () => setFull((f) => !f);
+  const sideOpen = panels.full ? fullSide : panels.source;
+  const showSide = (open: boolean) =>
+    panels.full
+      ? setFullSide(open)
+      : setPanels((p) => ({ ...p, source: open }));
+  /** Source / Ask AI buttons: open the panel on that tab, or close it when it is already there */
+  const toggleSide = (tab: "source" | "ask") => {
+    if (sideOpen && side === tab) return showSide(false);
+    setSide(tab);
+    showSide(true);
+    if (tab === "ask") setAskFocus((n) => n + 1);
+  };
+  const openAsk = () => {
+    setSide("ask");
+    showSide(true);
+    setAskFocus((n) => n + 1);
+  };
   const onPanel = (k: keyof Panels) =>
-    k === "full" ? toggleFull() : setPanels((p) => ({ ...p, [k]: !p[k] }));
+    k === "full"
+      ? toggleFull()
+      : k === "tests"
+        ? setPanels((p) => ({ ...p, tests: !p.tests }))
+        : toggleSide(k);
+  const shown: Panels = {
+    tests: panels.tests,
+    source: sideOpen && side === "source",
+    ask: sideOpen && side === "ask",
+    full: panels.full,
+  };
 
   const jumpToRevert = () => {
     if (!revert) return;
@@ -211,6 +270,7 @@ function TraceBody({
   const keys = useRef({
     rows,
     frameIdx,
+    anchor,
     mode,
     model,
     selectFrame,
@@ -218,10 +278,14 @@ function TraceBody({
     setFull,
     full,
     foldSelected,
+    openAsk,
+    sideOpen,
+    showSide,
   });
   keys.current = {
     rows,
     frameIdx,
+    anchor,
     mode,
     model,
     selectFrame,
@@ -229,6 +293,9 @@ function TraceBody({
     setFull,
     full,
     foldSelected,
+    openAsk,
+    sideOpen,
+    showSide,
   };
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -250,7 +317,7 @@ function TraceBody({
               ? 0
               : k.rows.length - 1
             : Math.min(k.rows.length - 1, Math.max(0, at + dir));
-        k.selectFrame(k.rows[next].index);
+        k.selectFrame(k.rows[next].index, e.shiftKey);
       };
       // e.code as a fallback: some keyboard layouts and remote inputs send no usable e.key
       const key =
@@ -263,8 +330,15 @@ function TraceBody({
               : e.key;
       switch (key) {
         case "Escape":
+          // a range first, then full screen
+          if (k.anchor != null) return k.selectFrame(k.frameIdx ?? 0);
           if (k.full) k.setFull(() => false);
           return;
+        case "a":
+        case "A":
+          if (k.mode !== "trace" && k.mode !== "graph") return;
+          e.preventDefault();
+          return k.openAsk();
         case "ArrowLeft":
         case "h":
           if (k.mode !== "trace") return;
@@ -277,9 +351,11 @@ function TraceBody({
           return k.foldSelected(false);
         case "ArrowDown":
         case "j":
+        case "J":
           return step(1);
         case "ArrowUp":
         case "k":
+        case "K":
           return step(-1);
         case "/":
           e.preventDefault();
@@ -292,7 +368,7 @@ function TraceBody({
         case "[":
           return setPanels((p) => ({ ...p, tests: !p.tests }));
         case "]":
-          return setPanels((p) => ({ ...p, source: !p.source }));
+          return k.showSide(!k.sideOpen);
         case "1":
           return setMode("trace");
         case "2":
@@ -332,7 +408,9 @@ function TraceBody({
                 onSelect={(i) => {
                   setTestIdx(i);
                   setFrameIdx(null);
+                  setAnchor(null);
                   setFolded(new Set());
+                  thread.clear();
                 }}
               />
             </Sidebar>
@@ -357,7 +435,7 @@ function TraceBody({
           depth={depth}
           onDepth={setDepth}
           maxDepth={maxDepth}
-          panels={panels}
+          panels={shown}
           onPanel={onPanel}
           revert={revert}
           onRevert={jumpToRevert}
@@ -394,8 +472,10 @@ function TraceBody({
                     !!q || depth > 0 || hidden.size > 0 || folded.size > 0
                   }
                   selected={frameIdx}
+                  range={range}
                   onSelect={selectFrame}
                   onFold={(i) => fold(i)}
+                  onAsk={openAsk}
                   onReset={() => {
                     setQuery("");
                     setDepth(0);
@@ -411,7 +491,7 @@ function TraceBody({
                   frames={frames}
                   hidden={hidden}
                   selected={frameIdx}
-                  onSelect={selectFrame}
+                  onSelect={(i) => selectFrame(i)}
                 />
               </div>
             )}
@@ -424,8 +504,9 @@ function TraceBody({
               [["↑", "↓"], "step through calls"],
               [["←", "→"], "fold, unfold"],
               [["/"], "search"],
+              [["A"], "ask AI"],
               [["1", "2", "3"], "views"],
-              [["[", "]"], "tests, source"],
+              [["[", "]"], "side panels"],
               [["F"], full ? "exit full screen" : "full screen"],
             ] as const
           ).map(([ks, label]) => (
@@ -440,24 +521,81 @@ function TraceBody({
           ))}
         </footer>
       </main>
+      {/* the side panel: Source, or Ask AI about the selected calls (R4: the assistant as a tab
+          of the panel beside the data) */}
       <AnimatePresence initial={false}>
-        {panels.source && !full && (
+        {sideOpen && (
           <motion.div
-            key="source"
+            key="side"
             initial={{ width: 0, opacity: 0, marginLeft: -12 }}
             animate={{ width: 440, opacity: 1, marginLeft: 0 }}
             exit={{ width: 0, opacity: 0, marginLeft: -12 }}
             transition={{ duration: 0.26, ease: EASE }}
             className="flex flex-none overflow-hidden"
           >
-            <SourcePanel
-              sources={data.sources}
-              file={file}
-              onFile={setFile}
-              span={span}
-              frame={frame}
-              index={frameIdx}
-            />
+            <section className="flex min-h-0 w-[440px] flex-none flex-col rounded-card border border-border bg-card-grad shadow-soft">
+              <header className="flex flex-none items-center gap-2 px-3 pt-3 pb-2.5">
+                <SegmentedControl
+                  value={side}
+                  onChange={(t) => (t === "ask" ? openAsk() : setSide(t))}
+                  options={[
+                    {
+                      value: "source",
+                      label: "Source",
+                      title: "The lines the call ran",
+                      icon: <PhIcon d={PH.code} className="size-[14px]" />,
+                    },
+                    {
+                      value: "ask",
+                      label: "Ask AI",
+                      title: "Ask about the selected calls  A",
+                      icon: <PhIcon d={PH.sparkle} className="size-[14px]" />,
+                    },
+                  ]}
+                />
+                <span className="ml-auto text-[12.5px] text-dim">
+                  {side === "source"
+                    ? span && `L${span.start + 1}–${span.end + 1}`
+                    : thread.turns.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={thread.clear}
+                          className="hover:text-fg"
+                        >
+                          New chat
+                        </button>
+                      )}
+                </span>
+              </header>
+              <motion.div
+                key={side}
+                {...ENTER}
+                className="flex min-h-0 flex-1 flex-col"
+              >
+                {side === "source" ? (
+                  <SourcePanel
+                    sources={data.sources}
+                    file={file}
+                    onFile={setFile}
+                    span={span}
+                    frame={frame}
+                    index={frameIdx}
+                  />
+                ) : (
+                  <AskPanel
+                    data={data}
+                    test={test}
+                    range={range}
+                    thread={thread}
+                    focus={askFocus}
+                    onRange={(r) => {
+                      setMode((m) => (m === "scenario" ? "trace" : m));
+                      selectRange(r);
+                    }}
+                  />
+                )}
+              </motion.div>
+            </section>
           </motion.div>
         )}
       </AnimatePresence>

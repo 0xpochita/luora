@@ -4,6 +4,7 @@ export type * from "./types";
 export {
   aiReady,
   askPrompt,
+  type ChatMessage,
   configFor,
   NO_AI,
   PROVIDERS,

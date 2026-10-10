@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Button,
   Dropdown,
@@ -35,6 +35,10 @@ const NOTE: Record<Mode, string> = {
 };
 
 type Test = { state: "idle" | "busy" | "ok" | "bad"; text?: string };
+
+const OPEN = "luora-ai-settings";
+/** Opens the AI provider dialog from anywhere (the trace's Ask AI panel). */
+export const openAiSettings = () => dispatchEvent(new Event(OPEN));
 
 /** "AI provider" settings: none (canned answers), a local model, or the user's own API key. */
 export function AiSettings() {
@@ -77,6 +81,10 @@ export function AiSettings() {
       setTest({ state: "bad", text: (e as Error).message });
     }
   };
+  useEffect(() => {
+    addEventListener(OPEN, open);
+    return () => removeEventListener(OPEN, open);
+  });
   const ready = aiReady(draft);
   const connected = saved.kind !== "none";
 

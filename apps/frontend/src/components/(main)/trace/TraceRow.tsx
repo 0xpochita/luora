@@ -1,7 +1,8 @@
 "use client";
 
+import { motion } from "motion/react";
 import { Fragment, useEffect, useRef } from "react";
-import { Chevron, KindBadge, Meter } from "@/components/ui";
+import { Chevron, EASE, KindBadge, Meter } from "@/components/ui";
 import { displayKind, type Frame, human, splitArgs } from "@/features/trace";
 
 /*
@@ -9,24 +10,35 @@ import { displayKind, type Frame, human, splitArgs } from "@/features/trace";
  * a fold box for calls that have children, the kind as an outlined word, then the call as code,
  * Contract.fn(name=value, …), and its return in a box of its own. Compact rows, so a long
  * trace fits; reverts tinted; the selected row carries a bar on its left edge.
+ * The whole row selects, Shift-click takes every call up to it (GitHub's line numbers), and the
+ * row last clicked carries an Ask AI pill in the row's empty middle (GitHub's Copilot button,
+ * right of the selection), so asking never moves the gas column.
  */
 export function TraceRow({
   index,
   frame,
   maxGas,
   selected,
+  inRange,
   onSelect,
   fold,
   onFold,
+  ask,
+  onAsk,
 }: {
   index: number;
   frame: Frame;
   maxGas: number;
   selected: boolean;
-  onSelect: () => void;
+  /** inside a Shift-click range, but not the row last clicked */
+  inRange: boolean;
+  onSelect: (extend: boolean) => void;
   /** open / closed when the call has children, null otherwise */
   fold: "open" | "closed" | null;
   onFold: () => void;
+  /** the Ask AI pill's label; set on the row last clicked only */
+  ask: string | null;
+  onAsk: () => void;
 }) {
   const kind = displayKind(frame);
   const args = splitArgs(frame.args);
@@ -38,19 +50,30 @@ export function TraceRow({
   return (
     <div
       ref={ref}
-      className={`flex min-h-[34px] items-center gap-2 rounded-tile pr-2 pl-1 transition-colors ${
+      className={`relative flex min-h-[34px] items-center gap-2 rounded-tile pr-2 pl-1 transition-colors ${
         selected
           ? "bg-hover shadow-[inset_2px_0_0_var(--fg)]"
-          : kind === "REVERT"
-            ? "bg-red/[.05] hover:bg-red/[.09]"
-            : "hover:bg-raised"
+          : inRange
+            ? "bg-white/[.045] shadow-[inset_2px_0_0_rgb(255_255_255/.35)]"
+            : kind === "REVERT"
+              ? "bg-red/[.05] hover:bg-red/[.09]"
+              : "hover:bg-raised"
       }`}
     >
-      <span className="w-[26px] flex-none text-right font-mono text-[11.5px] text-muted tabular-nums">
+      <button
+        type="button"
+        onClick={(e) => onSelect(e.shiftKey)}
+        // Shift-click selects calls, not the page's text
+        onMouseDown={(e) => e.shiftKey && e.preventDefault()}
+        aria-current={selected || undefined}
+        aria-label={`Call ${index}: ${frame.to}.${frame.fn}`}
+        className="absolute inset-0 rounded-tile outline-none focus-visible:ring-2 focus-visible:ring-white/25"
+      />
+      <span className="pointer-events-none w-[26px] flex-none text-right font-mono text-[11.5px] text-muted tabular-nums">
         {index}
       </span>
       <span
-        className="tree-guides flex-none self-stretch"
+        className="tree-guides pointer-events-none flex-none self-stretch"
         style={{ width: frame.d * 20 }}
       />
       {/* Phalcon's fold box: written, not drawn */}
@@ -60,19 +83,14 @@ export function TraceRow({
           onClick={onFold}
           aria-expanded={fold === "open"}
           aria-label={fold === "open" ? "Fold this call" : "Unfold this call"}
-          className="grid size-4 flex-none place-items-center rounded-[4px] border border-white/20 font-mono text-[11px] text-muted leading-none hover:border-white/40 hover:text-fg"
+          className="relative z-10 grid size-4 flex-none place-items-center rounded-[4px] border border-white/20 font-mono text-[11px] text-muted leading-none hover:border-white/40 hover:text-fg"
         >
           {fold === "open" ? "−" : "+"}
         </button>
       ) : (
         <span className="w-4 flex-none" />
       )}
-      <button
-        type="button"
-        onClick={onSelect}
-        aria-current={selected || undefined}
-        className="flex min-w-0 flex-1 items-center gap-2.5 whitespace-nowrap py-1 text-left"
-      >
+      <span className="pointer-events-none flex min-w-0 flex-1 items-center gap-2.5 whitespace-nowrap py-1">
         <KindBadge kind={kind} />
         <span
           title={`${frame.to}.${frame.fn}(${frame.args})`}
@@ -108,6 +126,19 @@ export function TraceRow({
             )}
           </span>
         )}
+        {ask && (
+          <motion.button
+            type="button"
+            onClick={onAsk}
+            initial={{ opacity: 0, x: -4 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.16, ease: EASE }}
+            title="Ask AI about the selected calls  A"
+            className="pointer-events-auto relative z-10 flex h-6 flex-none items-center rounded-full bg-primary px-2.5 font-medium text-[11.5px] text-primary-fg transition-colors hover:bg-white"
+          >
+            {ask}
+          </motion.button>
+        )}
         <span className="ml-auto flex flex-none items-center gap-2 pl-3.5">
           {frame.callSite && (
             <span
@@ -126,7 +157,7 @@ export function TraceRow({
             </>
           )}
         </span>
-      </button>
+      </span>
     </div>
   );
 }

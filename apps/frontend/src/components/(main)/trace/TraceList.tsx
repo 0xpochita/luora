@@ -1,6 +1,6 @@
 "use client";
 
-import type { Frame } from "@/features/trace";
+import type { CallRange, Frame } from "@/features/trace";
 import { TraceRow } from "./TraceRow";
 
 /** The call trace rows the toolbar's filters, depth and search let through. */
@@ -10,8 +10,10 @@ export function TraceList({
   maxGas,
   filtered,
   selected,
+  range,
   onSelect,
   onFold,
+  onAsk,
   onReset,
 }: {
   rows: { frame: Frame; index: number; fold: "open" | "closed" | null }[];
@@ -20,8 +22,11 @@ export function TraceList({
   /** a filter, depth or search is on */
   filtered: boolean;
   selected: number | null;
-  onSelect: (i: number) => void;
+  /** the calls Ask AI would read: the selected one, or a Shift-click range */
+  range: CallRange | null;
+  onSelect: (i: number, extend: boolean) => void;
   onFold: (i: number) => void;
+  onAsk: () => void;
   onReset: () => void;
 }) {
   return (
@@ -52,9 +57,18 @@ export function TraceList({
               frame={frame}
               maxGas={maxGas}
               selected={selected === index}
-              onSelect={() => onSelect(index)}
+              inRange={!!range && index >= range.from && index <= range.to}
+              onSelect={(extend) => onSelect(index, extend)}
               fold={fold}
               onFold={() => onFold(index)}
+              ask={
+                selected === index && range
+                  ? range.from === range.to
+                    ? "Ask AI"
+                    : `Ask AI · ${range.to - range.from + 1} calls`
+                  : null
+              }
+              onAsk={onAsk}
             />
           ))}
         </div>

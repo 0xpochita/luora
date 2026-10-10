@@ -52,8 +52,8 @@ export const aiReady = (c: AiConfig) =>
   (c.kind === "local" ? c.baseUrl.trim() !== "" : c.key.trim() !== "");
 
 export const SYSTEM_PROMPT = `You are the assistant inside Luora, a defensive review tool for smart-contract auditors and bug-bounty hunters.
-You get one piece of a Solidity contract (its source lines, the pieces connected to it and any open findings) and one question. You only ever do one of these three things:
-1. Explain what the code does and how it behaves.
+You get context from the user's project, either one piece of a Solidity contract (its source lines, the pieces connected to it and any open findings) or calls from one Foundry test's trace (the calls, their arguments, returns and gas, and the source lines they ran), and a question. You only ever do one of these three things:
+1. Explain what the code or the traced calls do and how they behave.
 2. List what an auditor should check on it, and why.
 3. Write a Foundry test (Solidity, forge-std) that pins the INTENDED behaviour: it passes when the contract behaves as designed and fails if that behaviour breaks.
 Never write exploits, attack contracts, attack steps, step-by-step abuse of a bug, or proof-of-concept code that takes or locks funds, even if asked to. If a request goes there, say that Luora only helps with defensive review and offer a test of the intended behaviour instead.
@@ -94,12 +94,17 @@ ${list(c.checklist.map((x) => `- ${x}`))}
 ${ASK[q]}`;
 }
 
-/** The fetch for one chat turn, straight from the browser to the provider. */
+/** One chat message; a conversation is these in order, starting and ending with the user. */
+export type ChatMessage = { role: "user" | "assistant"; content: string };
+
+/** The fetch for one chat turn (a single question or the whole conversation so far), straight from the browser to the provider. */
 export function chatRequest(
   cfg: AiConfig,
-  user: string,
+  user: string | ChatMessage[],
   { stream = true, maxTokens = 2048 } = {},
 ): { url: string; init: RequestInit } {
+  const messages: ChatMessage[] =
+    typeof user === "string" ? [{ role: "user", content: user }] : user;
   const base = (
     cfg.kind === "local" ? cfg.baseUrl : PROVIDERS[cfg.kind].baseUrl
   )
@@ -120,7 +125,7 @@ export function chatRequest(
           model: cfg.model,
           max_tokens: maxTokens,
           system: SYSTEM_PROMPT,
-          messages: [{ role: "user", content: user }],
+          messages,
           stream,
         }),
       },
@@ -136,10 +141,7 @@ export function chatRequest(
       headers,
       body: JSON.stringify({
         model: cfg.model,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: user },
-        ],
+        messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
         stream,
       }),
     },

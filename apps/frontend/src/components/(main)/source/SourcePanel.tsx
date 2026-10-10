@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Chevron, Dropdown, Panel, PH, PhIcon } from "@/components/ui";
+import { Chevron, Dropdown, PH, PhIcon, SolidityLogo } from "@/components/ui";
 import {
   type Frame,
   human,
@@ -14,7 +14,7 @@ import { CodeView } from "./CodeView";
 /**
  * Source of the selected call, with that call's details on top (Tenderly's call information
  * panel: decoded inputs, output, gas, where it was called from) and a file select whose names read
- * in full (docs/ux/trace-view.md).
+ * in full (docs/ux/trace-view.md). The Source tab of the trace's side panel, next to Ask AI.
  */
 export function SourcePanel({
   sources,
@@ -33,11 +33,7 @@ export function SourcePanel({
 }) {
   const executed = span?.lines ? spanLines(span, span.file).length : 0;
   return (
-    <Panel
-      label="Source"
-      aside={span ? `L${span.start + 1}–${span.end + 1}` : undefined}
-      className="w-[440px] flex-none"
-    >
+    <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex-none px-3 pb-2">
         <Dropdown
           ariaLabel="Source file"
@@ -45,7 +41,13 @@ export function SourcePanel({
           value={file}
           onChange={onFile}
           className="h-8 w-full"
-          options={Object.keys(sources).map((f) => ({ value: f, label: f }))}
+          options={Object.keys(sources).map((f) => ({
+            value: f,
+            label: f,
+            icon: f.endsWith(".sol") ? (
+              <SolidityLogo className="size-3.5 text-body" />
+            ) : undefined,
+          }))}
         />
       </div>
       {frame ? (
@@ -109,7 +111,7 @@ export function SourcePanel({
         notes={span?.notes?.[file]}
         className="mx-2 mb-2 rounded-inner border border-border"
       />
-    </Panel>
+    </div>
   );
 }
 

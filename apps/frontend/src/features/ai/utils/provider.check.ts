@@ -62,6 +62,26 @@ assert.equal(ab.system, SYSTEM_PROMPT);
 assert.deepEqual(ab.messages, [{ role: "user", content: "hi" }]);
 assert.equal(ab.stream, true);
 assert.doesNotMatch(a.init.body as string, /sk-ant-x/);
+// a conversation goes as-is, after the system prompt on OpenAI-style APIs
+const turns = [
+  { role: "user" as const, content: "q1" },
+  { role: "assistant" as const, content: "a1" },
+  { role: "user" as const, content: "q2" },
+];
+assert.deepEqual(
+  JSON.parse(
+    chatRequest({ ...configFor("anthropic"), key: "k" }, turns).init
+      .body as string,
+  ).messages,
+  turns,
+);
+assert.deepEqual(
+  JSON.parse(
+    chatRequest(configFor("local"), turns).init.body as string,
+  ).messages.slice(1),
+  turns,
+);
+assert.match(SYSTEM_PROMPT, /Foundry test's trace/);
 
 // local: user endpoint (trailing slash trimmed), no auth header without a key
 const l = chatRequest(
