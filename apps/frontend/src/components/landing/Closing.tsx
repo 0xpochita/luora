@@ -235,7 +235,7 @@ export function FinalCta() {
               href="/atlas"
               className="rounded-full bg-primary px-5 py-2.5 font-medium text-[14px] text-primary-fg transition-colors hover:bg-white"
             >
-              Open the Lab
+              Open the Atlas
             </Link>
             <a
               href={GITHUB}
@@ -261,7 +261,7 @@ export function Footer() {
       title: "Product",
       links: [
         ["Trace", "/trace"],
-        ["Lab", "/atlas"],
+        ["Atlas", "/atlas"],
         ["Findings", "#findings"],
         ["Coverage", "#coverage"],
       ],

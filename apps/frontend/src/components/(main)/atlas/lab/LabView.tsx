@@ -465,31 +465,27 @@ export function LabView({
             />
           </Toolbar>
         )}
+        {/* only the tools that work here (docs/ux/atlas.md D2): the read-only graph keeps
+            settings and help; the scenario editor gets add, code, export and share too */}
         <nav aria-label="Lab tools">
           <Toolbar vertical>
-            {tool(
-              "add",
-              "Add node",
-              () => {
-                setMode("scenario");
-                toggle("add");
-              },
-              panel === "add",
-            )}
-            {tool(
-              "code",
-              "Generated Foundry test",
-              () => toggle("code"),
-              panel === "code",
-            )}
+            {mode === "scenario" &&
+              tool("add", "Add node", () => toggle("add"), panel === "add")}
+            {mode === "scenario" &&
+              tool(
+                "code",
+                "Generated Foundry test",
+                () => toggle("code"),
+                panel === "code",
+              )}
             {tool(
               "settings",
               "Settings",
               () => toggle("settings"),
               panel === "settings",
             )}
-            {tool("export", "Export .t.sol", exportTest)}
-            {tool("share", "Copy scenario JSON", share)}
+            {mode === "scenario" && tool("export", "Export .t.sol", exportTest)}
+            {mode === "scenario" && tool("share", "Copy scenario JSON", share)}
             {tool("help", "Help", () => toggle("help"), panel === "help")}
           </Toolbar>
         </nav>
@@ -643,17 +639,20 @@ export function LabView({
       {panel === "settings" && (
         <div className="lab-float lab-pop" data-no-pan>
           <h4>Settings</h4>
-          <label className="chk">
-            <input
-              type="checkbox"
-              checked={snap}
-              onChange={() => setSnap(!snap)}
-            />{" "}
-            Snap cards to grid
-          </label>
-          <button type="button" onClick={() => setMoved({})}>
-            Reset contract layout
-          </button>
+          {mode === "scenario" ? (
+            <label className="chk">
+              <input
+                type="checkbox"
+                checked={snap}
+                onChange={() => setSnap(!snap)}
+              />{" "}
+              Snap cards to grid
+            </label>
+          ) : (
+            <button type="button" onClick={() => setMoved({})}>
+              Reset contract layout
+            </button>
+          )}
           {sc && (
             <button
               type="button"
@@ -682,11 +681,11 @@ export function LabView({
       )}
       {panel === "help" && (
         <div className="lab-float lab-pop help" data-no-pan>
-          <h4>Lab</h4>
+          <h4>{mode === "contract" ? "Graph" : "Scenarios"}</h4>
           <p>
-            Scenarios test intended behaviour: access control holds, accounting
-            stays consistent, pause works, funds round-trip. A failing assert is
-            a finding.
+            {mode === "contract"
+              ? "Each function on the left, wired to the storage it writes, the contracts it calls and the events it emits. Select a card or a piece below: its cards and their neighbours stay, the rest fades."
+              : "Scenarios test intended behaviour: access control holds, accounting stays consistent, pause works, funds round-trip. A failing assert is a finding."}
           </p>
           <ul className="legend">
             {(Object.keys(PORT_COLOR) as PortType[]).map((t) => (

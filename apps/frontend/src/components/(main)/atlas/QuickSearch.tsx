@@ -7,6 +7,10 @@ import { SEVERITY } from "@/features/atlas/utils/audit";
 import { unitCode } from "@/features/atlas/utils/units";
 import { PieceIcon } from "./PieceIcon";
 
+const OPEN = "luora-quick-search";
+/** Opens the search from a button (the Atlas header's Search capsule). */
+export const openQuickSearch = () => dispatchEvent(new Event(OPEN));
+
 /** `/` or ⌘K: jump to any function, slot, call, event or finding by name or unit code. */
 export function QuickSearch({
   model,
@@ -33,8 +37,18 @@ export function QuickSearch({
       setAt(0);
       dialog.current?.showModal();
     };
+    const onOpen = () => {
+      if (dialog.current?.open) return;
+      setQ("");
+      setAt(0);
+      dialog.current?.showModal();
+    };
     addEventListener("keydown", onKey);
-    return () => removeEventListener("keydown", onKey);
+    addEventListener(OPEN, onOpen);
+    return () => {
+      removeEventListener("keydown", onKey);
+      removeEventListener(OPEN, onOpen);
+    };
   }, []);
 
   const needle = q.trim().toLowerCase();

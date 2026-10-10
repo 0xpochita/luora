@@ -256,6 +256,25 @@ assert.ok(
     (w) => w.from.port === "e:evDeposit" && w.to.node === "evDeposit",
   ),
 );
+// cards read on their own: a slot names its writers and readers, an external contract the
+// functions called on it (by name, even when the export has no `member`)
+const oracleSlot = g.nodes.find((n) => n.id === "oracle");
+assert.equal(oracleSlot?.inputs[0].label.startsWith("slot "), true);
+assert.ok(oracleSlot?.rows?.some((r) => /^written by .*setOracle/.test(r)));
+for (const n of g.nodes.filter((x) => x.kind === "ext"))
+  for (const r of n.rows ?? [])
+    assert.match(r, /^· [a-z]\w*\(\)$/, `${n.id}: ${r}`);
+const noMember = contractGraph({
+  ...m,
+  byId: Object.fromEntries(
+    Object.entries(m.byId).map(([k, v]) => [k, { ...v, member: undefined }]),
+  ),
+});
+assert.ok(
+  noMember.nodes
+    .find((n) => n.id === "dep_IERC20")
+    ?.rows?.includes("· transferFrom()"),
+);
 // cards in a column never overlap
 for (const kind of ["entry", "slot"] as const) {
   const col = g.nodes.filter((n) => n.kind === kind).sort((a, b) => a.y - b.y);

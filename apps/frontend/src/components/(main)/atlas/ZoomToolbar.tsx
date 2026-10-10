@@ -1,6 +1,10 @@
 import { IconButton, Toolbar } from "@/components/ui";
 
-/** Vertical zoom toolbar on the right edge of a pan/zoom canvas (Map, Flow). */
+/**
+ * The one zoom dock of every Atlas canvas (Overview, Graph, Paths, Scenarios): horizontal, in the
+ * bottom-right corner, zoom out · zoom in · Fit (docs/ux/atlas.md D3; A2 pin/23925441769073772's
+ * single canvas toolbar, always in the same place).
+ */
 export function ZoomToolbar({
   onIn,
   onOut,
@@ -10,20 +14,26 @@ export function ZoomToolbar({
   onOut: () => void;
   onFit: () => void;
 }) {
+  const stop = (f: () => void) => (e: { stopPropagation: () => void }) => {
+    e.stopPropagation();
+    f();
+  };
   return (
-    <div
-      data-no-pan
-      className="absolute top-1/2 right-3 -translate-y-1/2 cursor-default"
-    >
-      <Toolbar vertical>
-        <IconButton label="Zoom in" size="sm" onClick={onIn}>
-          +
-        </IconButton>
-        <IconButton label="Zoom out" size="sm" onClick={onOut}>
+    <div data-no-pan className="absolute right-3 bottom-3 z-[4] cursor-default">
+      <Toolbar>
+        <IconButton label="Zoom out" size="sm" onClick={stop(onOut)}>
           −
         </IconButton>
-        <IconButton label="Fit to view" size="sm" onClick={onFit}>
-          ⤢
+        <IconButton label="Zoom in" size="sm" onClick={stop(onIn)}>
+          +
+        </IconButton>
+        <IconButton
+          label="Fit to view"
+          size="sm"
+          className="px-2 text-[11.5px]"
+          onClick={stop(onFit)}
+        >
+          Fit
         </IconButton>
       </Toolbar>
     </div>

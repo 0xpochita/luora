@@ -11,11 +11,11 @@ import { Window } from "./Window";
 const Views = dynamic(() => import("./ProductViews").then((m) => m.Views));
 
 const VIEWS = [
-  { id: "lab", route: "/atlas · Lab", label: "Lab" },
-  { id: "scenario", route: "/atlas · Lab · Scenario", label: "Scenario" },
+  { id: "lab", route: "/atlas · Graph", label: "Graph" },
+  { id: "scenario", route: "/atlas · Scenarios", label: "Scenarios" },
   { id: "trace", route: "/trace", label: "Trace" },
-  { id: "flow", route: "/atlas · Flow", label: "Flow" },
-  { id: "map", route: "/atlas · Map", label: "Map" },
+  { id: "flow", route: "/atlas · Paths", label: "Paths" },
+  { id: "map", route: "/atlas · Overview", label: "Overview" },
   { id: "findings", route: "/atlas · Findings", label: "Findings" },
 ] as const;
 export type ViewId = (typeof VIEWS)[number]["id"];

@@ -396,9 +396,9 @@ export function contractGraph(m: PlayModel): { nodes: GNode[]; wires: Wire[] } {
       .map((w) => entryY.get(w.from.node) ?? 0);
     return ys.length ? ys.reduce((a, b) => a + b, 0) / ys.length : 1e9;
   };
-  const readers = (id: string) =>
+  const touching = (op: string, id: string) =>
     m.entry.filter((fn) =>
-      (m.seq[fn] ?? []).some(([k, t]) => k === "r" && t === id),
+      (m.seq[fn] ?? []).some(([k, t]) => k === op && t === id),
     );
   const target = (p: Piece): GNode | null => {
     const fb = findingBadge(m, p.id);
@@ -413,26 +413,36 @@ export function contractGraph(m: PlayModel): { nodes: GNode[]; wires: Wire[] } {
     };
     const name = (id: string) => (m.byId[id]?.name ?? id).replace("()", "");
     if (p.sys === "storage") {
-      const r = readers(p.id).map(name);
+      const r = touching("r", p.id).map(name);
+      const w = touching("w", p.id).map(name);
       return {
         ...base,
         kind: "slot",
         title: `${slotName(p)}${p.mapping ? "[ ]" : ""}`,
-        inputs: [
-          {
-            id: "in",
-            label: `slot ${p.slot ?? "?"} · written by`,
-            type: "slot",
-          },
+        // the wires in are the writers; the rows name them, so the card reads on its own
+        inputs: [{ id: "in", label: `slot ${p.slot ?? "?"}`, type: "slot" }],
+        rows: [
+          w.length
+            ? `written by ${w.join(", ")}`
+            : "never written after deploy",
+          ...(r.length ? [`read by ${r.join(", ")}`] : []),
         ],
-        rows: r.length ? [`read by ${r.join(", ")}`] : [],
       };
     }
     if (p.sys === "deps") {
       const members = uniq(
         Object.entries(m.callTarget)
           .filter(([, d]) => d === p.id)
-          .map(([c]) => m.byId[c]?.member ?? c),
+          // the function called on it; older exports have no `member`, so take it from the
+          // call's name (oracle.getSpotPrice, msg.sender.call{value})
+          .map(([c]) => {
+            const call = m.byId[c];
+            return (
+              call?.member ??
+              call?.name.split(".").pop()?.replace(/\{.*$/, "") ??
+              c
+            );
+          }),
       );
       return {
         ...base,

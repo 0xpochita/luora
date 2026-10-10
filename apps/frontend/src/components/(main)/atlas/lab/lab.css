@@ -40,18 +40,10 @@
 
 /* canvas + its own right gutter for the zoom stack, so cards never render under it */
 .lab-stage {
+  position: relative;
   flex: 1;
   min-height: 0;
   display: flex;
-}
-.lab-gutter {
-  flex: none;
-  width: 68px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: center;
-  padding-bottom: 16px;
 }
 .lab-canvas {
   position: relative;
@@ -719,4 +711,18 @@
 }
 .lab-run .finding .fix {
   color: var(--fg);
+}
+
+/* focus and neighbours (docs/ux/atlas.md D5): what the selection doesn't touch steps back */
+.lab-card {
+  transition: opacity 0.2s ease;
+}
+.lab-card.far {
+  opacity: 0.28;
+}
+.lab-wires .wire .vis {
+  transition: opacity 0.2s ease;
+}
+.lab-wires .wire.far .vis {
+  opacity: 0.1;
 }

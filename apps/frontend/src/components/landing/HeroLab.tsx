@@ -7,7 +7,8 @@ import { LabGraph } from "./LabGraph";
 import type { LabDemo } from "./stats";
 
 const DWELL = 6500;
-const TABS = ["Contract", "Scenario"] as const;
+// the Atlas views it shows, by their names in the app (docs/ux/atlas.md D1)
+const TABS = ["Graph", "Scenarios"] as const;
 
 /**
  * The hero's Lab window: the two things Luora is for, drawn by the app's own Lab cards on the
@@ -90,13 +91,13 @@ export function HeroLab({
           ))}
         </div>
         <span className="hidden font-mono text-[11.5px] text-dim md:block">
-          /atlas · Lab · {TABS[tab]}
+          /atlas · {TABS[tab]}
         </span>
         <Link
           href="/atlas"
           className="ml-auto inline-flex h-9 items-center gap-1 rounded-full bg-primary px-4 font-medium text-[13px] text-primary-fg transition-colors hover:bg-white"
         >
-          Open the Lab
+          Open the Atlas
           <svg
             aria-hidden="true"
             viewBox="0 0 16 16"

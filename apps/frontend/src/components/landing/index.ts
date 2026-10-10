@@ -289,7 +289,7 @@
  *  smart contract dan scenario testing"): the gas chart is gone; under HK's header now sits the
  *  Lab itself (HeroLab): the app's contract graph and its 'Non-owner cannot setOracle' scenario
  *  in the Lab's own cards, the Contract | Scenario switch flipping between them, the run bar and
- *  'Open the Lab' in the window.
+ *  'Open the Atlas' in the window.
  *  LB pin/19773685859738910 (Jaim, node editor 'image generation v3') + pin/14918242512526975
  *     (workflow 'Check form') — glassy node cards with a lit top edge, an icon tile in the card
  *     header, glowing port dots, a coloured glow under the active node, one soft light over the

@@ -1,7 +1,6 @@
 "use client";
 
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { IconButton, Toolbar } from "@/components/ui";
 import { ICON_PATH } from "@/features/atlas/utils/icons";
 import {
   type End,
@@ -17,6 +16,7 @@ import {
 } from "@/features/atlas/utils/lab-graph";
 import type { NodeRun } from "@/features/atlas/utils/lab-scenario";
 import { usePanZoom } from "@/features/trace/hooks/usePanZoom";
+import { ZoomToolbar } from "../ZoomToolbar";
 
 export const wireKey = (w: Wire) =>
   `${w.from.node}|${w.from.port}|${w.to.node}|${w.to.port}`;
@@ -31,11 +31,11 @@ const STATUS_LABEL = {
 const GRID = 22;
 /**
  * Screen-px space kept clear around the graph on Fit: 48px on every side, plus the left tool
- * stack (16 + 52 + 16) and the Contract / Scenario switch above it, and the hint in the bottom-left.
+ * stack (16 + 52 + 16) and the zoom dock in the bottom-right corner.
  */
 const FIT = {
   left: 16 + 52 + 48,
-  top: 16 + 50 + 48,
+  top: 48,
   right: 48,
   bottom: 48,
 } as const;
@@ -93,6 +93,17 @@ export function LabCanvas({
   } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const byId = new Map(nodes.map((n) => [n.id, n]));
+  // focus and neighbours (Cambridge Intelligence, docs/ux/atlas.md D5): on the read-only graph a
+  // selection keeps its cards and the cards wired to them; everything else fades
+  const focus = new Set(
+    editable ? [] : [...hot, ...(selected ? [selected] : [])],
+  );
+  const near = new Set(focus);
+  for (const w of focus.size ? wires : []) {
+    if (focus.has(w.from.node)) near.add(w.to.node);
+    if (focus.has(w.to.node)) near.add(w.from.node);
+  }
+  const far = (id: string) => focus.size > 0 && !near.has(id);
   const live = useRef({ view, origin, nodes });
   live.current = { view, origin, nodes };
 
@@ -309,7 +320,7 @@ export function LabCanvas({
               return (
                 <g
                   key={k}
-                  className={`wire ${type} ${lit ? "lit" : ""} ${selWire === k ? "picked" : ""} ${pulse?.has(b.id) ? "pulse" : ""}`}
+                  className={`wire ${type} ${lit ? "lit" : ""} ${focus.size && !lit ? "far" : ""} ${selWire === k ? "picked" : ""} ${pulse?.has(b.id) ? "pulse" : ""}`}
                 >
                   <path d={d} className="vis" />
                   {editable && (
@@ -348,7 +359,7 @@ export function LabCanvas({
               <div
                 key={n.id}
                 data-no-pan
-                className={`lab-card ${n.kind} ${n.inputs.length && n.outputs.length ? "" : "solo"} ${selected === n.id ? "sel" : ""} ${hot.has(n.id) ? "hot" : ""} ${r ? `run-${r.status}` : ""} ${pulse?.has(n.id) ? "running" : ""}`}
+                className={`lab-card ${n.kind} ${n.inputs.length && n.outputs.length ? "" : "solo"} ${selected === n.id ? "sel" : ""} ${hot.has(n.id) ? "hot" : ""} ${far(n.id) ? "far" : ""} ${r ? `run-${r.status}` : ""} ${pulse?.has(n.id) ? "running" : ""}`}
                 style={{
                   left: n.x,
                   top: n.y,
@@ -454,41 +465,11 @@ export function LabCanvas({
         </div>
         {toast && <div className="lab-float lab-toast">{toast}</div>}
       </div>
-      <div data-no-pan className="lab-gutter">
-        <Toolbar vertical>
-          <IconButton
-            size="sm"
-            label="Zoom in"
-            onClick={(e) => {
-              e.stopPropagation();
-              zoomAt(1.2);
-            }}
-          >
-            +
-          </IconButton>
-          <IconButton
-            size="sm"
-            label="Zoom out"
-            onClick={(e) => {
-              e.stopPropagation();
-              zoomAt(1 / 1.2);
-            }}
-          >
-            −
-          </IconButton>
-          <IconButton
-            size="sm"
-            label="Fit to view"
-            className="text-[11px]"
-            onClick={(e) => {
-              e.stopPropagation();
-              refit();
-            }}
-          >
-            Fit
-          </IconButton>
-        </Toolbar>
-      </div>
+      <ZoomToolbar
+        onIn={() => zoomAt(1.2)}
+        onOut={() => zoomAt(1 / 1.2)}
+        onFit={refit}
+      />
     </div>
   );
 }

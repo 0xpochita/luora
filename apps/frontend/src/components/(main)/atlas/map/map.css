@@ -119,7 +119,7 @@
 .atlas .am-chiptx {
   fill: var(--body);
   font-family: var(--font-geist-mono);
-  font-size: 9.5px;
+  font-size: 10.5px;
 }
 .atlas .am-trunk {
   fill: none;
@@ -177,7 +177,7 @@
 }
 .atlas .am-warn {
   fill: var(--red);
-  font-size: 9px;
+  font-size: 10px;
 }
 .atlas .am-port-b {
   fill: var(--port);
@@ -233,7 +233,7 @@
 .atlas .am-tagtx {
   fill: var(--red);
   font-family: var(--font-geist-mono);
-  font-size: 8.5px;
+  font-size: 10px;
 }
 .atlas .am-tag.sev-low + .am-tagtx,
 .atlas .am-tag.sev-info + .am-tagtx {
@@ -245,7 +245,7 @@
 .atlas .am-more {
   fill: var(--red);
   font-family: var(--font-geist-mono);
-  font-size: 10px;
+  font-size: 10.5px;
 }
 
 /* flow nodes inside a panel */
@@ -286,12 +286,12 @@
 }
 .atlas .am-kind {
   fill: var(--muted);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 500;
 }
 .atlas .am-nodetx {
   fill: var(--fg);
-  font-size: 10px;
+  font-size: 10.5px;
 }
 
 /* list rows */
@@ -305,7 +305,7 @@
 }
 .atlas .am-rowmeta {
   fill: var(--muted);
-  font-size: 10px;
+  font-size: 10.5px;
 }
 .atlas .am-foot {
   fill: var(--muted);
@@ -318,7 +318,7 @@
 /* legend: small dim corner text */
 .atlas .am-legend {
   position: absolute;
-  right: 16px;
+  left: 16px;
   bottom: 12px;
   justify-content: flex-end;
   display: flex;
