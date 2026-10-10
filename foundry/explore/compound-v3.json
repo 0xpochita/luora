@@ -1,0 +1,148 @@
+{
+  "id": "compound-v3",
+  "name": "Compound",
+  "version": "III (Comet)",
+  "category": "Lending",
+  "chain": "Ethereum and EVM L2s",
+  "logo": "/logos/compound.png",
+  "purpose": "One market per base asset (e.g. USDC): lenders earn interest on the base asset, borrowers post collateral assets that earn nothing, underwater accounts are absorbed by the protocol.",
+  "about": "Each Comet is a single market with one borrowable base asset and a fixed list of collateral assets. A user's base balance is one signed principal: positive is supply, negative is borrow; two indexes (supply and borrow) turn principal into present value and move on every accrual. Collateral is only collateral: it can't be borrowed and earns no interest. Liquidation has two steps: anyone calls absorb on an underwater account and the protocol takes its collateral and its debt onto its reserves; later anyone can buyCollateral from the protocol at a discount while reserves are below target. Parameters live in the Configurator; a change means deploying a new Comet implementation through the factory and upgrading the market's proxy through CometProxyAdmin. Main branch, no release tag: the commit is pinned.",
+  "builds": [
+    { "id": "main", "root": "comet", "out": "forge/out", "map": { "": "comet", "node_modules/": null, "forge/lib/": null } }
+  ],
+  "repos": [
+    {
+      "id": "comet",
+      "dir": "comet",
+      "url": "https://github.com/compound-finance/comet",
+      "tag": "main",
+      "commit": "f766f51583c23acc33b2a7824654ef2029a96804",
+      "license": "BUSL-1.1"
+    }
+  ],
+  "groups": ["Market", "Admin and deploy", "Rewards", "Outside"],
+  "contracts": [
+    { "name": "CometWithExtendedAssetList", "group": "Market", "role": "The market", "aliases": ["CometInterface", "CometMainInterface"], "summary": "Comet for one base asset: supply, withdraw (a withdraw past zero is a borrow), transfer, absorb, buyCollateral, accrue. Storage, configuration and maths come from CometCore, CometStorage and CometConfiguration; less used functions live in the extension (CometExt) reached through the fallback." },
+    { "name": "CometExtAssetList", "group": "Market", "role": "Extension", "summary": "Second half of the market, run by DELEGATECALL from Comet's fallback on Comet's storage: allowances and permit-style allow, ERC-20 views (name, symbol, totalSupply, balanceOf) and other helpers." },
+    { "name": "AssetList", "group": "Market", "role": "Collateral list", "summary": "Holds the market's collateral assets (price feed, scale, borrow and liquidate collateral factors, liquidation factor, supply cap) as immutables; the market reads them with getAssetInfo." },
+    { "name": "AssetListFactory", "group": "Admin and deploy", "role": "Collateral list deploy", "summary": "Deploys an AssetList for a new market implementation." },
+    { "name": "Configurator", "group": "Admin and deploy", "role": "Parameters", "aliases": ["Deployable"], "summary": "Stores each market's next configuration. The governor sets parameters (rates, collateral, caps, factors); deploy builds a new implementation from them through the factory." },
+    { "name": "CometFactoryWithExtendedAssetList", "group": "Admin and deploy", "role": "Implementation factory", "summary": "clone(config) deploys a new CometWithExtendedAssetList with the configuration baked in as immutables." },
+    { "name": "CometProxyAdmin", "group": "Admin and deploy", "role": "Upgrades", "summary": "Admin of each market's proxy. deployAndUpgradeTo asks the Configurator to deploy a new implementation and points the proxy to it; owner (governance) or a market admin." },
+    { "name": "CometRewards", "group": "Rewards", "role": "Rewards", "summary": "Pays reward tokens from the tracking indexes Comet keeps per account (baseTrackingAccrued)." }
+  ],
+  "externals": [
+    { "name": "IERC20NonStandard", "label": "Base and collateral tokens", "group": "Outside", "aliases": ["ERC20"], "summary": "The base asset and every collateral asset; transfers handle tokens that return nothing." },
+    { "name": "IPriceFeed", "label": "Price feeds", "group": "Outside", "summary": "Chainlink-style feeds (latestRoundData) for the base asset and each collateral, set per asset in the configuration." }
+  ],
+  "edges": [
+    { "from": "CometWithExtendedAssetList", "to": "CometExtAssetList", "kind": "delegates", "members": ["fallback"], "note": "fallback() delegatecalls extensionDelegate in assembly" }
+  ],
+  "flows": [
+    {
+      "id": "supply",
+      "title": "Supply base",
+      "actor": "Lender",
+      "summary": "Supply the base asset (say USDC) and earn interest; a negative balance is repaid first.",
+      "steps": [
+        { "at": "Lender", "say": "Approves the market, calls supply(baseToken, amount) (or supplyTo / supplyFrom with an operator's permission)." },
+        { "at": "CometWithExtendedAssetList.supply", "say": "Entry point; all three variants go to supplyInternal." },
+        { "at": "CometWithExtendedAssetList.supplyInternal", "say": "Supply not paused; the operator must have permission from the source. Base asset goes to supplyBase, anything else to supplyCollateral." },
+        { "at": "IERC20NonStandard.transferFrom", "say": "The amount is pulled first (doTransferIn) and the balance difference is what counts." },
+        { "at": "CometWithExtendedAssetList.accrueInternal", "say": "Moves the supply and borrow indexes forward for the time elapsed, and the reward tracking indexes." },
+        { "at": "CometWithExtendedAssetList.updateBasePrincipal", "say": "The signed principal goes up: debt is repaid first, the rest becomes supply. Totals updated." },
+        { "at": "CometWithExtendedAssetList.Supply", "say": "Emits Supply, and Transfer(0, dst) for the part that became supply." }
+      ],
+      "checks": [
+        "Present value = principal × index; review rounding in presentValue / principalValue both ways.",
+        "Supply of base is also the repay path; integrations must not treat supply as always creating a positive balance.",
+        "Operators: hasPermission lets an allowed manager act for an account across supply, withdraw and transfer."
+      ]
+    },
+    {
+      "id": "borrow",
+      "title": "Borrow",
+      "actor": "Borrower",
+      "summary": "Supply collateral, then withdraw base past zero: that is the loan.",
+      "steps": [
+        { "at": "Borrower", "say": "First supply(collateralAsset, amount)." },
+        { "at": "CometWithExtendedAssetList.supplyCollateral", "say": "Pulls the collateral, checks the asset's supply cap, records it and marks the asset in the account's assetsIn bitmap. Collateral earns no interest." },
+        { "at": "CometWithExtendedAssetList.withdraw", "say": "Then withdraw(baseToken, amount)." },
+        { "at": "CometWithExtendedAssetList.withdrawBase", "say": "Accrues, lowers the principal; below zero is a borrow." },
+        { "at": "CometWithExtendedAssetList.isBorrowCollateralized", "say": "For a negative balance: the debt must be at least baseBorrowMin and covered by Σ collateral × price × borrowCollateralFactor." },
+        { "at": "IPriceFeed.latestRoundData", "say": "Prices for the base asset and each collateral in the account." },
+        { "at": "IERC20NonStandard.transfer", "say": "The base asset goes to the borrower." },
+        { "at": "CometWithExtendedAssetList.Withdraw", "say": "Emits Withdraw." }
+      ],
+      "checks": [
+        "Two collateral factors per asset: borrow (to open debt) and liquidate (to be absorbed); review the gap between them.",
+        "Each price feed is per asset and fixed in the implementation; review heartbeat, decimals and what getPrice does with a non-positive answer.",
+        "baseBorrowMin stops dust loans; integrations must not try to borrow less."
+      ]
+    },
+    {
+      "id": "absorb",
+      "title": "Absorb (liquidation)",
+      "actor": "Absorber",
+      "summary": "The protocol takes over an underwater account: its collateral and its debt move onto the protocol's reserves.",
+      "steps": [
+        { "at": "Absorber", "say": "Anyone calls absorb(absorber, accounts)." },
+        { "at": "CometWithExtendedAssetList.absorb", "say": "Accrues once, then absorbs each account." },
+        { "at": "CometWithExtendedAssetList.absorbInternal", "say": "One account at a time." },
+        { "at": "CometWithExtendedAssetList.isLiquidatable", "say": "Only a negative balance, and debt larger than Σ collateral × price × liquidateCollateralFactor." },
+        { "at": "IPriceFeed.latestRoundData", "say": "Prices for the base asset and every collateral the account holds." },
+        { "at": "CometWithExtendedAssetList.AbsorbCollateral", "say": "Every collateral asset is seized into the protocol (out of the account, kept by the market), valued with the liquidationFactor." },
+        { "at": "CometWithExtendedAssetList.AbsorbDebt", "say": "The account's debt is cleared against that value; any surplus becomes supply for the account. The protocol's reserves pay what is left." }
+      ],
+      "checks": [
+        "Absorb moves losses onto reserves: review reserves as the protocol's buffer and what happens when they go negative.",
+        "The absorber gets no collateral here, only tracked points (accrued gas usage); there is no direct liquidation bonus to integrate against.",
+        "Review that every collateral the account holds is seized and that assetsIn is cleared."
+      ]
+    },
+    {
+      "id": "buy-collateral",
+      "title": "Buy collateral",
+      "actor": "Buyer",
+      "summary": "Buy absorbed collateral from the protocol at a discount, while reserves are below target.",
+      "steps": [
+        { "at": "Buyer", "say": "Approves the base asset, calls buyCollateral(asset, minAmount, baseAmount, recipient)." },
+        { "at": "CometWithExtendedAssetList.buyCollateral", "say": "Not paused, and reserves below targetReserves; otherwise NotForSale." },
+        { "at": "IERC20NonStandard.transferFrom", "say": "The base asset is pulled first." },
+        { "at": "CometWithExtendedAssetList.quoteCollateral", "say": "Collateral for that base amount at the feed price minus the store front discount (storeFrontPriceFactor × (1 − liquidationFactor))." },
+        { "at": "CometWithExtendedAssetList.buyCollateral", "say": "At least minAmount, and no more than the collateral the protocol holds." },
+        { "at": "IERC20NonStandard.transfer", "say": "The collateral goes to the recipient. Emits BuyCollateral." }
+      ],
+      "checks": [
+        "minAmount is the buyer's slippage protection.",
+        "The discount depends on configured factors; review them per asset.",
+        "Collateral reserves are the market's balance minus users' collateral; review that accounting never counts user collateral as for sale."
+      ]
+    },
+    {
+      "id": "upgrade",
+      "title": "Change a parameter",
+      "actor": "Governor",
+      "summary": "Parameters are immutables: a change deploys a new implementation and upgrades the proxy.",
+      "steps": [
+        { "at": "Governor", "say": "Through governance, calls a Configurator setter (for example setBorrowKink, updateAssetSupplyCap)." },
+        { "at": "Configurator.setConfiguration", "say": "Setters only change the stored next configuration for that market; nothing on the live market changes yet." },
+        { "at": "CometProxyAdmin.deployAndUpgradeTo", "say": "Owner or market admin: asks the Configurator for a new implementation and upgrades the proxy to it." },
+        { "at": "Configurator.deploy", "say": "Builds the implementation from the stored configuration through the market's factory." },
+        { "at": "CometFactoryWithExtendedAssetList.clone", "say": "Deploys a new CometWithExtendedAssetList; every parameter becomes an immutable in its bytecode." }
+      ],
+      "checks": [
+        "Every parameter change is an implementation upgrade: review storage compatibility and that the new configuration matches what was voted.",
+        "Who is owner of CometProxyAdmin and who may act as market admin (MarketAdminPermissionChecker).",
+        "The pause guardian can pause supply, transfer, withdraw, absorb and buy separately."
+      ]
+    }
+  ],
+  "checks": [
+    "Signed principal and two indexes: rounding of present and principal value both ways.",
+    "Price feeds per asset and getPrice's handling of bad answers.",
+    "Reserves: absorb draws on them, buyCollateral refills them; target reserves gate sales.",
+    "Upgrades: parameters are immutables, so every change is a new implementation behind the proxy."
+  ],
+  "notes": "Mapped: the extended-asset-list Comet market (the current main branch), its extension, collateral list, configurator, factory, proxy admin and rewards. Not mapped: bulkers, bridges and receivers, liquidator bots, market update proposers, older Comet without extended asset list. The repository has no release tags; the commit is pinned."
+}

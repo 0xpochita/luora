@@ -87,6 +87,7 @@ The inner card sits 8px inside the outer card. Never put a sharp corner inside a
 
 - **Outfit** (`font-sans`) for all UI, sentence case, letter-spacing 0 or `-0.01em`.
 - Sizes **12.5 / 13 / 14 / 15** (`text-ui-xs/sm/md/lg`), weights **400 / 500 only** (no semibold / bold).
+  One exception: a page's own title may use `text-ui-display` (34px, 500, -0.02em), once per page (Explore).
   Titles 14px 500 `fg`; body 13px `body`; port labels 12.5px `port`; control labels 13px `muted`.
 - **Geist Mono** (`font-mono`) only for code, addresses, hashes, slot numbers and percentages.
 - No `uppercase`, no wide `tracking-[…]`, no mono labels.

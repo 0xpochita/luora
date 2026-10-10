@@ -1,0 +1,200 @@
+{
+  "id": "morpho",
+  "name": "Morpho",
+  "version": "Blue v1 · MetaMorpho v1",
+  "category": "Lending",
+  "chain": "Ethereum and EVM L2s",
+  "logo": "/logos/morpho.png",
+  "purpose": "Isolated lending markets in one immutable contract, each defined by loan token, collateral token, oracle, rate model and LLTV; MetaMorpho vaults allocate deposits across them.",
+  "about": "Morpho Blue is a single contract with no upgrade path and no governance over existing markets. Anyone creates a market from five parameters (loanToken, collateralToken, oracle, irm, lltv) whose hash is the market id; the owner only chooses which rate models and LLTVs may be used, and a fee of up to 25% of interest. Supply and borrow positions are shares; interest accrues on each interaction. The oracle and the rate model are external contracts chosen per market. MetaMorpho is an ERC-4626 vault on top: a curator sets caps per market (increases behind a timelock), an allocator orders the queues and moves liquidity, and deposits are supplied to markets in queue order.",
+  "builds": [
+    { "id": "blue", "root": "morpho", "out": "out", "map": { "": "morpho-blue", "lib/": null } },
+    { "id": "vaults", "root": "metamorpho", "out": "out", "map": { "": "metamorpho", "lib/morpho-blue/": "morpho-blue", "lib/": null } }
+  ],
+  "repos": [
+    {
+      "id": "morpho-blue",
+      "dir": "morpho",
+      "url": "https://github.com/morpho-org/morpho-blue",
+      "tag": "v1.0.0",
+      "commit": "55d2d99304fb3fb930c688462ae2ccabb1d533ad",
+      "license": "BUSL-1.1 (Morpho.sol) and GPL-2.0-or-later (libraries)",
+      "licenseNote": "Licence read per file from its SPDX header: Morpho.sol is kept as structure only, the GPL libraries keep their source."
+    },
+    {
+      "id": "metamorpho",
+      "dir": "metamorpho",
+      "url": "https://github.com/morpho-org/metamorpho",
+      "tag": "v1.0.0",
+      "commit": "f5faa9c21b1396c291b471a6a5ad9407d23486a9",
+      "license": "GPL-2.0-or-later"
+    }
+  ],
+  "groups": ["Vaults", "Core", "Libraries", "Chosen per market"],
+  "contracts": [
+    { "name": "MetaMorpho", "build": "vaults", "group": "Vaults", "role": "ERC-4626 vault", "summary": "Pools deposits of one asset and supplies them to Morpho markets in supply-queue order, up to each market's cap. Roles: owner, curator (caps, market removal), allocator (queues, reallocate), guardian (can revoke pending changes). Cap increases and other risk-raising changes wait for a timelock; it takes a performance fee as new shares." },
+    { "name": "MetaMorphoFactory", "build": "vaults", "group": "Vaults", "role": "Vault factory", "summary": "Deploys MetaMorpho vaults with CREATE2 and records which addresses it created (isMetaMorpho)." },
+    { "name": "PendingLib", "build": "vaults", "group": "Vaults", "role": "Timelocked values", "summary": "A pending value and the time it becomes valid, for the vault's timelocked changes." },
+    { "name": "Morpho", "build": "blue", "group": "Core", "role": "Every market", "aliases": ["IMorpho", "IMorphoBase"], "summary": "One immutable contract for all markets: createMarket, supply / withdraw, supplyCollateral / withdrawCollateral, borrow / repay, liquidate, flashLoan, setAuthorization. Positions are shares per market; anyone can act for an account that authorized them. Callbacks let the caller act before paying." },
+    { "name": "SharesMathLib", "build": "blue", "group": "Libraries", "role": "Assets ↔ shares", "summary": "Converts between assets and shares with virtual shares and assets, rounding up or down explicitly at each call site." },
+    { "name": "MathLib", "build": "blue", "group": "Libraries", "role": "Fixed-point maths", "summary": "WAD multiplication and division with explicit rounding, and the Taylor expansion used to compound interest." },
+    { "name": "MarketParamsLib", "build": "blue", "group": "Libraries", "role": "Market id", "summary": "The market id: keccak256 of the five market parameters." },
+    { "name": "UtilsLib", "build": "blue", "group": "Libraries", "role": "Helpers", "summary": "exactlyOneZero (assets or shares, never both), min, zeroFloorSub and safe casts." },
+    { "name": "SafeTransferLib", "build": "blue", "group": "Libraries", "role": "Token transfers", "summary": "ERC-20 transfer and transferFrom that accept tokens returning nothing and revert when the token has no code." }
+  ],
+  "externals": [
+    { "name": "IOracle", "label": "Market oracle", "group": "Chosen per market", "summary": "price(): collateral priced in loan token, scaled by 1e36. Any contract can be a market's oracle; it is fixed at creation." },
+    { "name": "IIrm", "label": "Rate model", "group": "Chosen per market", "summary": "borrowRate(): the per-second borrow rate. Must be enabled by the owner before a market can use it (e.g. AdaptiveCurveIrm)." },
+    { "name": "IERC20", "label": "Loan and collateral tokens", "group": "Chosen per market", "summary": "The market's loan token and collateral token." },
+    { "name": "IMorphoLiquidateCallback", "label": "Caller callback", "group": "Chosen per market", "aliases": ["IMorphoSupplyCallback", "IMorphoRepayCallback", "IMorphoSupplyCollateralCallback", "IMorphoFlashLoanCallback"], "summary": "When the caller passes data, Morpho calls back msg.sender before pulling its tokens (onMorphoSupply, onMorphoRepay, onMorphoLiquidate …)." }
+  ],
+  "flows": [
+    {
+      "id": "supply",
+      "title": "Supply",
+      "actor": "Lender",
+      "summary": "Lend the loan token to one market and receive supply shares.",
+      "steps": [
+        { "at": "Lender", "say": "Approves Morpho, then calls supply(marketParams, assets, shares, onBehalf, data) with exactly one of assets or shares." },
+        { "at": "Morpho.supply", "say": "The market must exist, exactly one of assets / shares is non-zero, onBehalf is not zero." },
+        { "at": "Morpho._accrueInterest", "say": "Brings the market up to now: interest since lastUpdate is added to both total borrow and total supply; the fee part is minted as supply shares to the fee recipient." },
+        { "at": "IIrm.borrowRate", "say": "The market's rate model returns the borrow rate used for that accrual." },
+        { "at": "SharesMathLib.toSharesDown", "say": "Assets to shares, rounded down (for a shares input, assets are rounded up)." },
+        { "at": "Morpho.supply", "say": "Credits the shares to onBehalf, raises the market totals, emits Supply." },
+        { "at": "IMorphoLiquidateCallback.onMorphoSupply", "say": "Only with data: onMorphoSupply is called on msg.sender before payment." },
+        { "at": "IERC20.transferFrom", "say": "Last, the loan token moves from msg.sender into Morpho." }
+      ],
+      "checks": [
+        "State is written and the event emitted before the token is pulled; review that every path keeps that order and that a callback can't observe a half-updated market.",
+        "Rounding: supply rounds shares down, so a depositor never gets more than they paid for.",
+        "Integrations should pass assets or shares, never both, and read the returned pair."
+      ]
+    },
+    {
+      "id": "borrow",
+      "title": "Borrow",
+      "actor": "Borrower",
+      "summary": "Post collateral, then borrow the loan token up to LLTV.",
+      "steps": [
+        { "at": "Borrower", "say": "First supplyCollateral(marketParams, assets, onBehalf, data)." },
+        { "at": "Morpho.supplyCollateral", "say": "Credits collateral to onBehalf and pulls the collateral token. No interest accrual: collateral earns nothing." },
+        { "at": "Morpho.borrow", "say": "borrow(marketParams, assets, shares, onBehalf, receiver). msg.sender must be onBehalf or authorized by it (setAuthorization)." },
+        { "at": "Morpho._accrueInterest", "say": "Brings the market up to now." },
+        { "at": "SharesMathLib.toSharesUp", "say": "Borrow shares rounded up, against the borrower." },
+        { "at": "Morpho._isHealthy", "say": "Debt (shares to assets, rounded up) must be at most collateral × price × LLTV." },
+        { "at": "IOracle.price", "say": "The market's oracle prices the collateral in loan token." },
+        { "at": "Morpho.borrow", "say": "Total borrow must stay within total supply (liquidity). Emits Borrow." },
+        { "at": "IERC20.transfer", "say": "The loan token goes to receiver." }
+      ],
+      "checks": [
+        "The oracle and LLTV are fixed per market at creation; an integration choosing a market is choosing its oracle. Review the oracle's scale (1e36) and what it does when its feed is stale.",
+        "Authorization is per account and covers every market; integrations that ask users for setAuthorization should say so.",
+        "Health uses rounded-up debt and rounded-down collateral value, in the protocol's favour."
+      ]
+    },
+    {
+      "id": "repay",
+      "title": "Repay",
+      "actor": "Borrower",
+      "summary": "Pay back borrow shares; anyone can repay for anyone.",
+      "steps": [
+        { "at": "Borrower", "say": "Approves Morpho, then repay(marketParams, assets, shares, onBehalf, data). Repaying by shares clears a position exactly." },
+        { "at": "Morpho.repay", "say": "Market exists, exactly one of assets / shares, onBehalf not zero. No authorization needed." },
+        { "at": "Morpho._accrueInterest", "say": "Brings the market up to now." },
+        { "at": "SharesMathLib.toSharesDown", "say": "Assets to shares rounded down (shares to assets rounded up), so repayment never removes more debt than paid." },
+        { "at": "Morpho.repay", "say": "Reduces borrow shares and the totals (total borrow floored at zero), emits Repay." },
+        { "at": "IMorphoLiquidateCallback.onMorphoRepay", "say": "Only with data: onMorphoRepay on msg.sender, before payment." },
+        { "at": "IERC20.transferFrom", "say": "Pulls the assets from msg.sender." }
+      ],
+      "checks": [
+        "Repaying by assets can leave dust shares; repaying a whole position should use shares.",
+        "Anyone can repay any position: integrations must not assume a position's debt only changes through them."
+      ]
+    },
+    {
+      "id": "liquidation",
+      "title": "Liquidation",
+      "actor": "Liquidator",
+      "summary": "Repay an unhealthy position's debt and seize its collateral with an incentive set by the market's LLTV.",
+      "steps": [
+        { "at": "Liquidator", "say": "Calls liquidate(marketParams, borrower, seizedAssets, repaidShares, data) with exactly one of seizedAssets or repaidShares." },
+        { "at": "Morpho.liquidate", "say": "Market exists; exactly one input." },
+        { "at": "Morpho._accrueInterest", "say": "Brings the market up to now." },
+        { "at": "IOracle.price", "say": "One price read for the whole liquidation." },
+        { "at": "Morpho._isHealthy", "say": "The position must be unhealthy at that price." },
+        { "at": "Morpho.liquidate", "say": "Incentive factor = min(1.15, 1 / (1 − 0.3 × (1 − LLTV))); computes the other side of the trade, reduces the borrower's shares and collateral." },
+        { "at": "Morpho.liquidate", "say": "If no collateral is left, remaining debt is bad debt: removed from total borrow and from total supply, so all suppliers of the market share the loss." },
+        { "at": "IERC20.transfer", "say": "Seized collateral goes to the liquidator." },
+        { "at": "IMorphoLiquidateCallback.onMorphoLiquidate", "say": "Only with data: the liquidator's callback runs before it pays." },
+        { "at": "IERC20.transferFrom", "say": "Pulls the repaid loan token from the liquidator." }
+      ],
+      "checks": [
+        "Bad debt is socialised immediately to the market's suppliers; vaults and integrations should account for a sudden drop in supply share value.",
+        "The incentive depends only on LLTV; review the constants (max factor 1.15, cursor 0.3) against the documented spec.",
+        "Every liquidation trusts one oracle read; review that oracle per market."
+      ]
+    },
+    {
+      "id": "vault-deposit",
+      "title": "Vault deposit",
+      "actor": "Depositor",
+      "summary": "Deposit into a MetaMorpho vault; it supplies across markets in queue order.",
+      "steps": [
+        { "at": "Depositor", "say": "Approves the vault, calls deposit(assets, receiver) (ERC-4626)." },
+        { "at": "MetaMorpho.deposit", "say": "First _accrueFee." },
+        { "at": "MetaMorpho._accrueFee", "say": "Total assets now vs last time; the performance fee on the gain is minted as shares to the fee recipient." },
+        { "at": "MetaMorpho._deposit", "say": "Shares rounded down, the asset is pulled from the depositor and shares are minted." },
+        { "at": "MetaMorpho._supplyMorpho", "say": "For each market in the supply queue with a non-zero cap: accrue, read the vault's current supply, supply up to the cap." },
+        { "at": "Morpho.supply", "say": "Inside try / catch: a market that reverts is skipped. If anything is left after the queue, AllCapsReached reverts the deposit." }
+      ],
+      "checks": [
+        "The vault's share price depends on every market in its queues; review each market's oracle, LLTV and rate model, not only the vault.",
+        "Skipped markets (try / catch) mean deposits can land in a different market than the first in the queue.",
+        "Curator and allocator powers: cap increases wait for the timelock, cap decreases and reallocations don't."
+      ]
+    },
+    {
+      "id": "curation",
+      "title": "Curate a vault",
+      "actor": "Curator",
+      "summary": "Raise a market's cap through the timelock, then let the allocator move liquidity.",
+      "steps": [
+        { "at": "Curator", "say": "Calls submitCap(marketParams, newSupplyCap)." },
+        { "at": "MetaMorpho.submitCap", "say": "Only the curator role. The market must exist and lend the vault's asset. A lower cap applies at once; a higher one becomes pending until the timelock passes." },
+        { "at": "PendingLib.update", "say": "Stores the pending cap and the time it becomes valid." },
+        { "at": "MetaMorpho.acceptCap", "say": "After the timelock, anyone accepts it; the market is enabled and appended to the withdraw queue." },
+        { "at": "MetaMorpho.reallocate", "say": "The allocator withdraws from some markets and supplies to others, within caps; total withdrawn must equal total supplied." },
+        { "at": "Morpho.withdraw", "say": "Liquidity leaves one market." },
+        { "at": "Morpho.supply", "say": "And is supplied to another." }
+      ],
+      "checks": [
+        "The guardian can revoke a pending cap during the timelock; check who holds guardian on each vault.",
+        "Lowering the timelock is itself timelocked; raising it applies at once. Check its current value.",
+        "Reallocation is not timelocked: the allocator decides where funds sit day to day."
+      ]
+    },
+    {
+      "id": "create-market",
+      "title": "Create a market",
+      "actor": "Anyone",
+      "summary": "Anyone opens a market from five parameters.",
+      "steps": [
+        { "at": "Anyone", "say": "Calls createMarket(loanToken, collateralToken, oracle, irm, lltv)." },
+        { "at": "Morpho.createMarket", "say": "The IRM and the LLTV must be enabled by the owner, and the market must not exist. Sets lastUpdate and stores the parameters under their id." },
+        { "at": "MarketParamsLib.id", "say": "The id is keccak256 of the five parameters." },
+        { "at": "IIrm.borrowRate", "say": "Lets the rate model initialise itself for the market." }
+      ],
+      "checks": [
+        "Markets are permissionless: anything that lists or uses a market should check all five parameters, not just the tokens.",
+        "A market's oracle and IRM can't be changed later."
+      ]
+    }
+  ],
+  "checks": [
+    "Per market: oracle (scale 1e36, staleness), rate model, LLTV; they are fixed at creation.",
+    "Shares maths: virtual shares and the rounding direction at each call site.",
+    "Callbacks run before tokens are pulled; integrations implementing them must check msg.sender is Morpho.",
+    "Vaults: curator, allocator, guardian and owner; which changes are timelocked and which are not."
+  ],
+  "notes": "Mapped: Morpho Blue core and its libraries, MetaMorpho v1.0 and its factory. Not mapped: oracles (morpho-blue-oracles), AdaptiveCurveIrm (morpho-blue-irm), bundlers, public allocator, MetaMorpho v1.1 and Vaults V2."
+}

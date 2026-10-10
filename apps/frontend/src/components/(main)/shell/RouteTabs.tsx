@@ -8,6 +8,7 @@ import { SLIDE } from "@/components/ui";
 const ROUTES = [
   { href: "/trace", label: "Trace" },
   { href: "/atlas", label: "Atlas" },
+  { href: "/explore", label: "Explore" },
 ] as const;
 
 export function RouteTabs() {

@@ -85,6 +85,10 @@
   --text-ui-sm: 13px;
   --text-ui-md: 14px;
   --text-ui-lg: 15px;
+  /* page title only (Explore): one per page, weight 500 */
+  --text-ui-display: 34px;
+  --text-ui-display--line-height: 1.12;
+  --text-ui-display--letter-spacing: -0.02em;
 
   --font-sans: var(--font-outfit);
   --font-mono: var(--font-geist-mono);

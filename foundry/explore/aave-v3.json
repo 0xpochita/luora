@@ -1,0 +1,173 @@
+{
+  "id": "aave-v3",
+  "name": "Aave",
+  "version": "v3.5",
+  "category": "Lending",
+  "chain": "Ethereum and EVM L2s",
+  "logo": "/logos/aave.png",
+  "purpose": "Pooled lending market: suppliers earn interest through aTokens, borrowers take variable-rate loans against collateral, unhealthy positions are liquidated.",
+  "about": "One Pool per market holds the books for every reserve (asset). The Pool itself is thin: each action is delegated to an external logic library (SupplyLogic, BorrowLogic, LiquidationLogic, FlashLoanLogic) that runs on the Pool's storage. Liquidity sits in each reserve's aToken; debt is a non-transferable VariableDebtToken. Interest accrues through two indexes per reserve (liquidity and variable borrow), moved forward on every action. Prices come from AaveOracle; roles from ACLManager; addresses of everything from PoolAddressesProvider.",
+  "builds": [{"id": "main", "root": "aave", "out": "out", "map": {"": "aave-v3-origin", "lib/": null}}],
+  "repos": [
+    {
+      "id": "aave-v3-origin",
+      "dir": "aave",
+      "url": "https://github.com/aave-dao/aave-v3-origin",
+      "tag": "v3.5.0",
+      "commit": "25115b2d1d6f166b3f492a4cc329f475ae266e62",
+      "license": "BUSL-1.1"
+    }
+  ],
+  "groups": ["Entry", "Logic", "Tokens", "Config and prices", "Outside"],
+  "contracts": [
+    { "name": "Pool", "group": "Entry", "role": "Main entry point", "summary": "Every user action starts here: supply, withdraw, borrow, repay, liquidationCall, flashLoan. It reads the reserve and user books from its storage and delegates the work to the logic libraries. Deployed behind a proxy; PoolInstance is the concrete implementation." },
+    { "name": "PoolConfigurator", "group": "Entry", "role": "Admin entry point", "summary": "Where governance and risk admins list reserves and change their parameters (caps, LTV, liquidation threshold, reserve factor, freeze, pause). Each setter checks a role in ACLManager and writes the new configuration into the Pool." },
+    { "name": "SupplyLogic", "group": "Logic", "role": "Supply and withdraw", "summary": "External library: supply, withdraw, collateral switches and aToken transfer finalisation. Runs by DELEGATECALL on the Pool's storage." },
+    { "name": "BorrowLogic", "group": "Logic", "role": "Borrow and repay", "summary": "External library: mints and burns variable debt, moves the underlying out of and back into the aToken, re-checks health factor after a borrow." },
+    { "name": "LiquidationLogic", "group": "Logic", "role": "Liquidation", "summary": "External library: closes part of an unhealthy position. A liquidator repays debt and receives collateral plus a bonus, priced by the oracle; bad debt left on a position with no collateral is written off as reserve deficit." },
+    { "name": "FlashLoanLogic", "group": "Logic", "role": "Flash loans", "summary": "External library: lends liquidity within one transaction to a receiver contract that must pay it back with a premium, or open a debt position (flashLoan with a borrow mode)." },
+    { "name": "ValidationLogic", "group": "Logic", "role": "Rules", "summary": "Internal library, inlined into the logic libraries: every require of every action (active, paused, frozen, caps, health factor, e-mode, isolation, siloed borrowing, oracle sentinel)." },
+    { "name": "ReserveLogic", "group": "Logic", "role": "Interest accrual", "summary": "Internal library: updateState moves a reserve's liquidity and borrow indexes forward to now and books the treasury's share; updateInterestRatesAndVirtualBalance asks the rate strategy for new rates after each change." },
+    { "name": "GenericLogic", "group": "Logic", "role": "Account data", "summary": "Internal library: totals a user's collateral and debt in the base currency using oracle prices, and derives LTV and health factor." },
+    { "name": "AToken", "group": "Tokens", "role": "Deposit receipt, holds liquidity", "summary": "Interest-bearing token of a reserve. Balances are stored scaled and multiplied by the liquidity index on read, so they grow as interest accrues. The aToken contract holds the reserve's underlying; only the Pool can mint, burn or move it out." },
+    { "name": "VariableDebtToken", "group": "Tokens", "role": "Debt record", "summary": "Non-transferable token that records variable-rate debt, scaled by the variable borrow index. Only the Pool mints and burns it." },
+    { "name": "PoolAddressesProvider", "group": "Config and prices", "role": "Registry", "summary": "The market's address book: Pool, PoolConfigurator, oracle, ACL manager, oracle sentinel, data provider. Its owner can point any of them to a new implementation." },
+    { "name": "ACLManager", "group": "Config and prices", "role": "Roles", "summary": "Role registry (pool admin, emergency admin, risk admin, asset listing admin, flash borrower, bridge) checked by the Pool, the configurator and the tokens." },
+    { "name": "AaveOracle", "group": "Config and prices", "role": "Prices", "summary": "Returns each asset's price from its Chainlink-style source, with a fallback oracle when the source returns nothing usable. Health factor, borrow capacity and liquidation amounts all depend on it." },
+    { "name": "DefaultReserveInterestRateStrategyV2", "group": "Config and prices", "role": "Interest rate model", "summary": "Kinked rate curve per reserve: rates rise slowly up to the optimal utilisation, steeply after it. Parameters are set through the PoolConfigurator." }
+  ],
+  "externals": [
+    { "name": "IERC20", "label": "Underlying asset", "group": "Outside", "summary": "The reserve's ERC-20 (USDC, WETH …). Moved with SafeERC20 between users and the aToken." },
+    { "name": "AggregatorInterface", "label": "Price feed", "group": "Outside", "summary": "The Chainlink-style feed AaveOracle reads for each asset." },
+    { "name": "IFlashLoanSimpleReceiver", "label": "Flash loan receiver", "group": "Outside", "aliases": ["IFlashLoanReceiver"], "summary": "The borrower's own contract. Its executeOperation runs in the middle of a flash loan." }
+  ],
+  "flows": [
+    {
+      "id": "supply",
+      "title": "Supply",
+      "actor": "Supplier",
+      "summary": "Deposit an asset, receive aTokens that grow with interest.",
+      "steps": [
+        { "at": "Supplier", "say": "Approves the Pool for the asset, then calls supply(asset, amount, onBehalfOf, referralCode)." },
+        { "at": "Pool.supply", "say": "Entry point. Passes the reserve and user books to SupplyLogic." },
+        { "at": "SupplyLogic.executeSupply", "say": "Runs by DELEGATECALL, so every write lands in the Pool's storage." },
+        { "at": "ReserveLogic.updateState", "say": "Accrues interest since the last action: moves the liquidity and variable borrow indexes to now and books the treasury's share." },
+        { "at": "ValidationLogic.validateSupply", "say": "Amount not zero; reserve active, not paused, not frozen; supply cap not exceeded; onBehalfOf is not the aToken itself." },
+        { "at": "ReserveLogic.updateInterestRatesAndVirtualBalance", "say": "Adds the amount to the reserve's virtual balance and asks the rate strategy for new rates." },
+        { "at": "IERC20.transferFrom", "say": "The underlying moves from the supplier straight into the aToken contract, which holds the reserve's liquidity." },
+        { "at": "AToken.mint", "say": "Mints the amount divided by the liquidity index (scaled balance) to onBehalfOf." },
+        { "at": "ValidationLogic.validateAutomaticUseAsCollateral", "say": "On a first supply, decides whether the asset is switched on as collateral automatically (an isolated asset only when the supplier holds the isolated collateral supplier role)." },
+        { "at": "Pool.Supply", "say": "Emits Supply(reserve, user, onBehalfOf, amount, referralCode)." }
+      ],
+      "checks": [
+        "Indexes are updated before any amount is scaled, so the minted scaled amount uses the current liquidity index.",
+        "The scaled amount rounds down on mint (rayDivFloor), in the protocol's favour.",
+        "The supply cap is checked against the scaled total supply plus the treasury's accrued share.",
+        "Integrations: the aToken balance changes every block; read it, don't cache it."
+      ]
+    },
+    {
+      "id": "borrow",
+      "title": "Borrow",
+      "actor": "Borrower",
+      "summary": "Take a variable-rate loan against supplied collateral.",
+      "steps": [
+        { "at": "Borrower", "say": "Calls borrow(asset, amount, interestRateMode = variable, referralCode, onBehalfOf). onBehalfOf other than the caller needs a credit delegation allowance." },
+        { "at": "Pool.borrow", "say": "Entry point. Reads the oracle and the sentinel from PoolAddressesProvider." },
+        { "at": "BorrowLogic.executeBorrow", "say": "Runs on the Pool's storage." },
+        { "at": "ReserveLogic.updateState", "say": "Accrues interest to now." },
+        { "at": "ValidationLogic.validateBorrow", "say": "Reserve active, not paused or frozen, borrowing enabled, borrow cap, isolation mode debt ceiling, siloed borrowing, e-mode, and the oracle sentinel's grace period." },
+        { "at": "VariableDebtToken.mint", "say": "Records the debt: amount divided by the variable borrow index. Spends the credit delegation allowance when onBehalfOf is someone else." },
+        { "at": "ReserveLogic.updateInterestRatesAndVirtualBalance", "say": "Takes the amount out of the virtual balance and recomputes rates." },
+        { "at": "AToken.transferUnderlyingTo", "say": "The aToken sends the underlying to the borrower." },
+        { "at": "ValidationLogic.validateHFAndLtv", "say": "After the transfer: totals collateral and debt at oracle prices and requires health factor above 1 and the new LTV within limits. If not, the whole transaction reverts." },
+        { "at": "AaveOracle.getAssetPrice", "say": "Price of every asset in the account, read inside the health factor computation." },
+        { "at": "Pool.Borrow", "say": "Emits Borrow with the current variable rate." }
+      ],
+      "checks": [
+        "The health factor is checked after funds leave; the check must cover every state change made before it.",
+        "Every price comes from AaveOracle: check each asset's source, its decimals, and what happens when it returns 0 (fallback oracle).",
+        "Credit delegation: borrowing onBehalfOf spends an allowance on the debt token, not on the aToken.",
+        "Isolation mode and siloed borrowing restrict which assets can be borrowed together; confirm both are enforced on every path that mints debt (borrow and flashLoan with a debt mode)."
+      ]
+    },
+    {
+      "id": "repay",
+      "title": "Repay",
+      "actor": "Borrower",
+      "summary": "Pay back variable debt with the underlying (or with aTokens).",
+      "steps": [
+        { "at": "Borrower", "say": "Approves the Pool, then calls repay(asset, amount, interestRateMode, onBehalfOf). type(uint256).max repays the whole debt." },
+        { "at": "Pool.repay", "say": "Entry point. repayWithATokens takes the same path with useATokens = true." },
+        { "at": "BorrowLogic.executeRepay", "say": "Runs on the Pool's storage." },
+        { "at": "ReserveLogic.updateState", "say": "Accrues interest to now, so the debt includes interest up to this block." },
+        { "at": "ValidationLogic.validateRepay", "say": "Amount not zero, reserve active and not paused, there is debt to repay. max is only allowed when repaying for yourself." },
+        { "at": "VariableDebtToken.burn", "say": "Burns the repaid amount, capped at the outstanding debt; clears the borrowing flag when nothing is left." },
+        { "at": "ReserveLogic.updateInterestRatesAndVirtualBalance", "say": "Adds the payment back to the virtual balance and recomputes rates." },
+        { "at": "IERC20.transferFrom", "say": "The payment moves from the payer into the aToken. With aTokens, the payer's aTokens are burned instead." },
+        { "at": "Pool.Repay", "say": "Emits Repay(reserve, user, repayer, amount, useATokens)." }
+      ],
+      "checks": [
+        "The amount actually taken is the lesser of the request and the debt; integrations should read the return value, not assume the requested amount.",
+        "Repaying with aTokens reduces collateral too, so the health factor is re-checked when other debt remains.",
+        "Debt burns round the scaled amount down (less debt removed, in the protocol's favour); repaying with type(uint256).max must still clear the debt to zero."
+      ]
+    },
+    {
+      "id": "liquidation",
+      "title": "Liquidation",
+      "actor": "Liquidator",
+      "summary": "Close part of an unhealthy position: repay its debt, receive its collateral with a bonus.",
+      "steps": [
+        { "at": "Liquidator", "say": "Calls liquidationCall(collateralAsset, debtAsset, borrower, debtToCover, receiveAToken) after approving the debt asset." },
+        { "at": "Pool.liquidationCall", "say": "Entry point. Passes the oracle and sentinel addresses to LiquidationLogic." },
+        { "at": "LiquidationLogic.executeLiquidationCall", "say": "Runs on the Pool's storage." },
+        { "at": "ReserveLogic.updateState", "say": "Accrues interest on both the debt reserve and the collateral reserve." },
+        { "at": "GenericLogic.calculateUserAccountData", "say": "Recomputes the borrower's collateral, debt and health factor at current prices." },
+        { "at": "ValidationLogic.validateLiquidationCall", "say": "No self-liquidation; both reserves active and not paused; sentinel and grace period allow it; health factor below 1; the collateral is enabled and liquidatable; the borrower has this debt." },
+        { "at": "AaveOracle.getAssetPrice", "say": "Prices of the collateral and the debt asset, used to size the collateral to seize with the liquidation bonus. Up to 50% of the debt can be covered in one call; 100% when the health factor is below 0.95 or the position is small." },
+        { "at": "VariableDebtToken.burn", "say": "Burns the covered debt. If no collateral would remain, the rest is burned too and booked as reserve deficit." },
+        { "at": "AToken.burn", "say": "Collateral to the liquidator: underlying (aTokens burned) or, with receiveAToken, the aTokens themselves." },
+        { "at": "AToken.transferOnLiquidation", "say": "The liquidation protocol fee, a share of the bonus, goes to the treasury in aTokens." },
+        { "at": "IERC20.transferFrom", "say": "The liquidator's payment in the debt asset moves into the debt reserve's aToken." },
+        { "at": "Pool.LiquidationCall", "say": "Emits LiquidationCall with the debt covered and collateral seized." }
+      ],
+      "checks": [
+        "Liquidation is a designed safety valve; review that the close factor, bonus and protocol fee are applied in the documented order and rounding favours the protocol.",
+        "Every number depends on two oracle prices read in the same transaction: check each feed's freshness and decimals assumptions.",
+        "Deficit handling: debt burned without collateral must be recorded exactly once and only for positions with no collateral left.",
+        "Integrations that hold Aave positions must keep their health factor monitored; their own accounting must survive a partial liquidation."
+      ]
+    },
+    {
+      "id": "flashloan",
+      "title": "Flash loan",
+      "actor": "Receiver",
+      "summary": "Borrow liquidity within one transaction; pay it back with a premium before it ends.",
+      "steps": [
+        { "at": "Receiver", "say": "A contract calls flashLoanSimple(receiverAddress, asset, amount, params, referralCode)." },
+        { "at": "Pool.flashLoanSimple", "say": "Entry point. Reads the premium set by governance." },
+        { "at": "FlashLoanLogic.executeFlashLoanSimple", "say": "Runs on the Pool's storage." },
+        { "at": "ValidationLogic.validateFlashloanSimple", "say": "Reserve active, not paused, flash loans enabled, and the amount within the aToken's supply." },
+        { "at": "AToken.transferUnderlyingTo", "say": "Sends the amount to the receiver; the virtual balance is reduced first." },
+        { "at": "IFlashLoanSimpleReceiver.executeOperation", "say": "The receiver's own code runs, with the amount and the premium owed. It must return true." },
+        { "at": "ReserveLogic.updateState", "say": "Repayment: accrues interest and books the premium for the treasury." },
+        { "at": "IERC20.transferFrom", "say": "Pulls amount plus premium from the receiver back into the aToken. Without the approval, the whole transaction reverts." },
+        { "at": "Pool.FlashLoan", "say": "Emits FlashLoan with the premium paid." }
+      ],
+      "checks": [
+        "Liquidity leaves and must return in the same transaction; review that every state read during executeOperation is either final or re-read after repayment.",
+        "Receivers: executeOperation must check msg.sender is the Pool and initiator is trusted, since anyone can start a flash loan to any receiver.",
+        "Flash borrowers registered in ACLManager pay no premium on flashLoan (flashLoanSimple always charges it); that role should be held only by known contracts."
+      ]
+    }
+  ],
+  "checks": [
+    "Access: list who holds each ACLManager role and the PoolAddressesProvider owner; they can change any parameter or implementation.",
+    "Oracles: every asset's price source, its heartbeat and decimals, and the fallback oracle path.",
+    "Index math: scaled balances and the order of updateState before any scaling, on every action.",
+    "Library code runs on the Pool's storage: review storage layout compatibility on every Pool upgrade.",
+    "Integrations: aToken balances rebase; debt tokens can't be transferred; repay may take less than requested."
+  ],
+  "notes": "Mapped: the Pool, its configurator and logic libraries, both tokens, registry, roles, oracle and rate strategy. Not mapped: periphery (rewards, gateways, data providers, StataToken), GHO, governance."
+}

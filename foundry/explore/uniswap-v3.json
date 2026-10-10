@@ -1,0 +1,154 @@
+{
+  "id": "uniswap-v3",
+  "name": "Uniswap",
+  "version": "v3",
+  "category": "DEX",
+  "chain": "Ethereum and EVM L2s",
+  "logo": "/logos/uniswap.png",
+  "purpose": "Automated market maker with concentrated liquidity: LPs provide liquidity inside a price range, traders swap against the pool of one token pair and fee tier.",
+  "about": "The core is one Factory and one Pool per (token0, token1, fee). A Pool keeps the current price (sqrtPriceX96) and tick in slot0, liquidity per tick, positions per owner and range, and a price oracle. The core never pulls tokens: it sends first and then calls back msg.sender to be paid, checking its own balance afterwards. The periphery (SwapRouter, NonfungiblePositionManager) are the contracts users call; they implement those callbacks, check deadlines and slippage, and pay the pool.",
+  "builds": [{"id": "main", "root": "uni-periphery", "out": "out", "map": {"": "v3-periphery", "node_modules/@uniswap/v3-core/": "v3-core", "node_modules/": null}}],
+  "repos": [
+    {
+      "id": "v3-core",
+      "dir": "uni-core",
+      "url": "https://github.com/Uniswap/v3-core",
+      "tag": "v1.0.0",
+      "commit": "e3589b192d0be27e100cd0daaf6c97204fdb1899",
+      "license": "BUSL-1.1",
+      "licenseNote": "BUSL-1.1 with a Change Date of 2023-04-01 to GPL-2.0-or-later; kept as structure only here."
+    },
+    {
+      "id": "v3-periphery",
+      "dir": "uni-periphery",
+      "url": "https://github.com/Uniswap/v3-periphery",
+      "tag": "v1.0.0",
+      "commit": "464a8a49611272f7349c970e0fadb7ec1d3c1086",
+      "license": "GPL-2.0-or-later"
+    }
+  ],
+  "groups": ["Periphery", "Periphery libraries", "Core", "Pool libraries", "Outside"],
+  "contracts": [
+    { "name": "SwapRouter", "group": "Periphery", "role": "Swap entry point", "summary": "exactInput(Single) and exactOutput(Single), single and multi-hop. Finds the pool by computing its address, calls swap, and pays the pool from the user in the swap callback. Checks deadline and the minimum out / maximum in." },
+    { "name": "NonfungiblePositionManager", "group": "Periphery", "role": "Liquidity entry point", "summary": "Wraps pool positions as ERC-721 NFTs. mint, increaseLiquidity, decreaseLiquidity and collect go through it; it is the owner of the positions inside the pools and keeps each NFT's range, liquidity, fee snapshots and tokens owed." },
+    { "name": "PoolAddress", "group": "Periphery libraries", "role": "Pool address", "summary": "Computes a pool's CREATE2 address from the factory, the sorted token pair and the fee, so the periphery never reads the factory to find a pool." },
+    { "name": "CallbackValidation", "group": "Periphery libraries", "role": "Callback check", "summary": "In a callback, requires msg.sender to be the canonical pool for the expected tokens and fee." },
+    { "name": "UniswapV3Factory", "group": "Core", "role": "Pool registry", "summary": "Creates one pool per token pair and fee tier, keeps the getPool registry, and holds the owner who can enable fee tiers and set protocol fees." },
+    { "name": "UniswapV3PoolDeployer", "group": "Core", "role": "Pool deployment", "summary": "Deploys a pool with CREATE2 (salt = token0, token1, fee) after writing the pool's parameters to storage for the pool's constructor to read." },
+    { "name": "UniswapV3Pool", "group": "Core", "role": "One pair, one fee tier", "summary": "Holds both tokens of the pair. swap, mint, burn, collect and flash, all behind a reentrancy lock in slot0. Sends tokens out first, calls back the caller to be paid, then checks its own balances." },
+    { "name": "TickMath", "group": "Pool libraries", "role": "Tick ↔ price", "summary": "Converts between a tick and its sqrt price (Q64.96) within the minimum and maximum tick." },
+    { "name": "SwapMath", "group": "Pool libraries", "role": "One swap step", "summary": "Moves the price toward the next tick or the price limit, and returns amount in, amount out and the fee for that step." },
+    { "name": "SqrtPriceMath", "group": "Pool libraries", "role": "Amounts for liquidity", "summary": "Token amounts for a liquidity change between two prices, and the next price after an amount in or out, with explicit rounding directions." },
+    { "name": "Tick", "group": "Pool libraries", "role": "Per-tick books", "summary": "Liquidity gross and net per tick and the fee growth outside it; cross flips the outside values when the price crosses the tick." },
+    { "name": "TickBitmap", "group": "Pool libraries", "role": "Initialized ticks", "summary": "A bitmap of initialized ticks, so a swap can find the next one within a 256-tick word." },
+    { "name": "Position", "group": "Pool libraries", "role": "Positions", "summary": "Liquidity and fees owed per (owner, lower tick, upper tick)." },
+    { "name": "Oracle", "group": "Pool libraries", "role": "Price oracle", "summary": "A ring buffer of (timestamp, tick cumulative, liquidity cumulative) observations, written at most once per block; observe returns time-weighted values." }
+  ],
+  "externals": [
+    { "name": "IERC20Minimal", "label": "Pair tokens", "group": "Outside", "summary": "token0 and token1 of the pool, moved with TransferHelper (low-level calls that accept tokens returning nothing)." },
+    { "name": "IWETH9", "label": "WETH", "group": "Outside", "summary": "Wraps and unwraps ETH when a user pays or receives ETH through the periphery." },
+    { "name": "IUniswapV3FlashCallback", "label": "Flash borrower", "group": "Outside", "summary": "The caller's contract in pool.flash: it receives the tokens and must pay them back plus the fee in the callback." }
+  ],
+  "flows": [
+    {
+      "id": "swap",
+      "title": "Swap",
+      "actor": "Trader",
+      "summary": "Exact input, one pool: amountIn of tokenIn for at least amountOutMinimum of tokenOut.",
+      "steps": [
+        { "at": "Trader", "say": "Approves SwapRouter for tokenIn, then calls exactInputSingle(tokenIn, tokenOut, fee, recipient, deadline, amountIn, amountOutMinimum, sqrtPriceLimitX96)." },
+        { "at": "SwapRouter.exactInputSingle", "say": "checkDeadline, then exactInputInternal with the caller recorded as payer in the callback data." },
+        { "at": "PoolAddress.computeAddress", "say": "The pool's address comes from CREATE2 (factory, sorted tokens, fee), not from a storage lookup." },
+        { "at": "UniswapV3Pool.swap", "say": "Takes the lock in slot0 and swaps step by step until the amount is used or the price limit is reached." },
+        { "at": "TickBitmap.nextInitializedTickWithinOneWord", "say": "Finds the next initialized tick in the swap direction, within one 256-tick word." },
+        { "at": "SwapMath.computeSwapStep", "say": "Moves the price toward that tick: amount in, amount out and the LP fee for the step; the protocol's share is split off when the protocol fee is on." },
+        { "at": "Tick.cross", "say": "When the price crosses an initialized tick, its net liquidity is added or removed and its fee growth outside flipped." },
+        { "at": "Oracle.write", "say": "If the tick changed, writes one observation for this block." },
+        { "at": "IERC20Minimal.transfer", "say": "The pool sends tokenOut to the recipient first." },
+        { "at": "SwapRouter.uniswapV3SwapCallback", "say": "The pool calls back msg.sender (the router) with the amounts owed." },
+        { "at": "CallbackValidation.verifyCallback", "say": "The router checks msg.sender is the canonical pool for tokenIn, tokenOut and fee." },
+        { "at": "IERC20Minimal.transferFrom", "say": "The router pays tokenIn from the payer to the pool (wrapping ETH into WETH when the payer sent ETH)." },
+        { "at": "UniswapV3Pool.Swap", "say": "Back in the pool: requires its tokenIn balance grew by at least the amount owed, emits Swap, releases the lock." },
+        { "at": "SwapRouter.exactInputSingle", "say": "Requires amountOut ≥ amountOutMinimum, otherwise the whole swap reverts." }
+      ],
+      "checks": [
+        "Integrations: amountOutMinimum and deadline are the user's only protection against price movement; never pass 0 or a far deadline from a contract.",
+        "slot0 is the current price and moves with every swap; integrations that need a price should read the time-weighted oracle (observe) or an external feed.",
+        "Any contract implementing uniswapV3SwapCallback must verify msg.sender is a canonical pool, or anyone can call it and ask to be paid.",
+        "The pool checks its own balance after the callback: tokens that charge a transfer fee or rebase don't behave as the pool expects."
+      ]
+    },
+    {
+      "id": "add-liquidity",
+      "title": "Add liquidity",
+      "actor": "LP",
+      "summary": "Open a position in a price range and get it as an NFT.",
+      "steps": [
+        { "at": "LP", "say": "Approves NonfungiblePositionManager for both tokens, then calls mint(token0, token1, fee, tickLower, tickUpper, amount0Desired, amount1Desired, amount0Min, amount1Min, recipient, deadline)." },
+        { "at": "NonfungiblePositionManager.mint", "say": "checkDeadline, then addLiquidity." },
+        { "at": "NonfungiblePositionManager.addLiquidity", "say": "Computes the pool address and the liquidity the desired amounts buy at the current price (slot0)." },
+        { "at": "UniswapV3Pool.mint", "say": "Under the lock, with the position manager as the position's owner in the pool." },
+        { "at": "UniswapV3Pool._modifyPosition", "say": "Checks the ticks, updates the position and both ticks, and computes how much of each token the range needs at the current price." },
+        { "at": "Tick.update", "say": "Adds liquidity to the lower and upper tick; a tick that becomes initialized is flipped in the bitmap." },
+        { "at": "Position.update", "say": "Credits fees earned since the last update and sets the new liquidity." },
+        { "at": "NonfungiblePositionManager.uniswapV3MintCallback", "say": "The pool calls back the manager; it verifies the pool and pays both amounts from the LP." },
+        { "at": "IERC20Minimal.transferFrom", "say": "token0 and token1 move from the LP to the pool." },
+        { "at": "UniswapV3Pool.Mint", "say": "The pool requires both balances grew as owed and emits Mint." },
+        { "at": "NonfungiblePositionManager.IncreaseLiquidity", "say": "The manager checks amount0Min / amount1Min, mints the NFT, stores the range and the fee growth snapshot, emits IncreaseLiquidity." }
+      ],
+      "checks": [
+        "amount0Min / amount1Min protect the LP against the price moving before the transaction; contracts that add liquidity must set them.",
+        "In the pool, every position of every NFT is owned by the position manager; the NFT owner is tracked only in the manager.",
+        "The mint callback must verify the pool, like the swap callback."
+      ]
+    },
+    {
+      "id": "remove-liquidity",
+      "title": "Remove and collect",
+      "actor": "LP",
+      "summary": "Take liquidity out of a position, then collect the tokens and fees owed.",
+      "steps": [
+        { "at": "LP", "say": "As the NFT owner or an approved operator, calls decreaseLiquidity(tokenId, liquidity, amount0Min, amount1Min, deadline)." },
+        { "at": "NonfungiblePositionManager.decreaseLiquidity", "say": "isAuthorizedForToken; liquidity must be positive and not more than the position holds." },
+        { "at": "UniswapV3Pool.burn", "say": "Removes the liquidity and credits the token amounts to the position's tokensOwed in the pool. Nothing is transferred yet." },
+        { "at": "NonfungiblePositionManager.DecreaseLiquidity", "say": "Slippage check, then the manager adds the amounts and the fees since the last snapshot to the NFT's tokens owed." },
+        { "at": "NonfungiblePositionManager.collect", "say": "collect(tokenId, recipient, amount0Max, amount1Max); with liquidity left, first pokes the pool with burn(0) to bring fees up to date." },
+        { "at": "UniswapV3Pool.collect", "say": "Transfers up to the requested amounts of tokensOwed to the recipient." },
+        { "at": "IERC20Minimal.transfer", "say": "token0 and token1 leave the pool." },
+        { "at": "NonfungiblePositionManager.Collect", "say": "Emits Collect with the amounts sent." }
+      ],
+      "checks": [
+        "decreaseLiquidity moves no tokens; anything integrating it must call collect afterwards.",
+        "Who can act on a position is the NFT owner or an approved operator; vaults holding NFTs must control approvals.",
+        "Fees are derived from fee growth snapshots; review that every path that changes liquidity updates the snapshot first."
+      ]
+    },
+    {
+      "id": "create-pool",
+      "title": "Create a pool",
+      "actor": "Anyone",
+      "summary": "Deploy the pool for a new pair and fee tier, then set its first price.",
+      "steps": [
+        { "at": "Anyone", "say": "Calls createPool(tokenA, tokenB, fee) on the factory (the position manager's createAndInitializePoolIfNecessary does the same)." },
+        { "at": "UniswapV3Factory.createPool", "say": "Tokens different and non-zero, sorted into token0 < token1, the fee tier enabled, and no pool yet for this pair and fee." },
+        { "at": "UniswapV3PoolDeployer.deploy", "say": "Writes the parameters, deploys the pool with CREATE2 salt keccak256(token0, token1, fee), deletes the parameters." },
+        { "at": "UniswapV3Pool.constructor", "say": "Reads factory, tokens, fee and tick spacing from the deployer and stores them as immutables." },
+        { "at": "UniswapV3Factory.PoolCreated", "say": "The factory records the pool in getPool both ways and emits PoolCreated." },
+        { "at": "UniswapV3Pool.initialize", "say": "Anyone sets the starting sqrtPriceX96, once (slot0.sqrtPriceX96 must be 0). Initializes the oracle." }
+      ],
+      "checks": [
+        "The first price is set by whoever calls initialize; integrations must not trust a new pool's price until it has liquidity and history.",
+        "Pool addresses are deterministic: code that computes them must use the same init code hash as the deployed factory.",
+        "Only the factory owner enables fee tiers and protocol fees; check who that is on each chain."
+      ]
+    }
+  ],
+  "checks": [
+    "Callbacks: every uniswapV3*Callback implementation verifies msg.sender is a canonical pool.",
+    "Slippage and deadlines on every periphery call made by a contract.",
+    "Price: slot0 vs the time-weighted oracle; observation cardinality is small on new pools.",
+    "Tokens: fee-on-transfer and rebasing tokens break the pool's balance checks.",
+    "Rounding directions in SqrtPriceMath always favour the pool."
+  ],
+  "notes": "Mapped: core (factory, deployer, pool and its libraries) and the two main periphery contracts with their callback libraries. Not mapped: Quoter, position descriptor, multicall, migrator, Uniswap v4."
+}
