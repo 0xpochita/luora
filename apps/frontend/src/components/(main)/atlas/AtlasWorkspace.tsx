@@ -11,6 +11,7 @@ import {
 } from "@/features/atlas";
 import { atlasSource } from "@/features/atlas/utils/atlas-source";
 import { type RunFile, useShownSource } from "@/features/run";
+import { StartHere } from "../onboarding/StartHere";
 import { AtlasDashboard } from "./AtlasDashboard";
 import { ContractSource } from "./ContractSource";
 import { CoverageSummary } from "./CoverageSummary";
@@ -28,6 +29,7 @@ const fromFile = (data: RunFile) => atlasSource(data, "file");
 /** Client root of the atlas page: a dropped luora-data.json wins over the server's. */
 export function AtlasWorkspace({ source }: { source: AtlasSource }) {
   const shown = useShownSource(source, fromFile);
+  if (shown.origin === "none") return <StartHere />;
   if (shown.source) return <AtlasBody key={shown.key} source={shown.source} />;
   return (
     <div className="grid flex-1 place-items-center p-4">

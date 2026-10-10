@@ -2,7 +2,7 @@ import "server-only";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { connection } from "next/server";
-import { LUORA_DATA_PATH } from "@/config/env.server";
+import { LUORA_DATA_EXPLICIT, LUORA_DATA_PATH } from "@/config/env.server";
 import { SAMPLE_ATLAS } from "../fixtures/sample-atlas";
 import type { AtlasSource } from "../types";
 import { atlasSource } from "../utils/atlas-source";
@@ -31,22 +31,24 @@ async function loadProposed(contract: string): Promise<unknown[]> {
 
 /**
  * Reads the `atlas` section of the latest `luora-data.json` on every request, so a fresh
- * `node luora-export.mjs` (or `node luora-atlas.mjs`) shows up after a refresh. Falls back to
- * the bundled hand-written sample when no local export or atlas section exists.
+ * `node luora-export.mjs` (or `node luora-atlas.mjs`) shows up after a refresh, but only when
+ * LUORA_DATA_PATH points at one. Otherwise nothing is loaded (origin "none", the Start page) and
+ * the bundled sample rides along for "Try the sample".
  */
 export async function loadAtlas(): Promise<AtlasSource> {
   await connection();
-  try {
-    const local = atlasSource(
-      JSON.parse(await readFile(LUORA_DATA_PATH, "utf8")),
-      "local",
-    );
-    if (local)
-      return { ...local, proposed: await loadProposed(local.data.contract) };
-  } catch {}
+  if (LUORA_DATA_EXPLICIT)
+    try {
+      const local = atlasSource(
+        JSON.parse(await readFile(LUORA_DATA_PATH, "utf8")),
+        "local",
+      );
+      if (local)
+        return { ...local, proposed: await loadProposed(local.data.contract) };
+    } catch {}
   return {
     data: SAMPLE_ATLAS,
-    origin: "sample",
+    origin: "none",
     proposed: await loadProposed(SAMPLE_ATLAS.contract),
   };
 }

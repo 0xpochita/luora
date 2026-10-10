@@ -3,6 +3,7 @@
 import {
   createContext,
   type ReactNode,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -13,7 +14,7 @@ import type { RunFile } from "../utils/parse-run";
 
 /** A luora-data.json the auditor dropped into this tab. */
 export type LoadedRun = { data: RunFile; name: string; stamp: number };
-export type RunPane = "welcome" | "project";
+export type RunPane = "welcome" | "project" | "look";
 
 type RunState = {
   run: LoadedRun | null;
@@ -23,10 +24,14 @@ type RunState = {
   setOrigin: (o: RunOrigin | null) => void;
   pane: RunPane | null;
   setPane: (p: RunPane | null) => void;
+  /** the user chose "Try the sample" on the Start page (remembered in this browser) */
+  sample: boolean;
+  setSample: (on: boolean) => void;
 };
 
 const RunContext = createContext<RunState | null>(null);
 const ONBOARDED = "luora:onboarded";
+const SAMPLE = "luora:sample";
 
 /**
  * Holds a dropped run in memory for this tab. Nothing is uploaded or written to disk: a full
@@ -37,21 +42,44 @@ export function RunProvider({ children }: { children: ReactNode }) {
   const [run, setRun] = useState<LoadedRun | null>(null);
   const [origin, setOrigin] = useState<RunOrigin | null>(null);
   const [pane, setPane] = useState<RunPane | null>(null);
-
-  // the first session opens once per browser, on the first page that knows what it shows
-  // (sample, the local export or a dropped file): the welcome step says which
+  const [sample, setSampleState] = useState(false);
   useEffect(() => {
-    if (!origin) return;
+    try {
+      setSampleState(localStorage.getItem(SAMPLE) === "1");
+    } catch {}
+  }, []);
+  const setSample = useCallback((on: boolean) => {
+    setSampleState(on);
+    try {
+      if (on) localStorage.setItem(SAMPLE, "1");
+      else localStorage.removeItem(SAMPLE);
+    } catch {}
+  }, []);
+
+  // the first session opens once per browser, on the first page that shows a run (sample, the
+  // local export or a dropped file): with nothing loaded the Start page is the onboarding itself
+  useEffect(() => {
+    if (!origin || origin === "none") return;
     try {
       if (localStorage.getItem(ONBOARDED)) return;
       localStorage.setItem(ONBOARDED, "1");
     } catch {}
-    setPane("welcome");
+    // a dropped file came through the Start page or the session itself, which show the next step
+    if (origin !== "file") setPane("welcome");
   }, [origin]);
 
   const value = useMemo(
-    () => ({ run, setRun, origin, setOrigin, pane, setPane }),
-    [run, origin, pane],
+    () => ({
+      run,
+      setRun,
+      origin,
+      setOrigin,
+      pane,
+      setPane,
+      sample,
+      setSample,
+    }),
+    [run, origin, pane, sample, setSample],
   );
   return <RunContext value={value}>{children}</RunContext>;
 }
@@ -71,15 +99,22 @@ export function useShownSource<S extends { origin: RunOrigin }>(
   server: S,
   fromFile: (data: RunFile) => S | null,
 ) {
-  const { run, setOrigin } = useRun();
+  const { run, sample, setOrigin } = useRun();
+  // nothing loaded + "Try the sample" chosen: the server's unshown sample, now shown as such
+  const asSample = !run && sample && server.origin === "none";
   const source = useMemo(
-    () => (run ? fromFile(run.data) : server),
-    [run, server, fromFile],
+    () =>
+      run
+        ? fromFile(run.data)
+        : asSample
+          ? { ...server, origin: "sample" as const }
+          : server,
+    [run, server, fromFile, asSample],
   );
-  const origin = run ? "file" : server.origin;
+  const origin: RunOrigin = run ? "file" : asSample ? "sample" : server.origin;
   useEffect(() => {
     setOrigin(origin);
     return () => setOrigin(null);
   }, [origin, setOrigin]);
-  return { source, key: run ? String(run.stamp) : "server" };
+  return { source, origin, key: run ? String(run.stamp) : "server" };
 }

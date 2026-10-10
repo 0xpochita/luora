@@ -9,6 +9,7 @@ import {
   type TraceSource,
 } from "@/features/trace";
 import { CallGraph } from "../graph/CallGraph";
+import { StartHere } from "../onboarding/StartHere";
 import { Sidebar } from "../shell/Sidebar";
 import { Topbar } from "../shell/Topbar";
 import { SourcePanel } from "../source/SourcePanel";
@@ -23,6 +24,7 @@ const fromFile = (data: RunFile): TraceSource => ({ data, origin: "file" });
 /** Client root of the trace page: a dropped luora-data.json wins over the server's. */
 export function TraceWorkspace({ source }: { source: TraceSource }) {
   const shown = useShownSource(source, fromFile);
+  if (shown.origin === "none") return <StartHere />;
   return shown.source && <TraceBody key={shown.key} source={shown.source} />;
 }
 

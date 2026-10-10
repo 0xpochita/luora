@@ -17,16 +17,18 @@ pnpm install
 pnpm dev            # http://localhost:3000
 ```
 
-With no export yet the app shows the bundled **sample** (LuoraVault). A *Sample data* badge in the
-top bar says so on every page.
+With nothing loaded the app opens on its **Start here** page: the same steps as below, a drop zone,
+and *Try the sample vault* (LuoraVault, bundled) for a first look. A *Sample data* badge in the top
+bar says so on every page while the sample is shown.
 
 ### 2. Export a run from your Foundry project
 
-Copy the exporter (five plain Node scripts, no dependencies) into your project root and run it there:
+In your project root (next to `foundry.toml`), fetch the exporter from the running app (five plain
+Node scripts, no dependencies, the same version the app reads) and run it:
 
 ```sh
-cp luora/foundry/luora-{export,lib,atlas,findings,coverage}.mjs path/to/your-project/
 cd path/to/your-project
+curl -fsSLO "http://localhost:3000/exporter/luora-{export,lib,atlas,findings,coverage}.mjs"
 node luora-export.mjs
 ```
 
@@ -39,7 +41,8 @@ Either:
 - **Drop it in:** click *Sample data → Use my project* in the top bar and drop `luora-data.json`
   (or pick it). It is read in that browser tab only and kept in memory: a full reload or *Unload*
   goes back to the server's data.
-- **Keep it live:** start the app pointing at the file, then refresh after every export.
+- **Keep it live:** start the app pointing at the file, then refresh after every export. The app
+  only reads a run from disk when `LUORA_DATA_PATH` is set.
 
   ```sh
   LUORA_DATA_PATH=/abs/path/to/your-project/luora-data.json pnpm dev

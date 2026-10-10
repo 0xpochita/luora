@@ -5,7 +5,7 @@ import { useRun } from "@/features/run";
 
 /** Header badge: says when the app shows sample data or a dropped file, never silently. */
 export function DataBadge() {
-  const { run, setRun, origin, setPane } = useRun();
+  const { run, setRun, origin, setPane, setSample } = useRun();
 
   if (run)
     return (
@@ -25,19 +25,21 @@ export function DataBadge() {
     );
   if (origin !== "sample") return null;
   return (
-    <button
-      type="button"
-      onClick={() => setPane("project")}
-      className="group rounded-chip outline-none focus-visible:ring-2 focus-visible:ring-white/25"
-    >
-      <Chip
-        tone="warn"
-        dot
-        className="group-hover:bg-hover group-hover:text-fg"
-      >
+    <span className="flex items-center gap-1">
+      <Chip tone="warn" dot>
         Sample data
-        <span className="text-dim">· Use my project</span>
       </Chip>
-    </button>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-6 px-2"
+        onClick={() => {
+          setSample(false);
+          setPane(null);
+        }}
+      >
+        Use my project
+      </Button>
+    </span>
   );
 }

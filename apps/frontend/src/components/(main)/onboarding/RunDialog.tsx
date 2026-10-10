@@ -11,7 +11,6 @@ import {
 import { Button, IconButton } from "@/components/ui";
 import { parseRun, useRun } from "@/features/run";
 
-const REPO = "https://github.com/0xpochita/luora.git";
 
 const REPO_WEB = "https://github.com/0xpochita/luora/blob/main";
 const STEPS = ["Welcome", "Export your run", "Load it", "Where to look"];
@@ -28,7 +27,7 @@ export function RunDialog() {
 
   useEffect(() => {
     const d = ref.current;
-    if (pane) setStep(pane === "project" ? 1 : 0);
+    if (pane) setStep(pane === "project" ? 1 : pane === "look" ? 3 : 0);
     if (pane && !d?.open) d?.showModal();
     if (!pane && d?.open) d.close();
   }, [pane]);
@@ -159,6 +158,7 @@ function Welcome() {
 
 /** 2: get the exporter into the project and run it */
 function Export() {
+  const origin = useAppOrigin();
   return (
     <>
       <Lead>
@@ -169,19 +169,23 @@ function Export() {
         nothing to install.
       </Lead>
       <ol className="flex flex-col gap-2">
-        <Step n={1} title="Get the exporter">
-          <CopyLine text={`git clone ${REPO}`} />
+        <Step
+          n={1}
+          title="Open your Foundry project"
+          note="The folder with foundry.toml in it."
+        >
+          <CopyLine text="cd path/to/your-project" />
         </Step>
         <Step
           n={2}
-          title="Copy its five scripts into your Foundry project root"
-          note="luora-export.mjs imports the other four, so keep them side by side."
+          title="Get the exporter from this app"
+          note="Five plain Node scripts, downloaded from the app you are using, so they match it. No clone, no install."
         >
-          <CopyLine text="cp luora/foundry/luora-{export,lib,atlas,findings,coverage}.mjs path/to/your-project/" />
+          <CopyLine text={exporterCommand(origin)} />
         </Step>
         <Step
           n={3}
-          title="Run it in that project"
+          title="Run it"
           note={
             <>
               <code className="font-mono">--mt test_name</code> exports one
@@ -290,7 +294,18 @@ function Look() {
   );
 }
 
-function Step({
+/** The five exporter scripts, fetched from this running app into the current folder. */
+export const exporterCommand = (origin: string) =>
+  `curl -fsSLO "${origin}/exporter/luora-{export,lib,atlas,findings,coverage}.mjs"`;
+
+/** This app's origin once mounted (the server render assumes the default dev port). */
+export function useAppOrigin() {
+  const [origin, setOrigin] = useState("http://localhost:3000");
+  useEffect(() => setOrigin(location.origin), []);
+  return origin;
+}
+
+export function Step({
   n,
   title,
   note,
@@ -317,7 +332,7 @@ function Step({
   );
 }
 
-function CopyLine({ text }: { text: string }) {
+export function CopyLine({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
@@ -328,7 +343,8 @@ function CopyLine({ text }: { text: string }) {
   };
   return (
     <div className="flex items-center gap-1.5 rounded-tile bg-inset py-1 pr-1 pl-3">
-      <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap font-mono text-[12px] text-fg">
+      {/* long commands wrap instead of scrolling, so the whole line stays readable and selectable */}
+      <code className="min-w-0 flex-1 whitespace-pre-wrap py-1 font-mono text-[12px] text-fg leading-relaxed [overflow-wrap:anywhere]">
         {text}
       </code>
       <Button size="sm" variant="ghost" className="h-7 px-2" onClick={copy}>
@@ -339,7 +355,7 @@ function CopyLine({ text }: { text: string }) {
 }
 
 /** Reads the file in this tab only (File.text + JSON.parse); nothing is uploaded. */
-function DropZone({ onLoaded }: { onLoaded: () => void }) {
+export function DropZone({ onLoaded }: { onLoaded: () => void }) {
   const { setRun } = useRun();
   const [over, setOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
