@@ -6,20 +6,19 @@
  *     under it, a three-line paragraph top-right, and the rest of the screen a chart of thin
  *     vertical hairlines rising from the bottom edge, one bar white with a rotated value label
  *     and a coloured dot above it.
+ *  Nineteenth pass ("hapus saja bagian ini, ganti jadi fokus kita yang visualisasi smart contract
+ *  dan scenario testing"): HK's header kept, its chart replaced by the Lab itself (HeroLab).
  */
 import Link from "next/link";
 import { LogoText } from "@/components/ui";
 import { ICON_PATH } from "@/features/atlas/utils/icons";
+import { contractGraph } from "@/features/atlas/utils/lab-graph";
+import { createAtlasModel } from "@/features/atlas/utils/model";
 import { HeroExit } from "./Haze";
+import { HeroLab } from "./HeroLab";
 import { ProductTabs } from "./ProductTabs";
 import { ScatterGrow } from "./ScatterGrow";
-import {
-  demoAtlas,
-  gasProfile,
-  sampleRun,
-  scenarioDemo,
-  traceFrames,
-} from "./stats";
+import { demoAtlas, sampleRun, scenarioDemo, traceFrames } from "./stats";
 import "./hero.css";
 
 export const GITHUB = "https://github.com/0xpochita/luora";
@@ -107,28 +106,26 @@ const glyph = (d: string) => (
 );
 
 /**
- * Eighteenth pass (HK). Title and two chips top-left, one line top-right, and under them the
- * run's own profile: one hairline per call frame in the traced tests, its height the gas that
- * frame used, cheapest first, so the chart ramps up like the ref's. The white bar is the most
- * expensive call of the function the first high finding sits in, flagged red. Bars grow out
- * of the floor, left to right.
+ * Nineteenth pass. HK's header (title, subtitle, two chips, one line right) over the Lab window
+ * (HeroLab): the app's contract graph and its scenario, the two things Luora is for, the window
+ * running off the bottom of the first screen. The graph is cut to the cards that fit the window
+ * (graph y < 900), so the page carries only what shows.
  */
 export async function Hero() {
-  const [atlas, run, bars] = await Promise.all([
+  const [atlas, run, scenario] = await Promise.all([
     demoAtlas(),
     sampleRun(),
-    gasProfile(),
+    scenarioDemo(),
   ]);
-  const max = Math.max(1, ...bars.map((b) => b.gas));
-  const pct = (gas: number) => 3 + (69 * gas) / max;
   const findings = atlas.pieces.filter((p) => p.sys === "vulns");
-  const flagged = findings.find((f) => f.risk === "high") ?? findings[0];
-  const fnName = flagged?.name.match(/in (\w+)\(\)/)?.[1];
-  // the costliest frame of that function (bars are sorted by gas), else the costliest frame
-  const flagAt =
-    fnName && bars.some((b) => b.fn === fnName)
-      ? bars.reduce((m, b, i) => (b.fn === fnName ? i : m), 0)
-      : bars.length - 1;
+  const full = contractGraph(createAtlasModel(atlas));
+  const shown = new Set(full.nodes.filter((n) => n.y < 900).map((n) => n.id));
+  const contract = {
+    nodes: full.nodes.filter((n) => shown.has(n.id)),
+    wires: full.wires.filter(
+      (w) => shown.has(w.from.node) && shown.has(w.to.node),
+    ),
+  };
   const tests = run.stats.find((s) => s.label === "forge tests traced")?.value;
   const chips: { icon: React.ReactNode; label: string; value: string }[] = [
     { icon: glyph(ICON_PATH.fn), label: "Tests", value: tests ?? "—" },
@@ -154,7 +151,7 @@ export async function Hero() {
               See what your contract actually does.
             </h1>
             <p className="mt-1 text-[clamp(16px,1.5vw,20px)] text-dim leading-tight">
-              Decoded Foundry runs
+              Contract graphs and scenario tests
             </p>
             <div className="mt-5 flex flex-wrap items-center gap-2">
               {chips.map((c) => (
@@ -172,47 +169,17 @@ export async function Hero() {
             className="lh-up max-w-[440px] text-[15px] text-body leading-relaxed md:justify-self-end md:text-[16px]"
             style={{ "--d": "0.25s" } as Delay}
           >
-            Decoded traces, a contract graph and analyzer findings, from your
-            own forge run.
+            Luora draws your contract as a graph of its functions, storage and
+            calls, and runs the scenarios you wire on it as Foundry tests.
           </p>
         </div>
 
-        {/* HK: the chart; every bar is one call frame of the traced tests */}
+        {/* the Lab window, where HK had its chart */}
         <div
-          role="img"
-          aria-label={`Gas per call frame in the traced tests of ${atlas.contract}, cheapest first`}
-          className="absolute inset-x-4 top-[270px] bottom-0 flex items-end justify-between md:inset-x-6 md:top-[230px]"
+          className="lh-up absolute inset-x-4 top-[300px] bottom-0 md:inset-x-6 md:top-[230px]"
+          style={{ "--d": "0.35s" } as Delay}
         >
-          {bars.map((b, i) => {
-            const flag = i === flagAt;
-            return (
-              <span
-                key={`${b.fn}-${b.gas}-${i}`}
-                className={`lh-bar relative w-px bg-white ${flag ? "lh-flag" : ""}`}
-                style={
-                  {
-                    height: `${pct(b.gas)}%`,
-                    "--d": `${0.3 + i * 0.016}s`,
-                    "--n": i,
-                  } as Delay
-                }
-              >
-                {flag && (
-                  <span
-                    className="lh-up absolute bottom-[calc(100%+12px)] left-1/2 flex -translate-x-1/2 flex-col items-center gap-2.5"
-                    style={{ "--d": "1.5s" } as Delay}
-                  >
-                    <span className="whitespace-nowrap font-mono text-[11px] text-muted [writing-mode:vertical-rl] rotate-180">
-                      {b.fn}() · {Math.round(b.gas / 1000)}k gas
-                    </span>
-                    <span className="relative size-[7px] rounded-full bg-red shadow-[0_0_10px_rgba(255,80,80,.6)]">
-                      <span className="lh-ping absolute inset-[-3px] rounded-full border border-red/70" />
-                    </span>
-                  </span>
-                )}
-              </span>
-            );
-          })}
+          <HeroLab contract={contract} scenario={scenario} />
         </div>
       </div>
     </HeroExit>

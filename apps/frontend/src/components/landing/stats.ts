@@ -135,18 +135,6 @@ export async function traceFrames(count = 5): Promise<{
   };
 }
 
-/** Gas per call frame across every traced test, cheapest first (the hero's chart). */
-export async function gasProfile(): Promise<{ fn: string; gas: number }[]> {
-  "use cache";
-  cacheLife("max");
-  const data = await readRun();
-  return data.tests
-    .flatMap((t) => t.frames)
-    .filter((f) => f.kind !== "EVENT" && f.gas != null && f.gas > 0)
-    .map((f) => ({ fn: f.fn.replace(/\(.*$/, ""), gas: f.gas as number }))
-    .sort((a, b) => a.gas - b.gas);
-}
-
 /**
  * The deposit that reads the oracle in test_depositThenWithdraw (its call, the oracle read, the
  * token transfer and both events), for the Trace word: frame rows and the call graph of that call.
