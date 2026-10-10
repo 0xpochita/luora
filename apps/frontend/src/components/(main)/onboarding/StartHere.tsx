@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button, Tabs } from "@/components/ui";
 import { useRun } from "@/features/run";
+import { PH, PhIcon } from "./ph";
 import {
   CopyLine,
   DropZone,
@@ -10,22 +11,6 @@ import {
   Step,
   useAppOrigin,
 } from "./RunDialog";
-
-/* Phosphor Icons (MIT, phosphoricons.com), regular weight: user and robot */
-const USER =
-  "M230.92,212c-15.23-26.33-38.7-45.21-66.09-54.16a72,72,0,1,0-73.66,0C63.78,166.78,40.31,185.66,25.08,212a8,8,0,1,0,13.85,8c18.84-32.56,52.14-52,89.07-52s70.23,19.44,89.07,52a8,8,0,1,0,13.85-8ZM72,96a56,56,0,1,1,56,56A56.06,56.06,0,0,1,72,96Z";
-const ROBOT =
-  "M200,48H136V16a8,8,0,0,0-16,0V48H56A32,32,0,0,0,24,80V192a32,32,0,0,0,32,32H200a32,32,0,0,0,32-32V80A32,32,0,0,0,200,48Zm16,144a16,16,0,0,1-16,16H56a16,16,0,0,1-16-16V80A16,16,0,0,1,56,64H200a16,16,0,0,1,16,16Zm-52-56H92a28,28,0,0,0,0,56h72a28,28,0,0,0,0-56Zm-24,16v24H116V152ZM80,164a12,12,0,0,1,12-12h8v24H92A12,12,0,0,1,80,164Zm84,12h-8V152h8a12,12,0,0,1,0,24ZM72,108a12,12,0,1,1,12,12A12,12,0,0,1,72,108Zm88,0a12,12,0,1,1,12,12A12,12,0,0,1,160,108Z";
-const PhIcon = ({ d }: { d: string }) => (
-  <svg
-    aria-hidden="true"
-    viewBox="0 0 256 256"
-    fill="currentColor"
-    className="size-[15px] flex-none"
-  >
-    <path d={d} />
-  </svg>
-);
 
 /**
  * The setup as one prompt for the auditor's own coding agent (Claude Code, Cursor, Codex, …):
@@ -76,8 +61,16 @@ export function StartHere() {
           value={how}
           onChange={setHow}
           options={[
-            { value: "manual", label: "For Human", icon: <PhIcon d={USER} /> },
-            { value: "agent", label: "For Agent", icon: <PhIcon d={ROBOT} /> },
+            {
+              value: "manual",
+              label: "For Human",
+              icon: <PhIcon d={PH.user} />,
+            },
+            {
+              value: "agent",
+              label: "For Agent",
+              icon: <PhIcon d={PH.robot} />,
+            },
           ]}
         />
 
