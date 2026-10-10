@@ -47,6 +47,21 @@ export function TraceList({
             Show all
           </button>
         )}
+        {/* the rows' right-hand columns, named once (widths match TraceRow) */}
+        <span className="ml-auto flex flex-none items-center gap-2 pr-1 text-[12px] text-dim">
+          <span
+            className="w-10 text-right"
+            title="The source line that made the call (or emitted the event)"
+          >
+            Line
+          </span>
+          <span
+            className="w-[126px] text-right"
+            title="Gas the call used, its sub-calls included; the bar compares it with the test's biggest call"
+          >
+            Gas used
+          </span>
+        </span>
       </header>
       {rows.length ? (
         <div className="space-y-px">

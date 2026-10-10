@@ -139,22 +139,27 @@ export function TraceRow({
             {ask}
           </motion.button>
         )}
+        {/* fixed columns under the list's Line / Gas used headers; empty cells keep them lined up */}
         <span className="ml-auto flex flex-none items-center gap-2 pl-3.5">
-          {frame.callSite && (
-            <span
-              title={`${frame.callSite.file}:${frame.callSite.line}`}
-              className="font-mono text-[11.5px] text-muted tabular-nums"
-            >
-              L{frame.callSite.line}
-            </span>
-          )}
-          {frame.gas != null && kind !== "EVENT" && (
+          <span
+            title={
+              frame.callSite
+                ? `${frame.callSite.file}:${frame.callSite.line}`
+                : undefined
+            }
+            className="w-10 text-right font-mono text-[11.5px] text-muted tabular-nums"
+          >
+            {frame.callSite && `L${frame.callSite.line}`}
+          </span>
+          {frame.gas != null && kind !== "EVENT" ? (
             <>
               <Meter value={frame.gas / maxGas} />
-              <span className="min-w-[54px] text-right font-mono text-[11.5px] text-body tabular-nums">
+              <span className="w-[54px] text-right font-mono text-[11.5px] text-body tabular-nums">
                 {frame.gas.toLocaleString()}
               </span>
             </>
+          ) : (
+            <span className="w-[126px]" />
           )}
         </span>
       </span>
