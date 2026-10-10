@@ -3,10 +3,20 @@ import { PH, PhIcon } from "@/components/ui";
 import { CopyPill } from "./CopyPill";
 import { ReloadButton } from "./ReloadButton";
 
-export function Sidebar({ children }: { children: ReactNode }) {
+export function Sidebar({
+  children,
+  action,
+}: {
+  children: ReactNode;
+  /** beside Reload trace: Test all */
+  action?: ReactNode;
+}) {
   return (
     <aside className="flex w-[272px] flex-none flex-col overflow-auto rounded-card border border-border bg-card-grad p-2.5 shadow-soft">
-      <ReloadButton />
+      <div className="mb-3 flex gap-1.5">
+        <ReloadButton />
+        {action}
+      </div>
       {children}
       {/* Re-run, in the header's family: a card whose commands are split capsules (command | Copy) */}
       <section className="mt-4 rounded-inner border border-border bg-inner-grad p-3">

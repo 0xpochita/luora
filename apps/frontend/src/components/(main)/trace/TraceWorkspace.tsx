@@ -36,7 +36,11 @@ import { CallGraph } from "../graph/CallGraph";
 import { StartHere } from "../onboarding/StartHere";
 import { ForkPicker } from "../shell/ForkPicker";
 import { Sidebar } from "../shell/Sidebar";
-import { TestRunDialog, TestRunPanel } from "../shell/TestRunPanel";
+import {
+  TestAllButton,
+  TestRunDialog,
+  TestRunPanel,
+} from "../shell/TestRunPanel";
 import { SourcePanel } from "../source/SourcePanel";
 import { AskPanel, useAskThread } from "./AskPanel";
 import { BalancePanels } from "./BalancePanels";
@@ -482,7 +486,9 @@ function TraceBody({
             transition={{ duration: 0.26, ease: EASE }}
             className="flex flex-none overflow-hidden"
           >
-            <Sidebar>
+            <Sidebar
+              action={<TestAllButton run={testRun} fork={fork} forks={forks} />}
+            >
               <TestList
                 tests={data.tests}
                 selected={testIdx}
@@ -542,6 +548,8 @@ function TraceBody({
               run={testRun}
               fork={fork}
               forks={forks}
+              current={test}
+              tests={data.tests}
               end={forkPicker}
             />
             {mode === "trace" ? (

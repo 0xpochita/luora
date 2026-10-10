@@ -1,11 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { TestResult } from "../../trace/types";
 import { parseRun, type RunFile } from "../utils/parse-run";
 import {
   applyProgress,
+  inScope,
   parseEvent,
   type RunGroup,
+  type RunScope,
   type RunSummary,
   summarize,
 } from "../utils/test-run";
@@ -15,6 +18,8 @@ export type TestRunState = {
   phase: "idle" | "running" | "done" | "failed";
   /** the fork it ran on ("" = local) */
   fork: string;
+  /** the tests it was limited to (null = all) */
+  scope: RunScope | null;
   started: number;
   /** when it finished or failed (0 while running) */
   ended: number;
@@ -23,17 +28,23 @@ export type TestRunState = {
   groups: RunGroup[];
   /** the verdict of the run Start test aimed at (the fork's when there is one) */
   summary: RunSummary | null;
+  /** once finished: each run's tests and the sources, for the log's "why it passed" */
+  runs: Record<string, TestResult[]>;
+  sources: Record<string, string>;
   error: string | null;
 };
 
 const IDLE: TestRunState = {
   phase: "idle",
   fork: "",
+  scope: null,
   started: 0,
   ended: 0,
   lines: [],
   groups: [],
   summary: null,
+  runs: {},
+  sources: {},
   error: null,
 };
 
@@ -46,6 +57,8 @@ export function useTestRun(onData: (data: RunFile) => void) {
   const [state, setState] = useState<TestRunState>(IDLE);
   // the log pop-up: Start test opens it; closing it leaves the run going
   const [open, setOpen] = useState(false);
+  // the tests last picked in Choose tests, ticked again next time
+  const [chosen, setChosen] = useState<RunScope>([]);
   const ctl = useRef<AbortController | null>(null);
   const take = useRef(onData);
   useEffect(() => {
@@ -54,11 +67,17 @@ export function useTestRun(onData: (data: RunFile) => void) {
   // leaving the page stops the run (the route ends the exporter and its forge processes)
   useEffect(() => () => ctl.current?.abort(), []);
 
-  const start = useCallback(async (fork: string) => {
+  const start = useCallback(async (fork: string, scope?: RunScope) => {
     ctl.current?.abort();
     const c = new AbortController();
     ctl.current = c;
-    setState({ ...IDLE, phase: "running", fork, started: Date.now() });
+    setState({
+      ...IDLE,
+      phase: "running",
+      fork,
+      scope: scope ?? null,
+      started: Date.now(),
+    });
     setOpen(true);
     const fail = (error: string) =>
       setState((s) => ({ ...s, phase: "failed", error, ended: Date.now() }));
@@ -66,7 +85,7 @@ export function useTestRun(onData: (data: RunFile) => void) {
       const res = await fetch("/api/test-run", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ fork }),
+        body: JSON.stringify(scope ? { fork, tests: scope } : { fork }),
         signal: c.signal,
       });
       if (!res.ok || !res.body) {
@@ -106,13 +125,18 @@ export function useTestRun(onData: (data: RunFile) => void) {
             return fail(
               "The fork run was skipped (see the output): the local run is loaded.",
             );
-          const local = summarize(r.data.tests);
-          const summary = fork ? summarize(tests) : local;
+          // a scoped run merged into the previous export: its verdict is only the tests it ran
+          const ran = (ts: TestResult[]) =>
+            scope ? ts.filter((t) => inScope(scope, t)) : ts;
+          const local = summarize(ran(r.data.tests));
+          const summary = fork ? summarize(ran(tests)) : local;
           setState((s) => ({
             ...s,
             phase: "done",
             ended: Date.now(),
             summary,
+            runs: { local: r.data.tests, ...(fork ? { [fork]: tests } : {}) },
+            sources: r.data.sources,
             groups: [
               { run: "local", rows: local.rows },
               ...(fork ? [{ run: fork, rows: summary.rows }] : []),
@@ -128,6 +152,14 @@ export function useTestRun(onData: (data: RunFile) => void) {
   }, []);
 
   const stop = useCallback(() => ctl.current?.abort(), []);
-  return { ...state, open, setOpen, start, stop };
+  return {
+    ...state,
+    open,
+    setOpen,
+    chosen,
+    setChosen,
+    start,
+    stop,
+  };
 }
 export type TestRun = ReturnType<typeof useTestRun>;

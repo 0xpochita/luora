@@ -56,17 +56,67 @@ export function splitChain(name: string): [string, string] {
   return i > 0 ? [name.slice(0, i), name.slice(i + 1)] : [name, ""];
 }
 
+/** A Solidity identifier: what a suite (contract) or test function name can be, nothing else. */
+const IDENT = /^[A-Za-z_$][\w$]{0,127}$/;
+/** test_x() / testFuzz_x(uint256) → test_x / testFuzz_x */
+const fnName = (name: string) => name.split("(")[0];
+/** names as one forge filter, ^(a|b) then `end`, with $ (legal in identifiers) taken literally */
+const anyOf = (names: Iterable<string>, end: string) =>
+  `^(${[...new Set(names)].map((n) => n.replace(/\$/g, "\\$")).join("|")})${end}`;
+
+export type RunScope = { suite: string; name: string }[];
+
+/** Did forge's filters for `scope` take this test (the --mc × --mt cross-product)? */
+export const inScope = (scope: RunScope, t: { suite: string; name: string }) =>
+  scope.some((s) => s.suite === t.suite) &&
+  scope.some((s) => fnName(s.name) === fnName(t.name));
+
 /**
- * The exporter's arguments for a request body: nothing (the local run), or `--forks <key>` for one
- * listed testnet. Anything else is refused, so the page can never pass forge a flag or a path.
+ * The exporter's arguments for a request body: the local run, plus `--forks <key>` for one listed
+ * testnet, and for chosen tests forge's own filters (--mc on their contracts, --mt on their
+ * functions; tests of the same name in another chosen contract run too). Names must be
+ * identifiers, so the page can never pass forge a flag, a path or a pattern of its own.
  */
 export function exportArgs(body: unknown): string[] | string {
   if (body == null || typeof body !== "object" || Array.isArray(body))
     return "Send a JSON object.";
-  const { fork } = body as { fork?: unknown };
-  if (fork == null || fork === "") return [];
-  const chain = FORK_CHAINS.find((c) => c.key === fork);
-  return chain ? ["--forks", chain.key] : "Unknown fork.";
+  const { fork, tests } = body as { fork?: unknown; tests?: unknown };
+  const args: string[] = [];
+  if (fork != null && fork !== "") {
+    const chain = FORK_CHAINS.find((c) => c.key === fork);
+    if (!chain) return "Unknown fork.";
+    args.push("--forks", chain.key);
+  }
+  if (tests != null) {
+    if (!Array.isArray(tests) || !tests.length || tests.length > 500)
+      return "Choose between 1 and 500 tests.";
+    const picked: RunScope = [];
+    for (const t of tests) {
+      const { suite, name } = (t ?? {}) as { suite?: unknown; name?: unknown };
+      if (
+        typeof suite !== "string" ||
+        typeof name !== "string" ||
+        !IDENT.test(suite) ||
+        !IDENT.test(fnName(name))
+      )
+        return "Tests are named by their contract and function.";
+      picked.push({ suite, name: fnName(name) });
+    }
+    args.push(
+      "--mc",
+      anyOf(
+        picked.map((t) => t.suite),
+        "$",
+      ),
+      // forge matches --mt against the whole signature, test_x(uint256): the name, then its (
+      "--mt",
+      anyOf(
+        picked.map((t) => t.name),
+        "\\(",
+      ),
+    );
+  }
+  return args;
 }
 
 /** One line of the route's NDJSON stream. */

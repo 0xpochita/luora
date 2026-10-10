@@ -21,3 +21,10 @@ export type { SourceSpan } from "./utils/source";
 export { locateFrame, spanLines } from "./utils/source";
 export type { Placed, TreeNode } from "./utils/tree";
 export { buildTree, layoutTree } from "./utils/tree";
+export {
+  type Check,
+  checksOf,
+  forgeTree,
+  type TreeLine,
+  whyOf,
+} from "./utils/why";

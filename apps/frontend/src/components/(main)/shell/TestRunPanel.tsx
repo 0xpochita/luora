@@ -1,15 +1,19 @@
 "use client";
 
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { ChainLogo, PH, PhIcon } from "@/components/ui";
+import { ChainLogo, PH, PhIcon, Tabs } from "@/components/ui";
 import type { RunLine, TestRun } from "@/features/run";
 import {
   clock,
+  exportArgs,
   FORK_CHAINS,
   type LiveRow,
   type ResultRow,
   type RunGroup,
+  type RunScope,
 } from "@/features/run/utils/test-run";
+import { TestChooser } from "./TestChooser";
+import { TestWhy } from "./TestWhy";
 
 /*
  * Start test, one row above the trace's Calls list: runs the exporter from the app and reports
@@ -22,8 +26,9 @@ import {
  *    tallies it ("8 passed · 1 failed · 0 skipped"), the tests on the left, the whole output on
  *    the right. Closed, the row keeps the verdict and an Open log button
  *  - each test as forge prints it, [PASS] / [FAIL: reason] / [SKIP] with its (gas: …) or
- *    (runs: …, calls: …, reverts: …), failures on top (GitHub Actions opens a failed step), a
- *    click opens it in the trace
+ *    (runs: …, calls: …, reverts: …), failures on top. A click shows why it passed or failed
+ *    on the right (TestWhy), beside the output; a finished run with failures opens its first
+ *    one (GitHub Actions opens a failed step); Open in trace goes to the full trace
  *  - Output: the exporter's own lines with the elapsed time beside each (Vercel's build log)
  */
 
@@ -51,24 +56,73 @@ function useElapsed(from: number, to: number) {
 
 const chainOf = (key: string) => FORK_CHAINS.find((c) => c.key === key);
 
+type TestId = { suite: string; name: string };
+
+/** What a run's command line is, as the log and the buttons' tooltips show it. */
+export function commandOf(fork: string, scope?: RunScope | null) {
+  const args = exportArgs(scope ? { fork, tests: scope } : { fork });
+  return [
+    "node luora-export.mjs",
+    ...(typeof args === "string"
+      ? []
+      : args.map((a) => (/[$^|()]/.test(a) ? `'${a}'` : a))),
+  ].join(" ");
+}
+
+/** where it runs is the Fork picker's choice: the local run, plus that fork when one is shown */
+const targetOf = (fork: string, forks: Record<string, unknown>) =>
+  forks[fork] ? fork : "";
+
+/** Test all, beside Reload trace: every test, local (plus the fork on screen). */
+export function TestAllButton({
+  run,
+  fork,
+  forks,
+}: {
+  run: TestRun;
+  fork: string;
+  forks: Record<string, unknown>;
+}) {
+  const target = targetOf(fork, forks);
+  return (
+    <button
+      type="button"
+      className="hdr-pill go flex-none px-3"
+      disabled={run.phase === "running"}
+      onClick={() => run.start(target)}
+      title={`Every test: ${commandOf(target)}`}
+    >
+      <PhIcon d={PH.play} className="size-[14px] text-green" />
+      Test all
+    </button>
+  );
+}
+
 export function TestRunPanel({
   run,
   fork,
   forks,
+  current,
+  tests,
   end,
 }: {
   run: TestRun;
   /** the Fork picker's choice, Start test's default target when the run has it */
   fork: string;
   forks: Record<string, unknown>;
+  /** the test on screen: what Start test runs */
+  current?: TestId;
+  /** every test of the run on screen, for Choose tests */
+  tests: TestId[];
   /** at the row's right end, over the Line / Gas used columns: the Fork picker, saying which
    *  chain's run is on screen */
   end?: ReactNode;
 }) {
   const running = run.phase === "running";
   const elapsed = useElapsed(run.started, run.ended);
-  // where it runs is the Fork picker's choice: the local run, plus that fork when one is shown
-  const target = forks[fork] ? fork : "";
+  const target = targetOf(fork, forks);
+  const [choosing, setChoosing] = useState(false);
+  const one = current ? [current] : undefined;
 
   return (
     // the run's controls wrap within the left; the Fork picker keeps the top right
@@ -83,7 +137,7 @@ export function TestRunPanel({
               title="Open the log"
             >
               <Spinner />
-              Running tests
+              Running {scopeLabel(run.scope)}
               <span className="ml-auto font-mono text-[12px] text-dim tabular-nums">
                 {clock(elapsed)}
               </span>
@@ -99,15 +153,30 @@ export function TestRunPanel({
             </button>
           </div>
         ) : (
-          <button
-            type="button"
-            className="hdr-pill go flex-none"
-            onClick={() => run.start(target)}
-            title={`Runs node luora-export.mjs${target ? ` --forks ${target}` : ""} in your Foundry project and loads the result`}
-          >
-            <PhIcon d={PH.play} className="size-[15px] text-green" />
-            Start test
-          </button>
+          // GitHub Actions' re-run split button: the one on screen, or choose
+          <div className="hdr-pill go split flex-none">
+            <button
+              type="button"
+              className="lead"
+              onClick={() => run.start(target, one)}
+              title={
+                current
+                  ? `Only ${current.suite}.${current.name}: ${commandOf(target, one)}`
+                  : commandOf(target)
+              }
+            >
+              <PhIcon d={PH.play} className="size-[15px] text-green" />
+              Start test
+            </button>
+            <button
+              type="button"
+              onClick={() => setChoosing(true)}
+              title="Choose the tests to run"
+            >
+              <PhIcon d={PH.list} className="size-[14px]" />
+              Choose
+            </button>
+          </div>
         )}
         {run.phase !== "idle" && (
           // the verdict stays here once the pop-up is closed, as one capsule that reopens it
@@ -115,9 +184,26 @@ export function TestRunPanel({
         )}
       </div>
       {end && <div className="mt-0.5 flex-none">{end}</div>}
+      <TestChooser
+        open={choosing}
+        tests={tests}
+        chosen={run.chosen}
+        onClose={() => setChoosing(false)}
+        onStart={(scope) => {
+          setChoosing(false);
+          run.setChosen(scope);
+          run.start(target, scope);
+        }}
+      />
     </div>
   );
 }
+
+/** "all tests", "1 test", "3 tests" */
+const scopeLabel = (scope: RunScope | null) =>
+  !scope
+    ? "all tests"
+    : `${scope.length} ${scope.length === 1 ? "test" : "tests"}`;
 
 const Spinner = () => (
   <span
@@ -141,7 +227,7 @@ function verdictOf(run: TestRun) {
 
 const whereOf = (run: TestRun) => {
   const c = chainOf(run.fork);
-  return c ? `Local + fork of ${c.name}` : "Local run";
+  return `${c ? `Local + fork of ${c.name}` : "Local run"} · ${scopeLabel(run.scope)}`;
 };
 
 /** The last run in one capsule: forge's tally (or why it stopped) and its time; opens the log. */
@@ -216,10 +302,33 @@ export function TestRunDialog({
     if (run.open && !d?.open) d?.showModal();
     if (!run.open && d?.open) d.close();
   }, [run.open]);
-  const command = `node luora-export.mjs${run.fork ? ` --forks ${run.fork}` : ""}`;
+  const command = commandOf(run.fork, run.scope);
   const all = run.groups.flatMap((g) => g.rows);
   const total = all.length;
   const finished = all.filter((r) => r.outcome !== "running").length;
+
+  // a test picked in the list: the right side says why it passed or failed
+  const [pick, setPick] = useState<{ run: string; row: LiveRow } | null>(null);
+  const [tab, setTab] = useState<"output" | "test">("output");
+  const picked = pick
+    ? run.runs[pick.run]?.find(
+        (t) => t.suite === pick.row.suite && t.name === pick.row.name,
+      )
+    : undefined;
+  // a new run starts on its output; a finished one with failures opens its first failure
+  // (GitHub Actions opens the failed step)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: per run, and once it is done
+  useEffect(() => {
+    const target = run.groups.at(-1);
+    const fail = target?.rows.find((r) => r.outcome === "fail");
+    if (run.phase === "done" && target && fail) {
+      setPick({ run: target.run, row: fail });
+      setTab("test");
+    } else {
+      setPick(null);
+      setTab("output");
+    }
+  }, [run.started, run.phase === "done"]);
 
   return (
     <dialog
@@ -285,13 +394,13 @@ export function TestRunDialog({
                 <Group
                   key={g.run}
                   g={g}
-                  // only the finished run is loaded in the trace: until then a click would open
-                  // the previous run's trace of that test
-                  onOpen={
+                  picked={pick?.run === g.run ? pick.row : undefined}
+                  // a test's trace is in the run file, read once the run has finished
+                  onPick={
                     run.phase === "done"
-                      ? (r) => {
-                          run.setOpen(false);
-                          onOpen(r.suite, r.name);
+                      ? (row) => {
+                          setPick({ run: g.run, row });
+                          setTab("test");
                         }
                       : undefined
                   }
@@ -306,14 +415,66 @@ export function TestRunDialog({
             </p>
           )}
         </section>
-        <Output lines={run.lines} running={running} />
+        <section className="flex min-h-0 flex-col">
+          <div className="flex flex-none items-center gap-2 px-3 pt-2.5 pb-2">
+            <Tabs
+              size="sm"
+              value={picked && tab === "test" ? "test" : "output"}
+              onChange={setTab}
+              className="min-w-0"
+              options={[
+                {
+                  value: "output",
+                  label: `Output · ${run.lines.length}`,
+                  title: "What the exporter printed",
+                },
+                ...(picked
+                  ? [
+                      {
+                        value: "test" as const,
+                        label: picked.name,
+                        title: `Why ${picked.suite}.${picked.name} ${picked.status === "Success" ? "passed" : picked.status === "Failure" ? "failed" : "was skipped"}`,
+                      },
+                    ]
+                  : []),
+              ]}
+            />
+            {picked && tab === "test" && (
+              <button
+                type="button"
+                className="hdr-pill sm ml-auto flex-none"
+                onClick={() => {
+                  run.setOpen(false);
+                  onOpen(picked.suite, picked.name);
+                }}
+                title="Close the log and open this test in the trace"
+              >
+                <PhIcon d={PH.list} className="size-[14px]" />
+                Open in trace
+              </button>
+            )}
+          </div>
+          {picked && tab === "test" ? (
+            <TestWhy test={picked} source={run.sources[picked.file]} />
+          ) : (
+            <Output lines={run.lines} running={running} />
+          )}
+        </section>
       </div>
     </dialog>
   );
 }
 
 /** One run's tests under its name: Local, or the fork's chain, with how many are done. */
-function Group({ g, onOpen }: { g: RunGroup; onOpen?: (r: LiveRow) => void }) {
+function Group({
+  g,
+  picked,
+  onPick,
+}: {
+  g: RunGroup;
+  picked?: LiveRow;
+  onPick?: (r: LiveRow) => void;
+}) {
   const chain = chainOf(g.run);
   const done = g.rows.filter((r) => r.outcome !== "running").length;
   return (
@@ -331,7 +492,8 @@ function Group({ g, onOpen }: { g: RunGroup; onOpen?: (r: LiveRow) => void }) {
             key={`${r.suite}.${r.name}`}
             r={r}
             twin={rows.some((o) => o !== r && o.name === r.name)}
-            onOpen={onOpen && (() => onOpen(r))}
+            picked={picked?.suite === r.suite && picked.name === r.name}
+            onPick={onPick && (() => onPick(r))}
           />
         ))}
       </ul>
@@ -342,12 +504,14 @@ function Group({ g, onOpen }: { g: RunGroup; onOpen?: (r: LiveRow) => void }) {
 function Row({
   r,
   twin,
-  onOpen,
+  picked,
+  onPick,
 }: {
   r: LiveRow;
   /** another suite has a test of the same name: say which suite this one is */
   twin: boolean;
-  onOpen?: () => void;
+  picked: boolean;
+  onPick?: () => void;
 }) {
   const running = r.outcome === "running";
   const tag = running ? null : TAG[r.outcome as ResultRow["outcome"]];
@@ -356,14 +520,15 @@ function Row({
     <li>
       <button
         type="button"
-        onClick={onOpen}
-        disabled={!onOpen}
+        onClick={onPick}
+        disabled={!onPick}
+        aria-pressed={onPick ? picked : undefined}
         title={
-          onOpen
-            ? `Open ${r.suite}.${r.name} in the trace`
+          onPick
+            ? `Why ${r.suite}.${r.name} ${r.outcome === "pass" ? "passed" : r.outcome === "fail" ? "failed" : "was skipped"}`
             : `${r.suite}.${r.name}`
         }
-        className="flex w-full flex-col gap-0.5 px-4 py-1.5 text-left transition-colors enabled:cursor-pointer enabled:hover:bg-raised"
+        className="flex w-full flex-col gap-0.5 px-4 py-1.5 text-left transition-colors enabled:cursor-pointer enabled:hover:bg-raised aria-pressed:bg-raised aria-pressed:shadow-[inset_2px_0_0_rgba(255,255,255,.75)]"
       >
         <span className="flex min-w-0 items-center gap-2">
           {running ? (
@@ -409,37 +574,29 @@ function Output({ lines, running }: { lines: RunLine[]; running: boolean }) {
   }, [lines.length]);
 
   return (
-    <section className="flex min-h-0 flex-col">
-      <h3 className="flex-none px-4 pt-3 pb-1.5 text-[12.5px] text-muted">
-        Output{" "}
-        <span className="text-dim">
-          {lines.length} {lines.length === 1 ? "line" : "lines"}
-        </span>
-      </h3>
-      <ol
-        ref={box}
-        className="mx-3 mb-3 min-h-0 flex-1 overflow-auto rounded-inner border border-border bg-inset px-3 py-2.5 font-mono text-[12px] leading-[1.7]"
-      >
-        {lines.map((l, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: an append-only log
-          <li key={i} className="flex gap-3">
-            <span className="w-8 flex-none text-right text-dim tabular-nums">
-              {clock(l.at)}
-            </span>
-            <span
-              className={`min-w-0 whitespace-pre-wrap break-words ${l.warn ? "text-yellow" : "text-body"}`}
-            >
-              {l.log.replace(/^luora: /, "")}
-            </span>
-          </li>
-        ))}
-        {running && (
-          <li className="flex gap-3" aria-hidden="true">
-            <span className="w-8 flex-none" />
-            <span className="animate-pulse text-dim">▍</span>
-          </li>
-        )}
-      </ol>
-    </section>
+    <ol
+      ref={box}
+      className="mx-3 mb-3 min-h-0 flex-1 overflow-auto rounded-inner border border-border bg-inset px-3 py-2.5 font-mono text-[12px] leading-[1.7]"
+    >
+      {lines.map((l, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: an append-only log
+        <li key={i} className="flex gap-3">
+          <span className="w-8 flex-none text-right text-dim tabular-nums">
+            {clock(l.at)}
+          </span>
+          <span
+            className={`min-w-0 whitespace-pre-wrap break-words ${l.warn ? "text-yellow" : "text-body"}`}
+          >
+            {l.log.replace(/^luora: /, "")}
+          </span>
+        </li>
+      ))}
+      {running && (
+        <li className="flex gap-3" aria-hidden="true">
+          <span className="w-8 flex-none" />
+          <span className="animate-pulse text-dim">▍</span>
+        </li>
+      )}
+    </ol>
   );
 }

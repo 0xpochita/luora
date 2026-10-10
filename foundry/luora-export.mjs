@@ -19,7 +19,7 @@ import { buildAtlas } from './luora-atlas.mjs';
 import { forkKeys, latestBlock, resolveChain } from './luora-chains.mjs';
 import { loadReports, mergeFindings, reportFiles } from './luora-findings.mjs';
 import { buildCoverage } from './luora-coverage.mjs';
-import { decodeParams, fmtWord, innermost, keccak256, lineIndex, parseSourceMap, pcToIc, revertReason, sig } from './luora-lib.mjs';
+import { decodeParams, fmtWord, innermost, keccak256, lineIndex, mergeRun, parseSourceMap, pcToIc, revertReason, sig } from './luora-lib.mjs';
 
 const ROOT = process.cwd();
 // --chain <key>: run on a fork of that testnet (luora-chains.mjs); --forks all|a,b: add a run per
@@ -108,6 +108,10 @@ if (process.env.LUORA_PROGRESS) try {
 } catch {}
 console.log('luora: running forge test');
 const raw = sh('forge', ['test', '--json', '-vvvv', ...extra], { failOk: true });
+if (!raw.includes('{')) {
+  console.error('luora: forge ran no test (does a --mt / --mc filter match nothing?)');
+  process.exit(1);
+}
 const results = JSON.parse(raw.slice(raw.indexOf('{')));
 for (const [suiteId, suite] of Object.entries(results)) for (const [name, t] of Object.entries(suite.test_results))
   progress({ result: { suite: suiteId.split(':').pop(), name, status: t.status, reason: t.reason, kind: t.kind } });
@@ -313,6 +317,11 @@ if (forksArg) {
     }
   }
 }
-writeFileSync(OUT_FILE, JSON.stringify(data, null, 1));
+// LUORA_MERGE (set by the app's Start test for one test or a few): a filtered run updates only its
+// own tests in the previous luora-data.json, so the rest of the run stays in the app
+let out = data;
+if (process.env.LUORA_MERGE && passthrough.length !== extra.length && existsSync(OUT_FILE))
+  try { out = mergeRun(JSON.parse(readFileSync(OUT_FILE, 'utf8')), data); } catch (e) { console.warn(`luora: merge skipped — ${e.message}`); }
+writeFileSync(OUT_FILE, JSON.stringify(out, null, 1));
 const traced = tests.reduce((n, t) => n + t.frames.filter(f => f.lines).length, 0);
 console.log(`luora: ${tests.length} tests, ${tests.reduce((n, t) => n + t.frames.length, 0)} frames (${traced} with source lines) → ${TRACE_ONLY ? 'the fork run' : basename(OUT_FILE)}`);

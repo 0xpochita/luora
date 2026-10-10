@@ -107,8 +107,12 @@ export function TraceToolbar({
             <h1 className="truncate font-medium font-mono text-[18px] text-fg leading-tight">
               {test.name}
             </h1>
-            <Chip tone={pass ? "ok" : "bad"} dot>
-              {pass ? "Pass" : "Fail"}
+            {/* a skipped test (vm.skip, e.g. fork-only) neither passed nor failed */}
+            <Chip
+              tone={pass ? "ok" : test.status === "Skipped" ? "neutral" : "bad"}
+              dot
+            >
+              {pass ? "Pass" : test.status === "Skipped" ? "Skipped" : "Fail"}
             </Chip>
           </div>
           <p className="mt-1 truncate text-[12.5px] text-dim">

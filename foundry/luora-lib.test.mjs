@@ -1,7 +1,7 @@
 // node --test luora-lib.test.mjs — vectors cross-checked against `cast keccak` / `cast abi-encode`.
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { decodeParams, innermost, keccak256, lineIndex, parseSourceMap, pcToIc, revertReason } from './luora-lib.mjs';
+import { decodeParams, innermost, keccak256, lineIndex, mergeRun, parseSourceMap, pcToIc, revertReason } from './luora-lib.mjs';
 
 test('keccak256', () => {
   assert.equal(keccak256(''), '0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470');
@@ -30,4 +30,21 @@ test('source maps', () => {
   const line = lineIndex('a\nbé\nc');
   assert.deepEqual([line(0), line(2), line(6)], [1, 2, 3]); // é is 2 bytes
   assert.deepEqual(innermost([['f', 0, 100], ['f', 10, 5], ['f', 20, 5], ['g', 0, 1]]), [['f', 10, 5], ['f', 20, 5], ['g', 0, 1]]);
+});
+
+test('mergeRun: a filtered run replaces only its own tests, local and per fork', () => {
+  const t = (suite, name, status) => ({ suite, name, status });
+  const old = {
+    tests: [t('A', 'x()', 'Success'), t('A', 'y()', 'Success'), t('B', 'x()', 'Success')],
+    sources: { 'a.sol': 'old', 'b.sol': 'b' },
+    forks: { base: { chain: 1, tests: [t('A', 'x()', 'Success'), t('A', 'y()', 'Success')] }, tempo: { chain: 2, tests: [] } },
+  };
+  const fresh = { tests: [t('A', 'y()', 'Failure'), t('A', 'z()', 'Success')], sources: { 'a.sol': 'new' }, forks: { base: { chain: 3, tests: [t('A', 'y()', 'Failure')] } } };
+  const m = mergeRun(old, fresh);
+  assert.deepEqual(m.tests.map(x => `${x.suite}.${x.name}:${x.status}`), ['A.x():Success', 'A.y():Failure', 'B.x():Success', 'A.z():Success']);
+  assert.deepEqual(m.sources, { 'a.sol': 'new', 'b.sol': 'b' });
+  assert.equal(m.forks.base.chain, 3);
+  assert.deepEqual(m.forks.base.tests.map(x => x.status), ['Success', 'Failure']);
+  assert.deepEqual(m.forks.tempo, { chain: 2, tests: [] });
+  assert.equal('forks' in mergeRun({ tests: [] }, { tests: [] }), false);
 });

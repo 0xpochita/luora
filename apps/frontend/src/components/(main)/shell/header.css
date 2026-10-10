@@ -192,3 +192,9 @@ button.hdr-pill.go:hover {
 button.hdr-pill.danger:hover {
   color: var(--red);
 }
+/* a capsule that cannot act now (Test all while a run goes) */
+button.hdr-pill:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}

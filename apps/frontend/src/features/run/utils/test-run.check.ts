@@ -44,6 +44,36 @@ for (const fork of [
 ])
   assert.equal(typeof exportArgs({ fork }), "string", String(fork));
 assert.equal(typeof exportArgs(null), "string");
+
+// chosen tests: forge's filters on their contracts and functions, identifiers only
+assert.deepEqual(
+  exportArgs({
+    fork: "base-sepolia",
+    tests: [
+      { suite: "LuoraVaultTest", name: "test_deposit()" },
+      { suite: "LuoraVaultTest", name: "testFuzz_x(uint256)" },
+      { suite: "Scenario$Test", name: "test_scenario()" },
+    ],
+  }),
+  [
+    "--forks",
+    "base-sepolia",
+    "--mc",
+    "^(LuoraVaultTest|Scenario\\$Test)$",
+    "--mt",
+    "^(test_deposit|testFuzz_x|test_scenario)\\(",
+  ],
+);
+for (const tests of [
+  [],
+  "LuoraVaultTest",
+  [{ suite: "A|B", name: "x" }],
+  [{ suite: "A", name: ".*" }],
+  [{ suite: "A", name: "--fork-url" }],
+  [{ suite: "../a", name: "x" }],
+  [{ suite: "A" }],
+])
+  assert.equal(typeof exportArgs({ tests }), "string", JSON.stringify(tests));
 assert.equal(typeof exportArgs([]), "string");
 
 assert.equal(kindDetail({ Unit: { gas: 107704 } }), "gas: 107,704");

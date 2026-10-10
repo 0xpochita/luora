@@ -11,7 +11,8 @@ import { exportArgs, type RunEvent } from "@/features/run/utils/test-run";
  * luora-data.json, exactly what the auditor would type, and streams its output back as NDJSON,
  * then the fresh luora-data.json. Local only, behind the same guard as the Claude bridge (this
  * app's own page on this machine; a hosted build answers 404). The page can only choose the
- * local run or one testnet fork (exportArgs), never a command, flag or path. One run at a time;
+ * local run or one testnet fork, and which tests by name (exportArgs), never a command, flag or
+ * path. One run at a time;
  * Stop, a closed tab or the timeout ends the exporter and the forge processes it started.
  */
 
@@ -65,7 +66,13 @@ export async function POST(req: Request) {
   const child = spawn(process.execPath, ["luora-export.mjs", ...args], {
     cwd,
     // written where the app reads it, whatever LUORA_DATA_PATH names the file
-    env: { ...env, LUORA_OUT: LUORA_DATA_PATH, LUORA_PROGRESS: "1" },
+    // progress lines for the live log; a run of chosen tests merges into the previous export
+    env: {
+      ...env,
+      LUORA_OUT: LUORA_DATA_PATH,
+      LUORA_PROGRESS: "1",
+      LUORA_MERGE: "1",
+    },
     stdio: ["ignore", "pipe", "pipe"],
     detached: true,
   });

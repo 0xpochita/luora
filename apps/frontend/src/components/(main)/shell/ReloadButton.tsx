@@ -15,7 +15,7 @@ export function ReloadButton() {
     <button
       type="button"
       onClick={() => start(() => router.refresh())}
-      className="hdr-pill lit mb-3 w-full justify-start pr-2"
+      className="hdr-pill lit min-w-0 flex-1 justify-start pr-2"
     >
       <PhIcon
         d={PH.reload}

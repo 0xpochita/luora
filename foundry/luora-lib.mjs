@@ -171,3 +171,18 @@ export function innermost(ranges) {
   // ponytail: O(n²) over distinct ranges per frame; sort + sweep if frames get huge.
   return ranges.filter(([f, s, l]) => !ranges.some(([f2, s2, l2]) => f2 === f && s2 >= s && s2 + l2 <= s + l && (s2 !== s || l2 !== l)));
 }
+
+/**
+ * A filtered run (--mt / --mc / --mp) folded into the previous export: its tests replace their old
+ * results (new ones are added), every other test keeps its last result, local and per fork.
+ */
+export function mergeRun(old, fresh) {
+  const key = t => `${t.suite}.${t.name}`;
+  const fold = (was = [], now = []) => {
+    const byKey = new Map(now.map(t => [key(t), t])), had = new Set(was.map(key));
+    return [...was.map(t => byKey.get(key(t)) ?? t), ...now.filter(t => !had.has(key(t)))];
+  };
+  const forks = { ...old.forks };
+  for (const [k, run] of Object.entries(fresh.forks ?? {})) forks[k] = { ...run, tests: fold(old.forks?.[k]?.tests, run.tests) };
+  return { ...fresh, tests: fold(old.tests, fresh.tests), sources: { ...old.sources, ...fresh.sources }, ...(Object.keys(forks).length ? { forks } : {}) };
+}

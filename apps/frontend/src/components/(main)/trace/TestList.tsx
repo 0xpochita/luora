@@ -39,7 +39,7 @@ export function TestList({
                 }`}
               >
                 <span
-                  className={`size-1.5 flex-none rounded-full ${pass ? "bg-green" : "bg-red"}`}
+                  className={`size-1.5 flex-none rounded-full ${pass ? "bg-green" : t.status === "Skipped" ? "bg-dim" : "bg-red"}`}
                 />
                 <span className="truncate">{t.name}</span>
                 <small className="ml-auto font-sans text-[11px] text-dim">
