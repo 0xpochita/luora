@@ -7,7 +7,8 @@ import type { ChainInfo } from "@/features/trace";
 /*
  * Which run Trace and Atlas show: the local one, or the same tests on a fork of a testnet
  * (`node luora-export.mjs --forks all`). One choice for both pages (useRun().fork).
- *  - a fork icon names the control (Tenderly marks a forked network the same way)
+ *  - the control's name as a tag, a hairline, then the chain (Tenderly badges a forked network
+ *    "Fork" the same way), so "Fork" never reads as part of the chain's name
  *  - each chain as its ringed mark and its name, brand first and the network quieter
  *    (Etherscan / Blockscout: "Base" then "Sepolia"), its chain id at the menu's right edge to
  *    check against
@@ -38,9 +39,13 @@ export function ForkPicker({
     <Dropdown
       variant="pill"
       label={
-        <span className="inline-flex items-center gap-1.5">
-          <PhIcon d={PH.gitFork} className="size-[13px]" />
-          Fork
+        // the control's name as its own tag, a hairline, then the chain: never read as one name
+        <span className="-ml-1.5 inline-flex items-center gap-2.5">
+          <span className="inline-flex h-[22px] items-center gap-1 rounded-full bg-white/[.06] px-2 font-medium text-[10.5px] text-muted uppercase tracking-[0.08em] shadow-[inset_0_0_0_1px_rgb(255_255_255/0.08)]">
+            <PhIcon d={PH.gitFork} className="size-3" />
+            Fork
+          </span>
+          <span aria-hidden="true" className="h-4 w-px bg-white/10" />
         </span>
       }
       ariaLabel="Which chain the tests ran on"
