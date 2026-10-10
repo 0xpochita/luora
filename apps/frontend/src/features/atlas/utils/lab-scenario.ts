@@ -8,6 +8,7 @@ import {
   revertsOf,
   slotName,
   type Wire,
+  wireError,
 } from "./lab-graph.ts";
 import {
   accessCheck,
@@ -57,6 +58,8 @@ export type Scenario = {
   name: string;
   nodes: ScNode[];
   wires: Wire[];
+  /** imported from luora-scenarios.json: proposed by the auditor's AI client over MCP */
+  proposed?: true;
 };
 
 // ---- what the model offers -----------------------------------------------------
@@ -1149,6 +1152,133 @@ export function templates(m: PlayModel): Template[] {
     });
   }
   return out;
+}
+
+// ---- validation ------------------------------------------------------------------------
+
+const FIELDS: Record<ScNode["kind"], string[]> = {
+  actor: ["label", "role", "balance"],
+  const: ["value"],
+  call: ["fn"],
+  expect: ["reason"],
+  assert: ["check"],
+  snapshot: ["of"],
+};
+type Obj = Record<string, unknown>;
+const isObj = (v: unknown): v is Obj =>
+  !!v && typeof v === "object" && !Array.isArray(v);
+const extra = (o: Obj, keys: string[]) =>
+  Object.keys(o).filter((k) => !keys.includes(k));
+
+/**
+ * Why `sc` (untrusted JSON, e.g. a proposal from an AI client in luora-scenarios.json) is not a
+ * scenario the Lab can draw, run and export; [] when it is. Same rules as scenarioErrors in
+ * foundry/luora-mcp.mjs, except that positions are required here.
+ */
+export function scenarioErrors(m: PlayModel, sc: unknown): string[] {
+  if (!isObj(sc) || !Array.isArray(sc.nodes) || !Array.isArray(sc.wires))
+    return ["not a scenario { name, nodes, wires }"];
+  const errs: string[] = [];
+  const name = typeof sc.name === "string" ? sc.name.trim() : "";
+  if (!/^[^\r\n\u2028\u2029]{1,80}$/.test(name))
+    errs.push("name must be one line of 1–80 characters");
+  const roles = actorRoles(m);
+  const checks = assertOptions(m).map((o) => checkKey(o.check));
+  const reasons = new Set(
+    m.entry.flatMap((fn) => revertsOf(m, fn).map((r) => r.reason)),
+  );
+  const slots = publicSlots(m).map((p) => p.id);
+  const ids = new Set<string>();
+  const labels = new Set<string>();
+  const cards: GNode[] = [];
+  for (const n of sc.nodes as unknown[]) {
+    if (
+      !isObj(n) ||
+      typeof n.id !== "string" ||
+      !/^[A-Za-z_]\w{0,39}$/.test(n.id)
+    ) {
+      errs.push("node id must be an identifier");
+      continue;
+    }
+    const me = `node "${n.id}"`;
+    const kind = n.kind as ScNode["kind"];
+    const before = errs.length;
+    if (ids.has(n.id)) errs.push(`${me}: duplicate id`);
+    ids.add(n.id);
+    if (!Object.hasOwn(FIELDS, kind)) {
+      errs.push(`${me}: unknown kind`);
+      continue;
+    }
+    if (extra(n, ["id", "kind", "x", "y", ...FIELDS[kind]]).length)
+      errs.push(`${me}: unknown field`);
+    if (!Number.isFinite(n.x) || !Number.isFinite(n.y))
+      errs.push(`${me}: x and y must be numbers`);
+    const c = n.check;
+    const ok =
+      kind === "actor"
+        ? typeof n.label === "string" &&
+          /^[A-Za-z_]\w{0,31}$/.test(n.label) &&
+          !labels.has(n.label) &&
+          roles.includes(n.role as string) &&
+          parseUsdc(String(n.balance)) !== null &&
+          !!labels.add(n.label)
+        : kind === "const"
+          ? typeof n.value === "string" && parseUsdc(n.value) !== null
+          : kind === "call"
+            ? m.entry.includes(n.fn as string)
+            : kind === "expect"
+              ? n.reason === "" || reasons.has(n.reason as string)
+              : kind === "assert"
+                ? isObj(c) &&
+                  !extra(
+                    c,
+                    c.type === "cmp"
+                      ? ["type", "op"]
+                      : c.type === "only" || c.type === "paused"
+                        ? ["type", "fn"]
+                        : ["type"],
+                  ).length &&
+                  checks.includes(checkKey(c as AssertCheck))
+                : n.of === "balance" || slots.includes(n.of as string);
+    if (!ok) errs.push(`${me}: ${kind} is outside the model`);
+    if (errs.length === before) cards.push(scenarioCard(m, n as ScNode));
+  }
+  const accepted: Wire[] = [];
+  const taken = new Set<string>();
+  for (const w of sc.wires as Wire[]) {
+    const end = (e: unknown) =>
+      isObj(e) &&
+      typeof e.node === "string" &&
+      typeof e.port === "string" &&
+      !extra(e, ["node", "port"]).length;
+    if (
+      !isObj(w) ||
+      !end(w.from) ||
+      !end(w.to) ||
+      extra(w, ["from", "to"]).length
+    ) {
+      errs.push("wire must be { from: { node, port }, to: { node, port } }");
+      continue;
+    }
+    const me = `wire ${w.from.node}.${w.from.port} → ${w.to.node}.${w.to.port}`;
+    if (!ids.has(w.from.node) || !ids.has(w.to.node)) {
+      errs.push(`${me}: no such node`);
+      continue;
+    }
+    const key = `${w.to.node}.${w.to.port}`;
+    // a wire into a card with its own error is reported by that card
+    const live = (id: string) => cards.some((g) => g.id === id);
+    if (!live(w.from.node) || !live(w.to.node)) continue;
+    const err = taken.has(key)
+      ? "already wired"
+      : wireError(cards, accepted, w);
+    if (err) errs.push(`${me}: ${err}`);
+    else {
+      taken.add(key);
+      accepted.push(w);
+    }
+  }
+  return errs;
 }
 
 /** Blank card of `kind` for the palette. */

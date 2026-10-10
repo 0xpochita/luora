@@ -92,6 +92,7 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
             <LabView
               model={model}
               calls={source.calls}
+              proposed={source.proposed}
               selected={selected}
               onSelect={setSelected}
             />

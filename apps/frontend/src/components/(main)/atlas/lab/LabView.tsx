@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Button,
+  Chip,
   FloatingDock,
   IconButton,
   Input,
@@ -38,6 +39,7 @@ import {
   type Scenario,
   type ScNode,
   scenarioCard,
+  scenarioErrors,
   templates,
 } from "@/features/atlas/utils/lab-scenario";
 import type { TraceCall } from "@/features/atlas/utils/playground";
@@ -88,11 +90,14 @@ const download = (name: string, text: string, type = "text/plain") => {
 export function LabView({
   model,
   calls = [],
+  proposed = [],
   selected,
   onSelect,
 }: {
   model: AtlasModel;
   calls?: TraceCall[];
+  /** luora-scenarios.json entries for this contract (unvalidated) */
+  proposed?: unknown[];
   selected: string | null;
   onSelect: (id: string | null) => void;
 }) {
@@ -114,6 +119,17 @@ export function LabView({
     templates(model).map((t) => t.build()),
   );
   const sc = store.current;
+  // AI proposals not imported yet; invalid ones stay listed but disabled, with the reason
+  const proposals = useMemo(
+    () =>
+      proposed
+        .map((p) => {
+          const s = p as Scenario;
+          return { s, id: `ai-${s.id}`, errs: scenarioErrors(model, p) };
+        })
+        .filter((x) => !store.list.some((s) => s.id === x.id)),
+    [proposed, model, store.list],
+  );
 
   // ---- graph for the current mode ----
   const contract = useMemo(() => contractGraph(model), [model]);
@@ -505,15 +521,41 @@ export function LabView({
               <Select
                 className="max-w-[200px]"
                 value={sc.id}
-                onChange={(e) => store.select(e.target.value)}
+                onChange={(e) => {
+                  const p = proposals.find((x) => x.id === e.target.value);
+                  if (!p) return store.select(e.target.value);
+                  const { name, nodes, wires } = p.s;
+                  store.add({ id: p.id, name, nodes, wires, proposed: true });
+                  setRun(null);
+                }}
                 aria-label="Scenario"
               >
                 {store.list.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.name}
+                    {s.proposed ? `AI · ${s.name}` : s.name}
                   </option>
                 ))}
+                {proposals.length > 0 && (
+                  <optgroup label="Proposed by your AI client">
+                    {proposals.map((p) => (
+                      <option
+                        key={p.id}
+                        value={p.id}
+                        disabled={p.errs.length > 0}
+                        title={p.errs.join("\n") || undefined}
+                      >
+                        {p.errs.length ? "Invalid · " : "AI · "}
+                        {p.s.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
               </Select>
+              {sc.proposed && (
+                <span title="Proposed by your AI client over MCP: review it before you rely on it">
+                  <Chip>AI proposal</Chip>
+                </span>
+              )}
               <Input
                 className="w-[200px]"
                 value={sc.name}

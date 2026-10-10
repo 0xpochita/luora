@@ -127,6 +127,8 @@ export type AtlasSource = {
   origin: "local" | "sample";
   /** calls the forge tests made into the contract (luora-data.json `tests`), for real values in Lab runs */
   calls?: TraceCall[];
+  /** scenarios an AI client proposed through foundry/luora-mcp.mjs (luora-scenarios.json), unvalidated */
+  proposed?: unknown[];
 };
 
 export type AtlasView = "lab" | "explorer" | "map" | "flow";
