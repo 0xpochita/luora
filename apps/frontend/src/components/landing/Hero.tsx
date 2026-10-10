@@ -64,7 +64,7 @@ export function Nav() {
         href="/trace"
         className="rounded-full bg-primary px-4 py-2 font-medium text-[13px] text-primary-fg transition-colors hover:bg-white"
       >
-        Open app
+        Launch app
       </Link>
       <div
         aria-hidden="true"

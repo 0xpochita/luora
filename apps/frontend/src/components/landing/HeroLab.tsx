@@ -94,10 +94,21 @@ export function HeroLab({
         </span>
         <Link
           href="/atlas"
-          className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-full bg-primary px-4 font-medium text-[13px] text-primary-fg transition-colors hover:bg-white"
+          className="ml-auto inline-flex h-9 items-center gap-1 rounded-full bg-primary px-4 font-medium text-[13px] text-primary-fg transition-colors hover:bg-white"
         >
           Open the Lab
-          <span aria-hidden="true">→</span>
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 16 16"
+            className="size-3.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M6 3.5 10.5 8 6 12.5" />
+          </svg>
         </Link>
       </div>
 
