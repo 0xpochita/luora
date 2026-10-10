@@ -1,23 +1,20 @@
 "use client";
 
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { ChainLogo, Dropdown, PH, PhIcon } from "@/components/ui";
+import { PH, PhIcon } from "@/components/ui";
 import type { RunLine, TestRun } from "@/features/run";
 import {
   clock,
   FORK_CHAINS,
   type ResultRow,
-  splitChain,
 } from "@/features/run/utils/test-run";
-import { ChainName } from "./ForkPicker";
 
 /*
  * Start test, one row above the trace's Calls list: runs the exporter from the app and reports
  * what forge said, in forge's words, so an auditor reads it the way they read their terminal.
- *  - the button: the header's capsule (header.css .hdr-pill, T1/T2) in green, split like the data
- *    capsule (T3): Start test | where it runs (Local, or Local plus one testnet fork; the Fork
- *    picker's choice by default, and every chain even when the loaded run has no forks). While
- *    it runs the halves become a timer and Stop
+ *  - the button: the header's capsule (header.css .hdr-pill, T1/T2) in green. It runs where the
+ *    Fork picker points (Local, or Local plus that testnet fork); while it runs it splits like
+ *    the data capsule (T3) into a timer and Stop
  *  - the log is a pop-up (TestRunDialog, the Connect AI dialog's <dialog> and motion) that Start
  *    test opens, laid out like a GitHub Actions job page: the verdict in the header as forge
  *    tallies it ("8 passed · 1 failed · 0 skipped"), the tests on the left, the whole output on
@@ -68,7 +65,8 @@ export function TestRunPanel({
 }) {
   const running = run.phase === "running";
   const elapsed = useElapsed(run.started, run.ended);
-  const [target, setTarget] = useState(forks[fork] ? fork : "");
+  // where it runs is the Fork picker's choice: the local run, plus that fork when one is shown
+  const target = forks[fork] ? fork : "";
 
   return (
     // the run's controls wrap within the left; the Fork picker keeps the top right
@@ -99,41 +97,15 @@ export function TestRunPanel({
             </button>
           </div>
         ) : (
-          <div className="hdr-pill go split flex-none">
-            <button
-              type="button"
-              className="lead"
-              onClick={() => run.start(target)}
-              title={`Runs node luora-export.mjs${target ? ` --forks ${target}` : ""} in your Foundry project and loads the result`}
-            >
-              <PhIcon d={PH.play} className="size-[15px] text-green" />
-              Start test
-            </button>
-            <Dropdown
-              variant="bare"
-              ariaLabel="Where Start test runs"
-              value={target || "local"}
-              onChange={(v) => setTarget(v === "local" ? "" : v)}
-              options={[
-                {
-                  value: "local" as string,
-                  label: <ChainName parts={["Local", ""]} />,
-                  text: "Local",
-                  title: "forge test on an empty local chain",
-                  icon: <ChainLogo family="local" className="size-3.5" />,
-                },
-                ...FORK_CHAINS.map((c) => ({
-                  value: c.key as string,
-                  label: <ChainName parts={splitChain(c.name)} />,
-                  text: c.name,
-                  hint: c.id,
-                  title: `The local run, then the same tests on a fork of ${c.name} at its latest block (read-only, nothing is sent)`,
-                  icon: <ChainLogo family={c.family} className="size-3.5" />,
-                  group: "Local + a testnet fork",
-                })),
-              ]}
-            />
-          </div>
+          <button
+            type="button"
+            className="hdr-pill go flex-none"
+            onClick={() => run.start(target)}
+            title={`Runs node luora-export.mjs${target ? ` --forks ${target}` : ""} in your Foundry project and loads the result`}
+          >
+            <PhIcon d={PH.play} className="size-[15px] text-green" />
+            Start test
+          </button>
         )}
         {run.phase !== "idle" && (
           // the verdict stays here once the pop-up is closed, as one capsule that reopens it
