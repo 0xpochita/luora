@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, animate, motion } from "motion/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { EASE, ENTER, PH, PhIcon, SegmentedControl } from "@/components/ui";
 import { type AtlasSource, createAtlasModel } from "@/features/atlas";
 import { atlasSource } from "@/features/atlas/utils/atlas-source";
@@ -19,6 +19,7 @@ import {
 import { LabView } from "../atlas/lab/LabView";
 import { CallGraph } from "../graph/CallGraph";
 import { StartHere } from "../onboarding/StartHere";
+import { ForkPicker } from "../shell/ForkPicker";
 import { Sidebar } from "../shell/Sidebar";
 import { SourcePanel } from "../source/SourcePanel";
 import { AskPanel, useAskThread } from "./AskPanel";
@@ -38,7 +39,7 @@ export function TraceWorkspace({
   atlas: AtlasSource;
 }) {
   const shown = useShownSource(source, fromFile);
-  const { run } = useRun();
+  const { run, fork, setFork } = useRun();
   // the same run's atlas (for the Scenario tab): the dropped file's, else the server's when it
   // comes from the same place as the trace (a local trace without an atlas gets none)
   const runAtlas = run
@@ -47,10 +48,27 @@ export function TraceWorkspace({
       ? atlas
       : null;
   if (shown.origin === "none") return <StartHere />;
+  if (!shown.source) return null;
+  // the chosen fork's run of the same tests (shared with the Atlas), else the local run
+  const forks = shown.source.data.forks ?? {};
+  const forkRun = forks[fork];
+  const view = forkRun
+    ? {
+        ...shown.source,
+        data: {
+          ...shown.source.data,
+          tests: forkRun.tests,
+          chain: forkRun.chain,
+        },
+      }
+    : shown.source;
   return (
-    shown.source && (
-      <TraceBody key={shown.key} source={shown.source} atlas={runAtlas} />
-    )
+    <TraceBody
+      key={`${shown.key}:${forkRun ? fork : "local"}`}
+      source={view}
+      atlas={runAtlas}
+      forkPicker={<ForkPicker forks={forks} value={fork} onChange={setFork} />}
+    />
   );
 }
 
@@ -58,9 +76,11 @@ export function TraceWorkspace({
 function TraceBody({
   source,
   atlas,
+  forkPicker,
 }: {
   source: TraceSource;
   atlas: AtlasSource | null;
+  forkPicker: ReactNode;
 }) {
   const { data } = source;
   const model = useMemo(
@@ -437,6 +457,8 @@ function TraceBody({
           maxDepth={maxDepth}
           panels={shown}
           onPanel={onPanel}
+          chain={data.chain}
+          forkPicker={forkPicker}
           revert={revert}
           onRevert={jumpToRevert}
         />

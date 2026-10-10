@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { connection } from "next/server";
 import { LUORA_DATA_EXPLICIT, LUORA_DATA_PATH } from "@/config/env.server";
+import SAMPLE_RUN from "../../trace/fixtures/sample-trace.json";
 import { SAMPLE_ATLAS } from "../fixtures/sample-atlas";
 import SAMPLE_CONTRACTS from "../fixtures/sample-contracts.json";
 import type { AtlasData, AtlasSource } from "../types";
@@ -47,11 +48,15 @@ export async function loadAtlas(): Promise<AtlasSource> {
       if (local)
         return { ...local, proposed: await loadProposed(local.data.contract) };
     } catch {}
-  return {
-    data: SAMPLE_ATLAS,
-    // the sample project's mocks, mapped by luora-atlas.mjs, for the contract picker
-    contracts: SAMPLE_CONTRACTS as unknown as AtlasData[],
-    origin: "none",
-    proposed: await loadProposed(SAMPLE_ATLAS.contract),
-  };
+  // the sample project's mocks (mapped by luora-atlas.mjs) for the contract picker, and the
+  // sample run's calls, local and on each testnet fork, for the Lab's values
+  const sample = atlasSource(
+    {
+      ...(SAMPLE_RUN as Parameters<typeof atlasSource>[0]),
+      atlas: SAMPLE_ATLAS,
+      atlases: SAMPLE_CONTRACTS as unknown as AtlasData[],
+    },
+    "none",
+  ) as AtlasSource;
+  return { ...sample, proposed: await loadProposed(SAMPLE_ATLAS.contract) };
 }

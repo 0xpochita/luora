@@ -1,5 +1,6 @@
 export { Button } from "./Button";
 export { CardGradients } from "./CardGradients";
+export { ChainLogo } from "./ChainLogo";
 export { Chip } from "./Chip";
 export { Dropdown, type DropdownOption } from "./Dropdown";
 export { FloatingDock } from "./FloatingDock";

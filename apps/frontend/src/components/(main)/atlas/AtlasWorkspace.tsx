@@ -27,9 +27,10 @@ import {
   ratio,
 } from "@/features/atlas/utils/coverage";
 import type { FoundryTest } from "@/features/atlas/utils/lab-foundry";
-import { type RunFile, useShownSource } from "@/features/run";
+import { type RunFile, useRun, useShownSource } from "@/features/run";
 import { useAiThread } from "../ai/AiChat";
 import { StartHere } from "../onboarding/StartHere";
+import { ForkPicker } from "../shell/ForkPicker";
 import { AtlasAsk } from "./AtlasAsk";
 import { ContractSource } from "./ContractSource";
 import { CoverageSummary } from "./CoverageSummary";
@@ -111,6 +112,9 @@ function AtlasBody({ source }: { source: AtlasSource }) {
   const [name, setName] = useState(source.data.contract);
   const data = all.find((c) => c.contract === name) ?? source.data;
   const main = data === source.data;
+  // the run the Lab's values come from: local, or a testnet fork (one choice with Trace)
+  const { fork, setFork } = useRun();
+  const run = source.forks?.[fork] ?? source;
   const model = useMemo(() => createAtlasModel(data), [data]);
   const [view, setView] = useState<AtlasView>("lab");
   const [selected, setSelected] = useState<string | null>(null);
@@ -224,8 +228,15 @@ function AtlasBody({ source }: { source: AtlasSource }) {
             icon: <PhIcon d={v.icon} className="size-[15px]" />,
           }))}
         />
+        <div className="ml-auto">
+          <ForkPicker
+            forks={source.forks ?? {}}
+            value={fork}
+            onChange={setFork}
+          />
+        </div>
         {all.length > 1 ? (
-          <div className="ml-auto">
+          <div>
             <Dropdown
               variant="pill"
               mono
@@ -252,7 +263,7 @@ function AtlasBody({ source }: { source: AtlasSource }) {
             />
           </div>
         ) : (
-          <span className="ml-auto inline-flex items-center gap-1.5 font-mono text-[12.5px] text-muted">
+          <span className="inline-flex items-center gap-1.5 font-mono text-[12.5px] text-muted">
             <SolidityLogo className="size-3.5 text-body" />
             {model.file.split("/").pop()}
           </span>
@@ -320,7 +331,7 @@ function AtlasBody({ source }: { source: AtlasSource }) {
       </header>
       <div className="body">
         <motion.section
-          key={`${view}:${name}`}
+          key={`${view}:${name}:${run === source ? "" : fork}`}
           {...ENTER}
           className={view === "flow" ? "stage" : "stage flex flex-col"}
         >
@@ -335,7 +346,7 @@ function AtlasBody({ source }: { source: AtlasSource }) {
           ) : (
             <LabView
               model={model}
-              calls={main ? source.calls : source.callsBy?.[name]}
+              calls={main ? run.calls : run.callsBy?.[name]}
               proposed={main ? source.proposed : undefined}
               selected={selected}
               onSelect={select}

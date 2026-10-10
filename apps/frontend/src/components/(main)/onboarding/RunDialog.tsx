@@ -196,7 +196,12 @@ function Export() {
               <code className="whitespace-nowrap font-mono">--slither=…</code>{" "}
               <code className="whitespace-nowrap font-mono">--aderyn=…</code>.{" "}
               <code className="font-mono">LUORA_ATLAS=Contract</code> picks the
-              contract for Atlas.
+              contract for Atlas. <code className="font-mono">--forks all</code>{" "}
+              (or{" "}
+              <code className="whitespace-nowrap font-mono">
+                --chain base-sepolia
+              </code>
+              ) reruns the tests on testnet forks; nothing is sent on-chain.
             </>
           }
         >
@@ -296,9 +301,9 @@ function Look() {
   );
 }
 
-/** The five exporter scripts, fetched from this running app into the current folder. */
+/** The six exporter scripts, fetched from this running app into the current folder. */
 export const exporterCommand = (origin: string) =>
-  `curl -fsSLO -w "saved %{filename_effective}\\n" "${origin}/exporter/luora-{export,lib,atlas,findings,coverage}.mjs"`;
+  `curl -fsSLO -w "saved %{filename_effective}\\n" "${origin}/exporter/luora-{export,lib,atlas,findings,coverage,chains}.mjs"`;
 
 /** This app's origin once mounted (the server render assumes the default dev port). */
 export function useAppOrigin() {

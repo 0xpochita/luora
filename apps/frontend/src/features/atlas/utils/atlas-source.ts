@@ -1,3 +1,4 @@
+import type { ChainInfo } from "../../trace/types";
 import type { AtlasData, AtlasSource } from "../types";
 import { type TraceTest, traceCalls } from "./playground";
 
@@ -10,6 +11,7 @@ export function atlasSource(
     atlas?: AtlasData | null;
     atlases?: (AtlasData | null)[];
     tests?: TraceTest[];
+    forks?: Record<string, { chain: ChainInfo; tests?: TraceTest[] }>;
   },
   origin: AtlasSource["origin"],
 ): AtlasSource | null {
@@ -18,13 +20,23 @@ export function atlasSource(
   const contracts = (Array.isArray(json.atlases) ? json.atlases : []).filter(
     usable,
   );
+  const calls = (t: TraceTest[]) => ({
+    calls: traceCalls(t, atlas.contract),
+    callsBy: Object.fromEntries(
+      contracts.map((c) => [c.contract, traceCalls(t, c.contract)]),
+    ),
+  });
   return {
     data: atlas,
     origin,
-    calls: traceCalls(tests, atlas.contract),
     contracts,
-    callsBy: Object.fromEntries(
-      contracts.map((c) => [c.contract, traceCalls(tests, c.contract)]),
+    ...calls(tests),
+    // the same tests on testnet forks (luora-export.mjs --forks): their values, per chain
+    forks: Object.fromEntries(
+      Object.entries(json.forks ?? {}).map(([key, f]) => [
+        key,
+        { chain: f.chain, ...calls(f.tests ?? []) },
+      ]),
     ),
   };
 }

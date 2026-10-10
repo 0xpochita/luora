@@ -1,4 +1,4 @@
-import type { RunOrigin } from "../trace/types";
+import type { ChainInfo, RunOrigin } from "../trace/types";
 import type { TraceCall } from "./utils/playground";
 
 export type SystemKey =
@@ -132,6 +132,15 @@ export type AtlasSource = {
   contracts?: AtlasData[];
   /** `calls`, for each of the other contracts */
   callsBy?: Record<string, TraceCall[]>;
+  /** `calls` and `callsBy` from the same tests run on testnet forks (luora-data.json `forks`) */
+  forks?: Record<
+    string,
+    {
+      chain: ChainInfo;
+      calls: TraceCall[];
+      callsBy: Record<string, TraceCall[]>;
+    }
+  >;
   /** scenarios an AI client proposed through foundry/luora-mcp.mjs (luora-scenarios.json), unvalidated */
   proposed?: unknown[];
 };

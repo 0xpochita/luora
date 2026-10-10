@@ -27,11 +27,15 @@ type RunState = {
   /** the user chose "Try the sample" on the Start page (remembered in this browser) */
   sample: boolean;
   setSample: (on: boolean) => void;
+  /** the forked chain Trace and Atlas show ("" = the local run), remembered in this browser */
+  fork: string;
+  setFork: (key: string) => void;
 };
 
 const RunContext = createContext<RunState | null>(null);
 const ONBOARDED = "luora:onboarded";
 const SAMPLE = "luora:sample";
+const FORK = "luora:fork";
 
 /**
  * Holds a dropped run in memory for this tab. Nothing is uploaded or written to disk: a full
@@ -43,9 +47,18 @@ export function RunProvider({ children }: { children: ReactNode }) {
   const [origin, setOrigin] = useState<RunOrigin | null>(null);
   const [pane, setPane] = useState<RunPane | null>(null);
   const [sample, setSampleState] = useState(false);
+  const [fork, setForkState] = useState("");
   useEffect(() => {
     try {
       setSampleState(localStorage.getItem(SAMPLE) === "1");
+      setForkState(localStorage.getItem(FORK) ?? "");
+    } catch {}
+  }, []);
+  const setFork = useCallback((key: string) => {
+    setForkState(key);
+    try {
+      if (key) localStorage.setItem(FORK, key);
+      else localStorage.removeItem(FORK);
     } catch {}
   }, []);
   const setSample = useCallback((on: boolean) => {
@@ -78,8 +91,10 @@ export function RunProvider({ children }: { children: ReactNode }) {
       setPane,
       sample,
       setSample,
+      fork,
+      setFork,
     }),
-    [run, origin, pane, sample, setSample],
+    [run, origin, pane, sample, setSample, fork, setFork],
   );
   return <RunContext value={value}>{children}</RunContext>;
 }

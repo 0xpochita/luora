@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import type { RefObject } from "react";
+import type { ReactNode, RefObject } from "react";
 import {
   Chip,
   Dropdown,
@@ -11,6 +11,7 @@ import {
   SegmentedControl,
 } from "@/components/ui";
 import type {
+  ChainInfo,
   DisplayKind,
   Frame,
   TestResult,
@@ -70,6 +71,8 @@ export function TraceToolbar({
   onPanel,
   revert,
   onRevert,
+  chain,
+  forkPicker,
 }: {
   test: TestResult;
   forgeVersion: string;
@@ -91,6 +94,10 @@ export function TraceToolbar({
   onPanel: (p: keyof Panels) => void;
   revert: { index: number; frame: Frame } | null;
   onRevert: () => void;
+  /** the chain this run was forked from, if any */
+  chain?: ChainInfo;
+  /** Local / testnet forks (shell/ForkPicker) */
+  forkPicker?: ReactNode;
 }) {
   const pass = test.status === "Success";
   const icon = (d: string) => <PhIcon d={d} className="size-[15px]" />;
@@ -106,9 +113,20 @@ export function TraceToolbar({
             <Chip tone={pass ? "ok" : "bad"} dot>
               {pass ? "Pass" : "Fail"}
             </Chip>
+            {forkPicker}
           </div>
           <p className="mt-1 truncate text-[12.5px] text-dim">
             <span className="font-mono">{test.file}</span>
+            {/* the fork first: the rest is cut when the line runs out */}
+            {chain && (
+              <>
+                <span className="mx-1.5">·</span>
+                forked {chain.name} at block{" "}
+                <span className="font-mono">
+                  {chain.block.toLocaleString()}
+                </span>
+              </>
+            )}
             <span className="mx-1.5">·</span>
             <span className="font-mono">{command}</span>
             <span className="mx-1.5">·</span>

@@ -48,12 +48,32 @@ export type TestResult = {
   transfers: Transfer[];
 };
 
+/** A chain a run was forked from (foundry/luora-chains.mjs): the testnet and the pinned block. */
+export type ChainInfo = {
+  key: string;
+  name: string;
+  /** which logo: ethereum, arbitrum, base, robinhood, hyperliquid, tempo */
+  family: string;
+  id: number;
+  block: number;
+};
+/** The same tests run on a fork of one chain (`node luora-export.mjs --forks …`). */
+export type ForkRun = {
+  chain: ChainInfo;
+  generatedAt?: string;
+  tests: TestResult[];
+};
+
 export type LuoraData = {
   generatedAt: string;
   forgeVersion: string;
   command: string;
   tests: TestResult[];
   sources: Record<string, string>;
+  /** set when this whole run was forked (`--chain`) */
+  chain?: ChainInfo;
+  /** extra runs of the same tests, one per forked chain */
+  forks?: Record<string, ForkRun>;
 };
 
 /** What a row/node is drawn as (cheatcodes and reverts get their own look). */

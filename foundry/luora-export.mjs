@@ -14,13 +14,42 @@ import { execFile, execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { availableParallelism, tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { buildAtlas } from './luora-atlas.mjs';
+import { forkKeys, latestBlock, resolveChain } from './luora-chains.mjs';
 import { loadReports, mergeFindings, reportFiles } from './luora-findings.mjs';
 import { buildCoverage } from './luora-coverage.mjs';
 import { decodeParams, fmtWord, innermost, keccak256, lineIndex, parseSourceMap, pcToIc, revertReason, sig } from './luora-lib.mjs';
 
 const ROOT = process.cwd();
-const extra = process.argv.slice(2).filter(a => !/^--(slither|aderyn)=/.test(a));
+// --chain <key>: run on a fork of that testnet (luora-chains.mjs); --forks all|a,b: add a run per
+// chain after the local one. Both are Luora's own flags, never passed to forge.
+const argv = process.argv.slice(2);
+const flag = name => {
+  const i = argv.findIndex(a => a === `--${name}` || a.startsWith(`--${name}=`));
+  if (i < 0) return null;
+  const v = argv[i].includes('=') ? argv[i].split('=')[1] : argv[i + 1];
+  argv.splice(i, argv[i].includes('=') ? 1 : 2);
+  return v;
+};
+const chainKey = flag('chain'), forksArg = flag('forks');
+const extra = argv.filter(a => !/^--(slither|aderyn)=/.test(a));
+const OUT_FILE = process.env.LUORA_OUT || join(ROOT, 'luora-data.json');
+const TRACE_ONLY = !!process.env.LUORA_TRACE_ONLY;
+let chain = null;
+if (chainKey) {
+  const c = resolveChain(chainKey);
+  const block = await latestBlock(c);
+  // pinned to one block, so every forge run below forks the same state (Foundry caches it)
+  extra.push('--fork-url', c.rpc, '--fork-block-number', String(block));
+  // on a fork every fresh address a fuzzer touches is an RPC round trip, so fuzz and invariant
+  // tests run short there (ponytail: fixed caps; the project's own FOUNDRY_* settings still win)
+  process.env.FOUNDRY_FUZZ_RUNS ??= '16';
+  process.env.FOUNDRY_INVARIANT_RUNS ??= '4';
+  process.env.FOUNDRY_INVARIANT_DEPTH ??= '8';
+  chain = { key: c.key, name: c.name, family: c.family, id: c.id, block };
+  console.log(`luora: forking ${c.name} at block ${block}`);
+}
 const sh = (cmd, args) => execFileSync(cmd, args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 512 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
 
 // ---------- artifacts: selectors, events, bytecode → contract, source maps ----------
@@ -216,7 +245,9 @@ function otherContracts(root, skip) {
 }
 
 let atlas = null;
-try { atlas = buildAtlas({ root: ROOT }); } catch (e) { console.warn(`luora: atlas skipped — ${e.message}`); }
+// a fork run is only its traces (the --forks parent keeps the atlas, findings and coverage)
+if (!TRACE_ONLY)
+  try { atlas = buildAtlas({ root: ROOT }); } catch (e) { console.warn(`luora: atlas skipped — ${e.message}`); }
 // the project's other contracts, so the Atlas can switch between them; the app marks mocks.
 // ponytail: one build per contract and no coverage / report findings for them (the main contract
 // keeps those); share one AST pass if exports of big projects get slow
@@ -234,6 +265,25 @@ if (atlas) {
 if (atlas) try { atlas.coverage = buildCoverage({ root: ROOT, atlas, args: passthrough }); } catch (e) { console.warn(`luora: coverage skipped — ${e.message.split('\n')[0]}`); }
 
 const forgeVersion = sh('forge', ['--version']).split('\n')[0];
-writeFileSync(join(ROOT, 'luora-data.json'), JSON.stringify({ generatedAt: new Date().toISOString(), forgeVersion, command: ['forge', 'test', '--json', '-vvvv', ...extra].join(' '), tests, sources, atlas, atlases }, null, 1));
+const data = { generatedAt: new Date().toISOString(), forgeVersion, command: ['forge', 'test', '--json', '-vvvv', ...extra].join(' '), tests, sources, atlas, atlases, ...(chain ? { chain } : {}) };
+// --forks: one traced run per chain, each in a child export (sequential, gentle on public RPCs)
+if (forksArg) {
+  data.forks = {};
+  const own = process.argv.slice(2).filter((a, k, all) => !/^--(forks|chain)(=|$)/.test(a) && !/^--(forks|chain)$/.test(all[k - 1] ?? ''));
+  for (const key of forkKeys(forksArg)) {
+    const out = join(tmpdir(), `luora-fork-${key}-${process.pid}.json`);
+    try {
+      execFileSync(process.execPath, [fileURLToPath(import.meta.url), '--chain', key, ...own], { cwd: ROOT, stdio: 'inherit', env: { ...process.env, LUORA_OUT: out, LUORA_TRACE_ONLY: '1' } });
+      const run = JSON.parse(readFileSync(out, 'utf8'));
+      data.forks[key] = { chain: run.chain, generatedAt: run.generatedAt, tests: run.tests };
+      console.log(`luora: fork ${run.chain.name} — ${run.tests.length} tests`);
+    } catch (e) {
+      console.warn(`luora: fork ${key} skipped — ${e.message.split('\n')[0]}`);
+    } finally {
+      rmSync(out, { force: true });
+    }
+  }
+}
+writeFileSync(OUT_FILE, JSON.stringify(data, null, 1));
 const traced = tests.reduce((n, t) => n + t.frames.filter(f => f.lines).length, 0);
 console.log(`luora: ${tests.length} tests, ${tests.reduce((n, t) => n + t.frames.length, 0)} frames (${traced} with source lines) → luora-data.json`);
