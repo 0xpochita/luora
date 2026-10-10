@@ -1,0 +1,72 @@
+/* Connect AI dialog (AiSettings.tsx): the panel rises and scales in while the page dims behind it,
+   its rows follow one by one; closing plays it back. Native <dialog> + @starting-style, CSS only;
+   instant under reduced motion. */
+.ai-dialog {
+  opacity: 0;
+  transform: translateY(12px) scale(0.96);
+  transition:
+    opacity 0.22s ease,
+    transform 0.34s cubic-bezier(0.2, 0.8, 0.2, 1),
+    overlay 0.34s allow-discrete,
+    display 0.34s allow-discrete;
+}
+.ai-dialog[open] {
+  opacity: 1;
+  transform: none;
+}
+@starting-style {
+  .ai-dialog[open] {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+}
+.ai-dialog::backdrop {
+  background: rgb(0 0 0 / 0);
+  backdrop-filter: blur(0);
+  transition:
+    background 0.3s ease,
+    backdrop-filter 0.3s ease,
+    overlay 0.3s allow-discrete,
+    display 0.3s allow-discrete;
+}
+.ai-dialog[open]::backdrop {
+  background: rgb(0 0 0 / 0.55);
+  backdrop-filter: blur(3px);
+}
+@starting-style {
+  .ai-dialog[open]::backdrop {
+    background: rgb(0 0 0 / 0);
+    backdrop-filter: blur(0);
+  }
+}
+/* the rows inside follow the panel in */
+.ai-dialog[open] form > * {
+  animation: ai-row 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+.ai-dialog[open] form > :nth-child(2) {
+  animation-delay: 50ms;
+}
+.ai-dialog[open] form > :nth-child(3) {
+  animation-delay: 100ms;
+}
+.ai-dialog[open] form > :nth-child(4) {
+  animation-delay: 150ms;
+}
+.ai-dialog[open] form > :nth-child(n + 5) {
+  animation-delay: 200ms;
+}
+@keyframes ai-row {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-dialog,
+  .ai-dialog::backdrop {
+    transition: none;
+  }
+  .ai-dialog[open] form > * {
+    animation: none;
+  }
+}

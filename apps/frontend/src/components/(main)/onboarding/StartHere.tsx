@@ -42,7 +42,7 @@ export function StartHere() {
     <div className="flex min-h-0 flex-1 overflow-auto px-3 pb-3">
       <div className="m-auto w-[min(720px,100%)] py-8">
         <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-border bg-raised px-3 py-1 text-[12px] text-muted">
-          <span className="size-1.5 rounded-full bg-fg" />
+          <PhIcon d={PH.rocket} className="size-[13px] text-fg" />
           Start here
         </p>
         <h1 className="font-medium text-[clamp(24px,3vw,32px)] text-fg leading-tight tracking-[-0.02em]">

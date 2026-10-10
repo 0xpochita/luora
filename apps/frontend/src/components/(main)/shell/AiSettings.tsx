@@ -20,6 +20,7 @@ import {
   testConnection,
   useAiConfig,
 } from "@/features/ai";
+import "./ai-settings.css";
 
 type Mode = "none" | "local" | "key";
 const modeOf = (k: AiKind): Mode =>
@@ -91,7 +92,7 @@ export function AiSettings() {
         title={
           connected ? "Change your AI provider" : "Connect your own AI to Ask"
         }
-        className="group rounded-full bg-gradient-to-br from-white/30 via-white/[.06] to-white/20 p-px outline-none focus-visible:ring-2 focus-visible:ring-white/25"
+        className="group rounded-full bg-gradient-to-br from-white/30 via-white/[.06] to-white/20 p-px outline-none transition-transform active:scale-[.97] focus-visible:ring-2 focus-visible:ring-white/25"
       >
         <span className="flex rounded-full bg-[#09090a] p-[3px] shadow-[inset_0_1px_3px_rgba(0,0,0,.9)]">
           <span className="flex h-7 items-center gap-2 rounded-full bg-gradient-to-b from-[#2e2e32] to-[#1b1b1e] pr-2.5 pl-3 text-[13px] text-fg shadow-[inset_0_1px_0_rgba(255,255,255,.14),0_4px_14px_rgba(0,0,0,.55)] transition-colors group-hover:from-[#36363b] group-hover:to-[#202024]">
@@ -105,7 +106,10 @@ export function AiSettings() {
               </>
             ) : (
               <>
-                <PhIcon d={PH.sparkle} className="size-[14px]" />
+                <PhIcon
+                  d={PH.sparkle}
+                  className="size-[14px] transition-transform duration-500 group-hover:rotate-[20deg] group-hover:scale-110 motion-reduce:transition-none"
+                />
                 Connect AI
               </>
             )}
@@ -118,7 +122,7 @@ export function AiSettings() {
         aria-label="AI provider"
         onClick={(e) => e.target === dialog.current && dialog.current?.close()}
         onKeyDown={(e) => e.key === "Escape" && e.stopPropagation()}
-        className="m-auto w-[min(480px,calc(100vw-32px))] rounded-card border border-border bg-card-grad p-0 text-fg shadow-float backdrop:bg-black/55 backdrop:backdrop-blur-[2px]"
+        className="ai-dialog m-auto w-[min(480px,calc(100vw-32px))] rounded-card border border-border bg-card-grad p-0 text-fg shadow-float"
       >
         <form
           method="dialog"
