@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { tile } from "./tile";
 
 /** Row of separate rounded tiles with gaps; the active one is solid white. Used for every tab bar. */
@@ -11,7 +12,7 @@ export function Tabs<T extends string>({
   className = "",
 }: {
   value: T;
-  options: { value: T; label: string; title?: string }[];
+  options: { value: T; label: string; title?: string; icon?: ReactNode }[];
   onChange: (v: T) => void;
   size?: "sm" | "md";
   className?: string;
@@ -26,8 +27,9 @@ export function Tabs<T extends string>({
           title={o.title}
           aria-selected={o.value === value}
           onClick={() => onChange(o.value)}
-          className={`${tile(o.value === value)} ${size === "sm" ? "h-7 px-2.5 text-[12.5px]" : "h-9 px-4 text-[13px]"}`}
+          className={`${tile(o.value === value)} gap-1.5 ${size === "sm" ? "h-7 px-2.5 text-[12.5px]" : "h-9 px-4 text-[13px]"}`}
         >
+          {o.icon}
           {o.label}
         </button>
       ))}
