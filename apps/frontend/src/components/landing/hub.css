@@ -5,7 +5,7 @@
       with tick marks and one lit arc, short labels on the leaders → one ring kept (the ticks
       ring, the lit arc and the leader labels were dropped in the nineteenth pass)
    W3 id.pinterest.com/pin/1150880879804919385/ (zsearch 'Turn years of work into instant
-      context') — round marks wired into ONE rounded square with lit corner pins, a light streak
+      context') — round marks wired into ONE rounded square (its lit corner pins dropped), a light streak
       through it → .lp-hub-core (the wordmark's tile, 56px tall, that later hands over to the square
       growing into the Lab), the wires
    B1 id.pinterest.com/pin/23432860626141831/   — graphite fine grid under a soft centre light
@@ -181,7 +181,7 @@
   }
 }
 
-/* W3 core: the 56px square the Lab later grows from, lit corner pins */
+/* W3 core: the wordmark tile the Lab later grows from */
 .lp-hub-core {
   left: calc(var(--cw) * -1);
   top: calc(var(--c) * -1);
@@ -195,17 +195,6 @@
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.1),
     0 0 48px -8px rgb(255 255 255 / 0.2);
-}
-.lp-hub-core::before {
-  content: "";
-  position: absolute;
-  inset: -3px;
-  --pin: radial-gradient(circle, #fff 0.8px, transparent 1.8px);
-  background:
-    var(--pin) 0 0 / 6px 6px no-repeat,
-    var(--pin) 100% 0 / 6px 6px no-repeat,
-    var(--pin) 0 100% / 6px 6px no-repeat,
-    var(--pin) 100% 100% / 6px 6px no-repeat;
 }
 
 /* the marks on the arms; the labels (what each hands Luora) on the wire, under the name on phones */
