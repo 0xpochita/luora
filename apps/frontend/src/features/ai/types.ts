@@ -1,7 +1,14 @@
 import type { AiQuestion } from "../atlas/types";
 
 /** "none" = the built-in canned answers; everything else is the user's own provider. */
-export type AiKind = "none" | "local" | "anthropic" | "openai" | "openrouter";
+/** "claude" = the user's own Claude Code and its subscription login, through the local bridge (app/api/claude). */
+export type AiKind =
+  | "none"
+  | "local"
+  | "claude"
+  | "anthropic"
+  | "openai"
+  | "openrouter";
 
 /** Kept only in this browser's localStorage (`luora.ai`). */
 export type AiConfig = {

@@ -216,9 +216,9 @@ function Card({
                   {r.members.length}
                 </span>
               )}
-              {/* the row's port: the wire leaves from here (blue = something outside) */}
+              {/* the row's port, centred on the card's edge like the node editor the user pointed to (Wavely): the wire leaves from here; blue = something outside */}
               <span
-                className={`-mr-[11.5px] size-[7px] flex-none rounded-full ${r.outside ? "bg-blue" : "bg-port"}`}
+                className={`-mr-[14.5px] size-[9px] flex-none rounded-full ring-2 ring-canvas ${r.outside ? "bg-blue" : "bg-port"}`}
               />
             </span>
           ))}

@@ -13,7 +13,9 @@ import {
   type AiConfig,
   type AiKind,
   aiReady,
+  claudeModels,
   configFor,
+  modelLabel,
   NO_AI,
   PROVIDERS,
   saveAiConfig,
@@ -22,19 +24,30 @@ import {
 } from "@/features/ai";
 import "./ai-settings.css";
 
-type Mode = "none" | "local" | "key";
+type Mode = "none" | "claude" | "local" | "key";
 const modeOf = (k: AiKind): Mode =>
-  k === "none" ? "none" : k === "local" ? "local" : "key";
+  k === "none" || k === "claude" || k === "local" ? k : "key";
 const KEYED: AiKind[] = ["anthropic", "openai", "openrouter"];
 
 const NOTE: Record<Mode, string> = {
   none: "Ask answers come from Luora's built-in text. Nothing leaves your machine.",
+  claude:
+    "Ask runs your own Claude Code on this laptop, signed in with your own Claude plan, like Orca runs the agents you already pay for. Luora never sees or stores your login. Answers use your plan's limits. Works while Luora runs locally (pnpm dev).",
   local:
     "Ask sends the selected piece (its source lines, connected pieces and findings) and your question to the endpoint above, from your browser. Nothing goes to a Luora server.",
   key: "Ask sends the selected piece (its source lines, connected pieces and findings) and your question straight from your browser to the provider you picked. Your key is stored only in this browser's localStorage, is sent only to that provider and is never logged or sent to Luora.",
 };
 
 type Test = { state: "idle" | "busy" | "ok" | "bad"; text?: string };
+/** what app/api/claude says about the Claude Code on this machine */
+type ClaudeStatus = {
+  available: boolean;
+  loggedIn: boolean;
+  version?: string;
+  authMethod?: string | null;
+  plan?: string | null;
+  error?: string;
+} | null;
 
 const OPEN = "luora-ai-settings";
 /** Opens the AI provider dialog from anywhere (the trace's Ask AI panel). */
@@ -46,7 +59,30 @@ export function AiSettings() {
   const dialog = useRef<HTMLDialogElement>(null);
   const [draft, setDraft] = useState<AiConfig>(NO_AI);
   const [test, setTest] = useState<Test>({ state: "idle" });
+  const [claude, setClaude] = useState<ClaudeStatus>(null);
   const mode = modeOf(draft.kind);
+  // ask the local bridge whether Claude Code is here and signed in, each time "Your Claude" is shown
+  useEffect(() => {
+    if (mode !== "claude") return;
+    let live = true;
+    setClaude(null);
+    fetch(PROVIDERS.claude.baseUrl)
+      .then((r) => r.json())
+      .then((s: ClaudeStatus) => live && setClaude(s))
+      .catch(
+        () =>
+          live &&
+          setClaude({
+            available: false,
+            loggedIn: false,
+            error:
+              "The bridge didn't answer. Run Luora locally (pnpm dev) and open it at localhost.",
+          }),
+      );
+    return () => {
+      live = false;
+    };
+  }, [mode]);
   const edit = (patch: Partial<AiConfig>) => {
     setDraft({ ...draft, ...patch });
     setTest({ state: "idle" });
@@ -75,7 +111,7 @@ export function AiSettings() {
       const reply = await testConnection(draft);
       setTest({
         state: "ok",
-        text: `Connected · ${draft.model} replied “${reply.slice(0, 40) || "(empty)"}”`,
+        text: `Connected · ${modelLabel(draft) || PROVIDERS[draft.kind].label} replied “${reply.slice(0, 40) || "(empty)"}”`,
       });
     } catch (e) {
       setTest({ state: "bad", text: (e as Error).message });
@@ -106,9 +142,11 @@ export function AiSettings() {
           <>
             <span className="hdr-dot text-green" aria-hidden="true" />
             {PROVIDERS[saved.kind].label}
-            <span className="max-w-[140px] truncate font-mono text-[11.5px] text-dim">
-              {saved.model}
-            </span>
+            {modelLabel(saved) && (
+              <span className="max-w-[140px] truncate font-mono text-[11.5px] text-dim">
+                {modelLabel(saved)}
+              </span>
+            )}
           </>
         ) : (
           <>
@@ -145,13 +183,14 @@ export function AiSettings() {
           </header>
           <SegmentedControl<Mode>
             value={mode}
-            onChange={(m) =>
-              pick(
-                m === "none" ? "none" : m === "local" ? "local" : "anthropic",
-              )
-            }
+            onChange={(m) => pick(m === "key" ? "anthropic" : m)}
             options={[
               { value: "none", label: "None" },
+              {
+                value: "claude",
+                label: "Your Claude",
+                title: "Your own Claude Code and Claude plan, on this laptop",
+              },
               { value: "local", label: "Local model" },
               { value: "key", label: "Own API key" },
             ]}
@@ -184,32 +223,53 @@ export function AiSettings() {
                   />
                 </Row>
               )}
+              {mode === "claude" && <ClaudeLine s={claude} />}
               <Row label="Model">
-                <Input
-                  aria-label="Model"
-                  value={draft.model}
-                  onChange={(e) => edit({ model: e.target.value })}
-                  placeholder={PROVIDERS[draft.kind].model}
-                  spellCheck={false}
-                  className="w-full font-mono text-[12px]"
-                />
+                {mode === "claude" ? (
+                  <Dropdown
+                    ariaLabel="Model"
+                    value={draft.model || "default"}
+                    onChange={(m) => edit({ model: m === "default" ? "" : m })}
+                    className="w-full"
+                    options={claudeModels(draft.model).map((m) => ({
+                      value: m.value || "default",
+                      label: `${m.label} · ${m.hint}`,
+                      text: m.label,
+                    }))}
+                  />
+                ) : (
+                  <Input
+                    aria-label="Model"
+                    value={draft.model}
+                    onChange={(e) => edit({ model: e.target.value })}
+                    placeholder={PROVIDERS[draft.kind].model}
+                    spellCheck={false}
+                    className="w-full font-mono text-[12px]"
+                  />
+                )}
               </Row>
-              <Row label={mode === "local" ? "Key (optional)" : "API key"}>
-                <Input
-                  type="password"
-                  aria-label="API key"
-                  value={draft.key}
-                  onChange={(e) => edit({ key: e.target.value })}
-                  placeholder={PROVIDERS[draft.kind].keyHint ?? "not needed"}
-                  autoComplete="off"
-                  spellCheck={false}
-                  className="w-full font-mono text-[12px]"
-                />
-              </Row>
+              {mode !== "claude" && (
+                <Row label={mode === "local" ? "Key (optional)" : "API key"}>
+                  <Input
+                    type="password"
+                    aria-label="API key"
+                    value={draft.key}
+                    onChange={(e) => edit({ key: e.target.value })}
+                    placeholder={PROVIDERS[draft.kind].keyHint ?? "not needed"}
+                    autoComplete="off"
+                    spellCheck={false}
+                    className="w-full font-mono text-[12px]"
+                  />
+                </Row>
+              )}
               <div className="flex items-center gap-1.5 pt-0.5">
                 <Button
                   size="sm"
-                  disabled={!ready || test.state === "busy"}
+                  disabled={
+                    !ready ||
+                    test.state === "busy" ||
+                    (mode === "claude" && !claude?.loggedIn)
+                  }
                   onClick={run}
                 >
                   {test.state === "busy" ? "Testing…" : "Test connection"}
@@ -248,6 +308,45 @@ export function AiSettings() {
         </form>
       </dialog>
     </>
+  );
+}
+
+/** Claude Code on this machine: found and signed in (with which plan), or what to do. */
+function ClaudeLine({ s }: { s: ClaudeStatus }) {
+  const ok = !!s?.available && s.loggedIn;
+  const text = !s
+    ? "Looking for Claude Code on this laptop…"
+    : ok
+      ? `Claude Code ${s.version?.split(" ")[0] ?? ""} · signed in${s.authMethod === "claude.ai" ? ` with your Claude${s.plan ? ` ${s.plan}` : ""} plan` : ""}`
+      : s.available
+        ? (s.error ??
+          "Claude Code is here but not signed in. Run `claude` once in a terminal and sign in.")
+        : (s.error ?? "Claude Code is not installed.");
+  return (
+    <p className="flex items-start gap-2 text-[12.5px] text-body leading-normal">
+      <span
+        className={`mt-1.5 size-1.5 flex-none rounded-full ${!s ? "bg-dim" : ok ? "bg-green" : "bg-red"}`}
+      />
+      <span>
+        {text}
+        {s && !s.available && (
+          <>
+            {" "}
+            Install it from{" "}
+            <a
+              href="https://docs.claude.com/en/docs/claude-code/setup"
+              target="_blank"
+              rel="noreferrer"
+              className="underline decoration-white/30 underline-offset-2 hover:decoration-white"
+            >
+              the Claude Code docs
+            </a>
+            , run <code className="font-mono">claude</code> once to sign in,
+            then reopen this.
+          </>
+        )}
+      </span>
+    </p>
   );
 }
 

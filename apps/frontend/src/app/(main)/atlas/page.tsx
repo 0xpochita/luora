@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { AtlasWorkspace } from "@/components/(main)";
+import { AtlasSkeleton, AtlasWorkspace } from "@/components/(main)";
 import { loadAtlas } from "@/features/atlas/services/load-atlas";
 
 export const metadata = { title: "Contract Atlas" };
@@ -11,7 +11,7 @@ async function AtlasContent() {
 
 export default function AtlasPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<AtlasSkeleton />}>
       <AtlasContent />
     </Suspense>
   );

@@ -2,12 +2,15 @@
 
 import { motion } from "motion/react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { Chevron, ENTER } from "@/components/ui";
+import { Chevron, Dropdown, ENTER } from "@/components/ui";
 import {
   aiReady,
   askStream,
   type ChatMessage,
+  claudeModels,
+  modelLabel,
   PROVIDERS,
+  saveAiConfig,
   useAiConfig,
 } from "@/features/ai";
 import { openAiSettings } from "../shell/AiSettings";
@@ -268,7 +271,7 @@ export function AiChat({
                   !t.done && (
                     <p className="flex items-center gap-2 text-dim">
                       <span className="size-1.5 animate-pulse rounded-full bg-fg" />
-                      Asking {ai.model}…
+                      Asking {modelLabel(ai) || PROVIDERS[ai.kind].label}…
                     </p>
                   )
                 )}
@@ -324,21 +327,46 @@ export function AiChat({
             className="block max-h-40 w-full resize-none bg-transparent px-2.5 pt-2 pb-1 text-[13px] text-fg leading-normal outline-none [field-sizing:content] placeholder:text-dim"
           />
           <div className="flex items-center gap-2 pr-0.5 pl-1">
-            <button
-              type="button"
-              onClick={openAiSettings}
-              title={live ? "Change your AI provider" : "Connect your own AI"}
-              className={`flex h-7 min-w-0 items-center gap-1.5 rounded-full border px-2.5 text-[12px] transition-colors ${
-                live
-                  ? "border-white/[.08] text-body hover:text-fg"
-                  : "border-white/20 text-fg hover:border-white/40"
-              }`}
-            >
-              {live && (
-                <span className="hdr-dot text-green" aria-hidden="true" />
-              )}
-              <span className="truncate">{live ? ai.model : "Connect AI"}</span>
-            </button>
+            {live && ai.kind === "claude" ? (
+              // your Claude: pick the model right here (Claude Code's aliases)
+              <Dropdown
+                ariaLabel="Model"
+                variant="chip"
+                value={ai.model || "default"}
+                onChange={(m) =>
+                  saveAiConfig({ ...ai, model: m === "default" ? "" : m })
+                }
+                options={claudeModels(ai.model).map((m) => ({
+                  value: m.value || "default",
+                  label: m.label,
+                  text: m.label,
+                  title: m.hint,
+                  // the green dot marks the model in use: on the chip and in the menu
+                  icon:
+                    m.value === ai.model ? (
+                      <span className="hdr-dot text-green" aria-hidden="true" />
+                    ) : undefined,
+                }))}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={openAiSettings}
+                title={live ? "Change your AI provider" : "Connect your own AI"}
+                className={`flex h-7 min-w-0 items-center gap-1.5 rounded-full border px-2.5 text-[12px] transition-colors ${
+                  live
+                    ? "border-white/[.08] text-body hover:text-fg"
+                    : "border-white/20 text-fg hover:border-white/40"
+                }`}
+              >
+                {live && (
+                  <span className="hdr-dot text-green" aria-hidden="true" />
+                )}
+                <span className="truncate">
+                  {live ? modelLabel(ai) : "Connect AI"}
+                </span>
+              </button>
+            )}
             {thread.turns.length > 0 && (
               <button
                 type="button"
@@ -388,55 +416,137 @@ export function AiChat({
 }
 
 /** The answer as plain text, code fences as code, and every word that names something on screen a link to it. */
-function Answer({
-  text,
-  link,
-}: {
-  text: string;
-  link?: {
-    re: RegExp;
-    title: (token: string) => string | null;
-    go: (token: string) => void;
-  };
-}) {
+type Link = {
+  re: RegExp;
+  title: (token: string) => string | null;
+  go: (token: string) => void;
+};
+
+/**
+ * The answer as light markdown, the subset models actually write: headings, bullet and numbered
+ * lists, paragraphs, **bold**, `code` and fenced code blocks. Words that name something on screen
+ * (`link`) select it. Plain text otherwise; no HTML is ever interpreted.
+ */
+function Answer({ text, link }: { text: string; link?: Link }) {
+  let k = 0;
+  const key = () => `a${k++}`;
+
+  const words = (s: string): ReactNode[] =>
+    (link ? s.split(link.re) : [s]).filter(Boolean).map((bit) => {
+      const title = link?.title(bit);
+      return title && link ? (
+        <button
+          key={key()}
+          type="button"
+          onClick={() => link.go(bit)}
+          title={title}
+          className="font-mono text-[12.5px] text-fg underline decoration-white/30 decoration-dotted underline-offset-2 hover:decoration-white"
+        >
+          {bit}
+        </button>
+      ) : (
+        <span key={key()}>{bit}</span>
+      );
+    });
+
+  const inline = (s: string): ReactNode[] =>
+    s
+      .split(/(`[^`\n]+`|\*\*[^*\n]+\*\*)/)
+      .filter(Boolean)
+      .map((bit) =>
+        bit.startsWith("`") ? (
+          <code
+            key={key()}
+            className="rounded-[5px] bg-white/[.06] px-1 py-px font-mono text-[12px] text-fg"
+          >
+            {bit.slice(1, -1)}
+          </code>
+        ) : bit.startsWith("**") ? (
+          <strong key={key()} className="font-medium text-fg">
+            {words(bit.slice(2, -2))}
+          </strong>
+        ) : (
+          <span key={key()}>{words(bit)}</span>
+        ),
+      );
+
   const out: ReactNode[] = [];
-  let at = 0;
   for (const part of text.split(/\n?(```[\s\S]*?(?:```|$))\n?/)) {
     if (!part) continue;
     if (part.startsWith("```")) {
       out.push(
         <pre
-          key={at}
+          key={key()}
           className="my-2 overflow-x-auto rounded-tile border border-border bg-inset p-3 font-mono text-[12px] text-fg leading-relaxed"
         >
           {part.replace(/^```[^\n]*\n?/, "").replace(/```$/, "")}
         </pre>,
       );
-      at += part.length;
       continue;
     }
-    for (const bit of link ? part.split(link.re) : [part]) {
-      if (!bit) continue;
-      const title = link?.title(bit);
+    // block level: consecutive list items become one list, everything else a paragraph or heading
+    let list: { ordered: boolean; items: string[] } | null = null;
+    let para: string[] = [];
+    const flushPara = () => {
+      if (para.length)
+        out.push(
+          <p key={key()} className="my-2 first:mt-0">
+            {inline(para.join(" "))}
+          </p>,
+        );
+      para = [];
+    };
+    const flushList = () => {
+      if (!list) return;
+      const L = list;
+      const Tag = L.ordered ? "ol" : "ul";
       out.push(
-        title && link ? (
-          <button
-            key={at}
-            type="button"
-            onClick={() => link.go(bit)}
-            title={title}
-            className="font-mono text-fg underline decoration-white/30 decoration-dotted underline-offset-2 hover:decoration-white"
-          >
-            {bit}
-          </button>
-        ) : (
-          <span key={at} className="whitespace-pre-wrap">
-            {bit}
-          </span>
-        ),
+        <Tag
+          key={key()}
+          className={`my-2 space-y-1 pl-5 ${L.ordered ? "list-decimal" : "list-disc"} marker:text-dim`}
+        >
+          {L.items.map((it) => (
+            <li key={key()} className="pl-1">
+              {inline(it)}
+            </li>
+          ))}
+        </Tag>,
       );
-      at += bit.length;
+      list = null;
+    };
+    for (const line of part.split("\n")) {
+      const h = /^#{1,6}\s+(.*)$/.exec(line);
+      const li = /^\s*(?:([-*•])|(\d+)[.)])\s+(.*)$/.exec(line);
+      if (!line.trim()) {
+        flushPara();
+        flushList();
+      } else if (h) {
+        flushPara();
+        flushList();
+        out.push(
+          <p
+            key={key()}
+            className="mt-4 mb-1 font-medium text-[13.5px] text-fg first:mt-0"
+          >
+            {inline(h[1].replace(/\*\*/g, ""))}
+          </p>,
+        );
+      } else if (li) {
+        flushPara();
+        const ordered = !!li[2];
+        if (list && list.ordered !== ordered) flushList();
+        list ??= { ordered, items: [] };
+        list.items.push(li[3]);
+      } else if (list && /^\s{2,}\S/.test(line)) {
+        // a wrapped list item continues on an indented line
+        list.items[list.items.length - 1] += ` ${line.trim()}`;
+      } else {
+        flushList();
+        para.push(line.trim());
+      }
     }
+    flushPara();
+    flushList();
   }
   return <div>{out}</div>;
 }

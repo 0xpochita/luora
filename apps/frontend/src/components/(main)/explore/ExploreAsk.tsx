@@ -51,7 +51,9 @@ export function ExploreAsk({
       prompt={(q, followUp) => (followUp ? q : exploreAskPrompt(p, target, q))}
       link={{
         re,
-        title: (t) => `Select ${t}`,
+        // only a whole contract name is a link; any other text stays text
+        title: (t) =>
+          p.contracts.some((c) => c.name === t) ? `Select ${t}` : null,
         go: (t) => onTarget({ kind: "contract", name: t }),
       }}
       onContext={(key) => onTarget(JSON.parse(key) as ExploreTarget)}

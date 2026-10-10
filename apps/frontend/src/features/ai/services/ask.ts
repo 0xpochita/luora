@@ -14,6 +14,10 @@ async function failure(res: Response): Promise<Error> {
 
 function reach(cfg: AiConfig, e: unknown): Error {
   if ((e as Error).name === "AbortError") return e as Error;
+  if (cfg.kind === "claude")
+    return new Error(
+      "Can't reach Luora's Claude bridge. It runs only while this app runs locally (pnpm dev) and is opened at localhost.",
+    );
   return new Error(
     cfg.kind === "local"
       ? `Can't reach ${cfg.baseUrl}. Is the model server running, and does it allow this page's origin (CORS)?`
@@ -21,7 +25,7 @@ function reach(cfg: AiConfig, e: unknown): Error {
   );
 }
 
-/** Streams the answer text, browser → provider directly. No Luora server is involved. */
+/** Streams the answer text, browser → provider directly (your Claude: through this app's own local bridge). */
 export async function* askStream(
   cfg: AiConfig,
   user: string | ChatMessage[],

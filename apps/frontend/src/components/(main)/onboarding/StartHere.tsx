@@ -55,8 +55,21 @@ export function StartHere() {
           is loaded yet. A few minutes from zero, by hand or with your AI agent.
         </p>
 
+        {/* H1 pin/42854633948971517 (Stockboard hero): the quickest way in sits right under the
+            title as its action, not at the foot of the steps */}
+        <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
+          <Button variant="primary" size="sm" onClick={() => setSample(true)}>
+            <PhIcon d={PH.flask} className="size-[14px]" />
+            Try the sample vault
+          </Button>
+          <p className="min-w-0 flex-1 text-[12.5px] text-muted leading-normal">
+            <span className="text-text">No Foundry project at hand?</span> Look
+            around with LuoraVault, a small demo vault bundled with the app.
+          </p>
+        </div>
+
         <Tabs
-          className="mt-6"
+          className="mt-8"
           size="sm"
           value={how}
           onChange={setHow}
@@ -136,18 +149,6 @@ export function StartHere() {
           </Step>
         </motion.ol>
 
-        <div className="mt-4 flex flex-wrap items-center gap-3 rounded-inner border border-border bg-inner-grad p-4">
-          <div className="min-w-0 flex-1">
-            <p className="text-[14px] text-text">No Foundry project at hand?</p>
-            <p className="text-[12.5px] text-dim leading-normal">
-              Look around with LuoraVault, a small demo vault bundled with the
-              app. A Sample data badge stays in the top bar.
-            </p>
-          </div>
-          <Button variant="secondary" size="sm" onClick={() => setSample(true)}>
-            Try the sample vault
-          </Button>
-        </div>
         <p className="mt-4 text-[12.5px] text-dim">
           Everything stays on your machine: the exporter and the app read local
           files, a dropped file is read in this tab only.

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { ProtocolWorkspace } from "@/components/(main)";
+import { ProtocolSkeleton, ProtocolWorkspace } from "@/components/(main)";
 import {
   loadProtocol,
   protocolIds,
@@ -24,7 +24,7 @@ async function Content({ params }: PageProps<"/explore/[protocol]">) {
 
 export default function ProtocolPage(props: PageProps<"/explore/[protocol]">) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<ProtocolSkeleton />}>
       <Content {...props} />
     </Suspense>
   );

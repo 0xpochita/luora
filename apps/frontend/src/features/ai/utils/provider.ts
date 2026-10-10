@@ -5,6 +5,12 @@ export const PROVIDERS: Record<
   { label: string; baseUrl: string; model: string; keyHint?: string }
 > = {
   none: { label: "None", baseUrl: "", model: "" },
+  claude: {
+    label: "Your Claude",
+    baseUrl: "/api/claude",
+    /** empty = whatever model the user's Claude Code uses */
+    model: "",
+  },
   local: {
     label: "Local model",
     baseUrl: "http://localhost:11434/v1",
@@ -30,6 +36,35 @@ export const PROVIDERS: Record<
   },
 };
 
+/**
+ * Models for "Your Claude", by exact id so the version shows (each checked against Claude Code
+ * 2.1.280 on a Max plan; "" = whatever the user's Claude Code uses by default).
+ */
+export const CLAUDE_MODELS = [
+  { value: "", label: "Default", hint: "your Claude Code default" },
+  { value: "claude-fable-5-1", label: "Fable 5.1", hint: "claude-fable-5-1" },
+  { value: "claude-opus-5-5", label: "Opus 5.5", hint: "claude-opus-5-5" },
+  { value: "claude-sonnet-5", label: "Sonnet 5", hint: "claude-sonnet-5" },
+  {
+    value: "claude-haiku-4-5",
+    label: "Haiku 4.5",
+    hint: "claude-haiku-4-5, fastest",
+  },
+] as const;
+
+/** The model menu for a config: the list, plus a saved model that isn't in it (an older alias). */
+export const claudeModels = (current: string) =>
+  current && !CLAUDE_MODELS.some((m) => m.value === current)
+    ? [...CLAUDE_MODELS, { value: current, label: current, hint: current }]
+    : [...CLAUDE_MODELS];
+
+/** The name to show for the configured model. */
+export const modelLabel = (c: AiConfig) =>
+  c.kind === "claude"
+    ? (CLAUDE_MODELS.find((m) => m.value === c.model)?.label ?? c.model) ||
+      "Default"
+    : c.model;
+
 export const NO_AI: AiConfig = {
   kind: "none",
   baseUrl: "",
@@ -45,11 +80,12 @@ export const configFor = (kind: AiKind): AiConfig => ({
   key: "",
 });
 
-/** Enough filled in to call: a model, plus an endpoint (local) or a key (API providers). */
+/** Enough filled in to call: your Claude needs nothing; else a model, plus an endpoint (local) or a key (API providers). */
 export const aiReady = (c: AiConfig) =>
-  c.kind !== "none" &&
-  c.model.trim() !== "" &&
-  (c.kind === "local" ? c.baseUrl.trim() !== "" : c.key.trim() !== "");
+  c.kind === "claude" ||
+  (c.kind !== "none" &&
+    c.model.trim() !== "" &&
+    (c.kind === "local" ? c.baseUrl.trim() !== "" : c.key.trim() !== ""));
 
 export const SYSTEM_PROMPT = `You are the assistant inside Luora, a defensive review tool for smart-contract auditors and bug-bounty hunters.
 You get context from the user's project, either one piece of a Solidity contract (its source lines, the pieces connected to it and any open findings) or calls from one Foundry test's trace (the calls, their arguments, returns and gas, and the source lines they ran), or the map of a known DeFi protocol (its contracts, how they connect, its main flows step by step, and links to the code), and a question. Liquidations, flash loans, oracles and callbacks in a protocol are its intended features: explain how they work and what to check, never how to abuse them. You only ever do one of these three things:
@@ -105,6 +141,16 @@ export function chatRequest(
 ): { url: string; init: RequestInit } {
   const messages: ChatMessage[] =
     typeof user === "string" ? [{ role: "user", content: user }] : user;
+  // your Claude: this app's own local route; the system prompt is fixed on the server
+  if (cfg.kind === "claude")
+    return {
+      url: PROVIDERS.claude.baseUrl,
+      init: {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ model: cfg.model.trim(), messages, stream }),
+      },
+    };
   const base = (
     cfg.kind === "local" ? cfg.baseUrl : PROVIDERS[cfg.kind].baseUrl
   )
