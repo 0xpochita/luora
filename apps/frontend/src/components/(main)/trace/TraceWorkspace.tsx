@@ -482,9 +482,7 @@ function TraceBody({
             transition={{ duration: 0.26, ease: EASE }}
             className="flex flex-none overflow-hidden"
           >
-            <Sidebar
-              after={<TestRunPanel run={testRun} fork={fork} forks={forks} />}
-            >
+            <Sidebar>
               <TestList
                 tests={data.tests}
                 selected={testIdx}
@@ -541,6 +539,7 @@ function TraceBody({
             {...ENTER}
             className={`flex-1 overflow-auto px-5 pb-5 ${mode === "graph" ? "flex flex-col" : ""}`}
           >
+            <TestRunPanel run={testRun} fork={fork} forks={forks} />
             {mode === "trace" ? (
               <>
                 <TraceList

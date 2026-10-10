@@ -10,8 +10,8 @@ import {
 } from "@/features/run/utils/test-run";
 
 /*
- * Start test, under Re-run in the Trace sidebar: runs the exporter from the app and reports what
- * forge said, in forge's words, so an auditor reads it the way they read their terminal.
+ * Start test, one row above the trace's Calls list: runs the exporter from the app and reports
+ * what forge said, in forge's words, so an auditor reads it the way they read their terminal.
  *  - the button: the header's capsule (header.css .hdr-pill, T1/T2) in green, split like the data
  *    capsule (T3): Start test | where it runs (Local, or Local plus one testnet fork; the Fork
  *    picker's choice by default, and every chain even when the loaded run has no forks). While
@@ -19,7 +19,7 @@ import {
  *  - the log is a pop-up (TestRunDialog, the Connect AI dialog's <dialog> and motion) that Start
  *    test opens, laid out like a GitHub Actions job page: the verdict in the header as forge
  *    tallies it ("8 passed · 1 failed · 0 skipped"), the tests on the left, the whole output on
- *    the right. Closed, the sidebar keeps the verdict and an Open log button
+ *    the right. Closed, the row keeps the verdict and an Open log button
  *  - each test as forge prints it, [PASS] / [FAIL: reason] / [SKIP] with its (gas: …) or
  *    (runs: …, calls: …, reverts: …), failures on top (GitHub Actions opens a failed step), a
  *    click opens it in the trace
@@ -65,9 +65,9 @@ export function TestRunPanel({
   const [target, setTarget] = useState(forks[fork] ? fork : "");
 
   return (
-    <div className="mt-3">
+    <div className="mt-1.5 mb-5 flex flex-wrap items-center gap-x-4 gap-y-2">
       {running ? (
-        <div className="hdr-pill go split w-full">
+        <div className="hdr-pill go split w-[244px] flex-none">
           <button
             type="button"
             className="lead"
@@ -91,7 +91,7 @@ export function TestRunPanel({
           </button>
         </div>
       ) : (
-        <div className="hdr-pill go split w-full">
+        <div className="hdr-pill go split w-[244px] flex-none">
           <button
             type="button"
             className="lead"
@@ -128,18 +128,18 @@ export function TestRunPanel({
       )}
       {run.phase !== "idle" && (
         // the verdict stays here once the pop-up is closed
-        <section className="mt-2 rounded-inner border border-border bg-inner-grad p-3">
+        <>
           <Verdict run={run} elapsed={elapsed} />
-          {run.summary && <Tally s={run.summary} className="mt-2 pl-[14px]" />}
+          {run.summary && <Tally s={run.summary} />}
           <button
             type="button"
-            className="hdr-pill sm mt-3 w-full justify-center"
+            className="hdr-pill sm"
             onClick={() => run.setOpen(true)}
           >
             <PhIcon d={PH.terminal} className="size-[14px]" />
             Open log
           </button>
-        </section>
+        </>
       )}
     </div>
   );
@@ -172,22 +172,29 @@ const whereOf = (run: TestRun) => {
 
 function Verdict({ run, elapsed }: { run: TestRun; elapsed: number }) {
   const v = verdictOf(run);
+  const error =
+    run.phase === "failed" && run.error !== "Stopped." ? run.error : null;
   return (
-    <>
-      <p className="flex items-center gap-2 text-[13px] text-fg">
-        <span className={`hdr-dot ${v.dot}`} aria-hidden="true" />
-        {v.text}
-        <span className="ml-auto font-mono text-[11.5px] text-dim tabular-nums">
-          {clock(elapsed)}
+    <p className="flex min-w-0 items-center gap-2 text-[13px] text-fg">
+      <span className={`hdr-dot ${v.dot}`} aria-hidden="true" />
+      {v.text}
+      <span className="font-mono text-[12px] text-dim tabular-nums">
+        {clock(elapsed)}
+      </span>
+      <span className="truncate text-[12.5px] text-dim">
+        <span className="mr-1.5">·</span>
+        {whereOf(run)}
+      </span>
+      {error && (
+        <span
+          className="truncate text-[12.5px] text-red"
+          title={error ?? undefined}
+        >
+          <span className="mr-1.5">·</span>
+          {error}
         </span>
-      </p>
-      <p className="mt-0.5 pl-[14px] text-[12px] text-dim">{whereOf(run)}</p>
-      {run.phase === "failed" && run.error && run.error !== "Stopped." && (
-        <p className="mt-2 break-words pl-[14px] text-[12.5px] text-red leading-normal">
-          {run.error}
-        </p>
       )}
-    </>
+    </p>
   );
 }
 
