@@ -67,7 +67,7 @@ export function TestRunPanel({
   return (
     <div className="mt-1.5 mb-5 flex flex-wrap items-center gap-x-4 gap-y-2">
       {running ? (
-        <div className="hdr-pill go split min-w-[244px] flex-none">
+        <div className="hdr-pill go split flex-none">
           <button
             type="button"
             className="lead"
@@ -91,7 +91,7 @@ export function TestRunPanel({
           </button>
         </div>
       ) : (
-        <div className="hdr-pill go split min-w-[244px] flex-none">
+        <div className="hdr-pill go split flex-none">
           <button
             type="button"
             className="lead"
