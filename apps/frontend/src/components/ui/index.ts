@@ -9,7 +9,7 @@ export { KV } from "./KV";
 export { LogoMark, LogoText } from "./LogoMark";
 export { Meter } from "./Meter";
 export { Card, Panel } from "./Panel";
-export { PH, PhIcon } from "./PhIcon";
+export { Chevron, PH, PhIcon } from "./PhIcon";
 export { SegmentedControl } from "./SegmentedControl";
 export { Tabs, TileGroup } from "./Tabs";
 export { ToggleChip } from "./ToggleChip";

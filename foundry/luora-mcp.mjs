@@ -217,7 +217,7 @@ export function scenarioErrors(m, sc) {
     const end = e => isObj(e) && isStr(e.node) && isStr(e.port) && extra(e, ['node', 'port']).length === 0;
     if (!isObj(w) || !end(w.from) || !end(w.to) || extra(w, ['from', 'to']).length)
       return errs.push(`wires[${i}] must be { from: { node, port }, to: { node, port } }`);
-    const me = `wire ${w.from.node}.${w.from.port} → ${w.to.node}.${w.to.port}`;
+    const me = `wire ${w.from.node}.${w.from.port} › ${w.to.node}.${w.to.port}`;
     if (!ids.has(w.from.node) || !ids.has(w.to.node)) return errs.push(`${me}: no such node`);
     const a = ok.get(w.from.node);
     const b = ok.get(w.to.node);
@@ -228,7 +228,7 @@ export function scenarioErrors(m, sc) {
     if (!pa) return errs.push(`${me}: ${w.from.node} has no output "${w.from.port}" (has ${[...(a.flow ? ['then'] : []), ...a.outputs.map(p => p.id)].join(', ') || 'none'})`);
     if (!pb) return errs.push(`${me}: ${w.to.node} has no input "${w.to.port}" (has ${[...(b.flow ? ['then'] : []), ...b.inputs.map(p => p.id)].join(', ') || 'none'})`);
     if (w.from.node === w.to.node) return errs.push(`${me}: same card`);
-    if (pa.type !== pb.type) return errs.push(`${me}: ${pa.type} → ${pb.type}`);
+    if (pa.type !== pb.type) return errs.push(`${me}: ${pa.type} › ${pb.type}`);
     const key = `${w.to.node}.${w.to.port}`;
     if (taken.has(key)) return errs.push(`${me}: ${key} is already wired`);
     // a wire a→b closes a loop when b already reaches a (data and then wires both order cards)

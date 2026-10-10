@@ -1,6 +1,7 @@
 "use client";
 
-import { KindIcon, Meter } from "@/components/ui";
+import { useEffect, useRef } from "react";
+import { Chevron, KindIcon, Meter } from "@/components/ui";
 import { displayKind, type Frame, human, splitArgs } from "@/features/trace";
 
 export function TraceRow({
@@ -19,14 +20,24 @@ export function TraceRow({
   onSelect: () => void;
 }) {
   const kind = displayKind(frame);
+  // keyboard stepping keeps the selected call on screen
+  const ref = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (selected) ref.current?.scrollIntoView({ block: "nearest" });
+  }, [selected]);
   return (
     <button
+      ref={ref}
       type="button"
       onClick={onSelect}
       aria-current={selected || undefined}
       style={{ animationDelay: `${Math.min(order * 35, 900)}ms` }}
       className={`flex min-h-10 w-full animate-rise items-center gap-2.5 whitespace-nowrap rounded-tile py-1 pr-3 pl-1.5 text-left transition-colors ${
-        selected ? "bg-hover" : "hover:bg-raised"
+        selected
+          ? "bg-hover shadow-[inset_2px_0_0_var(--fg)]"
+          : kind === "REVERT"
+            ? "bg-red/[.05] hover:bg-red/[.09]"
+            : "hover:bg-raised"
       }`}
     >
       <span className="w-[22px] flex-none text-right font-mono text-[11px] text-dim">
@@ -59,7 +70,13 @@ export function TraceRow({
             frame.ok ? "bg-raised text-muted" : "bg-raised text-red"
           }`}
         >
-          {frame.ok ? `→ ${human(frame.ret)}` : `✕ ${frame.ret}`}
+          {frame.ok ? (
+            <>
+              <Chevron /> {human(frame.ret)}
+            </>
+          ) : (
+            `✕ ${frame.ret}`
+          )}
         </span>
       )}
       <span className="ml-auto flex flex-none items-center gap-2 pl-3.5">

@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { CardGradients } from "@/components/ui";
+import { CardGradients, Chevron } from "@/components/ui";
 import {
   type AtlasModel,
   ICON_PATH,
@@ -736,7 +736,10 @@ export function MapView({
           <i className="line" />
           Write after ext. call
         </span>
-        <span className="note">Gate → read → call → write → emit</span>
+        <span className="note inline-flex items-center gap-1">
+          Gate <Chevron /> read <Chevron /> call <Chevron /> write <Chevron />{" "}
+          emit
+        </span>
       </div>
     </div>
   );

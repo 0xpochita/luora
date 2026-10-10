@@ -242,7 +242,7 @@ function Look() {
     [
       "/atlas",
       "Atlas · Lab",
-      "Your contract as a graph. Switch to Scenario, wire Actor → Call → Expect, press Run, then Export .t.sol.",
+      "Your contract as a graph. Switch to Scenario, wire Actor › Call › Expect, press Run, then Export .t.sol.",
     ],
     [
       "/atlas",

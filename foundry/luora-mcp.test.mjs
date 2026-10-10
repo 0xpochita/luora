@@ -102,7 +102,7 @@ test('invalid scenarios are rejected with a precise reason', () => {
   bad(sc => (sc.code = 'vm.prank'), 'unknown scenario field "code"');
   bad(sc => (sc.name = 'ok\n} function attack() {'), 'name must be one line');
   bad(sc => sc.nodes.push({ ...sc.nodes[2] }), 'duplicate id');
-  bad(sc => sc.wires.push(W('amt', 'value', 'd', 'caller')), 'amount → actor');
+  bad(sc => sc.wires.push(W('amt', 'value', 'd', 'caller')), 'amount › actor');
   bad(sc => sc.wires.push(W('amt', 'value', 'd', 'a9')), 'd has no input "a9" (has then, caller, a0)');
   bad(sc => sc.wires.push(W('alice', 'addr', 'p', 'caller')), 'p.caller is already wired');
   bad(sc => sc.wires.push(W('snap', 'then', 'p', 'then')), 'loop');

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { KV } from "@/components/ui";
+import { Chevron, KV } from "@/components/ui";
 import { human, netBalances, type Transfer } from "@/features/trace";
 
 function Block({
@@ -46,8 +46,8 @@ export function BalancePanels({ transfers }: { transfers: Transfer[] }) {
               <span className="font-mono text-dim text-xs">
                 {String(i + 1).padStart(2, "0")}
               </span>
-              <span>
-                {t.from} → {t.to}
+              <span className="flex items-center gap-1.5">
+                {t.from} <Chevron /> {t.to}
               </span>
               <span className="ml-auto font-mono text-xs">
                 {human(t.value)} {t.token}

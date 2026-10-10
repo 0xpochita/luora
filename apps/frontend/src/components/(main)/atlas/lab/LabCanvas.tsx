@@ -125,7 +125,7 @@ export function LabCanvas({
     return () => clearTimeout(t);
   }, [toast]);
 
-  /** client point → canvas (world) point */
+  /** client point › canvas (world) point */
   const world = (cx: number, cy: number): Pt => {
     const r = vp.current?.getBoundingClientRect();
     const { view: v, origin: o } = live.current;
@@ -239,7 +239,7 @@ export function LabCanvas({
     const pb = b && portOf(b, w.to.port, "in");
     if (!pa || !pb) return "no such port";
     if (a === b) return "same card";
-    return pa.type === pb.type ? null : `${pa.type} → ${pb.type}`;
+    return pa.type === pb.type ? null : `${pa.type} › ${pb.type}`;
   };
 
   const sock = (n: GNode, p: Port, side: Side, wired: boolean) => (

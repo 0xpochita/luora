@@ -1,44 +1,72 @@
 "use client";
 
-import { type DisplayKind, displayKind, type Frame } from "@/features/trace";
+import type { Frame } from "@/features/trace";
 import { TraceRow } from "./TraceRow";
 
+/** The call trace rows the toolbar's filters, depth and search let through. */
 export function TraceList({
-  frames,
-  hidden,
+  rows,
+  total,
+  maxGas,
+  filtered,
   selected,
   onSelect,
+  onReset,
 }: {
-  frames: Frame[];
-  hidden: Set<DisplayKind>;
+  rows: { frame: Frame; index: number }[];
+  total: number;
+  maxGas: number;
+  /** a filter, depth or search is on */
+  filtered: boolean;
   selected: number | null;
   onSelect: (i: number) => void;
+  onReset: () => void;
 }) {
-  const maxGas = Math.max(1, ...frames.map((f) => f.gas ?? 0));
-  const visible = frames
-    .map((frame, index) => ({ frame, index }))
-    .filter(({ frame }) => !hidden.has(displayKind(frame)));
   return (
     <section>
-      <header className="flex items-center px-1 pb-1.5 text-[13px]">
-        <span className="text-fg">Frames</span>
-        <span className="ml-auto font-mono text-dim text-xs">
-          {visible.length} / {frames.length}
+      <header className="flex items-center gap-3 px-1 pb-1.5 text-[13px]">
+        <span className="text-fg">Calls</span>
+        <span className="font-mono text-dim text-xs">
+          {rows.length === total
+            ? `${total}`
+            : `${rows.length} of ${total} shown`}
         </span>
+        {filtered && rows.length < total && (
+          <button
+            type="button"
+            onClick={onReset}
+            className="text-[12px] text-dim underline-offset-2 hover:text-fg hover:underline"
+          >
+            Show all
+          </button>
+        )}
       </header>
-      <div className="space-y-0.5">
-        {visible.map(({ frame, index }, order) => (
-          <TraceRow
-            key={index}
-            index={index}
-            frame={frame}
-            maxGas={maxGas}
-            order={order}
-            selected={selected === index}
-            onSelect={() => onSelect(index)}
-          />
-        ))}
-      </div>
+      {rows.length ? (
+        <div className="space-y-0.5">
+          {rows.map(({ frame, index }, order) => (
+            <TraceRow
+              key={index}
+              index={index}
+              frame={frame}
+              maxGas={maxGas}
+              order={order}
+              selected={selected === index}
+              onSelect={() => onSelect(index)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="mt-2 rounded-inner border border-border border-dashed px-4 py-6 text-center text-[13px] text-muted">
+          No call matches.{" "}
+          <button
+            type="button"
+            onClick={onReset}
+            className="text-fg underline-offset-2 hover:underline"
+          >
+            Clear search and filters
+          </button>
+        </div>
+      )}
     </section>
   );
 }

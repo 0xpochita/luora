@@ -308,7 +308,7 @@ const W = (a: string, ap: string, b: string, bp: string): Wire => ({
 });
 assert.equal(
   wireError(cards, dw.wires, W("alice", "addr", "dep", "a0")),
-  "actor → amount",
+  "actor › amount",
 );
 assert.equal(wireError(cards, dw.wires, W("amt", "value", "dep", "a0")), null);
 assert.equal(
@@ -321,7 +321,7 @@ assert.equal(
 );
 assert.equal(
   wireError(cards, dw.wires, W("dep", "r:paused", "same", "a")),
-  "revert → amount",
+  "revert › amount",
 );
 const re = connect(dw.wires, W("amt", "value", "wd", "a0"));
 assert.equal(

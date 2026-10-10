@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { type AtlasSource, createAtlasModel } from "@/features/atlas";
 import { atlasSource } from "@/features/atlas/utils/atlas-source";
 import { type RunFile, useRun, useShownSource } from "@/features/run";
 import {
   type DisplayKind,
+  displayKind,
   locateFrame,
   type TraceMode,
   type TraceSource,
@@ -14,13 +15,11 @@ import { LabView } from "../atlas/lab/LabView";
 import { CallGraph } from "../graph/CallGraph";
 import { StartHere } from "../onboarding/StartHere";
 import { Sidebar } from "../shell/Sidebar";
-import { Topbar } from "../shell/Topbar";
 import { SourcePanel } from "../source/SourcePanel";
 import { BalancePanels } from "./BalancePanels";
-import { StatusBar } from "./StatusBar";
 import { TestList } from "./TestList";
-import { TraceHeader } from "./TraceHeader";
 import { TraceList } from "./TraceList";
+import { type Panels, TraceToolbar } from "./TraceToolbar";
 
 const fromFile = (data: RunFile): TraceSource => ({ data, origin: "file" });
 
@@ -49,7 +48,7 @@ export function TraceWorkspace({
   );
 }
 
-/** Owns test / frame / mode / filter selection. */
+/** Owns test / frame / mode / filter selection, the panels, full screen and the keyboard. */
 function TraceBody({
   source,
   atlas,
@@ -74,14 +73,47 @@ function TraceBody({
   const [hidden, setHidden] = useState<Set<DisplayKind>>(new Set());
   const [frameIdx, setFrameIdx] = useState<number | null>(null);
   const [file, setFile] = useState(files[0] ?? "");
+  const [query, setQuery] = useState("");
+  const [depth, setDepth] = useState(0);
+  const [panels, setPanels] = useState<Panels>({
+    tests: true,
+    source: true,
+    full: false,
+  });
+  const root = useRef<HTMLDivElement>(null);
+  const search = useRef<HTMLInputElement>(null);
 
   const test = data.tests[testIdx];
-  const frame = frameIdx != null ? test?.frames[frameIdx] : undefined;
+  const frames = test?.frames ?? [];
+  const frame = frameIdx != null ? frames[frameIdx] : undefined;
   const span = frame ? locateFrame(data, frame) : null;
+
+  // what the call trace shows: filters, depth and search, in that order
+  const q = query.trim().toLowerCase();
+  const rows = frames
+    .map((f, index) => ({ frame: f, index }))
+    .filter(
+      ({ frame: f }) =>
+        !hidden.has(displayKind(f)) &&
+        (!depth || f.d <= depth) &&
+        (!q ||
+          `${f.to}.${f.fn} ${f.contract ?? ""} ${f.args} ${f.ret}`
+            .toLowerCase()
+            .includes(q)),
+    );
+  const counts: Partial<Record<DisplayKind, number>> = {};
+  for (const f of frames) {
+    const k = displayKind(f);
+    counts[k] = (counts[k] ?? 0) + 1;
+  }
+  const maxDepth = Math.max(0, ...frames.map((f) => f.d));
+  const revertAt = frames.findIndex((f) => !f.ok && f.contract !== "vm");
+  const revert =
+    revertAt >= 0 ? { index: revertAt, frame: frames[revertAt] } : null;
 
   const selectFrame = (i: number) => {
     setFrameIdx(i);
-    const s = locateFrame(data, test.frames[i]);
+    const s = locateFrame(data, frames[i]);
     if (s) setFile(s.file);
   };
   const toggle = (k: DisplayKind) =>
@@ -92,91 +124,218 @@ function TraceBody({
       return next;
     });
 
+  // full screen = the trace panel fills the app window (not the browser's full screen): the test
+  // list, the source and the app header step aside until F or Esc
+  const toggleFull = () => setPanels((p) => ({ ...p, full: !p.full }));
+  const onPanel = (k: keyof Panels) =>
+    k === "full" ? toggleFull() : setPanels((p) => ({ ...p, [k]: !p[k] }));
+
+  const jumpToRevert = () => {
+    if (!revert) return;
+    setMode("trace");
+    setQuery("");
+    setDepth(0);
+    selectFrame(revert.index);
+  };
+
+  // keyboard (docs/ux/trace-view.md): ↑ ↓ / j k step, / search, 1 2 3 views, [ ] panels, F full
+  const full = panels.full;
+  const keys = useRef({
+    rows,
+    frameIdx,
+    mode,
+    model,
+    selectFrame,
+    toggleFull,
+    full,
+  });
+  keys.current = { rows, frameIdx, mode, model, selectFrame, toggleFull, full };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target;
+      if (
+        t instanceof Element &&
+        t.closest("input, textarea, select, [contenteditable='true'], dialog")
+      )
+        return;
+      const k = keys.current;
+      const step = (dir: 1 | -1) => {
+        if (k.mode !== "trace" || !k.rows.length) return;
+        e.preventDefault();
+        const at = k.rows.findIndex((r) => r.index === k.frameIdx);
+        const next =
+          at < 0
+            ? dir > 0
+              ? 0
+              : k.rows.length - 1
+            : Math.min(k.rows.length - 1, Math.max(0, at + dir));
+        k.selectFrame(k.rows[next].index);
+      };
+      // e.code as a fallback: some keyboard layouts and remote inputs send no usable e.key
+      const key =
+        e.code === "Slash"
+          ? "/"
+          : e.code === "BracketLeft"
+            ? "["
+            : e.code === "BracketRight"
+              ? "]"
+              : e.key;
+      switch (key) {
+        case "Escape":
+          if (k.full) setPanels((p) => ({ ...p, full: false }));
+          return;
+        case "ArrowDown":
+        case "j":
+          return step(1);
+        case "ArrowUp":
+        case "k":
+          return step(-1);
+        case "/":
+          e.preventDefault();
+          setMode("trace");
+          requestAnimationFrame(() => search.current?.focus());
+          return;
+        case "f":
+        case "F":
+          return k.toggleFull();
+        case "[":
+          return setPanels((p) => ({ ...p, tests: !p.tests }));
+        case "]":
+          return setPanels((p) => ({ ...p, source: !p.source }));
+        case "1":
+          return setMode("trace");
+        case "2":
+          return setMode("graph");
+        case "3":
+          if (k.model) setMode("scenario");
+          return;
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   if (!test)
     return <p className="p-10 text-muted">No tests in luora-data.json.</p>;
 
   return (
-    <div className="flex min-h-0 flex-1 gap-3 px-3 pb-3">
-      <Sidebar>
-        <TestList
-          tests={data.tests}
-          selected={testIdx}
-          onSelect={(i) => {
-            setTestIdx(i);
-            setFrameIdx(null);
-          }}
-        />
-      </Sidebar>
-      <div className="flex min-w-0 flex-1 flex-col gap-3">
-        <Topbar
-          crumb={test.name}
-          tests={data.tests.length}
-          sources={files.length}
+    <div
+      ref={root}
+      className={`flex min-h-0 flex-1 gap-3 ${full ? "dot-grid fixed inset-0 z-[60] bg-canvas p-3" : "px-3 pb-3"}`}
+    >
+      {panels.tests && !full && (
+        <Sidebar>
+          <TestList
+            tests={data.tests}
+            selected={testIdx}
+            onSelect={(i) => {
+              setTestIdx(i);
+              setFrameIdx(null);
+            }}
+          />
+        </Sidebar>
+      )}
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-card border border-border bg-card-grad shadow-soft">
+        <TraceToolbar
+          test={test}
           forgeVersion={data.forgeVersion}
+          command={data.command}
+          exportedAt={data.generatedAt}
+          mode={mode}
+          onMode={setMode}
+          scenario={!!model}
+          query={query}
+          onQuery={setQuery}
+          searchRef={search}
+          hidden={hidden}
+          onToggle={toggle}
+          counts={counts}
+          depth={depth}
+          onDepth={setDepth}
+          maxDepth={maxDepth}
+          panels={panels}
+          onPanel={onPanel}
+          revert={revert}
+          onRevert={jumpToRevert}
         />
-        <div className="flex min-h-0 flex-1 gap-3">
-          <main className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-card border border-border bg-card-grad shadow-soft">
-            <TraceHeader
-              title={test.name}
-              mode={mode}
-              onMode={setMode}
-              hidden={hidden}
-              onToggle={toggle}
-              scenario={!!model}
+        {mode === "scenario" && model ? (
+          // the Atlas Lab's Scenario editor, on this run's contract
+          <div className="relative flex min-h-0 flex-1 flex-col">
+            <LabView
+              model={model}
+              calls={atlas?.calls}
+              proposed={atlas?.proposed}
+              selected={piece}
+              onSelect={setPiece}
+              only="scenario"
             />
-            {mode === "scenario" && model ? (
-              // the Atlas Lab's Scenario editor, on this run's contract
-              <div className="relative flex min-h-0 flex-1 flex-col">
-                <LabView
-                  model={model}
-                  calls={atlas?.calls}
-                  proposed={atlas?.proposed}
-                  selected={piece}
-                  onSelect={setPiece}
-                  only="scenario"
+          </div>
+        ) : (
+          <div
+            className={`flex-1 overflow-auto px-5 pb-5 ${mode === "graph" ? "flex flex-col" : ""}`}
+          >
+            {mode === "trace" ? (
+              <>
+                <TraceList
+                  rows={rows}
+                  total={frames.length}
+                  maxGas={Math.max(1, ...frames.map((f) => f.gas ?? 0))}
+                  filtered={!!q || depth > 0 || hidden.size > 0}
+                  selected={frameIdx}
+                  onSelect={selectFrame}
+                  onReset={() => {
+                    setQuery("");
+                    setDepth(0);
+                    setHidden(new Set());
+                  }}
                 />
-              </div>
+                <BalancePanels transfers={test.transfers} />
+              </>
             ) : (
-              <div
-                className={`flex-1 overflow-auto px-5 pb-5 ${mode === "graph" ? "flex flex-col" : ""}`}
-              >
-                <StatusBar
-                  test={test}
-                  command={data.command}
-                  exportedAt={data.generatedAt}
+              <div className="min-h-0 flex-1">
+                <CallGraph
+                  frames={frames}
+                  hidden={hidden}
+                  selected={frameIdx}
+                  onSelect={selectFrame}
                 />
-                {mode === "trace" ? (
-                  <>
-                    <TraceList
-                      frames={test.frames}
-                      hidden={hidden}
-                      selected={frameIdx}
-                      onSelect={selectFrame}
-                    />
-                    <BalancePanels transfers={test.transfers} />
-                  </>
-                ) : (
-                  <div className="min-h-0 flex-1">
-                    <CallGraph
-                      frames={test.frames}
-                      hidden={hidden}
-                      selected={frameIdx}
-                      onSelect={selectFrame}
-                    />
-                  </div>
-                )}
               </div>
             )}
-          </main>
-          <SourcePanel
-            sources={data.sources}
-            file={file}
-            onFile={setFile}
-            span={span}
-            caption={frame ? `${frame.to}.${frame.fn}` : null}
-          />
-        </div>
-      </div>
+          </div>
+        )}
+        {/* the keyboard, said once where it is used */}
+        <footer className="flex flex-none flex-wrap items-center gap-x-4 gap-y-1 border-border border-t px-5 py-2 text-[12px] text-dim">
+          {(
+            [
+              [["↑", "↓"], "step through calls"],
+              [["/"], "search"],
+              [["1", "2", "3"], "views"],
+              [["[", "]"], "tests, source"],
+              [["F"], full ? "exit full screen" : "full screen"],
+            ] as const
+          ).map(([ks, label]) => (
+            <span key={label} className="flex items-center gap-1.5">
+              {ks.map((key) => (
+                <span key={key} className="kbd">
+                  {key}
+                </span>
+              ))}
+              {label}
+            </span>
+          ))}
+        </footer>
+      </main>
+      {panels.source && !full && (
+        <SourcePanel
+          sources={data.sources}
+          file={file}
+          onFile={setFile}
+          span={span}
+          frame={frame}
+          index={frameIdx}
+        />
+      )}
     </div>
   );
 }

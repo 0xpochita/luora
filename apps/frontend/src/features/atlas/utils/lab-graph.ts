@@ -159,7 +159,7 @@ export function wireError(
   const pb = b && portOf(b, w.to.port, "in");
   if (!pa || !pb) return "no such port";
   if (a === b) return "same card";
-  if (pa.type !== pb.type) return `${pa.type} → ${pb.type}`;
+  if (pa.type !== pb.type) return `${pa.type} › ${pb.type}`;
   // a wire a→b closes a loop when b already reaches a (data and then wires both order cards)
   const next = (id: string) =>
     wires.filter((x) => x.from.node === id).map((x) => x.to.node);
@@ -183,7 +183,7 @@ export const connect = (wires: Wire[], w: Wire): Wire[] => [
 
 // ---- solidity signatures ------------------------------------------------------
 
-/** Port type of a solidity type: (u)int → amount, bool → bool, address / contract → actor. */
+/** Port type of a solidity type: (u)int › amount, bool › bool, address / contract › actor. */
 export function portType(sol: string): PortType {
   if (/^u?int\d*$/.test(sol)) return "amount";
   if (sol === "bool") return "bool";

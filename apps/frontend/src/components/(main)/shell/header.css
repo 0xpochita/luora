@@ -90,6 +90,44 @@ button.hdr-pill:focus-visible,
   background: currentColor;
   box-shadow: 0 0 8px currentColor;
 }
+/* smaller capsule for in-panel toolbars (TraceToolbar); a pressed toggle reads lit */
+.hdr-pill.sm {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12.5px;
+  gap: 6px;
+}
+.hdr-pill.split.sm > * {
+  padding: 0 11px;
+  gap: 6px;
+}
+.hdr-pill[aria-pressed="true"],
+.hdr-pill.split > button[aria-pressed="true"] {
+  color: var(--fg);
+}
+.hdr-pill[aria-pressed="false"] {
+  color: var(--dim);
+}
+.hdr-pill.split > button[aria-pressed="false"] {
+  color: var(--dim);
+}
+.hdr-pill.split > button.mid {
+  border-radius: 0;
+}
+/* a key, as the keyboard legend and fields show it */
+.kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 0.35);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.09);
+  font: 11px / 1 var(--font-geist-mono);
+  color: var(--muted);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hdr-pill,
   .hdr-pill.split > button {

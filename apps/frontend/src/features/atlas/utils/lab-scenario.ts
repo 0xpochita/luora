@@ -420,7 +420,7 @@ function initialSlot(m: PlayModel, name: string): Val {
   return isBoolSlot(m, p.id) ? false : lin(0n);
 }
 
-/** 1_000e6 → 1000000000n, true → true; null when it is not a literal. */
+/** 1_000e6 › 1000000000n, true › true; null when it is not a literal. */
 function literal(s: string): Val {
   if (s === "true" || s === "false") return s === "true";
   const n = /^(\d[\d_]*)(?:e(\d+))?$/.exec(s.trim());
@@ -431,7 +431,7 @@ function literal(s: string): Val {
 
 type Env = {
   caller: string;
-  /** identifier → value: parameters, trace-bound locals, derived locals */
+  /** identifier › value: parameters, trace-bound locals, derived locals */
   vars: Map<string, Val>;
   self: string;
   asset: string | null;
@@ -476,7 +476,7 @@ function evalExpr(m: PlayModel, st: State, env: Env, e: string): Val {
 }
 
 const OPS: CmpOp[] = [">=", "<=", "==", ">", "<"];
-/** require condition → holds / fails / null when it cannot be decided. */
+/** require condition › holds / fails / null when it cannot be decided. */
 function evalCond(
   m: PlayModel,
   st: State,
@@ -1260,7 +1260,7 @@ export function scenarioErrors(m: PlayModel, sc: unknown): string[] {
       errs.push("wire must be { from: { node, port }, to: { node, port } }");
       continue;
     }
-    const me = `wire ${w.from.node}.${w.from.port} → ${w.to.node}.${w.to.port}`;
+    const me = `wire ${w.from.node}.${w.from.port} › ${w.to.node}.${w.to.port}`;
     if (!ids.has(w.from.node) || !ids.has(w.to.node)) {
       errs.push(`${me}: no such node`);
       continue;

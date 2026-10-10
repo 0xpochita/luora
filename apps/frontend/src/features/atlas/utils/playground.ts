@@ -30,7 +30,7 @@ export type PlayModel = Pick<
 export const USDC_DECIMALS = 6;
 const UNIT = 10n ** BigInt(USDC_DECIMALS);
 
-/** "1,000.5" → 1000500000n raw units; null when it is not a non-negative amount. */
+/** "1,000.5" › 1000500000n raw units; null when it is not a non-negative amount. */
 export function parseUsdc(s: string): bigint | null {
   const m = /^(\d+)(?:\.(\d*))?$/.exec(s.replace(/[,_\s]/g, ""));
   if (!m || (m[2]?.length ?? 0) > USDC_DECIMALS) return null;
@@ -38,7 +38,7 @@ export function parseUsdc(s: string): bigint | null {
 }
 
 const group = (n: bigint) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-/** 1000500000n → "1,000.5 USDC". */
+/** 1000500000n › "1,000.5 USDC". */
 export function formatUsdc(raw: bigint): string {
   const neg = raw < 0n;
   const a = neg ? -raw : raw;
@@ -48,7 +48,7 @@ export function formatUsdc(raw: bigint): string {
     .replace(/0+$/, "");
   return `${neg ? "−" : ""}${group(a / UNIT)}${frac ? `.${frac}` : ""} USDC`;
 }
-/** "1000000000" → "1,000,000,000" (raw integer, unit unknown). */
+/** "1000000000" › "1,000,000,000" (raw integer, unit unknown). */
 export const formatInt = (s: string) =>
   /^-?\d+$/.test(s) ? group(BigInt(s)) : s;
 
@@ -149,15 +149,15 @@ export type CaptionCtx = {
   amount: string;
   /** label for msg.sender, e.g. "caller" or the test's prank address "alice" */
   caller: string;
-  /** identifier → decoded value from a forge trace */
+  /** identifier › decoded value from a forge trace */
   bound?: Record<string, string>;
 };
 const selfLabel = (contract: string) =>
   /vault/i.test(contract) ? "vault" : "this";
 
 /**
- * Symbolic effect of one source line: msg.sender → caller, address(this) → vault, and the
- * entry's amount parameter → the amount wherever it is passed directly as an argument
+ * Symbolic effect of one source line: msg.sender › caller, address(this) › vault, and the
+ * entry's amount parameter › the amount wherever it is passed directly as an argument
  * (`f(…, amount)`), never inside arithmetic. Trace-bound identifiers get `(=value)`.
  */
 export function stepCaption(
@@ -214,7 +214,7 @@ export type TraceCall = {
   caller: string | null;
   /** emitted inside the call: "Deposit(user=alice, assets=…)" */
   events: string[];
-  /** external calls made inside it: "MockUSDC.transferFrom(from=alice, …) → true" */
+  /** external calls made inside it: "MockUSDC.transferFrom(from=alice, …) › true" */
   calls: string[];
   transfers: { token: string; from: string; to: string; value: string }[];
 };
@@ -272,7 +272,7 @@ export function traceCalls(tests: TraceTest[], contract: string): TraceCall[] {
           }
         } else if (g.d === f.d + 1)
           call.calls.push(
-            `${g.to}.${g.fn}(${g.args})${g.ok ? (g.ret ? ` → ${g.ret}` : "") : ` ✕ ${g.ret}`}`,
+            `${g.to}.${g.fn}(${g.args})${g.ok ? (g.ret ? ` › ${g.ret}` : "") : ` ✕ ${g.ret}`}`,
           );
       }
       out.push(call);
@@ -281,13 +281,13 @@ export function traceCalls(tests: TraceTest[], contract: string): TraceCall[] {
   return out;
 }
 
-/** Entry piece name `deposit()` → trace function name `deposit`. */
+/** Entry piece name `deposit()` › trace function name `deposit`. */
 export const fnName = (p: Piece) => p.name.replace(/\(.*$/, "");
 
 /**
- * Identifier → value from a traced call: the entry's parameters, plus the arguments of every
+ * Identifier › value from a traced call: the entry's parameters, plus the arguments of every
  * `emit` in its body matched to the event's declared parameter names (emit Deposit(_, amount, minted)
- * + Deposit(…, shares=5) → minted = 5).
+ * + Deposit(…, shares=5) › minted = 5).
  */
 export function traceBindings(
   m: Pick<PlayModel, "byId" | "pieces" | "lines" | "lineOf">,
@@ -325,7 +325,7 @@ export type Deltas = {
   /** token balance change of the caller / the contract, e.g. "−1,000 USDC" or "+value" */
   caller: string | null;
   vault: string | null;
-  /** slot name → "+= minted" */
+  /** slot name › "+= minted" */
   writes: Record<string, string>;
 };
 
@@ -440,7 +440,7 @@ export function reachOf(m: PlayModel, id: string): Reach[] {
         ? [{ entry: e, how: kinds.map((k) => HOW[k]).join(" + ") }]
         : [];
     });
-  // logic / access: linked entries, through internal helpers (deposit → _computeShares → _price)
+  // logic / access: linked entries, through internal helpers (deposit › _computeShares › _price)
   const inner = new Set(m.internal);
   const reaches = (from: string, seen: Set<string>): boolean =>
     (m.byId[from]?.links ?? []).some(

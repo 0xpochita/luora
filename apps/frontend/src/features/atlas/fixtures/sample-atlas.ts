@@ -13,7 +13,7 @@ const PIECES: Piece[] = [
     name: "deposit()",
     find: "function deposit",
     n: 7,
-    desc: "Public entry: pulls tokens in and mints shares. Prices shares through _computeShares → _price → oracle.",
+    desc: "Public entry: pulls tokens in and mints shares. Prices shares through _computeShares › _price › oracle.",
     links: [
       "whenNotPaused",
       "_computeShares",
@@ -342,7 +342,7 @@ const PIECES: Piece[] = [
     name: "IUniswapV2Router02",
     find: "import {IUniswapV2Router02}",
     n: 1,
-    desc: "Uniswap V2 router. Executes the reward → asset swap; output is bounded by minOut.",
+    desc: "Uniswap V2 router. Executes the reward › asset swap; output is bounded by minOut.",
     links: ["router", "cSwap"],
   },
   {
