@@ -19,6 +19,7 @@ import {
   runScenario,
   type Scenario,
   scenarioCard,
+  scenarioErrors,
   scenarioOrder,
   templates,
 } from "./lab-scenario.ts";
@@ -518,5 +519,126 @@ assert.ok(
     'assertGe(usdc.balanceOf(address(vault)), vault.totalShares(), "vault holds at least totalShares");',
   ),
 );
+
+// ---- scenario validation: the app and foundry/luora-mcp.mjs agree ----------------------
+const mcpPath = "../../../../../../foundry/luora-mcp.mjs";
+const mcp = await import(new URL(mcpPath, import.meta.url).href);
+const mcpModel = mcp.labModel({
+  contract: m.contract,
+  source,
+  pieces,
+  seq,
+  entry: m.entry,
+});
+const variants: [string, (s: Scenario) => unknown][] = [
+  ["as built", (s) => s],
+  [
+    "unknown kind",
+    (s) => ({
+      ...s,
+      nodes: [...s.nodes, { id: "z", x: 0, y: 0, kind: "exploit" }],
+    }),
+  ],
+  [
+    "not an entry",
+    (s) => ({
+      ...s,
+      nodes: s.nodes.map((n) =>
+        n.kind === "call" ? { ...n, fn: "_price" } : n,
+      ),
+    }),
+  ],
+  [
+    "bad role",
+    (s) => ({
+      ...s,
+      nodes: s.nodes.map((n) =>
+        n.kind === "actor" ? { ...n, role: "god" } : n,
+      ),
+    }),
+  ],
+  [
+    "bad check",
+    (s) => ({
+      ...s,
+      nodes: [
+        ...s.nodes,
+        {
+          id: "z",
+          x: 0,
+          y: 0,
+          kind: "assert",
+          check: { type: "only", fn: "deposit" },
+        },
+      ],
+    }),
+  ],
+  [
+    "bad slot",
+    (s) => ({
+      ...s,
+      nodes: [
+        ...s.nodes,
+        { id: "z", x: 0, y: 0, kind: "snapshot", of: "secret" },
+      ],
+    }),
+  ],
+  [
+    "extra field",
+    (s) => ({
+      ...s,
+      nodes: s.nodes.map((n, i) => (i ? n : { ...n, code: "x" })),
+    }),
+  ],
+  ["two lines", (s) => ({ ...s, name: "a\nb" })],
+  [
+    "type mismatch",
+    (s) => ({
+      ...s,
+      wires: [...s.wires, W2(s.nodes[0].id, "addr", "z", "a")],
+      nodes: [
+        ...s.nodes,
+        {
+          id: "z",
+          x: 0,
+          y: 0,
+          kind: "assert",
+          check: { type: "cmp", op: "==" },
+        },
+      ],
+    }),
+  ],
+  [
+    "no such port",
+    (s) => ({
+      ...s,
+      wires: [...s.wires, W2(s.nodes[0].id, "nope", s.nodes[1].id, "caller")],
+    }),
+  ],
+];
+function W2(a: string, ap: string, b: string, bp: string): Wire {
+  return { from: { node: a, port: ap }, to: { node: b, port: bp } };
+}
+for (const t of tpl)
+  for (const [what, f] of variants) {
+    const sc = f(t.build());
+    const app = scenarioErrors(m, sc);
+    const tool = mcp.scenarioErrors(mcpModel, {
+      id: "x",
+      name: (sc as Scenario).name,
+      nodes: (sc as Scenario).nodes,
+      wires: (sc as Scenario).wires,
+    });
+    assert.equal(
+      app.length === 0,
+      tool.length === 0,
+      `${t.name} / ${what}: app ${JSON.stringify(app)} vs mcp ${JSON.stringify(tool)}`,
+    );
+    assert.equal(
+      app.length === 0,
+      what === "as built",
+      `${t.name} / ${what}: ${JSON.stringify(app)}`,
+    );
+  }
 
 console.log("lab ok");
