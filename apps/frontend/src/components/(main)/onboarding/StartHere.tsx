@@ -60,8 +60,8 @@ export function StartHere() {
           value={how}
           onChange={setHow}
           options={[
-            { value: "manual", label: "Do it myself" },
-            { value: "agent", label: "Let my AI agent do it" },
+            { value: "manual", label: "For human" },
+            { value: "agent", label: "For agent" },
           ]}
         />
 
