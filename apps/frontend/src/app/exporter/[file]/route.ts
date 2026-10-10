@@ -1,13 +1,14 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-/** The exporter scripts this app reads the output of (foundry/), nothing else. */
+/** The exporter scripts this app reads the output of, and the MCP server (foundry/), nothing else. */
 const FILES = new Set([
   "luora-export.mjs",
   "luora-lib.mjs",
   "luora-atlas.mjs",
   "luora-findings.mjs",
   "luora-coverage.mjs",
+  "luora-mcp.mjs",
 ]);
 
 /**
