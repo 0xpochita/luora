@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Button,
   Chip,
@@ -14,7 +14,10 @@ import {
 import type { AtlasModel } from "@/features/atlas";
 import { useScenarios } from "@/features/atlas/hooks/useScenarios";
 import { ICON_PATH } from "@/features/atlas/utils/icons";
-import { foundryTest } from "@/features/atlas/utils/lab-foundry";
+import {
+  type FoundryTest,
+  foundryTest,
+} from "@/features/atlas/utils/lab-foundry";
 import {
   connect,
   contractGraph,
@@ -73,7 +76,7 @@ const KindIco = ({ kind }: { kind: keyof typeof KIND_META }) => (
   </svg>
 );
 
-const download = (name: string, text: string, type = "text/plain") => {
+export const download = (name: string, text: string, type = "text/plain") => {
   const url = URL.createObjectURL(new Blob([text], { type }));
   const a = document.createElement("a");
   a.href = url;
@@ -94,6 +97,7 @@ export function LabView({
   selected,
   onSelect,
   only,
+  onTest,
 }: {
   model: AtlasModel;
   calls?: TraceCall[];
@@ -103,6 +107,8 @@ export function LabView({
   onSelect: (id: string | null) => void;
   /** pin the Lab to one mode and hide its Contract | Scenario switch (Trace page's Scenario tab) */
   only?: Mode;
+  /** the generated Foundry test, reported whenever the scenario changes (the Atlas's Test panel) */
+  onTest?: (test: FoundryTest | null) => void;
 }) {
   const [mode, setMode] = useState<Mode>(only ?? "contract");
   const [panel, setPanel] = useState<Panel>(null);
@@ -279,6 +285,12 @@ export function LabView({
 
   const test = sc ? foundryTest(model, sc) : null;
   const exportTest = () => test && download(test.file, test.source);
+  // tell the page each time the test changes (it shows it beside the canvas)
+  const testKey = test ? `${test.file}\n${test.source}` : "";
+  const report = useRef(onTest);
+  report.current = onTest;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: report when the generated text changes, not on every render
+  useEffect(() => report.current?.(test), [testKey]);
   const share = async () => {
     if (!sc) return;
     try {
@@ -480,6 +492,7 @@ export function LabView({
               {mode === "scenario" &&
                 tool("add", "Add node", () => toggle("add"), panel === "add")}
               {mode === "scenario" &&
+                !onTest &&
                 tool(
                   "code",
                   "Generated Foundry test",

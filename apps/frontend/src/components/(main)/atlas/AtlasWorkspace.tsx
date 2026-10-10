@@ -26,6 +26,7 @@ import {
   pctLabel,
   ratio,
 } from "@/features/atlas/utils/coverage";
+import type { FoundryTest } from "@/features/atlas/utils/lab-foundry";
 import { type RunFile, useShownSource } from "@/features/run";
 import { useAiThread } from "../ai/AiChat";
 import { StartHere } from "../onboarding/StartHere";
@@ -36,6 +37,7 @@ import { LabView } from "./lab/LabView";
 import { PieceInspector } from "./PieceInspector";
 import { PathsView } from "./paths/PathsView";
 import { openQuickSearch, QuickSearch } from "./QuickSearch";
+import { TestPanel } from "./TestPanel";
 import "./atlas.css";
 
 const fromFile = (data: RunFile) => atlasSource(data, "file");
@@ -100,6 +102,8 @@ const VIEWS: {
   },
 ];
 
+type Tab = "details" | "ask" | "test";
+
 /** Smart-contract visual: graph, paths and scenarios, sharing one selection. */
 function AtlasBody({ source }: { source: AtlasSource }) {
   // the contract on screen: the export's main one, or another the project deploys (mocks too)
@@ -116,7 +120,16 @@ function AtlasBody({ source }: { source: AtlasSource }) {
   const [side, setSide] = useState(true);
   const [full, setFull] = useState(false);
   // the right panel's two tabs: what the selection is, or the chat about it (as in Trace)
-  const [tab, setTab] = useState<"details" | "ask">("details");
+  const [tab, setTab] = useState<Tab>("details");
+  // the Foundry test the Scenarios playground writes, shown live in the Test tab
+  const [test, setTest] = useState<FoundryTest | null>(null);
+  // Scenarios opens on its test; leaving it falls back to Details
+  useEffect(() => {
+    if (view === "scenario") {
+      setTab("test");
+      setSide(true);
+    } else setTab((t) => (t === "test" ? "details" : t));
+  }, [view]);
   const [askFocus, setAskFocus] = useState(0);
   const thread = useAiThread();
   // the function Paths shows (its own choice, so selecting a step for the inspector keeps it)
@@ -129,7 +142,7 @@ function AtlasBody({ source }: { source: AtlasSource }) {
   const keys = useRef({
     selected: false,
     open: false,
-    toggle: (_t: "details" | "ask") => {},
+    toggle: (_t: Tab) => {},
   });
   // a selection brings the panel back (Figma UI3); in the chat it becomes the question's context
   const select = (id: string | null) => {
@@ -182,16 +195,20 @@ function AtlasBody({ source }: { source: AtlasSource }) {
       </span>
     </span>
   );
-  const open = side && (tab === "ask" || selected != null || summary);
-  const showTab = (t: "details" | "ask") => {
+  const open =
+    side &&
+    (tab === "ask" ||
+      (tab === "test" && view === "scenario") ||
+      selected != null ||
+      summary);
+  const showTab = (t: Tab) => {
     setTab(t);
     setSide(true);
     if (t === "details" && !selected) setSummary(true);
     if (t === "ask") setAskFocus((n) => n + 1);
   };
   /** Inspector / Ask AI buttons: open the panel on that tab, or put it away when it is already there */
-  const toggle = (t: "details" | "ask") =>
-    open && tab === t ? setSide(false) : showTab(t);
+  const toggle = (t: Tab) => (open && tab === t ? setSide(false) : showTab(t));
   keys.current = { selected: selected != null, open, toggle };
 
   return (
@@ -326,6 +343,7 @@ function AtlasBody({ source }: { source: AtlasSource }) {
               selected={selected}
               onSelect={select}
               only={view === "scenario" ? "scenario" : "contract"}
+              onTest={view === "scenario" ? setTest : undefined}
             />
           )}
         </motion.section>
@@ -348,6 +366,19 @@ function AtlasBody({ source }: { source: AtlasSource }) {
                     value={tab}
                     onChange={showTab}
                     options={[
+                      ...(view === "scenario"
+                        ? [
+                            {
+                              value: "test" as const,
+                              label: "Test",
+                              title:
+                                "The Foundry test this scenario writes, live",
+                              icon: (
+                                <PhIcon d={PH.flask} className="size-[14px]" />
+                              ),
+                            },
+                          ]
+                        : []),
                       {
                         value: "details",
                         label: "Details",
@@ -372,7 +403,9 @@ function AtlasBody({ source }: { source: AtlasSource }) {
                     ✕
                   </button>
                 </div>
-                {tab === "ask" ? (
+                {tab === "test" && view === "scenario" ? (
+                  <TestPanel test={test} />
+                ) : tab === "ask" ? (
                   // the chat fills the column (aside children are otherwise their own height)
                   <section
                     style={{ flex: "1 1 0", minHeight: 0 }}
