@@ -4,10 +4,23 @@ import type { TestResult } from "../../trace/types.ts";
 import {
   clock,
   exportArgs,
+  FORK_CHAINS,
   kindDetail,
   parseEvent,
+  splitChain,
   summarize,
 } from "./test-run.ts";
+
+// the Start test menu lists exactly the exporter's chains (foundry/luora-chains.mjs)
+const { CHAINS } = (await import(
+  new URL("../../../../../../foundry/luora-chains.mjs", import.meta.url).href
+)) as {
+  CHAINS: Record<string, { name: string; family: string; id: number }>;
+};
+assert.deepEqual(
+  FORK_CHAINS.map((c) => [c.key, c.name, c.family, c.id]),
+  Object.entries(CHAINS).map(([k, c]) => [k, c.name, c.family, c.id]),
+);
 
 // only the local run or one well-formed fork key: never a flag, a path or a list
 assert.deepEqual(exportArgs({}), []);
@@ -19,6 +32,8 @@ assert.deepEqual(exportArgs({ fork: "base-sepolia" }), [
 for (const fork of [
   "--mt",
   "-x",
+  "all",
+  "mainnet",
   "all,sepolia",
   "../x",
   "Base",
@@ -67,4 +82,16 @@ assert.deepEqual(parseEvent('{"log":"luora: x","at":3}'), {
 assert.equal(parseEvent("not json"), null);
 assert.equal(parseEvent('{"other":1}'), null);
 assert.equal(clock(83), "1:23");
+assert.deepEqual(
+  FORK_CHAINS.map((c) => splitChain(c.name)),
+  [
+    ["Ethereum", "Sepolia"],
+    ["Arbitrum", "Sepolia"],
+    ["Base", "Sepolia"],
+    ["Robinhood Chain", "Testnet"],
+    ["HyperEVM", "Testnet"],
+    ["Tempo", "Moderato"],
+  ],
+);
+assert.deepEqual(splitChain("Anvil"), ["Anvil", ""]);
 console.log("test-run ok");

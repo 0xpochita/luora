@@ -34,6 +34,8 @@ export type DropdownOption<T extends string> = {
   title?: string;
   /** options sharing a group are listed under its heading, in order */
   group?: string;
+  /** quiet text at the item's right end, in the menu only (a chain id) */
+  hint?: ReactNode;
 };
 
 const TRIGGER = {
@@ -282,11 +284,21 @@ export function Dropdown<T extends string>({
                         >
                           {o.label}
                         </span>
-                        {on && (
+                        {o.hint != null && (
+                          <span className="relative flex-none pl-3 font-mono text-[11.5px] text-dim tabular-nums">
+                            {o.hint}
+                          </span>
+                        )}
+                        {on ? (
                           <PhIcon
                             d={PH.check}
                             className="relative size-[13px] flex-none text-fg"
                           />
+                        ) : (
+                          // hints line up whether or not their row is checked
+                          o.hint != null && (
+                            <span className="size-[13px] flex-none" />
+                          )
                         )}
                       </div>
                     </div>

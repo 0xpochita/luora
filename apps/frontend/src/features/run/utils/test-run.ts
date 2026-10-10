@@ -8,20 +8,53 @@ import type { TestResult } from "../../trace/types";
 
 /**
  * The testnets Start test can add a fork run on: foundry/luora-chains.mjs's list (key, name, logo
- * family), which test-run.check.ts keeps equal to it.
+ * family, chain id), which test-run.check.ts keeps equal to it.
  */
 export const FORK_CHAINS = [
-  { key: "sepolia", name: "Ethereum Sepolia", family: "ethereum" },
-  { key: "arbitrum-sepolia", name: "Arbitrum Sepolia", family: "arbitrum" },
-  { key: "base-sepolia", name: "Base Sepolia", family: "base" },
+  {
+    key: "sepolia",
+    name: "Ethereum Sepolia",
+    family: "ethereum",
+    id: 11155111,
+  },
+  {
+    key: "arbitrum-sepolia",
+    name: "Arbitrum Sepolia",
+    family: "arbitrum",
+    id: 421614,
+  },
+  { key: "base-sepolia", name: "Base Sepolia", family: "base", id: 84532 },
   {
     key: "robinhood-testnet",
     name: "Robinhood Chain Testnet",
     family: "robinhood",
+    id: 46630,
   },
-  { key: "hyperevm-testnet", name: "HyperEVM Testnet", family: "hyperliquid" },
-  { key: "tempo-testnet", name: "Tempo Testnet (Moderato)", family: "tempo" },
+  {
+    key: "hyperevm-testnet",
+    name: "HyperEVM Testnet",
+    family: "hyperliquid",
+    id: 998,
+  },
+  {
+    key: "tempo-testnet",
+    name: "Tempo Testnet (Moderato)",
+    family: "tempo",
+    id: 42431,
+  },
 ] as const;
+
+/**
+ * A chain's name as brand and network, so the network reads second (Etherscan / Blockscout:
+ * "Sepolia", "Testnet" beside the chain, quieter): "Base Sepolia" → ["Base", "Sepolia"],
+ * "Tempo Testnet (Moderato)" → ["Tempo", "Moderato"].
+ */
+export function splitChain(name: string): [string, string] {
+  const named = name.match(/^(.+?)(?: Testnet)? \((.+)\)$/);
+  if (named) return [named[1], named[2]];
+  const i = name.lastIndexOf(" ");
+  return i > 0 ? [name.slice(0, i), name.slice(i + 1)] : [name, ""];
+}
 
 /**
  * The exporter's arguments for a request body: nothing (the local run), or `--forks <key>` for one

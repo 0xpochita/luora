@@ -7,7 +7,9 @@ import {
   clock,
   FORK_CHAINS,
   type ResultRow,
+  splitChain,
 } from "@/features/run/utils/test-run";
+import { ChainName } from "./ForkPicker";
 
 /*
  * Start test, one row above the trace's Calls list: runs the exporter from the app and reports
@@ -115,14 +117,16 @@ export function TestRunPanel({
               options={[
                 {
                   value: "local" as string,
-                  label: "Local",
+                  label: <ChainName parts={["Local", ""]} />,
                   text: "Local",
                   title: "forge test on an empty local chain",
+                  icon: <ChainLogo family="local" className="size-3.5" />,
                 },
                 ...FORK_CHAINS.map((c) => ({
                   value: c.key as string,
-                  label: c.name,
+                  label: <ChainName parts={splitChain(c.name)} />,
                   text: c.name,
+                  hint: c.id,
                   title: `The local run, then the same tests on a fork of ${c.name} at its latest block (read-only, nothing is sent)`,
                   icon: <ChainLogo family={c.family} className="size-3.5" />,
                   group: "Local + a testnet fork",
