@@ -62,10 +62,10 @@ Products (L2 opened for this pass; TD from the trace pass; DL and SU known tools
 | Card: real logo tile top-left (only if the asset exists, else monogram tile), category top-right, name + version, two-line purpose, footer "chain · N contracts · licence" | T1, T7 | P6, DL |
 | Licence shown as a chip with a dot: green "Source excerpts" (MIT/GPL), grey "Structure only" (BUSL); the same words in the protocol header and About | T7 | L2 (sources linked, not copied) |
 | No TVL, users, volume or other numbers we did not measure; counts are counted from the AST | T1 | DESIGN.md "no fake stats" |
-| Protocol page = left rail (views, flows, contracts) · canvas · right panel (About / Ask AI) | T2–T6 | P5, R4 |
-| Views as Tabs: Map · Flows · Contract | T2–T4 | trace-view.md view tabs |
+| Protocol page = one switch · the canvas · a side panel closed until asked (About / Ask AI), Esc closes; no left rail | T2–T6 | P5, R4, atlas.md minimal pass |
+| Views in one segmented control, keys 1–3: Map · Flows · Contract (the same control as Trace and Atlas) | T2–T4 | atlas.md minimal pass |
 | Map: contracts in **columns by role** (entry points → logic → tokens and storage → config, oracles, external) | T2 | P2 columns, L2 Disco |
-| Map card: title above (white dot + name), inner header kind icon + label (Contract, Library, Token, Interface), **one row per relation** ("calls AToken", "holds IPoolAddressesProvider") with a port dot; the wire leaves from that row | T2 | P1, L2 Disco |
+| Map card: title above (white dot + name), inner header kind icon + label (Contract, Library, Outside), the role, then **one row per contract it reaches**, kinds merged ("calls · holds PoolAddressesProvider", member count on the right) with a port dot (blue when the target is outside the protocol); the wire leaves from that row | T2 | P1, L2 Disco |
 | Relation kinds told apart by **words and line style**, not colour: calls and delegates solid, holds dashed, deploys dotted; inheritance listed as text ("is PoolStorage, …") | T2 | SU, DESIGN.md (monochrome wires) |
 | Selecting a card lights its wires and neighbours, the rest fades | T2 | P3, P2 |
 | Pan, zoom, fit (the Call graph's ZoomControls and usePanZoom) | T2 | trace Call graph |
@@ -75,7 +75,12 @@ Products (L2 opened for this pass; TD from the trace pass; DL and SU known tools
 | Contract view = the Atlas **Lab** contract graph, unchanged (`only="contract"`), fed from the same luora-atlas.mjs output | T4 | Atlas |
 | Every function name links to `github.com/<repo>/blob/<commit>/<file>#L<n>` | T5 | L2 (source links), Phalcon line links |
 | Ask AI tab: context strip (protocol › flow › step or contract), suggested defensive questions, model chip, Copy prompt without AI | T6 | R1–R4 |
-| Header chips: repo@tag, short commit, licence; "What's not here" note per protocol (e.g. Curve: Vyper, no solc AST) | T7 | L2 numbered sections |
+| No chip row: one quiet line "15 contracts · 5 flows · Source for 2 of 15" opens About, which holds repo@tag, commit, licence per repo, the protocol's checks and what is not mapped | T7 | L2 numbered sections, atlas.md minimal pass |
+| A tall column (Aave's seven logic libraries) wraps into a second column; the wrap height is chosen so the map's shape matches the stage and Fit stays legible | T2 | P2 columns |
+| Flow chosen from one dropdown above the lanes; the step's text, its GitHub line and the flow's checks sit under the diagram, so no panel is needed to read a flow | T3 | P5, atlas.md minimal pass |
+
+Not taken: P7's search and category filter (four protocols fit one screen), the left rail first
+planned from P5 (main's minimal Atlas pass: one switch, panels only on demand, no chip rows).
 
 ## Data
 
