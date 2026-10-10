@@ -1,7 +1,8 @@
 "use client";
 
+import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import { PH, PhIcon } from "@/components/ui";
+import { EASE, PH, PhIcon } from "@/components/ui";
 import type { FoundryTest } from "@/features/atlas/utils/lab-foundry";
 import { CodeView } from "../source/CodeView";
 import { download } from "./lab/LabView";
@@ -27,6 +28,20 @@ export function TestPanel({ test }: { test: FoundryTest | null }) {
     setFresh(first || added.length > now.length / 2 ? [] : added);
   }, [source]);
 
+  // full screen: the code over the whole window, still following the playground; Esc steps back
+  // (caught before the Atlas's own Esc, which would close the panel)
+  const [full, setFull] = useState(false);
+  useEffect(() => {
+    if (!full) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.stopPropagation();
+      setFull(false);
+    };
+    addEventListener("keydown", onKey, true);
+    return () => removeEventListener("keydown", onKey, true);
+  }, [full]);
+
   if (!test)
     return (
       <p className="rounded-card border border-border border-dashed px-4 py-6 text-center text-[13px] text-dim">
@@ -35,11 +50,11 @@ export function TestPanel({ test }: { test: FoundryTest | null }) {
       </p>
     );
 
-  return (
+  const card = (
     <section
-      // the panel fills the column (aside children are otherwise their own height)
-      style={{ flex: "1 1 0", minHeight: 0 }}
-      className="flex flex-col rounded-card border border-border bg-card-grad shadow-soft"
+      // in the panel it fills the column (aside children are otherwise their own height)
+      style={full ? undefined : { flex: "1 1 0", minHeight: 0 }}
+      className={`flex flex-col rounded-card border border-border bg-card-grad shadow-soft ${full ? "h-full" : ""}`}
     >
       <header className="flex flex-none items-center gap-2 px-4 pt-3.5 pb-1">
         <span
@@ -70,6 +85,16 @@ export function TestPanel({ test }: { test: FoundryTest | null }) {
         >
           Download
         </button>
+        <button
+          type="button"
+          className="hdr-pill sm"
+          aria-label={full ? "Exit full screen (Esc)" : "Full screen"}
+          title={full ? "Back to the panel  Esc" : "Read the test full screen"}
+          onClick={() => setFull((v) => !v)}
+        >
+          <PhIcon d={full ? PH.shrink : PH.expand} className="size-[14px]" />
+          {full && "Exit full screen"}
+        </button>
       </header>
       <p className="flex-none px-4 pb-2.5 text-[12px] text-dim leading-normal">
         Written from the playground as you wire it. Run it in your Foundry
@@ -84,5 +109,17 @@ export function TestPanel({ test }: { test: FoundryTest | null }) {
         className="mx-2 mb-2 min-h-0 flex-1 rounded-inner border border-border"
       />
     </section>
+  );
+  return full ? (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.985 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.2, ease: EASE }}
+      className="dot-grid fixed inset-0 z-[70] bg-canvas p-3"
+    >
+      {card}
+    </motion.div>
+  ) : (
+    card
   );
 }
