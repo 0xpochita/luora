@@ -2,18 +2,21 @@
 
 Luora does not host an AI. The **Ask** panel in the atlas (Explain / What could go wrong? / Write
 invariant test) answers from built-in text by default. If you want a model's answer instead, connect
-your own: a model running on your machine, or your own API key.
+your own: your own Claude (Claude Code with your Claude plan), a model running on your machine, or your own API key.
 
 Open it from the app header: **AI · None** → *AI provider*.
 
 | Option | What answers | What leaves your machine |
 |---|---|---|
 | **None** (default) | Luora's built-in text | Nothing. No network call is made. |
+| **Your Claude** | Your own Claude Code, signed in with your own Claude plan (Pro / Max) | The prompt goes from the page to this app's local route, which hands it to the `claude` program on your laptop; Claude Code sends it to Anthropic under your own login. |
 | **Local model** | Ollama / LM Studio / any OpenAI-compatible server you run | The prompt goes from your browser to the endpoint you typed (normally `localhost`, so it stays on your machine). |
 | **Own API key** | Anthropic, OpenAI or OpenRouter | The prompt and your key go from your browser straight to that provider's API. |
 
-In every case calls go **directly from your browser** to the provider. There is no Luora server route
-in between, and Luora never sees your prompt, the answer or your key.
+For Local model and Own API key, calls go **directly from your browser** to the provider: there is no
+Luora server route in between, and Luora never sees your prompt, the answer or your key. **Your Claude**
+is the one exception: it needs a program on your laptop, so the prompt passes through this app's own
+local route (`/api/claude`) on its way to your Claude Code. Your Claude login never touches Luora.
 
 ## What is sent
 
@@ -44,6 +47,42 @@ back to the built-in answer.
   to another provider.
 - Never logged and never sent to a Luora server.
 - **Forget key** in the dialog deletes it from `localStorage` right away.
+
+## Your Claude (your Claude plan, like Orca)
+
+Ask answered by **your own Claude Code** on your laptop, with the Claude plan you already pay for,
+the way [Orca](https://www.onorca.dev) runs the agents you are already subscribed to. Luora never asks
+for, reads or stores your Claude login: it runs the unmodified `claude` program, which uses its own.
+
+1. Install Claude Code and run `claude` once in a terminal to sign in with your Claude account.
+2. Run Luora locally (`pnpm dev`) and open it at `localhost`.
+3. **Connect AI → Your Claude.** The dialog shows whether Claude Code was found and how it is signed
+   in (e.g. *signed in with your Claude max plan*). Pick a model (Default, Fable 5.1, Opus 5.5,
+   Sonnet 5, Haiku 4.5; also from the chip under the Ask box) and **Test connection**.
+
+How it works: the page posts the question with its context to `app/api/claude`, which runs
+
+```sh
+claude -p --output-format stream-json --verbose --include-partial-messages \
+  --tools "" --strict-mcp-config --setting-sources "" --disable-slash-commands \
+  --no-session-persistence --permission-mode dontAsk --system-prompt "<Luora's defensive prompt>"
+```
+
+in a fresh empty temporary folder (deleted afterwards), with the prompt on stdin, and streams the
+text back. So:
+
+- **No tools, no files, no MCP servers, no hooks:** Claude only answers. Your user and project
+  settings (and their hooks) are not loaded, and nothing of your project folder is visible to it.
+- **Same defensive system prompt** as the other providers, fixed on the server.
+- **Your plan's limits:** each Ask uses your Claude usage like any Claude Code prompt. Two answers
+  can run at once; each stops after three minutes or when you press Stop.
+- **Local only:** the route answers only requests from this app's own page at `localhost` /
+  `127.0.0.1` (checked from the Host, Origin and Sec-Fetch-Site headers, which stops other websites
+  and DNS rebinding) and is disabled on a hosted deployment (`VERCEL` or `LUORA_HOSTED` set).
+  `next dev` listens on your network too; on a shared network, start it with `pnpm dev -H 127.0.0.1`.
+- **Not for resale:** Anthropic allows you to use your own subscription in the unmodified Claude Code
+  on your machine; it does not allow apps to offer Claude.ai login or route other people's requests
+  through Pro / Max plans. Each auditor connects their own Claude on their own laptop.
 
 ## Local model: Ollama
 

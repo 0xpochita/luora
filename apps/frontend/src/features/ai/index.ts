@@ -5,7 +5,10 @@ export {
   aiReady,
   askPrompt,
   type ChatMessage,
+  CLAUDE_MODELS,
+  claudeModels,
   configFor,
+  modelLabel,
   NO_AI,
   PROVIDERS,
 } from "./utils/provider";
