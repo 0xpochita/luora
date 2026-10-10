@@ -187,3 +187,8 @@ button.hdr-pill.go:hover {
   color: #fca5a5;
   background: rgb(248 113 113 / 0.1);
 }
+/* a capsule that ends something (the log's Stop): the fail colour */
+.hdr-pill.danger,
+button.hdr-pill.danger:hover {
+  color: var(--red);
+}

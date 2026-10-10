@@ -34,6 +34,8 @@ const IDLE: TestRunState = {
  */
 export function useTestRun(onData: (data: RunFile) => void) {
   const [state, setState] = useState<TestRunState>(IDLE);
+  // the log pop-up: Start test opens it; closing it leaves the run going
+  const [open, setOpen] = useState(false);
   const ctl = useRef<AbortController | null>(null);
   const take = useRef(onData);
   useEffect(() => {
@@ -47,6 +49,7 @@ export function useTestRun(onData: (data: RunFile) => void) {
     const c = new AbortController();
     ctl.current = c;
     setState({ ...IDLE, phase: "running", fork, started: Date.now() });
+    setOpen(true);
     const fail = (error: string) =>
       setState((s) => ({ ...s, phase: "failed", error, ended: Date.now() }));
     try {
@@ -102,6 +105,6 @@ export function useTestRun(onData: (data: RunFile) => void) {
   }, []);
 
   const stop = useCallback(() => ctl.current?.abort(), []);
-  return { ...state, start, stop };
+  return { ...state, open, setOpen, start, stop };
 }
 export type TestRun = ReturnType<typeof useTestRun>;

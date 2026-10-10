@@ -2,7 +2,14 @@
 
 import { AnimatePresence, animate, motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { EASE, ENTER, PH, PhIcon, SegmentedControl } from "@/components/ui";
 import { type AtlasSource, createAtlasModel } from "@/features/atlas";
 import { atlasSource } from "@/features/atlas/utils/atlas-source";
@@ -29,7 +36,7 @@ import { CallGraph } from "../graph/CallGraph";
 import { StartHere } from "../onboarding/StartHere";
 import { ForkPicker } from "../shell/ForkPicker";
 import { Sidebar } from "../shell/Sidebar";
-import { TestRunPanel } from "../shell/TestRunPanel";
+import { TestRunDialog, TestRunPanel } from "../shell/TestRunPanel";
 import { SourcePanel } from "../source/SourcePanel";
 import { AskPanel, useAskThread } from "./AskPanel";
 import { BalancePanels } from "./BalancePanels";
@@ -57,6 +64,9 @@ export function TraceWorkspace({
       ? router.refresh()
       : setRun({ data, name: "luora-data.json", stamp: Date.now() }),
   );
+  // the log pop-up lives here, above the trace that a fresh run remounts; a click on one of its
+  // tests opens it in whichever trace is current
+  const opener = useRef<(suite: string, name: string) => void>(() => {});
   // the same run's atlas (for the Scenario tab): the dropped file's, else the server's when it
   // comes from the same place as the trace (a local trace without an atlas gets none)
   const runAtlas = run
@@ -80,15 +90,21 @@ export function TraceWorkspace({
       }
     : shown.source;
   return (
-    <TraceBody
-      key={`${shown.key}:${forkRun ? fork : "local"}`}
-      source={view}
-      atlas={runAtlas}
-      forkPicker={<ForkPicker forks={forks} value={fork} onChange={setFork} />}
-      testRun={testRun}
-      fork={fork}
-      forks={forks}
-    />
+    <>
+      <TraceBody
+        key={`${shown.key}:${forkRun ? fork : "local"}`}
+        source={view}
+        atlas={runAtlas}
+        forkPicker={
+          <ForkPicker forks={forks} value={fork} onChange={setFork} />
+        }
+        testRun={testRun}
+        fork={fork}
+        forks={forks}
+        opener={opener}
+      />
+      <TestRunDialog run={testRun} onOpen={(s, n) => opener.current(s, n)} />
+    </>
   );
 }
 
@@ -100,6 +116,7 @@ function TraceBody({
   testRun,
   fork,
   forks,
+  opener,
 }: {
   source: TraceSource;
   atlas: AtlasSource | null;
@@ -107,6 +124,7 @@ function TraceBody({
   testRun: TestRun;
   fork: string;
   forks: Record<string, ForkRun>;
+  opener: RefObject<(suite: string, name: string) => void>;
 }) {
   const { data } = source;
   const model = useMemo(
@@ -236,6 +254,13 @@ function TraceBody({
     setFolded(new Set());
     thread.clear();
   };
+
+  useEffect(() => {
+    opener.current = (suite, name) =>
+      openTest(
+        data.tests.findIndex((t) => t.suite === suite && t.name === name),
+      );
+  });
 
   /** select a call; `extend` (Shift) keeps the range's start and moves its end here */
   const selectFrame = (i: number, extend = false) => {
@@ -458,20 +483,7 @@ function TraceBody({
             className="flex flex-none overflow-hidden"
           >
             <Sidebar
-              after={
-                <TestRunPanel
-                  run={testRun}
-                  fork={fork}
-                  forks={forks}
-                  onOpen={(suite, name) =>
-                    openTest(
-                      data.tests.findIndex(
-                        (t) => t.suite === suite && t.name === name,
-                      ),
-                    )
-                  }
-                />
-              }
+              after={<TestRunPanel run={testRun} fork={fork} forks={forks} />}
             >
               <TestList
                 tests={data.tests}
