@@ -377,7 +377,7 @@ export function proposeScenario(d, dataPath, input) {
   list = [...list.filter(s => s?.id !== sc.id), entry];
   writeFileSync(`${file}.tmp`, `${JSON.stringify(list, null, 1)}\n`);
   renameSync(`${file}.tmp`, file);
-  return { saved: file, id: sc.id, replaced, next: 'Open /atlas → Lab → Scenario → New… → "AI proposal · ' + sc.name + '", then Run and Export .t.sol.' };
+  return { saved: file, id: sc.id, replaced, next: `Open /atlas → Lab → Scenario; pick "AI · ${sc.name}" under "Proposed by your AI client", then Run and Export .t.sol.` };
 }
 
 // ---------- MCP ----------
