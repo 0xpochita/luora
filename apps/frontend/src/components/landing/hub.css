@@ -1,6 +1,7 @@
 /* 'Works with' hub (ScatterGrow.tsx), tenth pass. Pins studied 2026-10-09:
    W1 id.pinterest.com/pin/56858014040806247/   (Integrations Wheel) — concentric rings around one
-      core, the tools sitting on the orbit → .lp-hub-ring, the marks on the arms
+      core, the tools sitting on the orbit → the marks on the arms (the rings themselves were
+      dropped in the nineteenth pass)
    W2 id.pinterest.com/pin/1076360379685275188/ (MagicWand 'Everything for your website') — rings
       with tick marks and one lit arc, short labels on the leaders → one ring kept (the ticks
       ring, the lit arc and the leader labels were dropped in the nineteenth pass)
@@ -21,9 +22,6 @@
   --c: 28px; /* half the core's height, and where the wires start */
   --cw: 62px; /* half the core's width: the wordmark sits in it */
   --oy: 210px;
-  --r1: 84px;
-  --r2: 190px;
-  --r3: 290px;
   position: relative;
   height: 440px;
   margin: 8px -16px 0;
@@ -35,9 +33,6 @@
     --hy: 220px;
     --m: 48px;
     --oy: 300px;
-    --r1: 150px;
-    --r2: 270px;
-    --r3: 400px;
     height: 620px;
     margin-inline: 0;
   }
@@ -88,20 +83,6 @@
   position: absolute;
 }
 
-/* W1 / W2 rings: one plain, one of ticks, one with a lit arc on top */
-.lp-hub-rings {
-  inset: 0;
-}
-.lp-hub-ring {
-  --r: var(--r1);
-  left: calc(var(--r) * -1);
-  top: calc(var(--r) * -1);
-  position: absolute;
-  width: calc(var(--r) * 2);
-  height: calc(var(--r) * 2);
-  border-radius: 9999px;
-  border: 1px solid rgb(255 255 255 / 0.07);
-}
 /* W3: the light streak through the core, and the wires from each mark into it */
 .lp-hub-axis {
   left: calc(var(--hx) * -1 - 160px);

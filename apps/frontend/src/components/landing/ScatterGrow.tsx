@@ -15,9 +15,9 @@ const SQ = 56;
 
 /**
  * Tenth pass: before it scatters, the row is a hub (hub.css, refs W1–W3, B1–B2): the three marks
- * on arms wired into the Luora core, one ring and a lit grid behind. (Nineteenth pass, "terlalu
- * banyak komponen dan teks": the eyebrow, the wire labels, the core's file name, the ticks ring
- * and the lit-arc ring were dropped; the marks' names stay.)
+ * on arms wired into the Luora core, a lit grid behind. (Nineteenth pass, "terlalu
+ * banyak komponen dan teks": the eyebrow, the wire labels, the core's file name and all three
+ * rings were dropped; the marks' names stay.)
  * Genie: a pinned stage (~2.6 viewports). The row of round icons (three here: Foundry, Solidity,
  * Ethereum) scatters to random spots,
  * gathers back into the centre and fades, a tiny square appears there and grows into the full app
@@ -28,7 +28,6 @@ const SQ = 56;
 function scatterGrow(root: HTMLElement, gsap: Gsap) {
   const q = gsap.utils.selector(root);
   const marks = q("[data-lp=mark]");
-  const rings = q("[data-lp=rings]");
   const core = q("[data-lp=core]");
   const shot = q("[data-lp=frame]")[0] as HTMLElement;
   const win = shot.firstElementChild as HTMLElement;
@@ -64,18 +63,12 @@ function scatterGrow(root: HTMLElement, gsap: Gsap) {
         invalidateOnRefresh: true,
       },
     })
-    // 1. the hub comes apart: labels and wires go, the rings turn and open, the marks scatter
+    // 1. the hub comes apart: the wires go, the marks scatter
     // (fromTo everywhere: invalidateOnRefresh must never record a later state)
     .fromTo(
       q("[data-lp=wire]"),
       { autoAlpha: 1 },
       { autoAlpha: 0, duration: 0.9 },
-    )
-    .fromTo(
-      rings,
-      { rotate: 0, scale: 1, autoAlpha: 1 },
-      { rotate: 36, scale: 1.12, autoAlpha: 0.55, duration: 3 },
-      0,
     )
     .fromTo(
       marks,
@@ -102,12 +95,6 @@ function scatterGrow(root: HTMLElement, gsap: Gsap) {
       core,
       { x: 0, y: 0, rotate: 0 },
       { x: meet.x, y: meet.y, rotate: -4, duration: 1.4 },
-      "<",
-    )
-    .fromTo(
-      rings,
-      { scale: 1.12, autoAlpha: 0.55 },
-      { scale: 0.5, autoAlpha: 0, duration: 1.4, ease: "power2.in" },
       "<",
     )
     .fromTo(
@@ -201,9 +188,6 @@ export function ScatterGrow({
       <div className="lp-hub">
         <div aria-hidden="true" data-lp="bg" className="lp-hub-bg" />
         <div className="lp-hub-o">
-          <div aria-hidden="true" data-lp="rings" className="lp-hub-rings">
-            <span className="lp-hub-ring" />
-          </div>
           <span aria-hidden="true" data-lp="wire" className="lp-hub-axis" />
           {[
             ["180deg", "var(--hx)"],
