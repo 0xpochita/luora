@@ -178,3 +178,12 @@ button.hdr-pill.go:hover {
   border-radius: 9999px 0 0 9999px;
   box-shadow: none;
 }
+/* its Stop, while a run goes: the fail colour, as the one thing that ends something */
+.hdr-pill.go.split > button.stop {
+  color: var(--red);
+  box-shadow: inset 1px 0 0 rgb(74 222 128 / 0.2);
+}
+.hdr-pill.go.split > button.stop:hover {
+  color: #fca5a5;
+  background: rgb(248 113 113 / 0.1);
+}

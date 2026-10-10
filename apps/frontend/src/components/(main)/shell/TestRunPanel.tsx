@@ -81,6 +81,7 @@ export function TestRunPanel({
           </span>
           <button
             type="button"
+            className="stop"
             onClick={run.stop}
             title="Stop the run: ends the exporter and forge"
           >
