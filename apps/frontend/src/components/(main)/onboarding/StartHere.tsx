@@ -37,7 +37,7 @@ const agentPrompt = (
 
 1. Check that \`forge --version\` and \`node --version\` (Node 20 or newer) work. If Foundry is missing, ask me first, then install it with \`curl -L https://foundry.paradigm.xyz | bash\` and \`foundryup\`.
 2. In the project root (the folder with foundry.toml), download the Luora exporter from my running Luora app:
-   curl -fsSLO "${origin}/exporter/luora-{export,lib,atlas,findings,coverage}.mjs"
+   curl -fsSLO -w "saved %{filename_effective}\\n" "${origin}/exporter/luora-{export,lib,atlas,findings,coverage}.mjs"
 3. Run \`node luora-export.mjs\` there. It runs \`forge test\` with traces and writes luora-data.json. If Slither or Aderyn JSON reports exist in reports/, it merges them. If the build or a test fails, show me the error.
 4. Tell me the absolute path of luora-data.json and the summary lines the exporter printed.
 

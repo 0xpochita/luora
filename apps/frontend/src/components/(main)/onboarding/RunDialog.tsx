@@ -295,7 +295,7 @@ function Look() {
 
 /** The five exporter scripts, fetched from this running app into the current folder. */
 export const exporterCommand = (origin: string) =>
-  `curl -fsSLO "${origin}/exporter/luora-{export,lib,atlas,findings,coverage}.mjs"`;
+  `curl -fsSLO -w "saved %{filename_effective}\\n" "${origin}/exporter/luora-{export,lib,atlas,findings,coverage}.mjs"`;
 
 /** This app's origin once mounted (the server render assumes the default dev port). */
 export function useAppOrigin() {

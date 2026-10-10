@@ -13,7 +13,7 @@ const FILES = new Set([
 
 /**
  * Serves the exporter straight from the running app, so an auditor needs no clone:
- * `curl -fsSLO "<app>/exporter/luora-{export,lib,atlas,findings,coverage}.mjs"` in their Foundry
+ * `curl -fsSLO -w "saved %{filename_effective}\n" "<app>/exporter/luora-{export,lib,atlas,findings,coverage}.mjs"` in their Foundry
  * project gets exactly the version this app reads. Allow-listed names only.
  * ponytail: reads the repo's foundry/ next to the app, so it serves a local / repo checkout only;
  * a hosted build without foundry/ answers 404. Copy the five scripts into public/ at build time if

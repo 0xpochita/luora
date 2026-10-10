@@ -28,7 +28,7 @@ Node scripts, no dependencies, the same version the app reads) and run it:
 
 ```sh
 cd path/to/your-project
-curl -fsSLO "http://localhost:3000/exporter/luora-{export,lib,atlas,findings,coverage}.mjs"
+curl -fsSLO -w "saved %{filename_effective}\n" "http://localhost:3000/exporter/luora-{export,lib,atlas,findings,coverage}.mjs"
 node luora-export.mjs
 ```
 
