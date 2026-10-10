@@ -8,6 +8,7 @@ import {
   createAtlasModel,
 } from "@/features/atlas/utils/model";
 import { QUESTIONS } from "./AskDemo";
+import { scrollToY } from "./motion";
 import "./ask.css";
 
 /**
@@ -323,6 +324,14 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
   const answer = q ? blocks(model, card.p, q) : [];
   /** the pill drawn as the primary action: the asked question, else the default one */
   const lit = q ?? "risks";
+  /** ask, and bring the whole section on screen so the answer never sits under the fold */
+  const ask = (x: AiQuestion) => {
+    setQ(x);
+    const sec = root.current?.closest("section");
+    if (!sec) return;
+    const r = sec.getBoundingClientRect();
+    if (r.top < -2 || r.bottom > innerHeight + 2) scrollToY(scrollY + r.top);
+  };
   /** where the second column starts: the second heading, or the test's code */
   const split = answer.findIndex(
     (b, i) => i > 0 && (b.k === "h" || b.k === "code"),
@@ -410,10 +419,10 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
           bottom-left, the actions bottom-right; once asked, the question in big type and the
           answer under it, taking the height left under the row */}
       <div
-        className={`relative mx-auto mt-[clamp(6px,1.6svh,24px)] flex min-h-0 w-full max-w-[920px] flex-col rounded-[28px] border border-border bg-card-grad p-2 shadow-[0_48px_96px_-32px_rgba(0,0,0,.9),0_20px_40px_-20px_rgba(0,0,0,.7)] md:flex-initial ${q ? "flex-1" : ""}`}
+        className={`relative mx-auto mt-[clamp(6px,1.6svh,24px)] flex min-h-0 w-full max-w-[920px] flex-col rounded-[28px] border border-border bg-card-grad p-2 shadow-[0_48px_96px_-32px_rgba(0,0,0,.9),0_20px_40px_-20px_rgba(0,0,0,.7)] ${q ? "flex-1" : ""}`}
       >
         <div className="shrink-0 px-3 pt-[clamp(8px,1.6svh,22px)] pb-2 md:px-5">
-          <div className="min-h-[clamp(52px,8svh,96px)]">
+          <div className={q ? "" : "min-h-[clamp(52px,8svh,96px)]"}>
             {text ? (
               <p
                 key={`${at}:${q}`}
@@ -436,7 +445,7 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
               <button
                 key={`ph:${at}`}
                 type="button"
-                onClick={() => setQ("risks")}
+                onClick={() => ask("risks")}
                 className="lp-ask-in block w-full cursor-pointer text-left text-[clamp(17px,min(2.4vw,2.9svh),28px)] text-white/30 leading-[1.25] tracking-[-0.02em] transition-colors hover:text-white/45"
               >
                 <span aria-hidden="true" className="lp-ask-caret" />
@@ -461,7 +470,7 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
                     key={x.q}
                     type="button"
                     aria-pressed={x.q === q}
-                    onClick={() => setQ(x.q)}
+                    onClick={() => ask(x.q)}
                     className="flex h-[clamp(32px,4.4svh,40px)] cursor-pointer items-center gap-1.5 rounded-full bg-primary px-4 text-[14px] text-primary-fg transition-colors hover:bg-white"
                   >
                     <span aria-hidden="true">✦</span>
@@ -472,7 +481,7 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
                     key={x.q}
                     type="button"
                     aria-pressed="false"
-                    onClick={() => setQ(x.q)}
+                    onClick={() => ask(x.q)}
                     className="h-[clamp(30px,4svh,36px)] cursor-pointer rounded-full bg-raised px-3.5 text-[13px] text-muted transition-colors hover:bg-hover hover:text-fg"
                   >
                     {x.label}
@@ -484,12 +493,14 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
         </div>
 
         {/* the answer: an inner card 8px in, every block rendered at once, revealed by CSS. Wide
-            screens split it in two columns at its second part (findings, connections, the test),
-            so it fits the box; it scrolls only when the screen is too short for it */}
+            screens split it in two columns at its second part (findings, connections, the test).
+            It takes exactly the height left in the section (the box grows to the section's foot),
+            so asking never pushes anything under the fold; it scrolls inside only when the screen
+            is too short for it */}
         {q && (
           <div
             key={`a:${at}:${q}`}
-            className={`lp-scroll grid min-h-0 flex-1 content-start md:h-[clamp(200px,30svh,340px)] md:flex-initial gap-x-6 gap-y-2 overflow-y-auto rounded-inner border border-border bg-inner-grad p-2.5 text-[12px] text-body leading-normal md:text-[clamp(12px,1.55svh,13.5px)] md:p-[clamp(10px,1.6svh,16px)] md:leading-[1.55] ${split > 0 ? "md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]" : ""}`}
+            className={`lp-scroll grid min-h-0 flex-1 content-start gap-x-6 gap-y-2 overflow-y-auto rounded-inner border border-border bg-inner-grad p-2.5 text-[12px] text-body leading-normal md:text-[clamp(12px,1.55svh,13.5px)] md:p-[clamp(10px,1.6svh,16px)] md:leading-[1.55] ${split > 0 ? "md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]" : ""}`}
           >
             {[
               answer.slice(0, split > 0 ? split : undefined),
