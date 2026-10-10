@@ -1,7 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Button, Input, SegmentedControl, Select, tile } from "@/components/ui";
+import {
+  Button,
+  Input,
+  PH,
+  PhIcon,
+  SegmentedControl,
+  Select,
+} from "@/components/ui";
 import {
   type AiConfig,
   type AiKind,
@@ -70,18 +77,41 @@ export function AiSettings() {
     }
   };
   const ready = aiReady(draft);
+  const connected = saved.kind !== "none";
 
   return (
     <>
+      {/* B1 pin/24910604186122534 ('Details'): a tactile pill raised out of a recessed track;
+          B2 pin/5559199538595444: a thin gradient ring around the dark pill; B3
+          pin/14073817581281652: model-selector content, icon + name + caret */}
       <button
         type="button"
         onClick={open}
-        className={`${tile(false)} h-9 gap-2 px-3.5 text-[13px]`}
+        aria-haspopup="dialog"
+        title={
+          connected ? "Change your AI provider" : "Connect your own AI to Ask"
+        }
+        className="group rounded-full bg-gradient-to-br from-white/30 via-white/[.06] to-white/20 p-px outline-none focus-visible:ring-2 focus-visible:ring-white/25"
       >
-        <span
-          className={`size-1.5 rounded-full ${saved.kind === "none" ? "bg-dim" : "bg-green"}`}
-        />
-        AI · {saved.kind === "none" ? "None" : PROVIDERS[saved.kind].label}
+        <span className="flex rounded-full bg-[#09090a] p-[3px] shadow-[inset_0_1px_3px_rgba(0,0,0,.9)]">
+          <span className="flex h-7 items-center gap-2 rounded-full bg-gradient-to-b from-[#2e2e32] to-[#1b1b1e] pr-2.5 pl-3 text-[13px] text-fg shadow-[inset_0_1px_0_rgba(255,255,255,.14),0_4px_14px_rgba(0,0,0,.55)] transition-colors group-hover:from-[#36363b] group-hover:to-[#202024]">
+            {connected ? (
+              <>
+                <span className="size-1.5 rounded-full bg-green shadow-[0_0_6px_rgba(134,239,172,.7)]" />
+                {PROVIDERS[saved.kind].label}
+                <span className="max-w-[140px] truncate font-mono text-[11.5px] text-dim">
+                  {saved.model}
+                </span>
+              </>
+            ) : (
+              <>
+                <PhIcon d={PH.sparkle} className="size-[14px]" />
+                Connect AI
+              </>
+            )}
+            <PhIcon d={PH.caretDown} className="size-3 text-dim" />
+          </span>
+        </span>
       </button>
       <dialog
         ref={dialog}

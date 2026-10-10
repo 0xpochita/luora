@@ -1,8 +1,7 @@
 "use client";
 
-import { Button, Chip } from "@/components/ui";
+import { Button, Chip, PH, PhIcon } from "@/components/ui";
 import { useRun } from "@/features/run";
-import { PH, PhIcon } from "./ph";
 
 /**
  * Header badge: says what the app shows when it is a dropped file or the sample, never silently,

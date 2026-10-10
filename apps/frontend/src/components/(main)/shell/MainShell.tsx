@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Chip, LogoText } from "@/components/ui";
+import { LogoText } from "@/components/ui";
 import { RunProvider } from "@/features/run";
 import { DataBadge } from "../onboarding/DataBadge";
 import { GuideButton } from "../onboarding/GuideButton";
@@ -21,10 +21,6 @@ export function MainShell({ children }: { children: ReactNode }) {
             <GuideButton />
             <DataBadge />
             <AiSettings />
-            <Chip>Audit console</Chip>
-            <Chip tone="ok" dot>
-              Defensive
-            </Chip>
           </div>
         </header>
         {children}

@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Tabs } from "@/components/ui";
+import { Button, PH, PhIcon, Tabs } from "@/components/ui";
 import { useRun } from "@/features/run";
-import { PH, PhIcon } from "./ph";
 import {
   CopyLine,
   DropZone,
