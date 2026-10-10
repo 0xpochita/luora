@@ -2,7 +2,7 @@
 
 import { motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
-import { Chip, ENTER, Panel, Tabs } from "@/components/ui";
+import { Chip, ENTER, Panel, SolidityLogo, Tabs } from "@/components/ui";
 import {
   type AtlasSource,
   type AtlasView,
@@ -83,7 +83,10 @@ function AtlasBody({ source }: { source: AtlasSource }) {
         />
         <div className="ml-auto flex items-center gap-1.5">
           <span className="mr-1 text-dim ui-label">/ or ⌘K search</span>
-          <Chip>{model.file.split("/").pop()}</Chip>
+          <Chip>
+            <SolidityLogo className="size-3 text-body" />
+            {model.file.split("/").pop()}
+          </Chip>
           <Chip>solc {model.compiler}</Chip>
           <Chip tone="bad" dot>
             Findings {model.findings.length}

@@ -14,6 +14,7 @@ export { EASE, ENTER, SLIDE } from "./motion";
 export { Card, Panel } from "./Panel";
 export { Chevron, PH, PhIcon } from "./PhIcon";
 export { SegmentedControl } from "./SegmentedControl";
+export { SOLIDITY, SolidityLogo } from "./SolidityLogo";
 export { Tabs, TileGroup } from "./Tabs";
 export { ToggleChip } from "./ToggleChip";
 export { Toolbar } from "./Toolbar";

@@ -1,6 +1,6 @@
 "use client";
 
-import { Panel } from "@/components/ui";
+import { Panel, SolidityLogo } from "@/components/ui";
 import type { AtlasModel, StepSim } from "@/features/atlas";
 import { linesOf, pieceAtLine } from "@/features/atlas/utils/audit";
 import { hitLabel } from "@/features/atlas/utils/coverage";
@@ -67,7 +67,8 @@ export function ContractSource({
       label="Source"
       dot={current != null && sim.late[at] ? "bad" : "neutral"}
       aside={
-        <span className="font-mono">
+        <span className="inline-flex items-center gap-1.5 font-mono">
+          <SolidityLogo className="size-3.5 text-body" />
           {model.file.split("/").pop()}
           {range && <span className="ml-2 text-muted">{range}</span>}
         </span>

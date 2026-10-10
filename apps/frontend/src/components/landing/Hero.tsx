@@ -10,7 +10,7 @@
  *  dan scenario testing"): HK's header kept, its chart replaced by the Lab itself (HeroLab).
  */
 import Link from "next/link";
-import { LogoText } from "@/components/ui";
+import { LogoText, SOLIDITY } from "@/components/ui";
 import { ICON_PATH } from "@/features/atlas/utils/icons";
 import { contractGraph } from "@/features/atlas/utils/lab-graph";
 import { createAtlasModel } from "@/features/atlas/utils/model";
@@ -85,8 +85,6 @@ export function Nav() {
   );
 }
 
-const SOLIDITY =
-  "M4.409 6.608L7.981.255l3.572 6.353H4.409zM8.411 0l3.569 6.348L15.552 0H8.411zm4.036 17.392l3.572 6.354 3.575-6.354h-7.147zm-.608-10.284h-7.43l3.715 6.605 3.715-6.605zm.428-.25h7.428L15.982.255l-3.715 6.603zM15.589 24l-3.569-6.349L8.448 24h7.141zm-3.856-6.858H4.306l3.712 6.603 3.715-6.603zm.428-.25h7.433l-3.718-6.605-3.715 6.605z";
 const ETHEREUM =
   "M11.944 17.97L4.58 13.62 11.943 24l7.37-10.38-7.372 4.35h.003zM12.056 0L4.69 12.223l7.365 4.354 7.365-4.35L12.056 0z";
 
