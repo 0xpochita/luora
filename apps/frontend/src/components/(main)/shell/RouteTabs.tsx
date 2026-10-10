@@ -9,6 +9,7 @@ const ROUTES = [
   { href: "/trace", label: "Trace" },
   { href: "/atlas", label: "Atlas" },
   { href: "/explore", label: "Explore" },
+  { href: "/exploits", label: "Exploits" },
 ] as const;
 
 export function RouteTabs() {

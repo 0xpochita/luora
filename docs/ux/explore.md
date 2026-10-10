@@ -8,6 +8,9 @@ reading its code or auditing something that integrates with it.
 Defensive only, like the rest of Luora: liquidations, flash loans, oracles and callbacks are
 described as the protocol's intended features, followed by what an auditor should check. No attack
 steps, no exploit code, nowhere (data, UI, suggested questions, system prompt).
+Historical incidents live in their own section, Exploits, under their own written policy
+(docs/ux/exploits.md): closed cases at post-mortem level, each attack step paired with its missing
+check, still no exploit code.
 
 ## Who and what for
 
