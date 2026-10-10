@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Chip, Tabs } from "@/components/ui";
+import { Chip, Panel, Tabs } from "@/components/ui";
 import {
   type AtlasSource,
   type AtlasView,
@@ -9,6 +9,8 @@ import {
   useStepSim,
   useTriage,
 } from "@/features/atlas";
+import { atlasSource } from "@/features/atlas/utils/atlas-source";
+import { type RunFile, useShownSource } from "@/features/run";
 import { AtlasDashboard } from "./AtlasDashboard";
 import { ContractSource } from "./ContractSource";
 import { CoverageSummary } from "./CoverageSummary";
@@ -21,8 +23,34 @@ import { QuickSearch } from "./QuickSearch";
 import { UnitTray } from "./UnitTray";
 import "./atlas.css";
 
-/** Smart-contract visual: Lab node editor, explorer, map and flow, sharing one selection. */
+const fromFile = (data: RunFile) => atlasSource(data, "file");
+
+/** Client root of the atlas page: a dropped luora-data.json wins over the server's. */
 export function AtlasWorkspace({ source }: { source: AtlasSource }) {
+  const shown = useShownSource(source, fromFile);
+  if (shown.source) return <AtlasBody key={shown.key} source={shown.source} />;
+  return (
+    <div className="grid flex-1 place-items-center p-4">
+      <Panel
+        label="This run has no atlas"
+        inset
+        className="w-[min(480px,100%)]"
+      >
+        <p className="px-4 py-3 text-body leading-normal">
+          The dropped luora-data.json has traces but no{" "}
+          <code className="font-mono">atlas</code> section. luora-export.mjs
+          skips it when <code className="font-mono">forge build --ast</code> or{" "}
+          <code className="font-mono">forge inspect</code> fails, and prints why
+          (<code className="font-mono">luora: atlas skipped</code>). Trace still
+          shows this run.
+        </p>
+      </Panel>
+    </div>
+  );
+}
+
+/** Smart-contract visual: Lab node editor, explorer, map and flow, sharing one selection. */
+function AtlasBody({ source }: { source: AtlasSource }) {
   const model = useMemo(() => createAtlasModel(source.data), [source.data]);
   const [view, setView] = useState<AtlasView>("lab");
   const [selected, setSelected] = useState<string | null>(null);
@@ -54,7 +82,6 @@ export function AtlasWorkspace({ source }: { source: AtlasSource }) {
           <span className="mr-1 text-dim ui-label">/ or ⌘K search</span>
           <Chip>{model.file.split("/").pop()}</Chip>
           <Chip>solc {model.compiler}</Chip>
-          {source.origin === "sample" && <Chip>Sample</Chip>}
           <Chip tone="bad" dot>
             Findings {model.findings.length}
           </Chip>
