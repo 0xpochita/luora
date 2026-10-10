@@ -158,3 +158,25 @@ Atlas findings (the hygiene heuristics) are dropped: these protocols are audited
 
 Flow and step names use the protocol's own function names (supply, borrow, liquidationCall,
 exactInputSingle, mint, absorb, buyCollateral …), read from the code at the pinned commit.
+
+## Report pass (2026-10-11)
+
+User: improve Explore the way the Exploits report was improved; research Pinterest first. The map
+drew every relation at once and read as tangled cables; the flows' lane pills cut long names.
+
+| Id | Reference, opened for this pass | Taken |
+|---|---|---|
+| A1 | Pinterest pin 317574211247610337 (Alexander Janzen, *xchange: Architecture*, Behance) | The system as layers of small typed boxes with a legend of the box types; relations as a tree from one root with **right-angle elbows**, never curves; one row per item |
+| A2 | Pinterest pin 442126888432329740 (Anton Suprunenko, *Product Architecture*, Behance) | One root on the left, its branches level by level, labels as plain text; a legend for the line types |
+| PH, C1 | Phalcon's transaction page and Cybershield (pin 590112357470554424), from exploits.md | One page of stacked titled sections, a summary row of stat cards first |
+| SD | The Exploits' sequence diagram (exploits.md) | Flows as lifelines and calls, explained row by row |
+
+| UI choice | From |
+|---|---|
+| Protocol page = **one report**, the Exploits frame: Overview, Architecture, Flows, Contract, Checks, About; the header's switch jumps to a section and follows the scroll (keys 1–5); Ask AI and the selection's details stay in the side panel | PH, C1, exploits.md |
+| **Overview**: stat cards (contracts with libraries and outside, flows, source excerpts and licences, pinned tag and commit), *What it is*, *Code, pinned* as link cards | C1, L2 |
+| **Architecture**: the groups as columns of typed chips (white contract, grey library, blue outside) with the legend; picking one shows its card (role, counts, GitHub line, *Open in the Lab*), **what it reaches** as an elbow tree (verb, target, the functions it uses; a second level on demand), **reached by**, **who may call** (its gated functions) and what it inherits | A1, A2, L2 |
+| The all-wires map (ProtocolMap) and the lane diagram (FlowLanes) are gone | user |
+| **Flows**: one tab per flow, then the shared **sequence diagram**; each step's caller is written in the spec (`from`, foundry/explore/*.json), never guessed: new transactions come from the user or a role (Morpho's `acceptCap` from Anyone, `reallocate` from the Allocator), events show as `emit X`, a return as `back in fn()`; every function links to its line; ← → step, and the selected step is what Ask AI is about | SD, TD |
+| **Contract**: the Atlas Lab in the page, a dropdown for the contract | Atlas |
+| **Checks**: the protocol's and every flow's checks as one checklist that can be ticked | defensive policy |

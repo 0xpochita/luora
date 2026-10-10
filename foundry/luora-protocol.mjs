@@ -176,7 +176,8 @@ export function buildProtocol(spec, clones) {
     };
   });
 
-  // hand-written flows: every step must name a function that exists where it says
+  // hand-written flows: every step must name a function that exists where it says; `from` (who
+  // makes the call, for the app's sequence diagram) passes through as written
   const fnLine = (name, fn) => {
     const B = buildOf(name);
     for (const b of B.linear(name)) {

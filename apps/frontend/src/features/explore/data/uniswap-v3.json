@@ -4588,12 +4588,14 @@
       "steps": [
         {
           "at": "Trader",
+          "from": "Trader",
           "say": "Approves SwapRouter for tokenIn, then calls exactInputSingle(tokenIn, tokenOut, fee, recipient, deadline, amountIn, amountOutMinimum, sqrtPriceLimitX96).",
           "lane": "Trader",
           "fn": null
         },
         {
           "at": "SwapRouter.exactInputSingle",
+          "from": "Trader",
           "say": "checkDeadline, then exactInputInternal with the caller recorded as payer in the callback data.",
           "lane": "SwapRouter",
           "fn": "exactInputSingle",
@@ -4603,6 +4605,7 @@
         },
         {
           "at": "PoolAddress.computeAddress",
+          "from": "SwapRouter",
           "say": "The pool's address comes from CREATE2 (factory, sorted tokens, fee), not from a storage lookup.",
           "lane": "PoolAddress",
           "fn": "computeAddress",
@@ -4612,6 +4615,7 @@
         },
         {
           "at": "UniswapV3Pool.swap",
+          "from": "SwapRouter",
           "say": "Takes the lock in slot0 and swaps step by step until the amount is used or the price limit is reached.",
           "lane": "UniswapV3Pool",
           "fn": "swap",
@@ -4621,6 +4625,7 @@
         },
         {
           "at": "TickBitmap.nextInitializedTickWithinOneWord",
+          "from": "UniswapV3Pool",
           "say": "Finds the next initialized tick in the swap direction, within one 256-tick word.",
           "lane": "TickBitmap",
           "fn": "nextInitializedTickWithinOneWord",
@@ -4630,6 +4635,7 @@
         },
         {
           "at": "SwapMath.computeSwapStep",
+          "from": "UniswapV3Pool",
           "say": "Moves the price toward that tick: amount in, amount out and the LP fee for the step; the protocol's share is split off when the protocol fee is on.",
           "lane": "SwapMath",
           "fn": "computeSwapStep",
@@ -4639,6 +4645,7 @@
         },
         {
           "at": "Tick.cross",
+          "from": "UniswapV3Pool",
           "say": "When the price crosses an initialized tick, its net liquidity is added or removed and its fee growth outside flipped.",
           "lane": "Tick",
           "fn": "cross",
@@ -4648,6 +4655,7 @@
         },
         {
           "at": "Oracle.write",
+          "from": "UniswapV3Pool",
           "say": "If the tick changed, writes one observation for this block.",
           "lane": "Oracle",
           "fn": "write",
@@ -4657,12 +4665,14 @@
         },
         {
           "at": "IERC20Minimal.transfer",
+          "from": "UniswapV3Pool",
           "say": "The pool sends tokenOut to the recipient first.",
           "lane": "IERC20Minimal",
           "fn": "transfer"
         },
         {
           "at": "SwapRouter.uniswapV3SwapCallback",
+          "from": "UniswapV3Pool",
           "say": "The pool calls back msg.sender (the router) with the amounts owed.",
           "lane": "SwapRouter",
           "fn": "uniswapV3SwapCallback",
@@ -4672,6 +4682,7 @@
         },
         {
           "at": "CallbackValidation.verifyCallback",
+          "from": "SwapRouter",
           "say": "The router checks msg.sender is the canonical pool for tokenIn, tokenOut and fee.",
           "lane": "CallbackValidation",
           "fn": "verifyCallback",
@@ -4681,12 +4692,14 @@
         },
         {
           "at": "IERC20Minimal.transferFrom",
+          "from": "SwapRouter",
           "say": "The router pays tokenIn from the payer to the pool (wrapping ETH into WETH when the payer sent ETH).",
           "lane": "IERC20Minimal",
           "fn": "transferFrom"
         },
         {
           "at": "UniswapV3Pool.Swap",
+          "from": "UniswapV3Pool",
           "say": "Back in the pool: requires its tokenIn balance grew by at least the amount owed, emits Swap, releases the lock.",
           "lane": "UniswapV3Pool",
           "fn": "Swap",
@@ -4696,6 +4709,7 @@
         },
         {
           "at": "SwapRouter.exactInputSingle",
+          "from": "SwapRouter",
           "say": "Requires amountOut ≥ amountOutMinimum, otherwise the whole swap reverts.",
           "lane": "SwapRouter",
           "fn": "exactInputSingle",
@@ -4719,12 +4733,14 @@
       "steps": [
         {
           "at": "LP",
+          "from": "LP",
           "say": "Approves NonfungiblePositionManager for both tokens, then calls mint(token0, token1, fee, tickLower, tickUpper, amount0Desired, amount1Desired, amount0Min, amount1Min, recipient, deadline).",
           "lane": "LP",
           "fn": null
         },
         {
           "at": "NonfungiblePositionManager.mint",
+          "from": "LP",
           "say": "checkDeadline, then addLiquidity.",
           "lane": "NonfungiblePositionManager",
           "fn": "mint",
@@ -4734,6 +4750,7 @@
         },
         {
           "at": "NonfungiblePositionManager.addLiquidity",
+          "from": "NonfungiblePositionManager",
           "say": "Computes the pool address and the liquidity the desired amounts buy at the current price (slot0).",
           "lane": "NonfungiblePositionManager",
           "fn": "addLiquidity",
@@ -4743,6 +4760,7 @@
         },
         {
           "at": "UniswapV3Pool.mint",
+          "from": "NonfungiblePositionManager",
           "say": "Under the lock, with the position manager as the position's owner in the pool.",
           "lane": "UniswapV3Pool",
           "fn": "mint",
@@ -4752,6 +4770,7 @@
         },
         {
           "at": "UniswapV3Pool._modifyPosition",
+          "from": "UniswapV3Pool",
           "say": "Checks the ticks, updates the position and both ticks, and computes how much of each token the range needs at the current price.",
           "lane": "UniswapV3Pool",
           "fn": "_modifyPosition",
@@ -4761,6 +4780,7 @@
         },
         {
           "at": "Tick.update",
+          "from": "UniswapV3Pool",
           "say": "Adds liquidity to the lower and upper tick; a tick that becomes initialized is flipped in the bitmap.",
           "lane": "Tick",
           "fn": "update",
@@ -4770,6 +4790,7 @@
         },
         {
           "at": "Position.update",
+          "from": "UniswapV3Pool",
           "say": "Credits fees earned since the last update and sets the new liquidity.",
           "lane": "Position",
           "fn": "update",
@@ -4779,6 +4800,7 @@
         },
         {
           "at": "NonfungiblePositionManager.uniswapV3MintCallback",
+          "from": "UniswapV3Pool",
           "say": "The pool calls back the manager; it verifies the pool and pays both amounts from the LP.",
           "lane": "NonfungiblePositionManager",
           "fn": "uniswapV3MintCallback",
@@ -4788,12 +4810,14 @@
         },
         {
           "at": "IERC20Minimal.transferFrom",
+          "from": "NonfungiblePositionManager",
           "say": "token0 and token1 move from the LP to the pool.",
           "lane": "IERC20Minimal",
           "fn": "transferFrom"
         },
         {
           "at": "UniswapV3Pool.Mint",
+          "from": "UniswapV3Pool",
           "say": "The pool requires both balances grew as owed and emits Mint.",
           "lane": "UniswapV3Pool",
           "fn": "Mint",
@@ -4803,6 +4827,7 @@
         },
         {
           "at": "NonfungiblePositionManager.IncreaseLiquidity",
+          "from": "NonfungiblePositionManager",
           "say": "The manager checks amount0Min / amount1Min, mints the NFT, stores the range and the fee growth snapshot, emits IncreaseLiquidity.",
           "lane": "NonfungiblePositionManager",
           "fn": "IncreaseLiquidity",
@@ -4825,12 +4850,14 @@
       "steps": [
         {
           "at": "LP",
+          "from": "LP",
           "say": "As the NFT owner or an approved operator, calls decreaseLiquidity(tokenId, liquidity, amount0Min, amount1Min, deadline).",
           "lane": "LP",
           "fn": null
         },
         {
           "at": "NonfungiblePositionManager.decreaseLiquidity",
+          "from": "LP",
           "say": "isAuthorizedForToken; liquidity must be positive and not more than the position holds.",
           "lane": "NonfungiblePositionManager",
           "fn": "decreaseLiquidity",
@@ -4840,6 +4867,7 @@
         },
         {
           "at": "UniswapV3Pool.burn",
+          "from": "NonfungiblePositionManager",
           "say": "Removes the liquidity and credits the token amounts to the position's tokensOwed in the pool. Nothing is transferred yet.",
           "lane": "UniswapV3Pool",
           "fn": "burn",
@@ -4849,6 +4877,7 @@
         },
         {
           "at": "NonfungiblePositionManager.DecreaseLiquidity",
+          "from": "NonfungiblePositionManager",
           "say": "Slippage check, then the manager adds the amounts and the fees since the last snapshot to the NFT's tokens owed.",
           "lane": "NonfungiblePositionManager",
           "fn": "DecreaseLiquidity",
@@ -4858,6 +4887,7 @@
         },
         {
           "at": "NonfungiblePositionManager.collect",
+          "from": "LP",
           "say": "collect(tokenId, recipient, amount0Max, amount1Max); with liquidity left, first pokes the pool with burn(0) to bring fees up to date.",
           "lane": "NonfungiblePositionManager",
           "fn": "collect",
@@ -4867,6 +4897,7 @@
         },
         {
           "at": "UniswapV3Pool.collect",
+          "from": "NonfungiblePositionManager",
           "say": "Transfers up to the requested amounts of tokensOwed to the recipient.",
           "lane": "UniswapV3Pool",
           "fn": "collect",
@@ -4876,12 +4907,14 @@
         },
         {
           "at": "IERC20Minimal.transfer",
+          "from": "UniswapV3Pool",
           "say": "token0 and token1 leave the pool.",
           "lane": "IERC20Minimal",
           "fn": "transfer"
         },
         {
           "at": "NonfungiblePositionManager.Collect",
+          "from": "NonfungiblePositionManager",
           "say": "Emits Collect with the amounts sent.",
           "lane": "NonfungiblePositionManager",
           "fn": "Collect",
@@ -4904,12 +4937,14 @@
       "steps": [
         {
           "at": "Anyone",
+          "from": "Anyone",
           "say": "Calls createPool(tokenA, tokenB, fee) on the factory (the position manager's createAndInitializePoolIfNecessary does the same).",
           "lane": "Anyone",
           "fn": null
         },
         {
           "at": "UniswapV3Factory.createPool",
+          "from": "Anyone",
           "say": "Tokens different and non-zero, sorted into token0 < token1, the fee tier enabled, and no pool yet for this pair and fee.",
           "lane": "UniswapV3Factory",
           "fn": "createPool",
@@ -4919,6 +4954,7 @@
         },
         {
           "at": "UniswapV3PoolDeployer.deploy",
+          "from": "UniswapV3Factory",
           "say": "Writes the parameters, deploys the pool with CREATE2 salt keccak256(token0, token1, fee), deletes the parameters.",
           "lane": "UniswapV3PoolDeployer",
           "fn": "deploy",
@@ -4928,6 +4964,7 @@
         },
         {
           "at": "UniswapV3Pool.constructor",
+          "from": "UniswapV3PoolDeployer",
           "say": "Reads factory, tokens, fee and tick spacing from the deployer and stores them as immutables.",
           "lane": "UniswapV3Pool",
           "fn": "constructor",
@@ -4937,6 +4974,7 @@
         },
         {
           "at": "UniswapV3Factory.PoolCreated",
+          "from": "UniswapV3Factory",
           "say": "The factory records the pool in getPool both ways and emits PoolCreated.",
           "lane": "UniswapV3Factory",
           "fn": "PoolCreated",
@@ -4946,6 +4984,7 @@
         },
         {
           "at": "UniswapV3Pool.initialize",
+          "from": "Anyone",
           "say": "Anyone sets the starting sqrtPriceX96, once (slot0.sqrtPriceX96 must be 0). Initializes the oracle.",
           "lane": "UniswapV3Pool",
           "fn": "initialize",

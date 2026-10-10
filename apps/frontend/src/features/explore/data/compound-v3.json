@@ -6223,12 +6223,14 @@
       "steps": [
         {
           "at": "Lender",
+          "from": "Lender",
           "say": "Approves the market, calls supply(baseToken, amount) (or supplyTo / supplyFrom with an operator's permission).",
           "lane": "Lender",
           "fn": null
         },
         {
           "at": "CometWithExtendedAssetList.supply",
+          "from": "Lender",
           "say": "Entry point; all three variants go to supplyInternal.",
           "lane": "CometWithExtendedAssetList",
           "fn": "supply",
@@ -6238,6 +6240,7 @@
         },
         {
           "at": "CometWithExtendedAssetList.supplyInternal",
+          "from": "CometWithExtendedAssetList",
           "say": "Supply not paused; the operator must have permission from the source. Base asset goes to supplyBase, anything else to supplyCollateral.",
           "lane": "CometWithExtendedAssetList",
           "fn": "supplyInternal",
@@ -6247,12 +6250,14 @@
         },
         {
           "at": "IERC20NonStandard.transferFrom",
+          "from": "CometWithExtendedAssetList",
           "say": "The amount is pulled first (doTransferIn) and the balance difference is what counts.",
           "lane": "IERC20NonStandard",
           "fn": "transferFrom"
         },
         {
           "at": "CometWithExtendedAssetList.accrueInternal",
+          "from": "CometWithExtendedAssetList",
           "say": "Moves the supply and borrow indexes forward for the time elapsed, and the reward tracking indexes.",
           "lane": "CometWithExtendedAssetList",
           "fn": "accrueInternal",
@@ -6262,6 +6267,7 @@
         },
         {
           "at": "CometWithExtendedAssetList.updateBasePrincipal",
+          "from": "CometWithExtendedAssetList",
           "say": "The signed principal goes up: debt is repaid first, the rest becomes supply. Totals updated.",
           "lane": "CometWithExtendedAssetList",
           "fn": "updateBasePrincipal",
@@ -6271,6 +6277,7 @@
         },
         {
           "at": "CometWithExtendedAssetList.Supply",
+          "from": "CometWithExtendedAssetList",
           "say": "Emits Supply, and Transfer(0, dst) for the part that became supply.",
           "lane": "CometWithExtendedAssetList",
           "fn": "Supply",
@@ -6293,12 +6300,14 @@
       "steps": [
         {
           "at": "Borrower",
+          "from": "Borrower",
           "say": "First supply(collateralAsset, amount).",
           "lane": "Borrower",
           "fn": null
         },
         {
           "at": "CometWithExtendedAssetList.supplyCollateral",
+          "from": "Borrower",
           "say": "Pulls the collateral, checks the asset's supply cap, records it and marks the asset in the account's assetsIn bitmap. Collateral earns no interest.",
           "lane": "CometWithExtendedAssetList",
           "fn": "supplyCollateral",
@@ -6308,6 +6317,7 @@
         },
         {
           "at": "CometWithExtendedAssetList.withdraw",
+          "from": "Borrower",
           "say": "Then withdraw(baseToken, amount).",
           "lane": "CometWithExtendedAssetList",
           "fn": "withdraw",
@@ -6317,6 +6327,7 @@
         },
         {
           "at": "CometWithExtendedAssetList.withdrawBase",
+          "from": "CometWithExtendedAssetList",
           "say": "Accrues, lowers the principal; below zero is a borrow.",
           "lane": "CometWithExtendedAssetList",
           "fn": "withdrawBase",
@@ -6326,6 +6337,7 @@
         },
         {
           "at": "CometWithExtendedAssetList.isBorrowCollateralized",
+          "from": "CometWithExtendedAssetList",
           "say": "For a negative balance: the debt must be at least baseBorrowMin and covered by Σ collateral × price × borrowCollateralFactor.",
           "lane": "CometWithExtendedAssetList",
           "fn": "isBorrowCollateralized",
@@ -6335,18 +6347,21 @@
         },
         {
           "at": "IPriceFeed.latestRoundData",
+          "from": "CometWithExtendedAssetList",
           "say": "Prices for the base asset and each collateral in the account.",
           "lane": "IPriceFeed",
           "fn": "latestRoundData"
         },
         {
           "at": "IERC20NonStandard.transfer",
+          "from": "CometWithExtendedAssetList",
           "say": "The base asset goes to the borrower.",
           "lane": "IERC20NonStandard",
           "fn": "transfer"
         },
         {
           "at": "CometWithExtendedAssetList.Withdraw",
+          "from": "CometWithExtendedAssetList",
           "say": "Emits Withdraw.",
           "lane": "CometWithExtendedAssetList",
           "fn": "Withdraw",
@@ -6369,12 +6384,14 @@
       "steps": [
         {
           "at": "Absorber",
+          "from": "Absorber",
           "say": "Anyone calls absorb(absorber, accounts).",
           "lane": "Absorber",
           "fn": null
         },
         {
           "at": "CometWithExtendedAssetList.absorb",
+          "from": "Absorber",
           "say": "Accrues once, then absorbs each account.",
           "lane": "CometWithExtendedAssetList",
           "fn": "absorb",
@@ -6384,6 +6401,7 @@
         },
         {
           "at": "CometWithExtendedAssetList.absorbInternal",
+          "from": "CometWithExtendedAssetList",
           "say": "One account at a time.",
           "lane": "CometWithExtendedAssetList",
           "fn": "absorbInternal",
@@ -6393,6 +6411,7 @@
         },
         {
           "at": "CometWithExtendedAssetList.isLiquidatable",
+          "from": "CometWithExtendedAssetList",
           "say": "Only a negative balance, and debt larger than Σ collateral × price × liquidateCollateralFactor.",
           "lane": "CometWithExtendedAssetList",
           "fn": "isLiquidatable",
@@ -6402,12 +6421,14 @@
         },
         {
           "at": "IPriceFeed.latestRoundData",
+          "from": "CometWithExtendedAssetList",
           "say": "Prices for the base asset and every collateral the account holds.",
           "lane": "IPriceFeed",
           "fn": "latestRoundData"
         },
         {
           "at": "CometWithExtendedAssetList.AbsorbCollateral",
+          "from": "CometWithExtendedAssetList",
           "say": "Every collateral asset is seized into the protocol (out of the account, kept by the market), valued with the liquidationFactor.",
           "lane": "CometWithExtendedAssetList",
           "fn": "AbsorbCollateral",
@@ -6417,6 +6438,7 @@
         },
         {
           "at": "CometWithExtendedAssetList.AbsorbDebt",
+          "from": "CometWithExtendedAssetList",
           "say": "The account's debt is cleared against that value; any surplus becomes supply for the account. The protocol's reserves pay what is left.",
           "lane": "CometWithExtendedAssetList",
           "fn": "AbsorbDebt",
@@ -6439,12 +6461,14 @@
       "steps": [
         {
           "at": "Buyer",
+          "from": "Buyer",
           "say": "Approves the base asset, calls buyCollateral(asset, minAmount, baseAmount, recipient).",
           "lane": "Buyer",
           "fn": null
         },
         {
           "at": "CometWithExtendedAssetList.buyCollateral",
+          "from": "Buyer",
           "say": "Not paused, and reserves below targetReserves; otherwise NotForSale.",
           "lane": "CometWithExtendedAssetList",
           "fn": "buyCollateral",
@@ -6454,12 +6478,14 @@
         },
         {
           "at": "IERC20NonStandard.transferFrom",
+          "from": "CometWithExtendedAssetList",
           "say": "The base asset is pulled first.",
           "lane": "IERC20NonStandard",
           "fn": "transferFrom"
         },
         {
           "at": "CometWithExtendedAssetList.quoteCollateral",
+          "from": "CometWithExtendedAssetList",
           "say": "Collateral for that base amount at the feed price minus the store front discount (storeFrontPriceFactor × (1 − liquidationFactor)).",
           "lane": "CometWithExtendedAssetList",
           "fn": "quoteCollateral",
@@ -6469,6 +6495,7 @@
         },
         {
           "at": "CometWithExtendedAssetList.buyCollateral",
+          "from": "CometWithExtendedAssetList",
           "say": "At least minAmount, and no more than the collateral the protocol holds.",
           "lane": "CometWithExtendedAssetList",
           "fn": "buyCollateral",
@@ -6478,6 +6505,7 @@
         },
         {
           "at": "IERC20NonStandard.transfer",
+          "from": "CometWithExtendedAssetList",
           "say": "The collateral goes to the recipient. Emits BuyCollateral.",
           "lane": "IERC20NonStandard",
           "fn": "transfer"
@@ -6497,12 +6525,14 @@
       "steps": [
         {
           "at": "Governor",
+          "from": "Governor",
           "say": "Through governance, calls a Configurator setter (for example setBorrowKink, updateAssetSupplyCap).",
           "lane": "Governor",
           "fn": null
         },
         {
           "at": "Configurator.setConfiguration",
+          "from": "Governor",
           "say": "Setters only change the stored next configuration for that market; nothing on the live market changes yet.",
           "lane": "Configurator",
           "fn": "setConfiguration",
@@ -6512,6 +6542,7 @@
         },
         {
           "at": "CometProxyAdmin.deployAndUpgradeTo",
+          "from": "Governor",
           "say": "Owner or market admin: asks the Configurator for a new implementation and upgrades the proxy to it.",
           "lane": "CometProxyAdmin",
           "fn": "deployAndUpgradeTo",
@@ -6521,6 +6552,7 @@
         },
         {
           "at": "Configurator.deploy",
+          "from": "CometProxyAdmin",
           "say": "Builds the implementation from the stored configuration through the market's factory.",
           "lane": "Configurator",
           "fn": "deploy",
@@ -6530,6 +6562,7 @@
         },
         {
           "at": "CometFactoryWithExtendedAssetList.clone",
+          "from": "Configurator",
           "say": "Deploys a new CometWithExtendedAssetList; every parameter becomes an immutable in its bytecode.",
           "lane": "CometFactoryWithExtendedAssetList",
           "fn": "clone",

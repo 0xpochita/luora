@@ -3,14 +3,10 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import type { Protocol } from "../types";
 import { exploreAskPrompt, exploreSuggestions, targetLabel } from "./ask.ts";
-import {
-  githubUrl,
-  laneLayout,
-  MAP,
-  mapLayout,
-  sourceLabel,
-  summarize,
-} from "./protocol.ts";
+import { flowSequence, githubUrl, sourceLabel, summarize } from "./protocol.ts";
+
+/** callers a flow names that are roles, not mapped contracts or the flow's actor */
+const ROLES = new Set(["Anyone", "Allocator"]);
 
 const dir = new URL("../data/", import.meta.url);
 const all: Protocol[] = readdirSync(dir)
@@ -60,35 +56,20 @@ for (const p of all) {
       if (s.fn && p.contracts.some((c) => c.name === s.lane))
         assert.ok(s.file && s.line != null, `${f.id} ${s.at} has a line`);
     }
-    const L = laneLayout(f);
-    assert.equal(L.lanes[0], f.actor);
-    assert.equal(new Set(L.steps.map((s) => s.x)).size, f.steps.length);
-    assert.ok(L.steps.every((s) => s.lane >= 0));
+    // the sequence diagram: every step says who calls, and that caller is a party
+    for (const st of f.steps)
+      assert.ok(
+        st.from &&
+          (names.has(st.from) || st.from === f.actor || ROLES.has(st.from)),
+        `${p.id}/${f.id} ${st.at}: caller ${st.from}`,
+      );
+    const q = flowSequence(p, f);
+    assert.equal(q.parties[0].name, f.actor);
+    const parties = new Set(q.parties.map((x) => x.name));
+    assert.ok(
+      q.steps.every((st) => parties.has(st.from) && parties.has(st.to)),
+    );
   }
-
-  // map: cards in a column never overlap; every relation between mapped nodes has a wire
-  const m = mapLayout(p);
-  for (const a of m.nodes)
-    for (const b of m.nodes)
-      if (a !== b && a.col === b.col)
-        assert.ok(a.y + a.h <= b.y || b.y + b.h <= a.y, `${a.id} / ${b.id}`);
-  const pairs = new Set(
-    p.edges
-      .filter((e) => e.kind !== "inherits")
-      .map((e) => `${e.from}>${e.to}`),
-  );
-  assert.equal(m.wires.length, pairs.size, `${p.id} one wire per pair`);
-  const tall = mapLayout(p, 640);
-  assert.ok(
-    tall.nodes.every((n) => n.y + n.h <= 640 || n.y === 0),
-    "tall groups wrap",
-  );
-  assert.ok(
-    m.w / m.h > 0.8 && m.w / m.h < 4,
-    `${p.id} map shape ${m.w}x${m.h}`,
-  );
-  for (const w of m.wires) assert.ok(!/NaN|Infinity/.test(w.d), w.d);
-  assert.ok(m.nodes.every((n) => n.x + MAP.w <= m.w && n.y + n.h <= m.h));
 
   // gallery
   const s = summarize(p);

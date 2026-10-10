@@ -70,6 +70,8 @@ export type Edge = {
 
 export type FlowStep = {
   at: string;
+  /** who makes the call: the actor, a contract, or a role the step names (Anyone, Allocator) */
+  from?: string;
   say: string;
   /** contract, external or the flow's actor */
   lane: string;

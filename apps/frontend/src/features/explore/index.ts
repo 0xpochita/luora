@@ -7,13 +7,10 @@ export {
 export {
   contractOf,
   EDGE_VERB,
+  flowSequence,
   githubUrl,
-  LANES,
-  laneLayout,
-  MAP,
-  type MapNode,
-  type MapRow,
-  mapLayout,
-  neighbours,
+  type SeqParty,
+  type SeqRole,
+  type SeqStep,
   sourceLabel,
 } from "./utils/protocol";

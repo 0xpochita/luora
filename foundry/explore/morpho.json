@@ -55,14 +55,14 @@
       "actor": "Lender",
       "summary": "Lend the loan token to one market and receive supply shares.",
       "steps": [
-        { "at": "Lender", "say": "Approves Morpho, then calls supply(marketParams, assets, shares, onBehalf, data) with exactly one of assets or shares." },
-        { "at": "Morpho.supply", "say": "The market must exist, exactly one of assets / shares is non-zero, onBehalf is not zero." },
-        { "at": "Morpho._accrueInterest", "say": "Brings the market up to now: interest since lastUpdate is added to both total borrow and total supply; the fee part is minted as supply shares to the fee recipient." },
-        { "at": "IIrm.borrowRate", "say": "The market's rate model returns the borrow rate used for that accrual." },
-        { "at": "SharesMathLib.toSharesDown", "say": "Assets to shares, rounded down (for a shares input, assets are rounded up)." },
-        { "at": "Morpho.supply", "say": "Credits the shares to onBehalf, raises the market totals, emits Supply." },
-        { "at": "IMorphoLiquidateCallback.onMorphoSupply", "say": "Only with data: onMorphoSupply is called on msg.sender before payment." },
-        { "at": "IERC20.transferFrom", "say": "Last, the loan token moves from msg.sender into Morpho." }
+        { "at": "Lender", "from": "Lender", "say": "Approves Morpho, then calls supply(marketParams, assets, shares, onBehalf, data) with exactly one of assets or shares." },
+        { "at": "Morpho.supply", "from": "Lender", "say": "The market must exist, exactly one of assets / shares is non-zero, onBehalf is not zero." },
+        { "at": "Morpho._accrueInterest", "from": "Morpho", "say": "Brings the market up to now: interest since lastUpdate is added to both total borrow and total supply; the fee part is minted as supply shares to the fee recipient." },
+        { "at": "IIrm.borrowRate", "from": "Morpho", "say": "The market's rate model returns the borrow rate used for that accrual." },
+        { "at": "SharesMathLib.toSharesDown", "from": "Morpho", "say": "Assets to shares, rounded down (for a shares input, assets are rounded up)." },
+        { "at": "Morpho.supply", "from": "Morpho", "say": "Credits the shares to onBehalf, raises the market totals, emits Supply." },
+        { "at": "IMorphoLiquidateCallback.onMorphoSupply", "from": "Morpho", "say": "Only with data: onMorphoSupply is called on msg.sender before payment." },
+        { "at": "IERC20.transferFrom", "from": "Morpho", "say": "Last, the loan token moves from msg.sender into Morpho." }
       ],
       "checks": [
         "State is written and the event emitted before the token is pulled; review that every path keeps that order and that a callback can't observe a half-updated market.",
@@ -76,15 +76,15 @@
       "actor": "Borrower",
       "summary": "Post collateral, then borrow the loan token up to LLTV.",
       "steps": [
-        { "at": "Borrower", "say": "First supplyCollateral(marketParams, assets, onBehalf, data)." },
-        { "at": "Morpho.supplyCollateral", "say": "Credits collateral to onBehalf and pulls the collateral token. No interest accrual: collateral earns nothing." },
-        { "at": "Morpho.borrow", "say": "borrow(marketParams, assets, shares, onBehalf, receiver). msg.sender must be onBehalf or authorized by it (setAuthorization)." },
-        { "at": "Morpho._accrueInterest", "say": "Brings the market up to now." },
-        { "at": "SharesMathLib.toSharesUp", "say": "Borrow shares rounded up, against the borrower." },
-        { "at": "Morpho._isHealthy", "say": "Debt (shares to assets, rounded up) must be at most collateral × price × LLTV." },
-        { "at": "IOracle.price", "say": "The market's oracle prices the collateral in loan token." },
-        { "at": "Morpho.borrow", "say": "Total borrow must stay within total supply (liquidity). Emits Borrow." },
-        { "at": "IERC20.transfer", "say": "The loan token goes to receiver." }
+        { "at": "Borrower", "from": "Borrower", "say": "First supplyCollateral(marketParams, assets, onBehalf, data)." },
+        { "at": "Morpho.supplyCollateral", "from": "Borrower", "say": "Credits collateral to onBehalf and pulls the collateral token. No interest accrual: collateral earns nothing." },
+        { "at": "Morpho.borrow", "from": "Borrower", "say": "borrow(marketParams, assets, shares, onBehalf, receiver). msg.sender must be onBehalf or authorized by it (setAuthorization)." },
+        { "at": "Morpho._accrueInterest", "from": "Morpho", "say": "Brings the market up to now." },
+        { "at": "SharesMathLib.toSharesUp", "from": "Morpho", "say": "Borrow shares rounded up, against the borrower." },
+        { "at": "Morpho._isHealthy", "from": "Morpho", "say": "Debt (shares to assets, rounded up) must be at most collateral × price × LLTV." },
+        { "at": "IOracle.price", "from": "Morpho", "say": "The market's oracle prices the collateral in loan token." },
+        { "at": "Morpho.borrow", "from": "Morpho", "say": "Total borrow must stay within total supply (liquidity). Emits Borrow." },
+        { "at": "IERC20.transfer", "from": "Morpho", "say": "The loan token goes to receiver." }
       ],
       "checks": [
         "The oracle and LLTV are fixed per market at creation; an integration choosing a market is choosing its oracle. Review the oracle's scale (1e36) and what it does when its feed is stale.",
@@ -98,13 +98,13 @@
       "actor": "Borrower",
       "summary": "Pay back borrow shares; anyone can repay for anyone.",
       "steps": [
-        { "at": "Borrower", "say": "Approves Morpho, then repay(marketParams, assets, shares, onBehalf, data). Repaying by shares clears a position exactly." },
-        { "at": "Morpho.repay", "say": "Market exists, exactly one of assets / shares, onBehalf not zero. No authorization needed." },
-        { "at": "Morpho._accrueInterest", "say": "Brings the market up to now." },
-        { "at": "SharesMathLib.toSharesDown", "say": "Assets to shares rounded down (shares to assets rounded up), so repayment never removes more debt than paid." },
-        { "at": "Morpho.repay", "say": "Reduces borrow shares and the totals (total borrow floored at zero), emits Repay." },
-        { "at": "IMorphoLiquidateCallback.onMorphoRepay", "say": "Only with data: onMorphoRepay on msg.sender, before payment." },
-        { "at": "IERC20.transferFrom", "say": "Pulls the assets from msg.sender." }
+        { "at": "Borrower", "from": "Borrower", "say": "Approves Morpho, then repay(marketParams, assets, shares, onBehalf, data). Repaying by shares clears a position exactly." },
+        { "at": "Morpho.repay", "from": "Borrower", "say": "Market exists, exactly one of assets / shares, onBehalf not zero. No authorization needed." },
+        { "at": "Morpho._accrueInterest", "from": "Morpho", "say": "Brings the market up to now." },
+        { "at": "SharesMathLib.toSharesDown", "from": "Morpho", "say": "Assets to shares rounded down (shares to assets rounded up), so repayment never removes more debt than paid." },
+        { "at": "Morpho.repay", "from": "Morpho", "say": "Reduces borrow shares and the totals (total borrow floored at zero), emits Repay." },
+        { "at": "IMorphoLiquidateCallback.onMorphoRepay", "from": "Morpho", "say": "Only with data: onMorphoRepay on msg.sender, before payment." },
+        { "at": "IERC20.transferFrom", "from": "Morpho", "say": "Pulls the assets from msg.sender." }
       ],
       "checks": [
         "Repaying by assets can leave dust shares; repaying a whole position should use shares.",
@@ -117,16 +117,16 @@
       "actor": "Liquidator",
       "summary": "Repay an unhealthy position's debt and seize its collateral with an incentive set by the market's LLTV.",
       "steps": [
-        { "at": "Liquidator", "say": "Calls liquidate(marketParams, borrower, seizedAssets, repaidShares, data) with exactly one of seizedAssets or repaidShares." },
-        { "at": "Morpho.liquidate", "say": "Market exists; exactly one input." },
-        { "at": "Morpho._accrueInterest", "say": "Brings the market up to now." },
-        { "at": "IOracle.price", "say": "One price read for the whole liquidation." },
-        { "at": "Morpho._isHealthy", "say": "The position must be unhealthy at that price." },
-        { "at": "Morpho.liquidate", "say": "Incentive factor = min(1.15, 1 / (1 − 0.3 × (1 − LLTV))); computes the other side of the trade, reduces the borrower's shares and collateral." },
-        { "at": "Morpho.liquidate", "say": "If no collateral is left, remaining debt is bad debt: removed from total borrow and from total supply, so all suppliers of the market share the loss." },
-        { "at": "IERC20.transfer", "say": "Seized collateral goes to the liquidator." },
-        { "at": "IMorphoLiquidateCallback.onMorphoLiquidate", "say": "Only with data: the liquidator's callback runs before it pays." },
-        { "at": "IERC20.transferFrom", "say": "Pulls the repaid loan token from the liquidator." }
+        { "at": "Liquidator", "from": "Liquidator", "say": "Calls liquidate(marketParams, borrower, seizedAssets, repaidShares, data) with exactly one of seizedAssets or repaidShares." },
+        { "at": "Morpho.liquidate", "from": "Liquidator", "say": "Market exists; exactly one input." },
+        { "at": "Morpho._accrueInterest", "from": "Morpho", "say": "Brings the market up to now." },
+        { "at": "IOracle.price", "from": "Morpho", "say": "One price read for the whole liquidation." },
+        { "at": "Morpho._isHealthy", "from": "Morpho", "say": "The position must be unhealthy at that price." },
+        { "at": "Morpho.liquidate", "from": "Morpho", "say": "Incentive factor = min(1.15, 1 / (1 − 0.3 × (1 − LLTV))); computes the other side of the trade, reduces the borrower's shares and collateral." },
+        { "at": "Morpho.liquidate", "from": "Morpho", "say": "If no collateral is left, remaining debt is bad debt: removed from total borrow and from total supply, so all suppliers of the market share the loss." },
+        { "at": "IERC20.transfer", "from": "Morpho", "say": "Seized collateral goes to the liquidator." },
+        { "at": "IMorphoLiquidateCallback.onMorphoLiquidate", "from": "Morpho", "say": "Only with data: the liquidator's callback runs before it pays." },
+        { "at": "IERC20.transferFrom", "from": "Morpho", "say": "Pulls the repaid loan token from the liquidator." }
       ],
       "checks": [
         "Bad debt is socialised immediately to the market's suppliers; vaults and integrations should account for a sudden drop in supply share value.",
@@ -140,12 +140,12 @@
       "actor": "Depositor",
       "summary": "Deposit into a MetaMorpho vault; it supplies across markets in queue order.",
       "steps": [
-        { "at": "Depositor", "say": "Approves the vault, calls deposit(assets, receiver) (ERC-4626)." },
-        { "at": "MetaMorpho.deposit", "say": "First _accrueFee." },
-        { "at": "MetaMorpho._accrueFee", "say": "Total assets now vs last time; the performance fee on the gain is minted as shares to the fee recipient." },
-        { "at": "MetaMorpho._deposit", "say": "Shares rounded down, the asset is pulled from the depositor and shares are minted." },
-        { "at": "MetaMorpho._supplyMorpho", "say": "For each market in the supply queue with a non-zero cap: accrue, read the vault's current supply, supply up to the cap." },
-        { "at": "Morpho.supply", "say": "Inside try / catch: a market that reverts is skipped. If anything is left after the queue, AllCapsReached reverts the deposit." }
+        { "at": "Depositor", "from": "Depositor", "say": "Approves the vault, calls deposit(assets, receiver) (ERC-4626)." },
+        { "at": "MetaMorpho.deposit", "from": "Depositor", "say": "First _accrueFee." },
+        { "at": "MetaMorpho._accrueFee", "from": "MetaMorpho", "say": "Total assets now vs last time; the performance fee on the gain is minted as shares to the fee recipient." },
+        { "at": "MetaMorpho._deposit", "from": "MetaMorpho", "say": "Shares rounded down, the asset is pulled from the depositor and shares are minted." },
+        { "at": "MetaMorpho._supplyMorpho", "from": "MetaMorpho", "say": "For each market in the supply queue with a non-zero cap: accrue, read the vault's current supply, supply up to the cap." },
+        { "at": "Morpho.supply", "from": "MetaMorpho", "say": "Inside try / catch: a market that reverts is skipped. If anything is left after the queue, AllCapsReached reverts the deposit." }
       ],
       "checks": [
         "The vault's share price depends on every market in its queues; review each market's oracle, LLTV and rate model, not only the vault.",
@@ -159,13 +159,13 @@
       "actor": "Curator",
       "summary": "Raise a market's cap through the timelock, then let the allocator move liquidity.",
       "steps": [
-        { "at": "Curator", "say": "Calls submitCap(marketParams, newSupplyCap)." },
-        { "at": "MetaMorpho.submitCap", "say": "Only the curator role. The market must exist and lend the vault's asset. A lower cap applies at once; a higher one becomes pending until the timelock passes." },
-        { "at": "PendingLib.update", "say": "Stores the pending cap and the time it becomes valid." },
-        { "at": "MetaMorpho.acceptCap", "say": "After the timelock, anyone accepts it; the market is enabled and appended to the withdraw queue." },
-        { "at": "MetaMorpho.reallocate", "say": "The allocator withdraws from some markets and supplies to others, within caps; total withdrawn must equal total supplied." },
-        { "at": "Morpho.withdraw", "say": "Liquidity leaves one market." },
-        { "at": "Morpho.supply", "say": "And is supplied to another." }
+        { "at": "Curator", "from": "Curator", "say": "Calls submitCap(marketParams, newSupplyCap)." },
+        { "at": "MetaMorpho.submitCap", "from": "Curator", "say": "Only the curator role. The market must exist and lend the vault's asset. A lower cap applies at once; a higher one becomes pending until the timelock passes." },
+        { "at": "PendingLib.update", "from": "MetaMorpho", "say": "Stores the pending cap and the time it becomes valid." },
+        { "at": "MetaMorpho.acceptCap", "from": "Anyone", "say": "After the timelock, anyone accepts it; the market is enabled and appended to the withdraw queue." },
+        { "at": "MetaMorpho.reallocate", "from": "Allocator", "say": "The allocator withdraws from some markets and supplies to others, within caps; total withdrawn must equal total supplied." },
+        { "at": "Morpho.withdraw", "from": "MetaMorpho", "say": "Liquidity leaves one market." },
+        { "at": "Morpho.supply", "from": "MetaMorpho", "say": "And is supplied to another." }
       ],
       "checks": [
         "The guardian can revoke a pending cap during the timelock; check who holds guardian on each vault.",
@@ -179,10 +179,10 @@
       "actor": "Anyone",
       "summary": "Anyone opens a market from five parameters.",
       "steps": [
-        { "at": "Anyone", "say": "Calls createMarket(loanToken, collateralToken, oracle, irm, lltv)." },
-        { "at": "Morpho.createMarket", "say": "The IRM and the LLTV must be enabled by the owner, and the market must not exist. Sets lastUpdate and stores the parameters under their id." },
-        { "at": "MarketParamsLib.id", "say": "The id is keccak256 of the five parameters." },
-        { "at": "IIrm.borrowRate", "say": "Lets the rate model initialise itself for the market." }
+        { "at": "Anyone", "from": "Anyone", "say": "Calls createMarket(loanToken, collateralToken, oracle, irm, lltv)." },
+        { "at": "Morpho.createMarket", "from": "Anyone", "say": "The IRM and the LLTV must be enabled by the owner, and the market must not exist. Sets lastUpdate and stores the parameters under their id." },
+        { "at": "MarketParamsLib.id", "from": "Morpho", "say": "The id is keccak256 of the five parameters." },
+        { "at": "IIrm.borrowRate", "from": "Morpho", "say": "Lets the rate model initialise itself for the market." }
       ],
       "checks": [
         "Markets are permissionless: anything that lists or uses a market should check all five parameters, not just the tokens.",

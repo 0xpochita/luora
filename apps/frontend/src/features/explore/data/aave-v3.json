@@ -11316,12 +11316,14 @@
       "steps": [
         {
           "at": "Supplier",
+          "from": "Supplier",
           "say": "Approves the Pool for the asset, then calls supply(asset, amount, onBehalfOf, referralCode).",
           "lane": "Supplier",
           "fn": null
         },
         {
           "at": "Pool.supply",
+          "from": "Supplier",
           "say": "Entry point. Passes the reserve and user books to SupplyLogic.",
           "lane": "Pool",
           "fn": "supply",
@@ -11331,6 +11333,7 @@
         },
         {
           "at": "SupplyLogic.executeSupply",
+          "from": "Pool",
           "say": "Runs by DELEGATECALL, so every write lands in the Pool's storage.",
           "lane": "SupplyLogic",
           "fn": "executeSupply",
@@ -11340,6 +11343,7 @@
         },
         {
           "at": "ReserveLogic.updateState",
+          "from": "SupplyLogic",
           "say": "Accrues interest since the last action: moves the liquidity and variable borrow indexes to now and books the treasury's share.",
           "lane": "ReserveLogic",
           "fn": "updateState",
@@ -11349,6 +11353,7 @@
         },
         {
           "at": "ValidationLogic.validateSupply",
+          "from": "SupplyLogic",
           "say": "Amount not zero; reserve active, not paused, not frozen; supply cap not exceeded; onBehalfOf is not the aToken itself.",
           "lane": "ValidationLogic",
           "fn": "validateSupply",
@@ -11358,6 +11363,7 @@
         },
         {
           "at": "ReserveLogic.updateInterestRatesAndVirtualBalance",
+          "from": "SupplyLogic",
           "say": "Adds the amount to the reserve's virtual balance and asks the rate strategy for new rates.",
           "lane": "ReserveLogic",
           "fn": "updateInterestRatesAndVirtualBalance",
@@ -11367,12 +11373,14 @@
         },
         {
           "at": "IERC20.transferFrom",
+          "from": "SupplyLogic",
           "say": "The underlying moves from the supplier straight into the aToken contract, which holds the reserve's liquidity.",
           "lane": "IERC20",
           "fn": "transferFrom"
         },
         {
           "at": "AToken.mint",
+          "from": "SupplyLogic",
           "say": "Mints the amount divided by the liquidity index (scaled balance) to onBehalfOf.",
           "lane": "AToken",
           "fn": "mint",
@@ -11382,6 +11390,7 @@
         },
         {
           "at": "ValidationLogic.validateAutomaticUseAsCollateral",
+          "from": "SupplyLogic",
           "say": "On a first supply, decides whether the asset is switched on as collateral automatically (an isolated asset only when the supplier holds the isolated collateral supplier role).",
           "lane": "ValidationLogic",
           "fn": "validateAutomaticUseAsCollateral",
@@ -11391,6 +11400,7 @@
         },
         {
           "at": "Pool.Supply",
+          "from": "Pool",
           "say": "Emits Supply(reserve, user, onBehalfOf, amount, referralCode).",
           "lane": "Pool",
           "fn": "Supply",
@@ -11414,12 +11424,14 @@
       "steps": [
         {
           "at": "Borrower",
+          "from": "Borrower",
           "say": "Calls borrow(asset, amount, interestRateMode = variable, referralCode, onBehalfOf). onBehalfOf other than the caller needs a credit delegation allowance.",
           "lane": "Borrower",
           "fn": null
         },
         {
           "at": "Pool.borrow",
+          "from": "Borrower",
           "say": "Entry point. Reads the oracle and the sentinel from PoolAddressesProvider.",
           "lane": "Pool",
           "fn": "borrow",
@@ -11429,6 +11441,7 @@
         },
         {
           "at": "BorrowLogic.executeBorrow",
+          "from": "Pool",
           "say": "Runs on the Pool's storage.",
           "lane": "BorrowLogic",
           "fn": "executeBorrow",
@@ -11438,6 +11451,7 @@
         },
         {
           "at": "ReserveLogic.updateState",
+          "from": "BorrowLogic",
           "say": "Accrues interest to now.",
           "lane": "ReserveLogic",
           "fn": "updateState",
@@ -11447,6 +11461,7 @@
         },
         {
           "at": "ValidationLogic.validateBorrow",
+          "from": "BorrowLogic",
           "say": "Reserve active, not paused or frozen, borrowing enabled, borrow cap, isolation mode debt ceiling, siloed borrowing, e-mode, and the oracle sentinel's grace period.",
           "lane": "ValidationLogic",
           "fn": "validateBorrow",
@@ -11456,6 +11471,7 @@
         },
         {
           "at": "VariableDebtToken.mint",
+          "from": "BorrowLogic",
           "say": "Records the debt: amount divided by the variable borrow index. Spends the credit delegation allowance when onBehalfOf is someone else.",
           "lane": "VariableDebtToken",
           "fn": "mint",
@@ -11465,6 +11481,7 @@
         },
         {
           "at": "ReserveLogic.updateInterestRatesAndVirtualBalance",
+          "from": "BorrowLogic",
           "say": "Takes the amount out of the virtual balance and recomputes rates.",
           "lane": "ReserveLogic",
           "fn": "updateInterestRatesAndVirtualBalance",
@@ -11474,6 +11491,7 @@
         },
         {
           "at": "AToken.transferUnderlyingTo",
+          "from": "BorrowLogic",
           "say": "The aToken sends the underlying to the borrower.",
           "lane": "AToken",
           "fn": "transferUnderlyingTo",
@@ -11483,6 +11501,7 @@
         },
         {
           "at": "ValidationLogic.validateHFAndLtv",
+          "from": "BorrowLogic",
           "say": "After the transfer: totals collateral and debt at oracle prices and requires health factor above 1 and the new LTV within limits. If not, the whole transaction reverts.",
           "lane": "ValidationLogic",
           "fn": "validateHFAndLtv",
@@ -11492,6 +11511,7 @@
         },
         {
           "at": "AaveOracle.getAssetPrice",
+          "from": "ValidationLogic",
           "say": "Price of every asset in the account, read inside the health factor computation.",
           "lane": "AaveOracle",
           "fn": "getAssetPrice",
@@ -11501,6 +11521,7 @@
         },
         {
           "at": "Pool.Borrow",
+          "from": "Pool",
           "say": "Emits Borrow with the current variable rate.",
           "lane": "Pool",
           "fn": "Borrow",
@@ -11524,12 +11545,14 @@
       "steps": [
         {
           "at": "Borrower",
+          "from": "Borrower",
           "say": "Approves the Pool, then calls repay(asset, amount, interestRateMode, onBehalfOf). type(uint256).max repays the whole debt.",
           "lane": "Borrower",
           "fn": null
         },
         {
           "at": "Pool.repay",
+          "from": "Borrower",
           "say": "Entry point. repayWithATokens takes the same path with useATokens = true.",
           "lane": "Pool",
           "fn": "repay",
@@ -11539,6 +11562,7 @@
         },
         {
           "at": "BorrowLogic.executeRepay",
+          "from": "Pool",
           "say": "Runs on the Pool's storage.",
           "lane": "BorrowLogic",
           "fn": "executeRepay",
@@ -11548,6 +11572,7 @@
         },
         {
           "at": "ReserveLogic.updateState",
+          "from": "BorrowLogic",
           "say": "Accrues interest to now, so the debt includes interest up to this block.",
           "lane": "ReserveLogic",
           "fn": "updateState",
@@ -11557,6 +11582,7 @@
         },
         {
           "at": "ValidationLogic.validateRepay",
+          "from": "BorrowLogic",
           "say": "Amount not zero, reserve active and not paused, there is debt to repay. max is only allowed when repaying for yourself.",
           "lane": "ValidationLogic",
           "fn": "validateRepay",
@@ -11566,6 +11592,7 @@
         },
         {
           "at": "VariableDebtToken.burn",
+          "from": "BorrowLogic",
           "say": "Burns the repaid amount, capped at the outstanding debt; clears the borrowing flag when nothing is left.",
           "lane": "VariableDebtToken",
           "fn": "burn",
@@ -11575,6 +11602,7 @@
         },
         {
           "at": "ReserveLogic.updateInterestRatesAndVirtualBalance",
+          "from": "BorrowLogic",
           "say": "Adds the payment back to the virtual balance and recomputes rates.",
           "lane": "ReserveLogic",
           "fn": "updateInterestRatesAndVirtualBalance",
@@ -11584,12 +11612,14 @@
         },
         {
           "at": "IERC20.transferFrom",
+          "from": "BorrowLogic",
           "say": "The payment moves from the payer into the aToken. With aTokens, the payer's aTokens are burned instead.",
           "lane": "IERC20",
           "fn": "transferFrom"
         },
         {
           "at": "Pool.Repay",
+          "from": "Pool",
           "say": "Emits Repay(reserve, user, repayer, amount, useATokens).",
           "lane": "Pool",
           "fn": "Repay",
@@ -11612,12 +11642,14 @@
       "steps": [
         {
           "at": "Liquidator",
+          "from": "Liquidator",
           "say": "Calls liquidationCall(collateralAsset, debtAsset, borrower, debtToCover, receiveAToken) after approving the debt asset.",
           "lane": "Liquidator",
           "fn": null
         },
         {
           "at": "Pool.liquidationCall",
+          "from": "Liquidator",
           "say": "Entry point. Passes the oracle and sentinel addresses to LiquidationLogic.",
           "lane": "Pool",
           "fn": "liquidationCall",
@@ -11627,6 +11659,7 @@
         },
         {
           "at": "LiquidationLogic.executeLiquidationCall",
+          "from": "Pool",
           "say": "Runs on the Pool's storage.",
           "lane": "LiquidationLogic",
           "fn": "executeLiquidationCall",
@@ -11636,6 +11669,7 @@
         },
         {
           "at": "ReserveLogic.updateState",
+          "from": "LiquidationLogic",
           "say": "Accrues interest on both the debt reserve and the collateral reserve.",
           "lane": "ReserveLogic",
           "fn": "updateState",
@@ -11645,6 +11679,7 @@
         },
         {
           "at": "GenericLogic.calculateUserAccountData",
+          "from": "LiquidationLogic",
           "say": "Recomputes the borrower's collateral, debt and health factor at current prices.",
           "lane": "GenericLogic",
           "fn": "calculateUserAccountData",
@@ -11654,6 +11689,7 @@
         },
         {
           "at": "ValidationLogic.validateLiquidationCall",
+          "from": "LiquidationLogic",
           "say": "No self-liquidation; both reserves active and not paused; sentinel and grace period allow it; health factor below 1; the collateral is enabled and liquidatable; the borrower has this debt.",
           "lane": "ValidationLogic",
           "fn": "validateLiquidationCall",
@@ -11663,6 +11699,7 @@
         },
         {
           "at": "AaveOracle.getAssetPrice",
+          "from": "LiquidationLogic",
           "say": "Prices of the collateral and the debt asset, used to size the collateral to seize with the liquidation bonus. Up to 50% of the debt can be covered in one call; 100% when the health factor is below 0.95 or the position is small.",
           "lane": "AaveOracle",
           "fn": "getAssetPrice",
@@ -11672,6 +11709,7 @@
         },
         {
           "at": "VariableDebtToken.burn",
+          "from": "LiquidationLogic",
           "say": "Burns the covered debt. If no collateral would remain, the rest is burned too and booked as reserve deficit.",
           "lane": "VariableDebtToken",
           "fn": "burn",
@@ -11681,6 +11719,7 @@
         },
         {
           "at": "AToken.burn",
+          "from": "LiquidationLogic",
           "say": "Collateral to the liquidator: underlying (aTokens burned) or, with receiveAToken, the aTokens themselves.",
           "lane": "AToken",
           "fn": "burn",
@@ -11690,6 +11729,7 @@
         },
         {
           "at": "AToken.transferOnLiquidation",
+          "from": "LiquidationLogic",
           "say": "The liquidation protocol fee, a share of the bonus, goes to the treasury in aTokens.",
           "lane": "AToken",
           "fn": "transferOnLiquidation",
@@ -11699,12 +11739,14 @@
         },
         {
           "at": "IERC20.transferFrom",
+          "from": "LiquidationLogic",
           "say": "The liquidator's payment in the debt asset moves into the debt reserve's aToken.",
           "lane": "IERC20",
           "fn": "transferFrom"
         },
         {
           "at": "Pool.LiquidationCall",
+          "from": "Pool",
           "say": "Emits LiquidationCall with the debt covered and collateral seized.",
           "lane": "Pool",
           "fn": "LiquidationCall",
@@ -11728,12 +11770,14 @@
       "steps": [
         {
           "at": "Receiver",
+          "from": "Receiver",
           "say": "A contract calls flashLoanSimple(receiverAddress, asset, amount, params, referralCode).",
           "lane": "Receiver",
           "fn": null
         },
         {
           "at": "Pool.flashLoanSimple",
+          "from": "Receiver",
           "say": "Entry point. Reads the premium set by governance.",
           "lane": "Pool",
           "fn": "flashLoanSimple",
@@ -11743,6 +11787,7 @@
         },
         {
           "at": "FlashLoanLogic.executeFlashLoanSimple",
+          "from": "Pool",
           "say": "Runs on the Pool's storage.",
           "lane": "FlashLoanLogic",
           "fn": "executeFlashLoanSimple",
@@ -11752,6 +11797,7 @@
         },
         {
           "at": "ValidationLogic.validateFlashloanSimple",
+          "from": "FlashLoanLogic",
           "say": "Reserve active, not paused, flash loans enabled, and the amount within the aToken's supply.",
           "lane": "ValidationLogic",
           "fn": "validateFlashloanSimple",
@@ -11761,6 +11807,7 @@
         },
         {
           "at": "AToken.transferUnderlyingTo",
+          "from": "FlashLoanLogic",
           "say": "Sends the amount to the receiver; the virtual balance is reduced first.",
           "lane": "AToken",
           "fn": "transferUnderlyingTo",
@@ -11770,12 +11817,14 @@
         },
         {
           "at": "IFlashLoanSimpleReceiver.executeOperation",
+          "from": "FlashLoanLogic",
           "say": "The receiver's own code runs, with the amount and the premium owed. It must return true.",
           "lane": "IFlashLoanSimpleReceiver",
           "fn": "executeOperation"
         },
         {
           "at": "ReserveLogic.updateState",
+          "from": "FlashLoanLogic",
           "say": "Repayment: accrues interest and books the premium for the treasury.",
           "lane": "ReserveLogic",
           "fn": "updateState",
@@ -11785,12 +11834,14 @@
         },
         {
           "at": "IERC20.transferFrom",
+          "from": "FlashLoanLogic",
           "say": "Pulls amount plus premium from the receiver back into the aToken. Without the approval, the whole transaction reverts.",
           "lane": "IERC20",
           "fn": "transferFrom"
         },
         {
           "at": "Pool.FlashLoan",
+          "from": "Pool",
           "say": "Emits FlashLoan with the premium paid.",
           "lane": "Pool",
           "fn": "FlashLoan",
