@@ -4,6 +4,7 @@
   "version": "Blue v1 · MetaMorpho v1",
   "category": "Lending",
   "chain": "Ethereum and EVM L2s",
+  "logo": "/logos/morpho.png",
   "purpose": "Isolated lending markets in one immutable contract, each defined by loan token, collateral token, oracle, rate model and LLTV; MetaMorpho vaults allocate deposits across them.",
   "about": "Morpho Blue is a single contract with no upgrade path and no governance over existing markets. Anyone creates a market from five parameters (loanToken, collateralToken, oracle, irm, lltv) whose hash is the market id; the owner only chooses which rate models and LLTVs may be used, and a fee of up to 25% of interest. Supply and borrow positions are shares; interest accrues on each interaction. The oracle and the rate model are external contracts chosen per market. MetaMorpho is an ERC-4626 vault on top: a curator sets caps per market (increases behind a timelock), an allocator orders the queues and moves liquidity, and deposits are supplied to markets in queue order.",
   "builds": [
