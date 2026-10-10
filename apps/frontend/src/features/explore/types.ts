@@ -121,6 +121,14 @@ export type ProtocolSummary = Pick<
   licenses: string[];
   /** contracts whose source is kept */
   excerpts: number;
+  flowTitles: string[];
+  /** the protocol map in miniature, for the gallery card (same layout as the Map view) */
+  preview: {
+    w: number;
+    h: number;
+    nodes: { x: number; y: number; h: number; outside: boolean }[];
+    wires: string[];
+  };
 };
 
 /** What the Ask panel and the About panel are about. */

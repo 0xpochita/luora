@@ -82,6 +82,21 @@ Products (L2 opened for this pass; TD from the trace pass; DL and SU known tools
 Not taken: P7's search and category filter (four protocols fit one screen), the left rail first
 planned from P5 (main's minimal Atlas pass: one switch, panels only on demand, no chip rows).
 
+## Gallery pass (same day)
+
+"Find Pinterest references to upgrade the Explore page." The first gallery was a title, a short
+grid and a footnote, with a hole after the fourth card and nothing showing what a protocol looks
+like inside. Studied:
+
+| Id | Pin | Taken |
+|---|---|---|
+| Q1 | 837880705720916025 (Naxion web3 landing, "Projects" grid) | the section's title is the grid's first tile, so the grid is one block; the last tile says what is missing (Curve, Lido) instead of a hole |
+| Q2 | 137008013661144911 (iaroslove, bento feature cards) | each card: title and two lines on top, a live miniature of the real product in an inset below. Here: the protocol's own map, from the same `mapLayout` as its Map view (cards as blocks, outside contracts with a blue bar, wires brighten on hover) |
+| — | 128774870591905379 (LayerZero Scan, protocol details) | looked at, not taken: a chart-first detail page; we have no measured series to chart |
+
+Each card also lists its flows by name (Supply · Borrow · Liquidation …) above the counts, so the
+business actions are visible before opening the protocol.
+
 ## Data
 
 `foundry/luora-protocol.mjs` turns one spec (`foundry/explore/<id>.json`: repos, key contracts with

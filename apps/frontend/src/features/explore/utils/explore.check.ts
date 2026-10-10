@@ -93,6 +93,12 @@ for (const p of all) {
   // gallery
   const s = summarize(p);
   assert.equal(s.contracts, p.contracts.length);
+  assert.equal(s.preview.nodes.length, p.contracts.length + p.externals.length);
+  assert.equal(s.preview.wires.length, m.wires.length);
+  assert.deepEqual(
+    s.flowTitles,
+    p.flows.map((f) => f.title),
+  );
   assert.ok(
     ["Structure only", "Source excerpts"].includes(sourceLabel(s)) ||
       /^Source for \d+ of \d+$/.test(sourceLabel(s)),

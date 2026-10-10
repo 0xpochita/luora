@@ -28,6 +28,21 @@ export function summarize(p: Protocol): ProtocolSummary {
       ...new Set(p.contracts.map((c) => c.license ?? "unknown")),
     ].sort(),
     excerpts: p.contracts.filter((c) => c.excerpts).length,
+    flowTitles: p.flows.map((f) => f.title),
+    preview: (() => {
+      const m = mapLayout(p);
+      return {
+        w: m.w,
+        h: m.h,
+        nodes: m.nodes.map((n) => ({
+          x: n.x,
+          y: n.y,
+          h: n.h,
+          outside: n.kind === "external",
+        })),
+        wires: m.wires.map((w) => w.d),
+      };
+    })(),
   };
 }
 
