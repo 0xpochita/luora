@@ -184,9 +184,8 @@ export function Faq() {
  */
 export function Finale() {
   return (
-    <FinaleRise city={<CityHorizon />}>
+    <FinaleRise city={<CityHorizon />} footer={<Footer />}>
       <FinalCta />
-      <Footer />
     </FinaleRise>
   );
 }
@@ -194,7 +193,7 @@ export function Finale() {
 /** R8 (onorca.dev "Get Orca") + R2 (starburst): the two actions, no card, over the scene. */
 export function FinalCta() {
   return (
-    <div className="relative mx-auto max-w-[1240px] px-4 pt-28 pb-[clamp(200px,24vw,340px)] md:px-6 md:pt-36">
+    <div className="relative mx-auto max-w-[1240px] px-4 pt-28 pb-[330px] md:px-6 md:pt-36 md:pb-[clamp(200px,24vw,340px)]">
       {/* R13: hairlines with '+' markers framing the headline */}
       <div
         aria-hidden="true"

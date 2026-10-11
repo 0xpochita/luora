@@ -108,7 +108,7 @@ export function CityHorizon() {
       aria-hidden="true"
       viewBox={`0 ${TOP} ${W} ${H - TOP}`}
       preserveAspectRatio="xMidYMax slice"
-      className="pointer-events-none absolute inset-x-0 bottom-0 h-[clamp(420px,42vw,640px)] w-full"
+      className="pointer-events-none absolute inset-x-0 bottom-0 h-[340px] w-full md:h-[clamp(420px,42vw,640px)]"
     >
       <defs>
         <radialGradient id="lp-dawn" cx="50%" cy="34%" r="58%">

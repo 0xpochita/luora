@@ -93,9 +93,11 @@ function finaleRise(root: HTMLElement, gsap: Gsap) {
 
 export function FinaleRise({
   city,
+  footer,
   children,
 }: {
   city: ReactNode;
+  footer: ReactNode;
   children: ReactNode;
 }) {
   const ref = useRef<HTMLElement>(null);
@@ -103,10 +105,15 @@ export function FinaleRise({
   return (
     <section ref={ref} data-tone="finale" className="relative overflow-hidden">
       <Haze className="bottom-0" />
-      <div data-lp="city" className="pointer-events-none absolute inset-0">
-        {city}
+      {/* phones stack the footer's columns into a tall block: the city stands under the call to
+          action there, not behind the links; from md it spans the whole section as before */}
+      <div className="relative md:static">
+        <div data-lp="city" className="pointer-events-none absolute inset-0">
+          {city}
+        </div>
+        <div className="relative">{children}</div>
       </div>
-      <div className="relative">{children}</div>
+      <div className="relative">{footer}</div>
     </section>
   );
 }
