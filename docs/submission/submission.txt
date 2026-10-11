@@ -1,0 +1,72 @@
+LUORA: hackathon submission answers
+Copy each answer into the form field with the same title.
+Character counts are shown next to each title (form limit in brackets).
+
+==============================================================================
+Brief description
+[461 characters / limit 500]
+------------------------------------------------------------------------------
+Luora helps smart contract auditors and bug bounty hunters see what their code actually does. You run your usual Foundry tests, and Luora turns the output, normally a wall of text, into something a person can read: every function call next to the line of code it ran, a map of the contract, test scenarios you build by connecting cards, and real hacks explained step by step. AI explains any piece in plain words, but the final call always stays with the human.
+
+==============================================================================
+Project website
+[12 characters]
+------------------------------------------------------------------------------
+luorasec.xyz
+
+==============================================================================
+What are you building, and who is it for?
+[926 characters / limit 1000]
+------------------------------------------------------------------------------
+Luora is a visual workbench for checking smart contracts.
+
+It is for independent security researchers, bug bounty hunters and audit firms, and for developers who want to check their own contracts before they ship.
+
+What it does:
+- Trace: run your Foundry tests and follow every call, step by step, beside the line of code that ran. Click a test to see why it passed.
+- Atlas: a map of the contract. Every function, who can call it, what it changes, with Slither and Aderyn findings pinned where they belong.
+- Scenarios: build a test by connecting cards (who calls, what they call, what should happen), run it, and get a real Foundry test file.
+- Explore and Exploits: how big DeFi protocols (Uniswap, Aave, Morpho, Compound) work, and four real hacks explained as post-mortems, with the check that was missing and the test that would have caught it. No exploit code.
+- Ask AI: explains one piece at a time, using your own AI.
+
+==============================================================================
+Why did you decide to build this, and why build it now?
+[940 characters / limit 1000]
+------------------------------------------------------------------------------
+Smart contract bugs are expensive: $3.4 billion was stolen from crypto in 2025 (Chainalysis). At the same time, security teams are being flooded with AI-written bug reports that sound confident but are wrong. curl shut down its bug bounty after fewer than 1 in 20 reports turned out to be real, and Immunefi bans hunters who submit AI-generated reports.
+
+The people doing the real checking have not been helped much. Most of them use Foundry (57% of Solidity developers, per the 2025 Solidity Developer Survey), but its test traces print as long walls of text that are hard to read.
+
+I built Luora because I believe AI should help people understand code, not replace their judgement. In Luora, AI explains and the human decides.
+
+Why now: AI is finally good enough to explain code clearly, and we can already see what happens when AI is left to decide on its own. The best moment to build the tool that keeps a human in charge is right now.
+
+==============================================================================
+What technologies are you using or integrating with to build your product?
+[474 characters]
+------------------------------------------------------------------------------
+Foundry (forge test, traces, coverage and testnet forks), Solidity, Slither and Aderyn for static analysis, Node.js exporter scripts, Next.js 16, React 19, TypeScript, Tailwind CSS v4, Biome, pnpm, Vercel, and an MCP (Model Context Protocol) server for AI clients. AI: Claude through the user's own Claude Code, local models (Ollama, LM Studio) or the user's own Anthropic, OpenAI or OpenRouter key. Built with Claude Code and Orca; videos made with Remotion and ElevenLabs.
+
+==============================================================================
+How does your product use these chains?
+[438 characters / limit 500]
+------------------------------------------------------------------------------
+Luora can run your tests on a copy of six EVM testnets: Ethereum Sepolia, Arbitrum Sepolia, Base Sepolia, Robinhood Chain Testnet, Hyperliquid's HyperEVM Testnet and Tempo's Moderato testnet. Pick a chain in the app, and your Foundry tests run against that chain's real, current state, so the trace shows calls into contracts actually deployed there. It only reads public data: no wallet, no keys, no gas, and no transaction is ever sent.
+
+==============================================================================
+What category best describes your product?
+[14 characters]
+------------------------------------------------------------------------------
+Security Tools
+
+==============================================================================
+Notes for judges: Did anyone not listed on the team here do meaningful work on this project? If so, please explain.
+[494 characters / limit 600]
+------------------------------------------------------------------------------
+No other person worked on Luora; I designed and built it on my own. I did use AI coding tools heavily, mainly Claude Code, to write code and to produce the demo and pitch videos, always under my direction and review. The voice in the videos is an ElevenLabs voice. Luora also builds on open-source work: Foundry, Slither, Aderyn, and the public source code of Uniswap, Aave, Morpho and Compound. The hack write-ups are based on public post-mortems (rekt.news and others), linked inside the app.
+
+==============================================================================
+Is there anything else judges should know about your project that isn't captured above?
+[404 characters / limit 500]
+------------------------------------------------------------------------------
+Luora is defensive only. It never writes exploits: test scenarios check that code does what it should, and the hack pages cover closed, historical cases with no exploit code. It runs on your own machine next to your Foundry project, so your code is never uploaded, and the AI is your own (or none at all). You can try it without a project using the built-in sample vault. Code: github.com/0xpochita/luora

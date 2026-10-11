@@ -510,9 +510,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   margin: 0;
-  padding: 4px 6px 8px;
+  padding: 2px 4px 12px 6px;
   font-weight: 500;
   font-size: 14px;
   color: var(--fg);
@@ -605,10 +605,10 @@
   z-index: 4;
   top: 16px;
   right: 84px;
-  width: 330px;
+  width: 372px;
   max-height: calc(100% - 180px);
   overflow: auto;
-  padding: 8px;
+  padding: 14px;
 }
 .lab-run h4 {
   display: flex;
@@ -624,14 +624,14 @@
 .lab-run h4 span {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
   font: 12px var(--font-geist-mono);
   color: var(--dim);
 }
 .lab-run ol {
   display: grid;
-  gap: 4px;
-  margin: 0 0 8px;
+  gap: 6px;
+  margin: 0 0 12px;
   padding: 0;
   list-style: none;
 }
@@ -639,10 +639,10 @@
   display: grid;
   grid-template-columns: 8px 20px auto 1fr;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
-  min-height: 32px;
-  padding: 0 10px;
+  min-height: 38px;
+  padding: 0 12px;
   text-align: left;
   border-radius: 10px;
   background: var(--raised);
@@ -682,7 +682,7 @@
   white-space: nowrap;
 }
 .lab-run p {
-  margin: 4px 6px 8px;
+  margin: 4px 6px 12px;
   color: var(--fg);
 }
 .lab-run .finding {
