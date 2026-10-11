@@ -15,6 +15,7 @@
   <img src="https://img.shields.io/badge/FORKS-6%20EVM%20TESTNETS-627EEA?style=flat-square&labelColor=555555" alt="Six EVM testnets" />
   <img src="https://img.shields.io/badge/AI-BRING%20YOUR%20OWN-8B5CF6?style=flat-square&labelColor=555555" alt="Bring your own AI" />
   <img src="https://img.shields.io/badge/SCOPE-DEFENSIVE%20ONLY-16A34A?style=flat-square&labelColor=555555" alt="Defensive only" />
+  <a href="LICENSE"><img src="https://img.shields.io/badge/LICENSE-MIT-000000?style=flat-square&labelColor=555555" alt="MIT license" /></a>
 </p>
 
 ---
@@ -514,7 +515,7 @@ luora-data.json
 
 ## License
 
-No license file has been added yet. All rights reserved until one is.
+[MIT](LICENSE) © 2026 Bima Jadiva. The exporter scripts, the app and the sample project are all open source.
 
 ---
 

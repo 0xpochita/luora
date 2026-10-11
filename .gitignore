@@ -6,3 +6,6 @@ node_modules/
 
 # Remotion video project (local only)
 video/
+
+# Local writing (submission answers, builder updates, preview images); docs already tracked stay tracked
+docs/
