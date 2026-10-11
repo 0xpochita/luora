@@ -25,6 +25,15 @@ export function loadMotion() {
   motion ??= Promise.all([import("gsap"), import("gsap/ScrollTrigger")]).then(
     ([g, s]) => {
       g.gsap.registerPlugin(s.ScrollTrigger);
+      // phones: the address bar showing / hiding resizes the viewport on every scroll direction
+      // change; refreshing then would make every pinned stage jump
+      s.ScrollTrigger.config({ ignoreMobileResize: true });
+      // a refresh offsets each trigger only by the pins created before it; a stage made after the
+      // ones below it (late hydration, Fast Refresh) left Compare pinning a whole pin too early,
+      // over Tests and Ask. Put the triggers in page order first.
+      s.ScrollTrigger.addEventListener("refreshInit", () =>
+        s.ScrollTrigger.sort(),
+      );
       return { gsap: g.gsap, ScrollTrigger: s.ScrollTrigger };
     },
   );
@@ -46,11 +55,12 @@ function withMotion(fn: (m: Motion) => (() => void) | undefined) {
 }
 
 /**
- * Pinned, scrubbed stages only run here. Below md, or with reduced motion, every stage is its
- * static, readable layout (the same query gates the `.lp-staged` CSS in landing.css).
+ * Pinned, scrubbed stages run on every screen size, phones included (the user: the same transitions
+ * as on desktop); each stage lays itself out for the width it has. Only reduced motion gets the
+ * static, readable layout (the same query gates the staged CSS in landing.css, hub.css, how.css and
+ * compare.css).
  */
-export const STAGE_MQ =
-  "(min-width: 768px) and (prefers-reduced-motion: no-preference)";
+export const STAGE_MQ = "(prefers-reduced-motion: no-preference)";
 /** cheap scrubbed fades and lifts, phones included */
 export const MOTION_MQ = "(prefers-reduced-motion: no-preference)";
 

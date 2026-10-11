@@ -1,6 +1,6 @@
 /* How Luora works (eighth pass, HowItWorks.tsx). The stage / static switch and the first-note /
    first-widget defaults stay in landing.css (.lp-how-*); before GSAP runs only step 1 shows here. */
-@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+@media (prefers-reduced-motion: no-preference) {
   .lp-how-io:not(:first-child),
   .lp-how-edge {
     visibility: hidden;
@@ -43,4 +43,12 @@
   height: 90px;
   transform: translateY(-100%);
   background: linear-gradient(0deg, rgba(255, 255, 255, 0.07), transparent);
+}
+
+/* below lg the core is a phone's width and about half its height: the step widgets keep their own
+   layout and shrink to fit it */
+@media (max-width: 1023.98px) {
+  .lp-how-body > * {
+    zoom: 0.82;
+  }
 }

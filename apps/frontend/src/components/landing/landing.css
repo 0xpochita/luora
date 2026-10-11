@@ -288,7 +288,7 @@
   display: none;
 }
 
-@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+@media (prefers-reduced-motion: no-preference) {
   .lp-sg {
     position: relative;
     height: 100vh;
@@ -345,6 +345,10 @@
   .lp-run > * {
     grid-area: 1 / 1;
   }
+  /* the column is the screen's width, never the graph's: the graph measures it to fit itself */
+  .lp-run {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .lp-run-graph {
     margin: 0;
     width: 100%;
@@ -389,6 +393,50 @@
     position: absolute;
     inset-inline: 0;
     top: calc(52vh + 150px);
+  }
+}
+/* the same stages on a phone: tighter insets, a smaller wheel so a card and a half fit across */
+@media (max-width: 767.98px) and (prefers-reduced-motion: no-preference) {
+  .lp-sg-head {
+    top: 12vh;
+  }
+  .lp-sg-product {
+    inset: 3vh 12px 3vh;
+  }
+  .lp-wheel-head {
+    top: 10vh;
+  }
+  .lp-wheel-ring {
+    --r: 760px;
+    top: calc(54vh + var(--r));
+  }
+  .lp-wheel-card {
+    left: -112px;
+    top: -82px;
+    width: 224px;
+    height: 164px;
+  }
+  .lp-wheel-read {
+    top: calc(54vh + 112px);
+  }
+  .lp-wheel-read p + p {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5;
+    overflow: hidden;
+    font-size: 14px;
+  }
+}
+/* touch screens read a card by tapping it */
+.lp-wheel-hint-touch {
+  display: none;
+}
+@media (hover: none) {
+  .lp-wheel-hint-touch {
+    display: inline;
+  }
+  .lp-wheel-hint-hover {
+    display: none;
   }
 }
 
@@ -454,7 +502,7 @@ a:hover > .lp-mark {
 .lp-how-stage {
   display: none;
 }
-@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+@media (prefers-reduced-motion: no-preference) {
   .lp-how-stage {
     display: block;
     height: 100vh;

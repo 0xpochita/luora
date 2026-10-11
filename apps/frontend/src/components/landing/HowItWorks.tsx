@@ -104,9 +104,11 @@ const STEPS: Step[] = [
 /** each static step's widget height (measured), held until it mounts so the page does not jump */
 const SPOT = ["h-[395px]", "h-[265px]", "h-[276px] md:h-[432px]", "h-[518px]"];
 
-/** the pinned stage only runs where the board fits (same query as `.lp-how-*` in landing.css) */
-const HOW_MQ =
-  "(min-width: 1024px) and (prefers-reduced-motion: no-preference)";
+/**
+ * the pinned stage runs on every width (same query as `.lp-how-*` in landing.css); below lg the
+ * board stacks under the copy and the wire pills step aside, the timeline is the same
+ */
+const HOW_MQ = "(prefers-reduced-motion: no-preference)";
 /** timeline units: each step holds STEP, the hand-over wipe is 2·XF wide around each boundary */
 const STEP = 2.4;
 const XF = 0.5;
@@ -223,7 +225,8 @@ function Wires({ items, side }: { items: Io[]; side: "in" | "out" }) {
  *  H4 pin/5207355814660740 (GRFN / roasti 'How it works') — circled 1 → 2 → 3 joined by strokes
  *     → the step rail; the stroke after a step fills while that step is open.
  * Scroll-driven: the stage pins, one scrubbed timeline (clip-path / transform / opacity only)
- * plays forwards and back. Phones, tablets, reduced motion: the static list, one widget per step.
+ * plays forwards and back, on phones too (stacked: copy over the core). Reduced motion: the static
+ * list, one widget per step.
  * Every widget mounts only near the screen (Lazy), so the layout that is display:none never builds.
  */
 export function HowItWorks({
@@ -455,17 +458,17 @@ export function HowItWorks({
 
   return (
     <section ref={ref} id="how-it-works" data-tone="how">
-      {/* lg+ with motion: one pinned screen, the timeline above drives everything in it */}
+      {/* with motion, any width: one pinned screen, the timeline above drives everything in it */}
       <div data-lp="stage" className="lp-how-stage">
         <div
           data-lp="scene"
-          className="mx-auto grid h-full max-w-[1320px] grid-cols-[minmax(0,300px)_minmax(0,1fr)] items-center gap-12 px-8"
+          className="mx-auto grid h-full max-w-[1320px] grid-rows-[auto_minmax(0,1fr)] gap-4 px-4 pt-[7vh] pb-[3vh] lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)] lg:grid-rows-none lg:items-center lg:gap-12 lg:px-8 lg:py-0"
         >
           {/* left: heading, the rolling index (H2), the open step's note, the step rail (H4) */}
-          <div className="flex h-full flex-col justify-center py-[8vh]">
+          <div className="flex flex-col justify-center lg:h-full lg:py-[8vh]">
             {head}
-            <div className="mt-[5vh] flex items-end gap-3">
-              <span className="flex font-light text-[clamp(104px,8.5vw,150px)] leading-none tracking-[-0.06em]">
+            <div className="mt-[1.5vh] flex items-end gap-3 lg:mt-[5vh]">
+              <span className="flex font-light text-[64px] leading-none tracking-[-0.06em] lg:text-[clamp(104px,8.5vw,150px)]">
                 <span className="lp-how-num">0</span>
                 <span className="relative block h-[1em] overflow-hidden">
                   <span data-lp="digits" className="block">
@@ -477,11 +480,11 @@ export function HowItWorks({
                   </span>
                 </span>
               </span>
-              <span className="mb-3 font-mono text-[12.5px] text-dim">
+              <span className="mb-2 font-mono text-[12.5px] text-dim lg:mb-3">
                 / 0{STEPS.length}
               </span>
             </div>
-            <div className="relative mt-5 h-[140px]">
+            <div className="relative mt-3 h-[104px] lg:mt-5 lg:h-[140px]">
               {STEPS.map((s, i) => (
                 <div
                   key={s.title}
@@ -489,17 +492,17 @@ export function HowItWorks({
                   aria-hidden={i !== at}
                   className="lp-how-note absolute inset-x-0 top-0"
                 >
-                  <h3 className="flex items-center gap-2.5 text-[22px] text-fg leading-tight tracking-[-0.01em]">
+                  <h3 className="flex items-center gap-2.5 text-[18px] text-fg leading-tight tracking-[-0.01em] lg:text-[22px]">
                     <Icon k={s.icon} className="size-[18px] text-muted" />
                     {s.title}
                   </h3>
-                  <p className="mt-3 text-[15px] text-body leading-relaxed">
+                  <p className="mt-2 text-[14px] text-body leading-relaxed lg:mt-3 lg:text-[15px]">
                     {s.copy[0]} <span className="text-muted">{s.copy[1]}</span>
                   </p>
                 </div>
               ))}
             </div>
-            <ol className="mt-6 flex items-center">
+            <ol className="mt-3 flex items-center lg:mt-6">
               {STEPS.map((s, i) => (
                 <li
                   key={s.title}
@@ -536,9 +539,12 @@ export function HowItWorks({
           {/* right: the board (H1): inputs wire into the core, the core shows the step's real UI */}
           <div
             data-lp="board"
-            className="grid h-[78vh] max-h-[700px] grid-cols-[176px_minmax(0,1fr)_176px] items-center"
+            className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)] items-center lg:h-[78vh] lg:max-h-[700px] lg:grid-cols-[176px_minmax(0,1fr)_176px]"
           >
-            <div className="relative" style={{ height: WIRE_H }}>
+            <div
+              className="relative hidden lg:block"
+              style={{ height: WIRE_H }}
+            >
               {STEPS.map((s) => (
                 <Wires key={s.title} items={s.in} side="in" />
               ))}
@@ -559,7 +565,7 @@ export function HowItWorks({
                     {/* the slot is filled like the core, so the wipe covers the step below it */}
                     <div
                       data-lp="body"
-                      className="flex size-full items-center justify-center p-6"
+                      className="lp-how-body flex size-full items-center justify-center p-3 lg:p-6"
                     >
                       {i <= upto && (
                         <Lazy className="size-full" wait={READY[i]}>
@@ -579,7 +585,10 @@ export function HowItWorks({
                 ))}
               </div>
             </div>
-            <div className="relative" style={{ height: WIRE_H }}>
+            <div
+              className="relative hidden lg:block"
+              style={{ height: WIRE_H }}
+            >
               {STEPS.map((s) => (
                 <Wires key={s.title} items={s.out} side="out" />
               ))}
@@ -588,7 +597,7 @@ export function HowItWorks({
         </div>
       </div>
 
-      {/* phones, tablets, reduced motion: each step with its wiring and widget, no pin */}
+      {/* reduced motion: each step with its wiring and widget, no pin */}
       <div className="lp-how-static mx-auto max-w-[640px] px-4 pb-32">
         {head}
         <ol className="mt-12 flex flex-col gap-16">

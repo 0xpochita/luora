@@ -98,6 +98,7 @@ export function FindingsWheel({ findings }: { findings: WheelFinding[] }) {
               type="button"
               onMouseEnter={() => setOn(i)}
               onFocus={() => setOn(i)}
+              onClick={() => setOn(i)}
               aria-pressed={i === on}
               className={`flex h-full w-full flex-col gap-2.5 rounded-card border bg-card-grad p-4 text-left shadow-soft transition-[border-color,transform] duration-300 ${
                 i === on
@@ -131,7 +132,10 @@ export function FindingsWheel({ findings }: { findings: WheelFinding[] }) {
         ))}
       </ul>
       <div className="lp-wheel-read px-4 text-center" aria-live="polite">
-        <p className="text-[12.5px] text-dim">Hover to read a finding</p>
+        <p className="text-[12.5px] text-dim">
+          <span className="lp-wheel-hint-hover">Hover to read a finding</span>
+          <span className="lp-wheel-hint-touch">Tap a card to read it</span>
+        </p>
         {f && (
           <p
             key={f.id}

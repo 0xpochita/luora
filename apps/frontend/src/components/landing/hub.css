@@ -37,7 +37,7 @@
     margin-inline: 0;
   }
 }
-@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+@media (prefers-reduced-motion: no-preference) {
   .lp-hub {
     position: absolute;
     inset: 0;

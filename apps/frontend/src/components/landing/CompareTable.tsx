@@ -142,28 +142,8 @@ function wipe(
 }
 
 /**
- * Below 1024px (and under reduced motion the rows just sit there): the rows flow down the page,
- * each wiping as it climbs the screen.
- */
-function flow(root: HTMLElement, gsap: Gsap) {
-  rise(root, gsap);
-  for (const row of root.querySelectorAll<HTMLElement>("[data-cmp]")) {
-    const tl = gsap.timeline({
-      defaults: { ease: "none" },
-      scrollTrigger: {
-        trigger: row,
-        start: "top 90%",
-        end: "top 45%",
-        scrub: 0.6,
-        invalidateOnRefresh: true,
-      },
-    });
-    wipe(gsap, tl, row, false, 0, 1);
-  }
-}
-
-/**
- * Wide screens: the block pins and the three rows take the same slot one at a time ("buatlah jeda
+ * Every width (phones too, the user: the same transitions as on desktop): the block pins and the
+ * rows take the same slot one at a time ("buatlah jeda
  * jadi pas scroll tunggu animasi selesai baru bisa scroll down"): a row arrives, its wipe runs with
  * the scroll, it holds finished, then it lifts away as the next one rises in. Nothing else moves
  * until the last row has wiped, so the page never shows every row half-open at once.
@@ -171,6 +151,8 @@ function flow(root: HTMLElement, gsap: Gsap) {
 function staged(root: HTMLElement, gsap: Gsap) {
   rise(root, gsap);
   const rows = [...root.querySelectorAll<HTMLElement>("[data-cmp]")];
+  // side by side from lg (the seam sweeps across), stacked below it (the card opens downward)
+  const wide = matchMedia("(min-width: 1024px)").matches;
   const tl = gsap.timeline({
     defaults: { ease: "none" },
     scrollTrigger: {
@@ -199,7 +181,7 @@ function staged(root: HTMLElement, gsap: Gsap) {
         `${at}+=0.35`,
       );
     }
-    wipe(gsap, tl, row, true, i > 0 ? `${at}+=0.8` : at, 1.2);
+    wipe(gsap, tl, row, wide, i > 0 ? `${at}+=0.8` : at, 1.2);
     // the finished row holds a while before the next one takes its place
     tl.to({}, { duration: 1 });
   });
@@ -207,10 +189,10 @@ function staged(root: HTMLElement, gsap: Gsap) {
 
 export function CompareWorlds({ data }: { data: CompareData }) {
   const ref = useRef<HTMLDivElement>(null);
-  // one setup per layout, so crossing 1024px reverts one and builds the other (compare.css stacks
-  // the rows under the same query the pinned stage runs in)
+  // one setup per layout, so crossing 1024px rebuilds the wipe for the other direction (compare.css
+  // stacks the rows in one slot under the same query the pinned stage runs in)
   useStage(ref, staged, `${MOTION_MQ} and (min-width: 1024px)`);
-  useStage(ref, flow, `${MOTION_MQ} and (max-width: 1023.98px)`);
+  useStage(ref, staged, `${MOTION_MQ} and (max-width: 1023.98px)`);
   const out = raw(data);
   return (
     <div ref={ref} className="lp-cmp-stage">

@@ -144,9 +144,9 @@
   display: block;
 }
 
-/* the pinned stage (CompareTable staged()): one screen, the rows stacked in one slot; the same
-   query the stage runs under, so without motion the rows keep flowing down the page */
-@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+/* the pinned stage (CompareTable staged()): one screen, the rows stacked in one slot, on every
+   width; the same query the stage runs under, so without motion the rows keep flowing down */
+@media (prefers-reduced-motion: no-preference) {
   .lp-cmp-stage {
     display: flex;
     flex-direction: column;
@@ -181,5 +181,52 @@
   }
   .lp-cmp-stage .lp-cmp-seam {
     left: calc(38% - 11px);
+  }
+}
+
+/* the same stage on a phone: a smaller title, the note row folded away, one slot that holds the
+   row's copy over its two worlds */
+@media (max-width: 1023.98px) and (prefers-reduced-motion: no-preference) {
+  .lp-cmp-stage {
+    justify-content: flex-start;
+    padding-top: 9vh;
+  }
+  .lp-cmp-stage h2 {
+    font-size: 34px;
+  }
+  .lp-cmp-stage h2 + div {
+    display: none;
+  }
+  .lp-cmp-stage .lp-cmp-rows {
+    height: 68vh;
+    margin-top: 20px;
+  }
+  .lp-cmp-stage .lp-cmp-rows > li {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .lp-cmp-stage .lp-cmp-world {
+    height: auto;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .lp-cmp-stage .lp-cmp-raw {
+    padding: 16px 18px;
+    font-size: 10.5px;
+    min-height: 0;
+    max-height: 110px;
+  }
+  .lp-cmp-stage .lp-cmp-read {
+    width: auto;
+    flex: 1;
+    min-height: 0;
+    padding: 14px;
+    overflow: hidden;
+  }
+  .lp-cmp-stage .lp-cmp-read > * {
+    zoom: 0.9;
   }
 }
