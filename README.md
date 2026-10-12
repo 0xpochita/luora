@@ -148,7 +148,7 @@ node luora-export.mjs [--mt …] [--mc …] [--chain <key> | --forks all]
 | Chains | Six EVM testnets through public read-only RPCs, overridable per chain |
 | AI | Claude through the user's own Claude Code, Ollama / LM Studio, Anthropic, OpenAI, OpenRouter |
 | AI tooling | MCP server over stdio (JSON-RPC 2.0) |
-| Tests | Node built-in test runner (7 exporter test files), 17 `*.check.ts` self-checks in the app, Foundry unit, fork and invariant tests |
+| Tests | Node built-in test runner (8 exporter test files), 17 `*.check.ts` self-checks in the app, Foundry unit, fork and invariant tests |
 | Lint / Format | Biome |
 | CI / Deploy | GitHub Actions (lint, typecheck, build, forge test, export smoke test), Vercel |
 | Built with | Claude Code, Orca worktrees; videos with Remotion and ElevenLabs |
@@ -157,7 +157,7 @@ node luora-export.mjs [--mt …] [--mc …] [--chain <key> | --forks all]
 
 ## Foundry Integration
 
-Foundry is where the data comes from. Luora adds nothing to your project except six plain scripts, and reads only what `forge` already produces.
+Foundry is where the data comes from. Luora adds nothing to your project except seven plain scripts, and reads only what `forge` already produces.
 
 | Component | File | Description |
 |---|---|---|
@@ -170,6 +170,7 @@ Foundry is where the data comes from. Luora adds nothing to your project except 
 | **Scenario runner** | [`luora-scenario.mjs`](foundry/luora-scenario.mjs) | Copies a test exported from Scenarios into `test/scenarios/` and runs just that file with `forge test --match-path` |
 | **Protocol maps** | [`luora-protocol.mjs`](foundry/luora-protocol.mjs) | Joins the maps of a protocol's contracts into one graph for Explore and checks the written flows against the AST |
 | **Start test route** | [`route.ts`](apps/frontend/src/app/api/test-run/route.ts) | Runs the exporter from the app, streams its output as NDJSON, one run at a time, 15 minute timeout |
+| **Bridge** | [`luora-bridge.mjs`](foundry/luora-bridge.mjs) | Lets the hosted app run the exporter on your machine: listens on `127.0.0.1` only, answers only the Luora origins and the token in the link it prints, runs nothing but `node luora-export.mjs` with validated test and fork names, same NDJSON stream as the route |
 
 ### Foundry surface in use
 
@@ -289,7 +290,20 @@ Only one run at a time is allowed, with a 15 minute limit. The local routes (`/a
 - [Foundry](https://getfoundry.sh) (`forge` on PATH)
 - Optional: Slither and Aderyn for findings, Claude Code or a local model for Ask AI
 
-### App Setup
+### Use the hosted app (no clone)
+
+Open **[luorasec.xyz/trace](https://www.luorasec.xyz/trace)** and follow its Start page. In your Foundry project:
+
+```bash
+cd path/to/your-project
+curl -fsSLO -w "saved %{filename_effective}\n" "https://www.luorasec.xyz/exporter/luora-{export,lib,atlas,findings,coverage,chains,bridge}.mjs"
+node luora-export.mjs        # writes luora-data.json: drop it on the page
+node luora-bridge.mjs        # optional: prints a link that opens your project live
+```
+
+With the bridge running, the hosted app shows **Start test**, **Test all** and **Reload trace**, and they run `forge` on your computer; your code is never uploaded. The first time, Chrome, Brave or Edge ask to let the site reach your computer or local network: allow it. Safari does not allow it, so use another browser for the bridge. Without the bridge, everything else works from a dropped `luora-data.json`.
+
+### App Setup (run Luora locally)
 
 ```bash
 # Clone the repository
@@ -307,11 +321,11 @@ With nothing loaded the app opens on its **Start here** page: the steps below, a
 
 ### Export a run from your Foundry project
 
-In your project root (next to `foundry.toml`), fetch the exporter from the running app (six plain Node scripts, the same version the app reads) and run it:
+In your project root (next to `foundry.toml`), fetch the exporter from the running app (seven plain Node scripts, the same version the app reads) and run it:
 
 ```bash
 cd path/to/your-project
-curl -fsSLO -w "saved %{filename_effective}\n" "http://localhost:3000/exporter/luora-{export,lib,atlas,findings,coverage,chains}.mjs"
+curl -fsSLO -w "saved %{filename_effective}\n" "http://localhost:3000/exporter/luora-{export,lib,atlas,findings,coverage,chains,bridge}.mjs"
 node luora-export.mjs
 ```
 

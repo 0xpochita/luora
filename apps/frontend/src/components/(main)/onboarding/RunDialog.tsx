@@ -182,7 +182,7 @@ function Export() {
         <Step
           n={2}
           title="Get the exporter from this app"
-          note="Five plain Node scripts, downloaded from the app you are using, so they match it. No clone, no install."
+          note="Seven plain Node scripts, downloaded from the app you are using, so they match it. No clone, no install."
         >
           <CopyLine text={exporterCommand(origin)} />
         </Step>
@@ -225,6 +225,14 @@ function Load({ onLoaded }: { onLoaded: () => void }) {
       </Lead>
       <div className="flex flex-col gap-2 px-2">
         <DropZone onLoaded={onLoaded} />
+        {!LOCAL_APP && (
+          <p className="text-[12.5px] text-dim leading-normal">
+            Or link it live: run{" "}
+            <code className="font-mono">node luora-bridge.mjs</code> in the
+            project and open the link it prints. Start test, Test all and Reload
+            trace then run forge on your computer.
+          </p>
+        )}
         {LOCAL_APP && (
           <p className="text-[12.5px] text-dim leading-normal">
             Or keep it live: start the app with{" "}
@@ -312,7 +320,7 @@ function Look() {
 
 /** The six exporter scripts, fetched from this running app into the current folder. */
 export const exporterCommand = (origin: string) =>
-  `curl -fsSLO -w "saved %{filename_effective}\\n" "${origin}/exporter/luora-{export,lib,atlas,findings,coverage,chains}.mjs"`;
+  `curl -fsSLO -w "saved %{filename_effective}\\n" "${origin}/exporter/luora-{export,lib,atlas,findings,coverage,chains,bridge}.mjs"`;
 
 /** This app's origin once mounted (the server render assumes the default dev port). */
 export function useAppOrigin() {

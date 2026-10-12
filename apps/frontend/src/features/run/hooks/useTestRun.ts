@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { TestResult } from "../../trace/types";
+import { bridgeFetch } from "../utils/bridge";
 import { parseRun, type RunFile } from "../utils/parse-run";
 import {
   applyProgress,
@@ -12,6 +13,7 @@ import {
   type RunSummary,
   summarize,
 } from "../utils/test-run";
+import { useRun } from "./useRun";
 
 export type RunLine = { log: string; warn?: boolean; at: number };
 export type TestRunState = {
@@ -49,7 +51,8 @@ const IDLE: TestRunState = {
 };
 
 /**
- * Start test: POST /api/test-run, read its NDJSON as it comes (the exporter's own lines), then hand
+ * Start test: POST /api/test-run (a local Luora) or the linked bridge's /run (the hosted one, the
+ * same stream from luora-bridge.mjs on the auditor's machine), read its NDJSON as it comes (the exporter's own lines), then hand
  * the fresh luora-data.json to `onData` and keep forge's verdict for the sidebar. Held above the
  * trace (TraceWorkspace) so loading the new run, which remounts the trace, keeps the log.
  */
@@ -61,8 +64,11 @@ export function useTestRun(onData: (data: RunFile) => void) {
   const [chosen, setChosen] = useState<RunScope>([]);
   const ctl = useRef<AbortController | null>(null);
   const take = useRef(onData);
+  const { bridge } = useRun();
+  const via = useRef(bridge);
   useEffect(() => {
     take.current = onData;
+    via.current = bridge;
   });
   // leaving the page stops the run (the route ends the exporter and its forge processes)
   useEffect(() => () => ctl.current?.abort(), []);
@@ -81,13 +87,17 @@ export function useTestRun(onData: (data: RunFile) => void) {
     setOpen(true);
     const fail = (error: string) =>
       setState((s) => ({ ...s, phase: "failed", error, ended: Date.now() }));
+    const b = via.current;
     try {
-      const res = await fetch("/api/test-run", {
+      const init = {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(scope ? { fork, tests: scope } : { fork }),
         signal: c.signal,
-      });
+      };
+      const res = b
+        ? await bridgeFetch(b, "/run", init)
+        : await fetch("/api/test-run", init);
       if (!res.ok || !res.body) {
         const j = await res.json().catch(() => null);
         return fail(
@@ -147,7 +157,13 @@ export function useTestRun(onData: (data: RunFile) => void) {
       }
       fail("The test run stopped before it finished.");
     } catch {
-      fail(c.signal.aborted ? "Stopped." : "Lost the connection to the app.");
+      fail(
+        c.signal.aborted
+          ? "Stopped."
+          : b
+            ? "Lost the connection to the bridge. Is node luora-bridge.mjs still running?"
+            : "Lost the connection to the app.",
+      );
     }
   }, []);
 

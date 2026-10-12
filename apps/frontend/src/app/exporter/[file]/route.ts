@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-/** The exporter scripts this app reads the output of, and the MCP server (foundry/), nothing else. */
+/** The exporter scripts this app reads the output of, the MCP server and the bridge (foundry/), nothing else. */
 const FILES = new Set([
   "luora-export.mjs",
   "luora-lib.mjs",
@@ -10,11 +10,12 @@ const FILES = new Set([
   "luora-coverage.mjs",
   "luora-chains.mjs",
   "luora-mcp.mjs",
+  "luora-bridge.mjs",
 ]);
 
 /**
  * Serves the exporter straight from the running app, so an auditor needs no clone:
- * `curl -fsSLO -w "saved %{filename_effective}\n" "<app>/exporter/luora-{export,lib,atlas,findings,coverage,chains}.mjs"` in their Foundry
+ * `curl -fsSLO -w "saved %{filename_effective}\n" "<app>/exporter/luora-{export,lib,atlas,findings,coverage,chains,bridge}.mjs"` in their Foundry
  * project gets exactly the version this app reads. Allow-listed names only.
  * ponytail: reads the repo's foundry/ next to the app, so it serves a local / repo checkout only;
  * a hosted build without foundry/ answers 404. Copy the six scripts into public/ at build time if

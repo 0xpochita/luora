@@ -23,7 +23,7 @@ const agentPrompt = (
 
 1. Check that \`forge --version\` and \`node --version\` (Node 20 or newer) work. If Foundry is missing, ask me first, then install it with \`curl -L https://foundry.paradigm.xyz | bash\` and \`foundryup\`.
 2. In the project root (the folder with foundry.toml), download the Luora exporter from the Luora app:
-   curl -fsSLO -w "saved %{filename_effective}\\n" "${origin}/exporter/luora-{export,lib,atlas,findings,coverage,chains}.mjs"
+   curl -fsSLO -w "saved %{filename_effective}\\n" "${origin}/exporter/luora-{export,lib,atlas,findings,coverage,chains,bridge}.mjs"
 3. Run \`node luora-export.mjs\` there. It runs \`forge test\` with traces and writes luora-data.json. If Slither or Aderyn JSON reports exist in reports/, it merges them. If the build or a test fails, show me the error. Only if I ask for forks: \`node luora-export.mjs --forks all\` runs the same tests on copies of six EVM testnets (read-only public RPCs, no transaction is sent).
 4. Tell me the absolute path of luora-data.json and the summary lines the exporter printed.
 ${
@@ -31,7 +31,9 @@ ${
     ? `
 Optional, only if I say yes: download ${origin}/exporter/luora-mcp.mjs and register it as an MCP server pointed at that luora-data.json (for Claude Code: \`claude mcp add luora -- node <abs path>/luora-mcp.mjs --data=<abs path>/luora-data.json\`), so you can read the run and propose test scenarios in the Luora Lab.
 `
-    : ""
+    : `
+Optional, only if I ask to run tests from the browser: in the project root, start \`node luora-bridge.mjs\` (it keeps running; leave it running) and give me the link it prints.
+`
 }
 Only read files and run these commands. Do not edit my contracts, tests or foundry.toml.`;
 
@@ -113,7 +115,7 @@ export function StartHere() {
               <Step
                 n={2}
                 title="Get the exporter into your Foundry project"
-                note="Run it in the folder with foundry.toml. It downloads six plain Node scripts from this app, so they match the version you are using. No clone, no install."
+                note="Run it in the folder with foundry.toml. It downloads seven plain Node scripts from this app, so they match the version you are using. No clone, no install."
               >
                 <CopyLine text="cd path/to/your-project" />
                 <CopyLine text={exporterCommand(origin)} />
@@ -156,6 +158,22 @@ export function StartHere() {
           >
             <DropZone onLoaded={() => setPane("look")} />
           </Step>
+          {/* the hosted site: Start test and friends run on the auditor's machine, through the
+              bridge (foundry/luora-bridge.mjs, downloaded with the exporter) */}
+          {!LOCAL_APP && (
+            <Step
+              n={how === "agent" ? 3 : 5}
+              title="Optional: run tests from this page"
+              note="Keep that terminal open while you work. The first time, Chrome, Brave or Edge ask to let this site reach your computer or local network: allow it. Safari does not allow it, so use another browser for this step."
+            >
+              <p className="text-[12.5px] text-body leading-normal">
+                In the same folder, start the bridge and open the link it
+                prints. Your project opens here, and Start test, Test all and
+                Reload trace run forge on your computer. Nothing is uploaded.
+              </p>
+              <CopyLine text="node luora-bridge.mjs" />
+            </Step>
+          )}
         </motion.ol>
 
         <p className="mt-4 text-[12.5px] text-dim">

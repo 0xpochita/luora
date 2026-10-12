@@ -3,7 +3,7 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { ChainLogo, PH, PhIcon, Tabs } from "@/components/ui";
 import { LOCAL_APP } from "@/config/site";
-import type { RunLine, TestRun } from "@/features/run";
+import { type RunLine, type TestRun, useRun } from "@/features/run";
 import {
   clock,
   exportArgs,
@@ -119,6 +119,7 @@ export function TestRunPanel({
    *  chain's run is on screen */
   end?: ReactNode;
 }) {
+  const { bridge } = useRun();
   const running = run.phase === "running";
   const elapsed = useElapsed(run.started, run.ended);
   const target = targetOf(fork, forks);
@@ -128,9 +129,10 @@ export function TestRunPanel({
   return (
     // the run's controls wrap within the left; the Fork picker keeps the top right
     <div className="mt-1.5 mb-5 flex items-start gap-4">
-      {/* Start test runs forge on this machine: local Luora only (the Fork picker stays) */}
+      {/* Start test runs forge on the auditor's machine: a local Luora, or the hosted one through
+          the bridge (the Fork picker stays either way) */}
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-2">
-        {LOCAL_APP &&
+        {(LOCAL_APP || bridge) &&
           (running ? (
             <div className="hdr-pill go split flex-none">
               <button

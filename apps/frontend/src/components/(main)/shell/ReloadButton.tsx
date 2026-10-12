@@ -3,18 +3,21 @@
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { PH, PhIcon } from "@/components/ui";
+import { useRun } from "@/features/run";
 
 /**
- * Re-reads luora-data.json on the server after a fresh `node luora-export.mjs`. Same capsule as
+ * Re-reads luora-data.json after a fresh `node luora-export.mjs`: on the server (a local Luora),
+ * or from the project through the bridge (the hosted one). Same capsule as
  * the header's controls (header.css .hdr-pill), full width, the arrow turning while it reloads.
  */
 export function ReloadButton() {
   const router = useRouter();
   const [pending, start] = useTransition();
+  const { bridge, reloadBridge } = useRun();
   return (
     <button
       type="button"
-      onClick={() => start(() => router.refresh())}
+      onClick={() => (bridge ? reloadBridge() : start(() => router.refresh()))}
       className="hdr-pill lit has-kbd min-w-0 flex-1 justify-start"
       title="Re-read luora-data.json  ⌘R"
     >

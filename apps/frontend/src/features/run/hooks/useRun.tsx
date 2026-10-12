@@ -10,7 +10,13 @@ import {
   useState,
 } from "react";
 import type { RunOrigin } from "../../trace/types";
-import type { RunFile } from "../utils/parse-run";
+import {
+  BRIDGE_UNREACHABLE,
+  type Bridge,
+  bridgeFetch,
+  bridgeFrom,
+} from "../utils/bridge";
+import { parseRun, type RunFile } from "../utils/parse-run";
 
 /** A luora-data.json the auditor dropped into this tab. */
 export type LoadedRun = { data: RunFile; name: string; stamp: number };
@@ -30,12 +36,22 @@ type RunState = {
   /** the forked chain Trace and Atlas show ("" = the local run), remembered in this browser */
   fork: string;
   setFork: (key: string) => void;
+  /** the local bridge (luora-bridge.mjs) this tab is linked to: Start test and Reload trace go
+   *  through it on the hosted site */
+  bridge: Bridge | null;
+  /** why the bridge link could not connect, until a retry or a reset */
+  bridgeError: string | null;
+  /** read the bridge's luora-data.json again (connecting first when needed) */
+  reloadBridge: () => void;
+  /** forget the bridge link in this tab */
+  dropBridge: () => void;
 };
 
 const RunContext = createContext<RunState | null>(null);
 const ONBOARDED = "luora:onboarded";
 const SAMPLE = "luora:sample";
 const FORK = "luora:fork";
+const BRIDGE = "luora:bridge";
 
 /**
  * Holds a dropped run in memory for this tab. Nothing is uploaded or written to disk: a full
@@ -48,6 +64,10 @@ export function RunProvider({ children }: { children: ReactNode }) {
   const [pane, setPane] = useState<RunPane | null>(null);
   const [sample, setSampleState] = useState(false);
   const [fork, setForkState] = useState("");
+  const [bridge, setBridge] = useState<Bridge | null>(null);
+  const [bridgeError, setBridgeError] = useState<string | null>(null);
+  // bumped to (re)connect: a new link in the address bar, Retry, Reload trace
+  const [link, setLink] = useState(0);
   useEffect(() => {
     try {
       setSampleState(localStorage.getItem(SAMPLE) === "1");
@@ -67,6 +87,74 @@ export function RunProvider({ children }: { children: ReactNode }) {
       if (on) localStorage.setItem(SAMPLE, "1");
       else localStorage.removeItem(SAMPLE);
     } catch {}
+  }, []);
+
+  // the link the bridge printed (#bridge=<port>.<token>): kept for this tab only, taken out of the
+  // address bar so it is never shared or bookmarked by accident
+  useEffect(() => {
+    const take = () => {
+      const b = bridgeFrom(location.hash);
+      if (!b) return;
+      try {
+        sessionStorage.setItem(BRIDGE, location.hash.split("bridge=")[1]);
+      } catch {}
+      history.replaceState(null, "", location.pathname + location.search);
+      setLink((n) => n + 1);
+    };
+    take();
+    addEventListener("hashchange", take);
+    return () => removeEventListener("hashchange", take);
+  }, []);
+  // connect, then load the project's luora-data.json, as a drop would
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `link` is the (re)connect trigger
+  useEffect(() => {
+    let saved: string | null = null;
+    try {
+      saved = sessionStorage.getItem(BRIDGE);
+    } catch {}
+    const b = bridgeFrom(saved);
+    if (!b) return;
+    let live = true;
+    setBridgeError(null);
+    (async () => {
+      const health = await bridgeFetch(b, "/health");
+      const h = await health.json();
+      if (!health.ok)
+        throw new Error(h.error ?? "The bridge refused this page.");
+      if (!live) return;
+      setBridge({ ...b, project: h.project });
+      const data = await bridgeFetch(b, "/data");
+      if (!data.ok) return; // nothing exported yet: Start test makes it
+      const r = parseRun(await data.text());
+      if (!r.ok) throw new Error(`luora-data.json: ${r.error}`);
+      if (live)
+        setRun({
+          data: r.data,
+          name: `${h.project}/luora-data.json`,
+          stamp: Date.now(),
+        });
+    })().catch((e: unknown) => {
+      if (!live) return;
+      setBridge(null);
+      setBridgeError(
+        e instanceof TypeError
+          ? BRIDGE_UNREACHABLE
+          : e instanceof Error
+            ? e.message
+            : String(e),
+      );
+    });
+    return () => {
+      live = false;
+    };
+  }, [link]);
+  const reloadBridge = useCallback(() => setLink((n) => n + 1), []);
+  const dropBridge = useCallback(() => {
+    try {
+      sessionStorage.removeItem(BRIDGE);
+    } catch {}
+    setBridge(null);
+    setBridgeError(null);
   }, []);
 
   // the first session opens once per browser, on the first page that shows a run (sample, the
@@ -93,8 +181,24 @@ export function RunProvider({ children }: { children: ReactNode }) {
       setSample,
       fork,
       setFork,
+      bridge,
+      bridgeError,
+      reloadBridge,
+      dropBridge,
     }),
-    [run, origin, pane, sample, setSample, fork, setFork],
+    [
+      run,
+      origin,
+      pane,
+      sample,
+      setSample,
+      fork,
+      setFork,
+      bridge,
+      bridgeError,
+      reloadBridge,
+      dropBridge,
+    ],
   );
   return <RunContext value={value}>{children}</RunContext>;
 }

@@ -166,4 +166,44 @@ assert.deepEqual(
   ["local", "base-sepolia"],
 );
 assert.equal(applyProgress(g, {} as never), g);
+
+// the bridge (foundry/luora-bridge.mjs) takes exactly what the app's own Start test takes
+const bridgeArgs = (
+  (await import(
+    new URL("../../../../../../foundry/luora-bridge.mjs", import.meta.url).href
+  )) as { exportArgs: (b: unknown) => string[] | string }
+).exportArgs;
+for (const body of [
+  {},
+  { fork: "base-sepolia" },
+  { fork: "mainnet" },
+  { tests: [{ suite: "VaultTest", name: "test_deposit()" }] },
+  {
+    tests: [
+      { suite: "A", name: "test_$x(uint256)" },
+      { suite: "B", name: "invariant_y" },
+    ],
+  },
+  { tests: [{ suite: "../x", name: "test_x" }] },
+  { tests: [] },
+  null,
+])
+  assert.deepEqual(bridgeArgs(body), exportArgs(body));
+
+// the link the bridge prints, and what the tab keeps of it
+const { bridgeFrom } = await import("./bridge.ts");
+const tok = "a".repeat(32);
+assert.deepEqual(bridgeFrom(`#bridge=7457.${tok}`), {
+  url: "http://127.0.0.1:7457",
+  token: tok,
+});
+assert.deepEqual(bridgeFrom(`7460.${tok}`), {
+  url: "http://127.0.0.1:7460",
+  token: tok,
+});
+assert.equal(bridgeFrom("#bridge=80.short"), null);
+assert.equal(bridgeFrom(`#bridge=99999.${tok}`), null);
+assert.equal(bridgeFrom(`#bridge=7457.${tok}/../evil`), null);
+assert.equal(bridgeFrom(""), null);
+
 console.log("test-run ok");
