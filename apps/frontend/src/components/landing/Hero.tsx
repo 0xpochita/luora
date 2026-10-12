@@ -37,6 +37,7 @@ type Delay = React.CSSProperties & { "--d"?: string; "--n"?: number };
 export function Nav({ active = "product" }: { active?: "product" | "docs" }) {
   // the landing's sections by anchor; from another page (Docs) they go back to the landing
   const home = active === "product" ? "" : "/";
+  const docs = active === "docs";
   const items = [
     { label: "Product", href: `${home}#product`, on: active === "product" },
     { label: "How it works", href: `${home}#how-it-works` },
@@ -48,7 +49,10 @@ export function Nav({ active = "product" }: { active?: "product" | "docs" }) {
       <Link href="/" className="flex items-center" aria-label="Luora">
         <LogoText height={26} />
       </Link>
-      <ul className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-0.5 rounded-full border border-white/[.08] bg-gradient-to-b from-white/[.07] to-white/[.02] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,.08),0_10px_30px_rgba(0,0,0,.45)] md:flex">
+      {/* the landing's sections; the docs keep a quiet bar (onorca.dev/docs) without them */}
+      <ul
+        className={`absolute left-1/2 -translate-x-1/2 items-center gap-0.5 rounded-full border border-white/[.08] bg-gradient-to-b from-white/[.07] to-white/[.02] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,.08),0_10px_30px_rgba(0,0,0,.45)] ${docs ? "hidden" : "hidden md:flex"}`}
+      >
         {items.map((i) => (
           <li key={i.label}>
             <a
@@ -67,19 +71,31 @@ export function Nav({ active = "product" }: { active?: "product" | "docs" }) {
         ))}
       </ul>
       <div className="flex items-center gap-2">
-        {/* on the docs, where to follow the project sits by the call to action (onorca.dev/docs:
-            the social marks left of Download) */}
-        {active === "docs" && (
-          <a
-            href="https://x.com/luorasec"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Luora on X"
-            title="Follow @luorasec on X"
-            className="grid size-9 place-items-center rounded-full border border-white/[.08] text-muted transition-colors hover:border-white/[.16] hover:text-fg"
-          >
-            <XMark className="size-3.5" />
-          </a>
+        {/* on the docs, where to follow the project sits by the call to action as bare marks
+            (onorca.dev/docs: Discord, X and GitHub left of Download, no fill) */}
+        {docs && (
+          <span className="mr-2 flex items-center gap-1">
+            <a
+              href="https://x.com/luorasec"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Luora on X"
+              title="Follow @luorasec on X"
+              className="grid size-8 place-items-center text-muted transition-colors hover:text-fg"
+            >
+              <XMark className="size-[15px]" />
+            </a>
+            <a
+              href={GITHUB}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Luora on GitHub"
+              title="Luora on GitHub"
+              className="grid size-8 place-items-center text-muted transition-colors hover:text-fg"
+            >
+              <GitHubMark className="size-[17px]" />
+            </a>
+          </span>
         )}
         {/* the app header's Connect AI capsule (header.css .hdr-pill.lit): the Luora starburst
             where it has its sparkle, a caret pointing on */}
