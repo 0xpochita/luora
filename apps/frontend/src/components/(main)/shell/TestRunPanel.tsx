@@ -2,6 +2,7 @@
 
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { ChainLogo, PH, PhIcon, Tabs } from "@/components/ui";
+import { LOCAL_APP } from "@/config/site";
 import type { RunLine, TestRun } from "@/features/run";
 import {
   clock,
@@ -127,57 +128,59 @@ export function TestRunPanel({
   return (
     // the run's controls wrap within the left; the Fork picker keeps the top right
     <div className="mt-1.5 mb-5 flex items-start gap-4">
+      {/* Start test runs forge on this machine: local Luora only (the Fork picker stays) */}
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-2">
-        {running ? (
-          <div className="hdr-pill go split flex-none">
-            <button
-              type="button"
-              className="lead"
-              onClick={() => run.setOpen(true)}
-              title="Open the log"
-            >
-              <Spinner />
-              Running {scopeLabel(run.scope)}
-              <span className="ml-auto font-mono text-[12px] text-dim tabular-nums">
-                {clock(elapsed)}
-              </span>
-            </button>
-            <button
-              type="button"
-              className="stop"
-              onClick={run.stop}
-              title="Stop the run: ends the exporter and forge"
-            >
-              <PhIcon d={PH.stop} className="size-[13px]" />
-              Stop
-            </button>
-          </div>
-        ) : (
-          // GitHub Actions' re-run split button: the one on screen, or choose
-          <div className="hdr-pill go split flex-none">
-            <button
-              type="button"
-              className="lead"
-              onClick={() => run.start(target, one)}
-              title={
-                current
-                  ? `Only ${current.suite}.${current.name}: ${commandOf(target, one)}`
-                  : commandOf(target)
-              }
-            >
-              <PhIcon d={PH.play} className="size-[15px] text-green" />
-              Start test
-            </button>
-            <button
-              type="button"
-              onClick={() => setChoosing(true)}
-              title="Choose the tests to run"
-            >
-              <PhIcon d={PH.list} className="size-[14px]" />
-              Choose
-            </button>
-          </div>
-        )}
+        {LOCAL_APP &&
+          (running ? (
+            <div className="hdr-pill go split flex-none">
+              <button
+                type="button"
+                className="lead"
+                onClick={() => run.setOpen(true)}
+                title="Open the log"
+              >
+                <Spinner />
+                Running {scopeLabel(run.scope)}
+                <span className="ml-auto font-mono text-[12px] text-dim tabular-nums">
+                  {clock(elapsed)}
+                </span>
+              </button>
+              <button
+                type="button"
+                className="stop"
+                onClick={run.stop}
+                title="Stop the run: ends the exporter and forge"
+              >
+                <PhIcon d={PH.stop} className="size-[13px]" />
+                Stop
+              </button>
+            </div>
+          ) : (
+            // GitHub Actions' re-run split button: the one on screen, or choose
+            <div className="hdr-pill go split flex-none">
+              <button
+                type="button"
+                className="lead"
+                onClick={() => run.start(target, one)}
+                title={
+                  current
+                    ? `Only ${current.suite}.${current.name}: ${commandOf(target, one)}`
+                    : commandOf(target)
+                }
+              >
+                <PhIcon d={PH.play} className="size-[15px] text-green" />
+                Start test
+              </button>
+              <button
+                type="button"
+                onClick={() => setChoosing(true)}
+                title="Choose the tests to run"
+              >
+                <PhIcon d={PH.list} className="size-[14px]" />
+                Choose
+              </button>
+            </div>
+          ))}
         {run.phase !== "idle" && (
           // the verdict stays here once the pop-up is closed, as one capsule that reopens it
           <Status run={run} elapsed={elapsed} />

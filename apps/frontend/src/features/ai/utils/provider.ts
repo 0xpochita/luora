@@ -76,11 +76,14 @@ export function isHostedUrl(url: string | undefined): boolean {
 }
 
 /**
- * "Your Claude" runs the Claude Code on the machine serving Luora, so only a local Luora offers it;
- * a deploy with NEXT_PUBLIC_URL set (https://www.luorasec.xyz) hides it (app/api/claude answers
- * 404 there anyway).
+ * This Luora runs on the auditor's own machine (NEXT_PUBLIC_URL empty or local). Only then can it
+ * run forge (Start test), re-read luora-data.json from disk (Reload trace, LUORA_DATA_PATH), pick
+ * up MCP-proposed scenarios or run "Your Claude"; the hosted site (https://www.luorasec.xyz) hides
+ * all of them, its API routes answering 404 anyway.
  */
-export const CLAUDE_HERE = !isHostedUrl(process.env.NEXT_PUBLIC_URL);
+export const LOCAL_APP = !isHostedUrl(process.env.NEXT_PUBLIC_URL);
+/** "Your Claude" runs the Claude Code on the machine serving Luora */
+export const CLAUDE_HERE = LOCAL_APP;
 
 export const NO_AI: AiConfig = {
   kind: "none",

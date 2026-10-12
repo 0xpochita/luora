@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import { Button, ENTER, IconButton } from "@/components/ui";
+import { LOCAL_APP } from "@/config/site";
 import { parseRun, useRun } from "@/features/run";
 
 const REPO_WEB = "https://github.com/0xpochita/luora/blob/main";
@@ -224,13 +225,15 @@ function Load({ onLoaded }: { onLoaded: () => void }) {
       </Lead>
       <div className="flex flex-col gap-2 px-2">
         <DropZone onLoaded={onLoaded} />
-        <p className="text-[12.5px] text-dim leading-normal">
-          Or keep it live: start the app with{" "}
-          <code className="font-mono">
-            LUORA_DATA_PATH=/path/to/luora-data.json
-          </code>{" "}
-          and reload after each export.
-        </p>
+        {LOCAL_APP && (
+          <p className="text-[12.5px] text-dim leading-normal">
+            Or keep it live: start the app with{" "}
+            <code className="font-mono">
+              LUORA_DATA_PATH=/path/to/luora-data.json
+            </code>{" "}
+            and reload after each export.
+          </p>
+        )}
       </div>
     </>
   );
@@ -288,14 +291,20 @@ function Look() {
         >
           how
         </a>
-        ), or let your AI client propose scenarios over MCP (
-        <a
-          className="text-muted underline-offset-2 hover:underline"
-          href={`${REPO_WEB}/docs/mcp.md`}
-        >
-          how
-        </a>
-        ).
+        )
+        {LOCAL_APP && (
+          <>
+            , or let your AI client propose scenarios over MCP (
+            <a
+              className="text-muted underline-offset-2 hover:underline"
+              href={`${REPO_WEB}/docs/mcp.md`}
+            >
+              how
+            </a>
+            )
+          </>
+        )}
+        .
       </p>
     </>
   );

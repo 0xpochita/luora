@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import { useState } from "react";
 import { Button, ENTER, PH, PhIcon, Tabs } from "@/components/ui";
+import { LOCAL_APP } from "@/config/site";
 import { useRun } from "@/features/run";
 import {
   CopyLine,
@@ -21,13 +22,17 @@ const agentPrompt = (
 ) => `Set up Luora for this Foundry project. Luora is a local, read-only viewer for Foundry test runs (traces, a contract graph, findings).
 
 1. Check that \`forge --version\` and \`node --version\` (Node 20 or newer) work. If Foundry is missing, ask me first, then install it with \`curl -L https://foundry.paradigm.xyz | bash\` and \`foundryup\`.
-2. In the project root (the folder with foundry.toml), download the Luora exporter from my running Luora app:
+2. In the project root (the folder with foundry.toml), download the Luora exporter from the Luora app:
    curl -fsSLO -w "saved %{filename_effective}\\n" "${origin}/exporter/luora-{export,lib,atlas,findings,coverage,chains}.mjs"
 3. Run \`node luora-export.mjs\` there. It runs \`forge test\` with traces and writes luora-data.json. If Slither or Aderyn JSON reports exist in reports/, it merges them. If the build or a test fails, show me the error. Only if I ask for forks: \`node luora-export.mjs --forks all\` runs the same tests on copies of six EVM testnets (read-only public RPCs, no transaction is sent).
 4. Tell me the absolute path of luora-data.json and the summary lines the exporter printed.
-
+${
+  LOCAL_APP
+    ? `
 Optional, only if I say yes: download ${origin}/exporter/luora-mcp.mjs and register it as an MCP server pointed at that luora-data.json (for Claude Code: \`claude mcp add luora -- node <abs path>/luora-mcp.mjs --data=<abs path>/luora-data.json\`), so you can read the run and propose test scenarios in the Luora Lab.
-
+`
+    : ""
+}
 Only read files and run these commands. Do not edit my contracts, tests or foundry.toml.`;
 
 /**
@@ -108,7 +113,7 @@ export function StartHere() {
               <Step
                 n={2}
                 title="Get the exporter into your Foundry project"
-                note="Run it in the folder with foundry.toml. It downloads five plain Node scripts from this app, so they match the version you are using. No clone, no install."
+                note="Run it in the folder with foundry.toml. It downloads six plain Node scripts from this app, so they match the version you are using. No clone, no install."
               >
                 <CopyLine text="cd path/to/your-project" />
                 <CopyLine text={exporterCommand(origin)} />
@@ -138,13 +143,15 @@ export function StartHere() {
             n={how === "agent" ? 2 : 4}
             title="Load it"
             note={
-              <>
-                Or keep it live: restart the app with{" "}
-                <code className="font-mono">
-                  LUORA_DATA_PATH=/abs/path/to/luora-data.json pnpm dev
-                </code>{" "}
-                and reload after each export.
-              </>
+              LOCAL_APP ? (
+                <>
+                  Or keep it live: restart the app with{" "}
+                  <code className="font-mono">
+                    LUORA_DATA_PATH=/abs/path/to/luora-data.json pnpm dev
+                  </code>{" "}
+                  and reload after each export.
+                </>
+              ) : undefined
             }
           >
             <DropZone onLoaded={() => setPane("look")} />
