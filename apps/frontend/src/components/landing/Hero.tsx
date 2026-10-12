@@ -175,100 +175,93 @@ export async function Hero() {
         data-lp="hero-body"
         className="relative z-10 mx-auto min-h-[calc(100svh-76px)] max-w-[1240px] px-4 pt-7 md:px-6 md:pt-9"
       >
-        {/* HK: title + subtitle + chips left, the same four rows mirrored right */}
-        <div className="relative z-10 grid gap-5 md:grid-cols-2 md:gap-10">
-          <div className="lh-up" style={{ "--d": "0.1s" } as Delay}>
-            <h1 className="font-medium text-[clamp(22px,2.1vw,30px)] text-fg leading-tight tracking-[-0.02em]">
-              See what your contract actually does.
-            </h1>
-            <p className="mt-1 text-[clamp(16px,1.5vw,20px)] text-dim leading-tight">
-              Contract graphs and scenario tests
-            </p>
-            {/* where Luora is being built (the Colosseum hackathon, its mark in the chip), and the
-                chains whose testnets it forks (luora-export.mjs --forks), their marks in a row */}
-            <div className="mt-5 flex flex-col items-start gap-3">
-              <a
-                href="https://colosseum.com"
-                {...OUT}
-                className="inline-flex h-9 items-center gap-2.5 rounded-[8px] border border-white/[.08] bg-[#131315] pr-3.5 pl-1.5 font-mono text-[13.5px] text-muted transition-colors hover:border-white/[.16]"
-              >
-                <Image
-                  src="/logos/colloseum.jpg"
-                  alt=""
-                  width={24}
-                  height={24}
-                  className="size-6 rounded-[5px]"
-                />
-                Built in <span className="text-fg">Colosseum</span>
-              </a>
-              <p className="flex items-center gap-3 font-mono text-[13px] text-dim">
-                Powered by
-                <span className="flex items-center gap-2">
-                  {CHAINS.map(([family, name, href]) => (
-                    <a
-                      key={family}
-                      href={href}
-                      {...OUT}
-                      title={name}
-                      aria-label={name}
-                      className="transition-transform hover:-translate-y-0.5"
-                    >
-                      <ChainLogo family={family} className="size-6" />
-                    </a>
-                  ))}
-                </span>
-              </p>
-            </div>
+        {/* One reading column, left (HB pin/60376451250059963, Instafleet: an eyebrow over the
+            title and its muted line, the right side left empty for the product below). The two
+            provenance chips ride above the title as its eyebrow (HA2 pin/470626229833453751, Atom
+            AI; HC pin/986358755907499973, Basecom: one pill over the headline); the chains and
+            the tools, both "what Luora stands on", share one strip under it, split by a hairline
+            (HC: the logos as one strip), instead of two text blocks pulling left and right. */}
+        <div className="lh-up relative z-10" style={{ "--d": "0.1s" } as Delay}>
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href="https://colosseum.com"
+              {...OUT}
+              className="inline-flex h-9 items-center gap-2.5 rounded-[8px] border border-white/[.08] bg-[#131315] pr-3.5 pl-1.5 font-mono text-[13.5px] text-muted transition-colors hover:border-white/[.16]"
+            >
+              <Image
+                src="/logos/colloseum.jpg"
+                alt=""
+                width={24}
+                height={24}
+                className="size-6 rounded-[5px]"
+              />
+              Built in <span className="text-fg">Colosseum</span>
+            </a>
+            <a
+              href={GITHUB}
+              {...OUT}
+              className="inline-flex h-9 items-center gap-2.5 rounded-[8px] border border-white/[.08] bg-[#131315] pr-3.5 pl-1.5 font-mono text-[13.5px] text-muted transition-colors hover:border-white/[.16]"
+            >
+              <span className="grid size-6 place-items-center rounded-[5px] bg-white text-black">
+                <GitHubMark className="size-4" />
+              </span>
+              Open source on <span className="text-fg">GitHub</span>
+            </a>
           </div>
-          {/* the right side mirrors the left block for block: title, grey subtitle, a chip (the
-              repo, MIT), then a row of marks (the tools whose output Luora reads: forge runs,
-              Solidity source, the analyzers' reports, on white tiles as they ship them) */}
-          <div
-            className="lh-up md:justify-self-end md:text-right"
-            style={{ "--d": "0.25s" } as Delay}
-          >
-            <h2 className="font-medium text-[clamp(22px,2.1vw,30px)] text-fg leading-tight tracking-[-0.02em]">
-              Reads what your tools already print.
-            </h2>
-            <p className="mt-1 text-[clamp(16px,1.5vw,20px)] text-dim leading-tight">
-              Forge traces, Slither and Aderyn reports
+          <h1 className="mt-5 font-medium text-[clamp(22px,2.1vw,30px)] text-fg leading-tight tracking-[-0.02em]">
+            See what your contract actually does.
+          </h1>
+          <p className="mt-1 text-[clamp(16px,1.5vw,20px)] text-dim leading-tight">
+            Contract graphs and scenario tests
+          </p>
+          {/* the chains whose testnets the exporter forks (luora-export.mjs --forks), then the
+              tools whose output Luora reads, on white tiles as they ship them */}
+          <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-3 font-mono text-[13px] text-dim">
+            <p className="flex items-center gap-3">
+              Powered by
+              <span className="flex items-center gap-2">
+                {CHAINS.map(([family, name, href]) => (
+                  <a
+                    key={family}
+                    href={href}
+                    {...OUT}
+                    title={name}
+                    aria-label={name}
+                    className="transition-transform hover:-translate-y-0.5"
+                  >
+                    <ChainLogo family={family} className="size-6" />
+                  </a>
+                ))}
+              </span>
             </p>
-            <div className="mt-5 flex flex-col items-start gap-3 md:items-end">
-              <a
-                href={GITHUB}
-                {...OUT}
-                className="inline-flex h-9 items-center gap-2.5 rounded-[8px] border border-white/[.08] bg-[#131315] pr-3.5 pl-1.5 font-mono text-[13.5px] text-muted transition-colors hover:border-white/[.16]"
-              >
-                <span className="grid size-6 place-items-center rounded-[5px] bg-white text-black">
-                  <GitHubMark className="size-4" />
-                </span>
-                Open source on <span className="text-fg">GitHub</span>
-              </a>
-              <p className="flex items-center gap-3 font-mono text-[13px] text-dim">
-                Works with
-                <span className="flex items-center gap-2">
-                  {TOOLS.map(([name, href, mark]) => (
-                    <a
-                      key={name}
-                      href={href}
-                      {...OUT}
-                      title={name}
-                      aria-label={name}
-                      className="grid size-6 place-items-center rounded-[5px] bg-white p-[3px] ring-1 ring-white/15 transition-transform hover:-translate-y-0.5"
-                    >
-                      {mark}
-                    </a>
-                  ))}
-                </span>
-              </p>
-            </div>
+            <span
+              aria-hidden="true"
+              className="hidden h-5 w-px bg-white/[.12] sm:block"
+            />
+            <p className="flex items-center gap-3">
+              Works with
+              <span className="flex items-center gap-2">
+                {TOOLS.map(([name, href, mark]) => (
+                  <a
+                    key={name}
+                    href={href}
+                    {...OUT}
+                    title={name}
+                    aria-label={name}
+                    className="grid size-6 place-items-center rounded-[5px] bg-white p-[3px] ring-1 ring-white/15 transition-transform hover:-translate-y-0.5"
+                  >
+                    {mark}
+                  </a>
+                ))}
+              </span>
+            </p>
           </div>
         </div>
 
         {/* the Lab window, where HK had its chart; on phones it follows the stacked header in the
             flow (their height depends on the width), from md it sits under the two-column header */}
         <div
-          className="lh-up relative mt-9 h-[440px] md:absolute md:inset-x-6 md:top-[230px] md:bottom-0 md:mt-0 md:h-auto"
+          className="lh-up relative mt-9 h-[440px] md:absolute md:inset-x-6 md:top-[250px] md:bottom-0 md:mt-0 md:h-auto"
           style={{ "--d": "0.35s" } as Delay}
         >
           <HeroLab contract={contract} scenario={scenario} />
