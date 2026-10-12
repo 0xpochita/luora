@@ -13,7 +13,6 @@ import { Button, ENTER, IconButton } from "@/components/ui";
 import { LOCAL_APP } from "@/config/site";
 import { parseRun, useRun } from "@/features/run";
 
-const REPO_WEB = "https://github.com/0xpochita/luora/blob/main";
 const STEPS = ["Welcome", "Export your run", "Load it", "Where to look"];
 
 /**
@@ -295,7 +294,7 @@ function Look() {
         <span className="text-muted">AI</span> chip in the top bar (
         <a
           className="text-muted underline-offset-2 hover:underline"
-          href={`${REPO_WEB}/docs/ai-provider.md`}
+          href="/docs/ai"
         >
           how
         </a>
@@ -305,7 +304,7 @@ function Look() {
             , or let your AI client propose scenarios over MCP (
             <a
               className="text-muted underline-offset-2 hover:underline"
-              href={`${REPO_WEB}/docs/mcp.md`}
+              href="/docs/mcp"
             >
               how
             </a>

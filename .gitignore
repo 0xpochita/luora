@@ -8,4 +8,4 @@ node_modules/
 video/
 
 # Local writing (submission answers, builder updates, preview images); docs already tracked stay tracked
-docs/
+/docs/

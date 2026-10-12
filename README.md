@@ -10,6 +10,8 @@
 
 <p align="center">
   <a href="https://luorasec.xyz"><img src="https://img.shields.io/badge/WEBSITE-LUORASEC.XYZ-000000?style=flat-square&labelColor=555555" alt="Website" /></a>
+  <a href="https://www.luorasec.xyz/docs"><img src="https://img.shields.io/badge/DOCS-LUORASEC.XYZ%2FDOCS-000000?style=flat-square&labelColor=555555" alt="Docs" /></a>
+  <a href="https://x.com/luorasec"><img src="https://img.shields.io/badge/X-%40LUORASEC-000000?style=flat-square&labelColor=555555&logo=x&logoColor=white" alt="Luora on X" /></a>
   <a href="https://github.com/0xpochita/luora"><img src="https://img.shields.io/badge/SOURCE-GITHUB-000000?style=flat-square&labelColor=555555&logo=github&logoColor=white" alt="Source on GitHub" /></a>
   <a href="https://getfoundry.sh"><img src="https://img.shields.io/badge/BUILT%20FOR-FOUNDRY-E5602C?style=flat-square&labelColor=555555" alt="Built for Foundry" /></a>
   <img src="https://img.shields.io/badge/FORKS-6%20EVM%20TESTNETS-627EEA?style=flat-square&labelColor=555555" alt="Six EVM testnets" />
@@ -29,6 +31,20 @@ Luora is a visual workbench for **smart contract auditors and bug bounty hunters
 > - It is **defensive only**: scenarios test intended behaviour, and hack pages carry no exploit code
 
 <img width="1710" alt="Luora landing page" src=".github/assets/landing.jpg" />
+
+## Documentation
+
+The docs live at **[luorasec.xyz/docs](https://www.luorasec.xyz/docs)**, with short recordings of the app on the pages that show it:
+
+| Section | Pages |
+|---|---|
+| Start here | [What is Luora?](https://www.luorasec.xyz/docs) · [Quick start](https://www.luorasec.xyz/docs/quick-start) · [Your first audit session](https://www.luorasec.xyz/docs/first-session) |
+| Using Luora | [Trace](https://www.luorasec.xyz/docs/trace) · [Atlas](https://www.luorasec.xyz/docs/atlas) · [Scenarios](https://www.luorasec.xyz/docs/scenarios) · [Findings & triage](https://www.luorasec.xyz/docs/findings) · [Explore](https://www.luorasec.xyz/docs/explore) · [Exploits](https://www.luorasec.xyz/docs/exploits) |
+| Running tests | [The exporter](https://www.luorasec.xyz/docs/exporter) · [Testnet forks](https://www.luorasec.xyz/docs/forks) · [Run tests from the browser](https://www.luorasec.xyz/docs/bridge) |
+| AI | [Ask AI providers](https://www.luorasec.xyz/docs/ai) · [MCP server](https://www.luorasec.xyz/docs/mcp) |
+| More | [Run Luora locally](https://www.luorasec.xyz/docs/local) · [Privacy & security](https://www.luorasec.xyz/docs/privacy) · [Known limits](https://www.luorasec.xyz/docs/limits) |
+
+The pages are written as data in [`features/docs/pages.ts`](apps/frontend/src/features/docs/pages.ts).
 
 ---
 

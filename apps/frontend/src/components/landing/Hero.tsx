@@ -24,7 +24,7 @@ import "@/components/(main)/shell/header.css";
 import "./hero.css";
 
 export const GITHUB = "https://github.com/0xpochita/luora";
-export const DOCS = `${GITHUB}#readme`;
+export const DOCS = "/docs";
 
 type Delay = React.CSSProperties & { "--d"?: string; "--n"?: number };
 
@@ -33,11 +33,13 @@ type Delay = React.CSSProperties & { "--d"?: string; "--n"?: number };
  * pill right, a hairline under the bar with '+' at its ends. (The active item's dot was dropped.) The glass is a gradient + inner
  * highlight, not backdrop-filter, so scrolling never re-blurs it.
  */
-export function Nav() {
+export function Nav({ active = "product" }: { active?: "product" | "docs" }) {
+  // the landing's sections by anchor; from another page (Docs) they go back to the landing
+  const home = active === "product" ? "" : "/";
   const items = [
-    { label: "Product", href: "#product", on: true },
-    { label: "How it works", href: "#how-it-works" },
-    { label: "Docs", href: DOCS },
+    { label: "Product", href: `${home}#product`, on: active === "product" },
+    { label: "How it works", href: `${home}#how-it-works` },
+    { label: "Docs", href: DOCS, on: active === "docs" },
     { label: "GitHub", href: GITHUB, mark: true },
   ];
   return (

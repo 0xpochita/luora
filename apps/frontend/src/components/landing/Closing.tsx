@@ -261,8 +261,8 @@ export function Footer() {
       links: [
         ["Trace", "/trace"],
         ["Atlas", "/atlas"],
-        ["Findings", "#findings"],
-        ["Coverage", "#coverage"],
+        ["Findings", "/#findings"],
+        ["Coverage", "/#coverage"],
       ],
     },
     {
@@ -271,7 +271,8 @@ export function Footer() {
         ["GitHub", GITHUB],
         ["Docs", DOCS],
         ["Issues", `${GITHUB}/issues`],
-        ["FAQ", "#faq"],
+        ["X", "https://x.com/luorasec"],
+        ["FAQ", "/#faq"],
       ],
     },
   ];
