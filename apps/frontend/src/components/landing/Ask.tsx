@@ -1,4 +1,4 @@
-import { AskDemo } from "./AskDemo";
+import { AskDemo, AskStage } from "./AskDemo";
 import { Reveal } from "./motion";
 
 /**
@@ -14,11 +14,7 @@ import { Reveal } from "./motion";
 const GLYPHS = ["58", "require(", "{ }", "msg.sender", "L47", "0x"];
 export function Ask() {
   return (
-    <section
-      id="ask"
-      data-tone="ask"
-      className="relative isolate mx-auto flex h-[100svh] min-h-[560px] max-w-[1240px] flex-col px-4 py-[clamp(10px,1.4svh,44px)] md:py-[clamp(12px,2.8svh,44px)] md:px-6"
-    >
+    <AskStage className="relative isolate mx-auto flex h-[100svh] min-h-[560px] max-w-[1240px] flex-col px-4 py-[clamp(10px,1.4svh,44px)] md:py-[clamp(12px,2.8svh,44px)] md:px-6">
       <div aria-hidden="true" className="lp-ask-stage">
         <div className="lp-ask-dots" />
         {GLYPHS.map((g) => (
@@ -44,6 +40,6 @@ export function Ask() {
         <AskDemo />
       </Reveal>
       <div aria-hidden="true" className="lp-ask-haze lp-ask-haze-front" />
-    </section>
+    </AskStage>
   );
 }

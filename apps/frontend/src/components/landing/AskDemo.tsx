@@ -1,9 +1,10 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { type ReactNode, useRef } from "react";
 import type { AiQuestion } from "@/features/atlas/types";
 import { loadAtlas, useAtlas } from "./atlas";
-import { Lazy } from "./motion";
+import { type Gsap, Lazy, MOTION_MQ, useStage } from "./motion";
 
 export const QUESTIONS: { q: AiQuestion; label: string }[] = [
   { q: "explain", label: "Explain" },
@@ -68,5 +69,54 @@ export function AskDemo() {
     >
       <Live />
     </Lazy>
+  );
+}
+
+/**
+ * The user: the Ask block must not slip by in a scroll. The section pins for a screen and a bit:
+ * the box idles on its placeholder, then "What to check" presses itself and the answer opens;
+ * any scroll back up resets the box. The pin is the section's own (here, from the first paint),
+ * the carousel mounts later and follows it: `data-ask-open` and an `lp-ask` event on the section
+ * (AskCarousel.tsx).
+ */
+function askPin(root: HTMLElement, gsap: Gsap) {
+  let open = false;
+  const set = (on: boolean) => {
+    if (on === open) return;
+    open = on;
+    root.toggleAttribute("data-ask-open", on);
+    root.dispatchEvent(new CustomEvent("lp-ask", { detail: on }));
+  };
+  gsap
+    .timeline({
+      scrollTrigger: {
+        trigger: root,
+        start: "top top",
+        end: "+=120%",
+        pin: true,
+        onUpdate: (self) => {
+          if (self.direction < 0) set(false);
+          else if (self.progress > 0.18) set(true);
+        },
+        onLeaveBack: () => set(false),
+      },
+    })
+    .to({}, { duration: 1 });
+  return () => set(false);
+}
+
+export function AskStage({
+  className,
+  children,
+}: {
+  className: string;
+  children: ReactNode;
+}) {
+  const ref = useRef<HTMLElement>(null);
+  useStage(ref, askPin, MOTION_MQ);
+  return (
+    <section ref={ref} id="ask" data-tone="ask" className={className}>
+      {children}
+    </section>
   );
 }

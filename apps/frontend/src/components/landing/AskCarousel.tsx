@@ -177,6 +177,13 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
   useEffect(() => setLive(true), []);
   const root = useRef<HTMLDivElement>(null);
   const track = useRef<HTMLElement>(null);
+  /** the primary pill, pressed by the section's pin (AskDemo askPin) */
+  const pill = useRef<HTMLButtonElement>(null);
+  /** an answer is open: the row stops turning on its own, so it stays to be read */
+  const opened = useRef(false);
+  useEffect(() => {
+    opened.current = q !== null;
+  }, [q]);
   const els = useRef<(HTMLButtonElement | null)[]>([]);
   const drive = useRef<{ go: (i: number) => void; step: (d: number) => void }>(
     null,
@@ -297,6 +304,7 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
         down ||
         document.hidden ||
         el.matches(":hover, :focus-within") ||
+        opened.current ||
         performance.now() - idle < AUTO_MS - 500
       )
         return;
@@ -324,6 +332,34 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
   const answer = q ? blocks(model, card.p, q) : [];
   /** the pill drawn as the primary action: the asked question, else the default one */
   const lit = q ?? "risks";
+  // the section's pin: scrolling down presses "What to check" (the pill dips, then the question
+  // types in), scrolling back up resets the box to its placeholder
+  useEffect(() => {
+    const sec = root.current?.closest("section");
+    if (!sec) return;
+    let t = 0;
+    const follow = (on: boolean) => {
+      clearTimeout(t);
+      if (!on) return setQ(null);
+      pill.current?.animate(
+        [
+          { transform: "scale(1)" },
+          { transform: "scale(.92)" },
+          { transform: "scale(1)" },
+        ],
+        { duration: 320, easing: "ease-out" },
+      );
+      t = window.setTimeout(() => setQ("risks"), 160);
+    };
+    const on = (e: Event) => follow((e as CustomEvent<boolean>).detail);
+    sec.addEventListener("lp-ask", on);
+    if (sec.hasAttribute("data-ask-open")) follow(true);
+    return () => {
+      clearTimeout(t);
+      sec.removeEventListener("lp-ask", on);
+    };
+  }, []);
+
   /** ask, and bring the whole section on screen so the answer never sits under the fold */
   const ask = (x: AiQuestion) => {
     setQ(x);
@@ -468,6 +504,7 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
                 x.q === lit ? (
                   <button
                     key={x.q}
+                    ref={pill}
                     type="button"
                     aria-pressed={x.q === q}
                     onClick={() => ask(x.q)}
