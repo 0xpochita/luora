@@ -24,16 +24,20 @@
     transform 0.15s;
 }
 button.hdr-pill:hover,
+a.hdr-pill:hover,
 .hdr-pill > button:hover {
   color: var(--fg);
 }
-button.hdr-pill:hover {
+button.hdr-pill:hover,
+a.hdr-pill:hover {
   background: linear-gradient(180deg, #2c2c30, #1e1e21);
 }
-button.hdr-pill:active {
+button.hdr-pill:active,
+a.hdr-pill:active {
   transform: scale(0.97);
 }
 button.hdr-pill:focus-visible,
+a.hdr-pill:focus-visible,
 .hdr-pill > button:focus-visible {
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.09),

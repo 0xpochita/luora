@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { PH, PhIcon } from "@/components/ui";
+import "@/components/(main)/shell/header.css";
 import type { GNode, Wire } from "@/features/atlas/utils/lab-graph";
 import { LabGraph } from "./LabGraph";
 import type { LabDemo } from "./stats";
@@ -93,23 +95,14 @@ export function HeroLab({
         <span className="hidden font-mono text-[11.5px] text-dim md:block">
           /atlas · {TABS[tab]}
         </span>
-        <Link
-          href="/atlas"
-          className="ml-auto inline-flex h-9 items-center gap-1 rounded-full bg-primary px-4 font-medium text-[13px] text-primary-fg transition-colors hover:bg-white"
-        >
+        {/* the app header's Connect AI capsule (header.css .hdr-pill.lit), the graph icon in front */}
+        <Link href="/atlas" className="group hdr-pill lit ml-auto">
+          <PhIcon
+            d={PH.graph}
+            className="size-[15px] transition-transform duration-500 group-hover:scale-110 motion-reduce:transition-none"
+          />
           Open the Atlas
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 16 16"
-            className="size-3.5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M6 3.5 10.5 8 6 12.5" />
-          </svg>
+          <PhIcon d={PH.caretRight} className="size-3 text-dim" />
         </Link>
       </div>
 

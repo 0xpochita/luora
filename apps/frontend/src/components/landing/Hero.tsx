@@ -10,7 +10,7 @@
  *  dan scenario testing"): HK's header kept, its chart replaced by the Lab itself (HeroLab).
  */
 import Link from "next/link";
-import { LogoText, SOLIDITY } from "@/components/ui";
+import { LogoText, PH, PhIcon, SOLIDITY } from "@/components/ui";
 import { ICON_PATH } from "@/features/atlas/utils/icons";
 import { contractGraph } from "@/features/atlas/utils/lab-graph";
 import { createAtlasModel } from "@/features/atlas/utils/model";
@@ -20,6 +20,7 @@ import { HeroLab } from "./HeroLab";
 import { ProductTabs } from "./ProductTabs";
 import { ScatterGrow } from "./ScatterGrow";
 import { demoAtlas, sampleRun, scenarioDemo, traceFrames } from "./stats";
+import "@/components/(main)/shell/header.css";
 import "./hero.css";
 
 export const GITHUB = "https://github.com/0xpochita/luora";
@@ -62,11 +63,22 @@ export function Nav() {
           </li>
         ))}
       </ul>
-      <Link
-        href="/trace"
-        className="rounded-full bg-primary px-4 py-2 font-medium text-[13px] text-primary-fg transition-colors hover:bg-white"
-      >
+      {/* the app header's Connect AI capsule (header.css .hdr-pill.lit): the Luora starburst where
+          it has its sparkle, a caret pointing on */}
+      <Link href="/trace" className="group hdr-pill lit">
+        <svg
+          aria-hidden="true"
+          viewBox="-40 -40 80 80"
+          className="size-[15px] flex-none transition-transform duration-500 group-hover:rotate-[20deg] group-hover:scale-110 motion-reduce:transition-none"
+          stroke="currentColor"
+          strokeWidth="6"
+          strokeLinecap="round"
+        >
+          <path d="M0-9V-34M0 9V34M-9 0H-34M9 0H34" />
+          <path d="M8-8L21-21M-8 8L-21 21M-8-8L-21-21M8 8L21 21" />
+        </svg>
         Launch app
+        <PhIcon d={PH.caretRight} className="size-3 text-dim" />
       </Link>
       <div
         aria-hidden="true"
