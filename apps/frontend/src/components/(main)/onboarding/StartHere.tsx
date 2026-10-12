@@ -26,11 +26,11 @@ const agentPrompt = (
    curl -fsSLO -w "saved %{filename_effective}\\n" "${origin}/exporter/luora-{export,lib,atlas,findings,coverage,chains,bridge}.mjs"
 3. Run \`node luora-export.mjs\` there. It runs \`forge test\` with traces and writes luora-data.json. If Slither or Aderyn JSON reports exist in reports/, it merges them. If the build or a test fails, show me the error. Only if I ask for forks: \`node luora-export.mjs --forks all\` runs the same tests on copies of six EVM testnets (read-only public RPCs, no transaction is sent).
 4. Tell me the absolute path of luora-data.json and the summary lines the exporter printed.
+
+Optional, only if I say yes: download ${origin}/exporter/luora-mcp.mjs and register it as an MCP server pointed at that luora-data.json (for Claude Code: \`claude mcp add luora -- node <abs path>/luora-mcp.mjs --data=<abs path>/luora-data.json\`), so you can read the run and propose test scenarios in the Luora Lab${LOCAL_APP ? "" : " (they reach this site while luora-bridge.mjs runs)"}.
 ${
   LOCAL_APP
-    ? `
-Optional, only if I say yes: download ${origin}/exporter/luora-mcp.mjs and register it as an MCP server pointed at that luora-data.json (for Claude Code: \`claude mcp add luora -- node <abs path>/luora-mcp.mjs --data=<abs path>/luora-data.json\`), so you can read the run and propose test scenarios in the Luora Lab.
-`
+    ? ""
     : `
 Optional, only if I ask to run tests from the browser: in the project root, start \`node luora-bridge.mjs\` (it keeps running; leave it running) and give me the link it prints.
 `

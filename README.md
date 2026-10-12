@@ -213,6 +213,12 @@ Only the selected piece is sent: its name, its own source lines (at most 120), t
 | `list_findings(severity?, tool?)` | read | Slither, Aderyn and Luora's own findings |
 | `propose_scenario(scenario)` | append | Checks a scenario against the Lab's cards and saves it to `luora-scenarios.json` |
 
+A proposal shows up in **Atlas → Scenarios** (and Trace's Scenario view) under *Proposed by your AI client*: in a local Luora, or on [luorasec.xyz](https://www.luorasec.xyz) while `node luora-bridge.mjs` runs in the project (switch back to the tab to pick up a new one). Pick it, check it, press **Run**, then export the `.t.sol`.
+
+```bash
+claude mcp add luora -- node /abs/path/luora-mcp.mjs --data=/abs/path/luora-data.json
+```
+
 ---
 
 ## Chain Integration

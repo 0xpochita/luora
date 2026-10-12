@@ -249,7 +249,7 @@ function Load({ onLoaded }: { onLoaded: () => void }) {
 
 /** 4: where each part of an audit lives in the app */
 function Look() {
-  const { setPane } = useRun();
+  const { setPane, bridge } = useRun();
   const card =
     "flex flex-col gap-1 rounded-inner border border-border bg-inner-grad p-3 transition-colors hover:border-border-strong";
   const places: [string, string, string][] = [
@@ -300,7 +300,7 @@ function Look() {
           how
         </a>
         )
-        {LOCAL_APP && (
+        {(LOCAL_APP || bridge) && (
           <>
             , or let your AI client propose scenarios over MCP (
             <a

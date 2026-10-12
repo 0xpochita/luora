@@ -143,6 +143,41 @@ export function LabView({
     [proposed, model, store.list],
   );
 
+  // the scenario picker's parts, shared by the dock and the empty dock (no scenario yet)
+  const pickScenario = (id: string) => {
+    const p = proposals.find((x) => x.id === id);
+    if (!p) return store.select(id);
+    const { name, nodes, wires } = p.s;
+    store.add({ id: p.id, name, nodes, wires, proposed: true });
+    setRun(null);
+  };
+  const proposalOptions = proposals.map((p) => ({
+    value: p.id,
+    label: `${p.errs.length ? "Invalid · " : "AI · "}${p.s.name}`,
+    disabled: p.errs.length > 0,
+    title: p.errs.join("\n") || undefined,
+    group: "Proposed by your AI client",
+  }));
+  const newFrom = (v: string) => {
+    const t = templates(model).find((x) => x.name === v);
+    if (v === "blank")
+      store.add({
+        id: newId("sc"),
+        name: "New scenario",
+        nodes: [],
+        wires: [],
+      });
+    else if (t) store.add(t.build());
+    setRun(null);
+  };
+  const newOptions = [
+    { value: "blank", label: "Blank scenario" },
+    ...templates(model).map((t) => ({
+      value: t.name,
+      label: `Template · ${t.name}`,
+    })),
+  ];
+
   // ---- graph for the current mode ----
   const contract = useMemo(() => contractGraph(model), [model]);
   const graph = useMemo(() => {
@@ -554,6 +589,35 @@ export function LabView({
         </p>
       )}
 
+      {mode === "scenario" && !sc && (
+        <div
+          data-no-pan
+          className="absolute bottom-[44px] left-1/2 z-[4] w-max max-w-[calc(100%-140px)] -translate-x-1/2"
+        >
+          <FloatingDock>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {proposals.length > 0 && (
+                <Dropdown
+                  className="w-[240px]"
+                  ariaLabel="Scenario"
+                  placeholder={`${proposals.length} proposed by your AI client…`}
+                  value=""
+                  onChange={pickScenario}
+                  options={proposalOptions}
+                />
+              )}
+              <Dropdown
+                className="w-[180px]"
+                ariaLabel="New from template"
+                placeholder="New scenario…"
+                value=""
+                onChange={newFrom}
+                options={newOptions}
+              />
+            </div>
+          </FloatingDock>
+        </div>
+      )}
       {mode === "scenario" && sc && (
         <div
           data-no-pan
@@ -565,25 +629,13 @@ export function LabView({
                 className="w-[200px]"
                 ariaLabel="Scenario"
                 value={sc.id}
-                onChange={(id) => {
-                  const p = proposals.find((x) => x.id === id);
-                  if (!p) return store.select(id);
-                  const { name, nodes, wires } = p.s;
-                  store.add({ id: p.id, name, nodes, wires, proposed: true });
-                  setRun(null);
-                }}
+                onChange={pickScenario}
                 options={[
                   ...store.list.map((s) => ({
                     value: s.id,
                     label: s.proposed ? `AI · ${s.name}` : s.name,
                   })),
-                  ...proposals.map((p) => ({
-                    value: p.id,
-                    label: `${p.errs.length ? "Invalid · " : "AI · "}${p.s.name}`,
-                    disabled: p.errs.length > 0,
-                    title: p.errs.join("\n") || undefined,
-                    group: "Proposed by your AI client",
-                  })),
+                  ...proposalOptions,
                 ]}
               />
               {sc.proposed && (
@@ -604,25 +656,8 @@ export function LabView({
                 ariaLabel="New from template"
                 placeholder="New…"
                 value=""
-                onChange={(v) => {
-                  const t = templates(model).find((x) => x.name === v);
-                  if (v === "blank")
-                    store.add({
-                      id: newId("sc"),
-                      name: "New scenario",
-                      nodes: [],
-                      wires: [],
-                    });
-                  else if (t) store.add(t.build());
-                  setRun(null);
-                }}
-                options={[
-                  { value: "blank", label: "Blank scenario" },
-                  ...templates(model).map((t) => ({
-                    value: t.name,
-                    label: `Template · ${t.name}`,
-                  })),
-                ]}
+                onChange={newFrom}
+                options={newOptions}
               />
               <Button
                 variant="accent"

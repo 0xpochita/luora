@@ -27,7 +27,12 @@ import {
   ratio,
 } from "@/features/atlas/utils/coverage";
 import type { FoundryTest } from "@/features/atlas/utils/lab-foundry";
-import { type RunFile, useRun, useShownSource } from "@/features/run";
+import {
+  proposalsFor,
+  type RunFile,
+  useRun,
+  useShownSource,
+} from "@/features/run";
 import { useAiThread } from "../ai/AiChat";
 import { StartHere } from "../onboarding/StartHere";
 import { ForkPicker } from "../shell/ForkPicker";
@@ -46,8 +51,20 @@ const fromFile = (data: RunFile) => atlasSource(data, "file");
 /** Client root of the atlas page: a dropped luora-data.json wins over the server's. */
 export function AtlasWorkspace({ source }: { source: AtlasSource }) {
   const shown = useShownSource(source, fromFile);
+  const { bridge, bridgeScenarios } = useRun();
+  // a project linked through the bridge: what its AI client proposed over MCP, for this contract
+  const linked = useMemo(
+    () =>
+      bridge && shown.origin === "file" && shown.source
+        ? {
+            ...shown.source,
+            proposed: proposalsFor(bridgeScenarios, shown.source.data.contract),
+          }
+        : shown.source,
+    [bridge, bridgeScenarios, shown.origin, shown.source],
+  );
   if (shown.origin === "none") return <StartHere />;
-  if (shown.source) return <AtlasBody key={shown.key} source={shown.source} />;
+  if (linked) return <AtlasBody key={shown.key} source={linked} />;
   return (
     <div className="grid flex-1 place-items-center p-4">
       <Panel

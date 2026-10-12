@@ -12,5 +12,5 @@ export {
   type TestRunState,
   useTestRun,
 } from "./hooks/useTestRun";
-export { type Bridge, bridgeFetch } from "./utils/bridge";
+export { type Bridge, bridgeFetch, proposalsFor } from "./utils/bridge";
 export { type ParseResult, parseRun, type RunFile } from "./utils/parse-run";

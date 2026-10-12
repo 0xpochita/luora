@@ -45,6 +45,8 @@ type RunState = {
   reloadBridge: () => void;
   /** forget the bridge link in this tab */
   dropBridge: () => void;
+  /** luora-scenarios.json through the bridge: what the auditor's AI client proposed over MCP */
+  bridgeScenarios: unknown[];
 };
 
 const RunContext = createContext<RunState | null>(null);
@@ -68,6 +70,7 @@ export function RunProvider({ children }: { children: ReactNode }) {
   const [bridgeError, setBridgeError] = useState<string | null>(null);
   // bumped to (re)connect: a new link in the address bar, Retry, Reload trace
   const [link, setLink] = useState(0);
+  const [bridgeScenarios, setBridgeScenarios] = useState<unknown[]>([]);
   useEffect(() => {
     try {
       setSampleState(localStorage.getItem(SAMPLE) === "1");
@@ -148,6 +151,31 @@ export function RunProvider({ children }: { children: ReactNode }) {
       live = false;
     };
   }, [link]);
+  // MCP proposals land in luora-scenarios.json while the auditor talks to their AI client: read them
+  // on connect and every time the tab comes back into focus; a list that did not change keeps its
+  // identity, so the Lab does not re-render for nothing
+  useEffect(() => {
+    if (!bridge) return setBridgeScenarios([]);
+    let last = "";
+    const read = () =>
+      bridgeFetch(bridge, "/scenarios")
+        .then((r) => (r.ok ? r.text() : "[]"))
+        .then((text) => {
+          if (text === last) return;
+          last = text;
+          const list: unknown = JSON.parse(text);
+          setBridgeScenarios(Array.isArray(list) ? list : []);
+        })
+        .catch(() => {});
+    read();
+    const onFocus = () => document.visibilityState === "visible" && read();
+    addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [bridge]);
   const reloadBridge = useCallback(() => setLink((n) => n + 1), []);
   const dropBridge = useCallback(() => {
     try {
@@ -185,6 +213,7 @@ export function RunProvider({ children }: { children: ReactNode }) {
       bridgeError,
       reloadBridge,
       dropBridge,
+      bridgeScenarios,
     }),
     [
       run,
@@ -198,6 +227,7 @@ export function RunProvider({ children }: { children: ReactNode }) {
       bridgeError,
       reloadBridge,
       dropBridge,
+      bridgeScenarios,
     ],
   );
   return <RunContext value={value}>{children}</RunContext>;

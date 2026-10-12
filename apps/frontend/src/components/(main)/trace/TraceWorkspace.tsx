@@ -14,6 +14,7 @@ import { EASE, ENTER, PH, PhIcon, SegmentedControl } from "@/components/ui";
 import { type AtlasSource, createAtlasModel } from "@/features/atlas";
 import { atlasSource } from "@/features/atlas/utils/atlas-source";
 import {
+  proposalsFor,
   type RunFile,
   type TestRun,
   useRun,
@@ -59,7 +60,7 @@ export function TraceWorkspace({
   atlas: AtlasSource;
 }) {
   const shown = useShownSource(source, fromFile);
-  const { run, fork, setFork, setRun } = useRun();
+  const { run, fork, setFork, setRun, bridge, bridgeScenarios } = useRun();
   const router = useRouter();
   // Start test's fresh luora-data.json: a live local run re-reads it from disk; the sample or a
   // dropped file is replaced by it, in this tab only, like a drop
@@ -73,8 +74,15 @@ export function TraceWorkspace({
   const opener = useRef<(suite: string, name: string) => void>(() => {});
   // the same run's atlas (for the Scenario tab): the dropped file's, else the server's when it
   // comes from the same place as the trace (a local trace without an atlas gets none)
+  const fileAtlas = run ? atlasSource(run.data, "file") : null;
   const runAtlas = run
-    ? atlasSource(run.data, "file")
+    ? fileAtlas && bridge
+      ? // linked through the bridge: its AI client's MCP proposals for this contract
+        {
+          ...fileAtlas,
+          proposed: proposalsFor(bridgeScenarios, fileAtlas.data.contract),
+        }
+      : fileAtlas
     : atlas.origin === source.origin
       ? atlas
       : null;
