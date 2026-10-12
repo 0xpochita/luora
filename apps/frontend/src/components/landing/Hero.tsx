@@ -184,7 +184,7 @@ export async function Hero() {
         <div className="lh-up relative z-10" style={{ "--d": "0.1s" } as Delay}>
           <div className="flex flex-wrap items-center gap-2">
             <a
-              href="https://colosseum.com"
+              href="https://colosseum.com/arena/projects/luora"
               {...OUT}
               className="inline-flex h-9 items-center gap-2.5 rounded-[8px] border border-white/[.08] bg-[#131315] pr-3.5 pl-1.5 font-mono text-[13.5px] text-muted transition-colors hover:border-white/[.16]"
             >
