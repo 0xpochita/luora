@@ -11,7 +11,7 @@
  */
 import Image from "next/image";
 import Link from "next/link";
-import { LogoText, PH, PhIcon, SOLIDITY } from "@/components/ui";
+import { ChainLogo, LogoText, PH, PhIcon, SOLIDITY } from "@/components/ui";
 import { contractGraph } from "@/features/atlas/utils/lab-graph";
 import { createAtlasModel } from "@/features/atlas/utils/model";
 import { GitHubMark } from "./GitHubMark";
@@ -102,6 +102,16 @@ export function Nav() {
 const ETHEREUM =
   "M11.944 17.97L4.58 13.62 11.943 24l7.37-10.38-7.372 4.35h.003zM12.056 0L4.69 12.223l7.365 4.354 7.365-4.35L12.056 0z";
 
+/** the chains whose testnets the exporter forks, in the order the app lists them */
+const CHAINS = [
+  ["ethereum", "Ethereum"],
+  ["arbitrum", "Arbitrum"],
+  ["base", "Base"],
+  ["robinhood", "Robinhood Chain"],
+  ["hyperliquid", "Hyperliquid"],
+  ["tempo", "Tempo"],
+] as const;
+
 /**
  * Nineteenth pass. HK's header (title, subtitle, a chip, one line right) over the Lab window
  * (HeroLab): the app's contract graph and its scenario, the two things Luora is for, the window
@@ -135,8 +145,9 @@ export async function Hero() {
             <p className="mt-1 text-[clamp(16px,1.5vw,20px)] text-dim leading-tight">
               Contract graphs and scenario tests
             </p>
-            {/* where Luora is being built: the Colosseum hackathon, its mark in the chip */}
-            <div className="mt-5 flex flex-wrap items-center gap-2">
+            {/* where Luora is being built (the Colosseum hackathon, its mark in the chip), and the
+                chains whose testnets it forks (luora-export.mjs --forks), their marks in a row */}
+            <div className="mt-5 flex flex-col items-start gap-3">
               <span className="inline-flex h-7 items-center gap-2 rounded-[6px] border border-white/[.08] bg-[#131315] pr-2.5 pl-1.5 font-mono text-[11.5px] text-muted">
                 <Image
                   src="/logos/colloseum.jpg"
@@ -147,6 +158,19 @@ export async function Hero() {
                 />
                 Built in <span className="text-fg">Colosseum</span>
               </span>
+              <p className="flex items-center gap-2.5 font-mono text-[11.5px] text-dim">
+                Powered by
+                <span className="flex items-center gap-1.5">
+                  {CHAINS.map(([family, name]) => (
+                    <span key={family} title={name}>
+                      <ChainLogo family={family} className="size-[18px]" />
+                    </span>
+                  ))}
+                </span>
+                <span className="sr-only">
+                  {CHAINS.map(([, name]) => name).join(", ")}
+                </span>
+              </p>
             </div>
           </div>
           <p
