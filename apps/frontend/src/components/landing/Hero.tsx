@@ -104,12 +104,51 @@ const ETHEREUM =
 
 /** the chains whose testnets the exporter forks, in the order the app lists them */
 const CHAINS = [
-  ["ethereum", "Ethereum"],
-  ["arbitrum", "Arbitrum"],
-  ["base", "Base"],
-  ["robinhood", "Robinhood Chain"],
-  ["hyperliquid", "Hyperliquid"],
-  ["tempo", "Tempo"],
+  ["ethereum", "Ethereum", "https://ethereum.org"],
+  ["arbitrum", "Arbitrum", "https://arbitrum.io"],
+  ["base", "Base", "https://www.base.org"],
+  ["robinhood", "Robinhood Chain", "https://robinhood.com/us/en/crypto/chain/"],
+  ["hyperliquid", "Hyperliquid", "https://hyperliquid.xyz"],
+  ["tempo", "Tempo", "https://tempo.xyz"],
+] as const;
+/** every mark in the hero opens its project's own site in a new tab */
+const OUT = { target: "_blank", rel: "noopener noreferrer" } as const;
+
+/** the tools Luora reads from: forge's runs, the Solidity source, Slither's and Aderyn's reports */
+const tool = (src: string) => (
+  <Image
+    src={src}
+    alt=""
+    width={36}
+    height={36}
+    className="size-full object-contain"
+  />
+);
+const TOOLS = [
+  ["Foundry", "https://getfoundry.sh", tool("/logos/tools/foundry.png")],
+  [
+    "Solidity",
+    "https://soliditylang.org",
+    <svg
+      key="sol"
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="#363636"
+      className="size-full"
+    >
+      <path d={SOLIDITY} />
+    </svg>,
+  ],
+  [
+    "Slither",
+    "https://github.com/crytic/slither",
+    tool("/logos/tools/slither-mark.png"),
+  ],
+  [
+    "Aderyn",
+    "https://github.com/Cyfrin/aderyn",
+    tool("/logos/tools/aderyn-mark.png"),
+  ],
 ] as const;
 
 /**
@@ -136,7 +175,7 @@ export async function Hero() {
         data-lp="hero-body"
         className="relative z-10 mx-auto min-h-[calc(100svh-76px)] max-w-[1240px] px-4 pt-7 md:px-6 md:pt-9"
       >
-        {/* HK: title + subtitle + chips left, one line right */}
+        {/* HK: title + subtitle + chips left, the same four rows mirrored right */}
         <div className="relative z-10 grid gap-5 md:grid-cols-2 md:gap-10">
           <div className="lh-up" style={{ "--d": "0.1s" } as Delay}>
             <h1 className="font-medium text-[clamp(22px,2.1vw,30px)] text-fg leading-tight tracking-[-0.02em]">
@@ -148,7 +187,11 @@ export async function Hero() {
             {/* where Luora is being built (the Colosseum hackathon, its mark in the chip), and the
                 chains whose testnets it forks (luora-export.mjs --forks), their marks in a row */}
             <div className="mt-5 flex flex-col items-start gap-3">
-              <span className="inline-flex h-9 items-center gap-2.5 rounded-[8px] border border-white/[.08] bg-[#131315] pr-3.5 pl-1.5 font-mono text-[13.5px] text-muted">
+              <a
+                href="https://colosseum.com"
+                {...OUT}
+                className="inline-flex h-9 items-center gap-2.5 rounded-[8px] border border-white/[.08] bg-[#131315] pr-3.5 pl-1.5 font-mono text-[13.5px] text-muted transition-colors hover:border-white/[.16]"
+              >
                 <Image
                   src="/logos/colloseum.jpg"
                   alt=""
@@ -157,34 +200,75 @@ export async function Hero() {
                   className="size-6 rounded-[5px]"
                 />
                 Built in <span className="text-fg">Colosseum</span>
-              </span>
+              </a>
               <p className="flex items-center gap-3 font-mono text-[13px] text-dim">
                 Powered by
                 <span className="flex items-center gap-2">
-                  {CHAINS.map(([family, name]) => (
-                    <span key={family} title={name}>
+                  {CHAINS.map(([family, name, href]) => (
+                    <a
+                      key={family}
+                      href={href}
+                      {...OUT}
+                      title={name}
+                      aria-label={name}
+                      className="transition-transform hover:-translate-y-0.5"
+                    >
                       <ChainLogo family={family} className="size-6" />
-                    </span>
+                    </a>
                   ))}
-                </span>
-                <span className="sr-only">
-                  {CHAINS.map(([, name]) => name).join(", ")}
                 </span>
               </p>
             </div>
           </div>
-          <p
-            className="lh-up max-w-[440px] text-[15px] text-body leading-relaxed md:justify-self-end md:text-[16px]"
+          {/* the right side mirrors the left block for block: title, grey subtitle, a chip (the
+              repo, MIT), then a row of marks (the tools whose output Luora reads: forge runs,
+              Solidity source, the analyzers' reports, on white tiles as they ship them) */}
+          <div
+            className="lh-up md:justify-self-end md:text-right"
             style={{ "--d": "0.25s" } as Delay}
           >
-            Luora draws your contract as a graph of its functions, storage and
-            calls, and runs the scenarios you wire on it as Foundry tests.
-          </p>
+            <h2 className="font-medium text-[clamp(22px,2.1vw,30px)] text-fg leading-tight tracking-[-0.02em]">
+              Reads what your tools already print.
+            </h2>
+            <p className="mt-1 text-[clamp(16px,1.5vw,20px)] text-dim leading-tight">
+              Forge traces, Slither and Aderyn reports
+            </p>
+            <div className="mt-5 flex flex-col items-start gap-3 md:items-end">
+              <a
+                href={GITHUB}
+                {...OUT}
+                className="inline-flex h-9 items-center gap-2.5 rounded-[8px] border border-white/[.08] bg-[#131315] pr-3.5 pl-1.5 font-mono text-[13.5px] text-muted transition-colors hover:border-white/[.16]"
+              >
+                <span className="grid size-6 place-items-center rounded-[5px] bg-white text-black">
+                  <GitHubMark className="size-4" />
+                </span>
+                Open source on <span className="text-fg">GitHub</span>
+              </a>
+              <p className="flex items-center gap-3 font-mono text-[13px] text-dim">
+                Works with
+                <span className="flex items-center gap-2">
+                  {TOOLS.map(([name, href, mark]) => (
+                    <a
+                      key={name}
+                      href={href}
+                      {...OUT}
+                      title={name}
+                      aria-label={name}
+                      className="grid size-6 place-items-center rounded-[5px] bg-white p-[3px] ring-1 ring-white/15 transition-transform hover:-translate-y-0.5"
+                    >
+                      {mark}
+                    </a>
+                  ))}
+                </span>
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* the Lab window, where HK had its chart */}
+        {/* the Lab window, where HK had its chart; on phones it follows the stacked header in the
+            flow (their height depends on the width), from md it sits under the two-column header */}
         <div
-          className="lh-up absolute inset-x-4 top-[300px] bottom-0 md:inset-x-6 md:top-[230px]"
+          className="lh-up relative mt-9 h-[440px] md:absolute md:inset-x-6 md:top-[230px] md:bottom-0 md:mt-0 md:h-auto"
           style={{ "--d": "0.35s" } as Delay}
         >
           <HeroLab contract={contract} scenario={scenario} />
