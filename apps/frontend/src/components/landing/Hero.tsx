@@ -9,9 +9,9 @@
  *  Nineteenth pass ("hapus saja bagian ini, ganti jadi fokus kita yang visualisasi smart contract
  *  dan scenario testing"): HK's header kept, its chart replaced by the Lab itself (HeroLab).
  */
+import Image from "next/image";
 import Link from "next/link";
 import { LogoText, PH, PhIcon, SOLIDITY } from "@/components/ui";
-import { ICON_PATH } from "@/features/atlas/utils/icons";
 import { contractGraph } from "@/features/atlas/utils/lab-graph";
 import { createAtlasModel } from "@/features/atlas/utils/model";
 import { GitHubMark } from "./GitHubMark";
@@ -19,7 +19,7 @@ import { HeroExit } from "./Haze";
 import { HeroLab } from "./HeroLab";
 import { ProductTabs } from "./ProductTabs";
 import { ScatterGrow } from "./ScatterGrow";
-import { demoAtlas, sampleRun, scenarioDemo, traceFrames } from "./stats";
+import { demoAtlas, scenarioDemo, traceFrames } from "./stats";
 import "@/components/(main)/shell/header.css";
 import "./hero.css";
 
@@ -102,34 +102,14 @@ export function Nav() {
 const ETHEREUM =
   "M11.944 17.97L4.58 13.62 11.943 24l7.37-10.38-7.372 4.35h.003zM12.056 0L4.69 12.223l7.365 4.354 7.365-4.35L12.056 0z";
 
-const glyph = (d: string) => (
-  <svg
-    aria-hidden="true"
-    viewBox="0 0 24 24"
-    className="size-3.5"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.6"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d={d} />
-  </svg>
-);
-
 /**
- * Nineteenth pass. HK's header (title, subtitle, two chips, one line right) over the Lab window
+ * Nineteenth pass. HK's header (title, subtitle, a chip, one line right) over the Lab window
  * (HeroLab): the app's contract graph and its scenario, the two things Luora is for, the window
  * running off the bottom of the first screen. The graph is cut to the cards that fit the window
  * (graph y < 900), so the page carries only what shows.
  */
 export async function Hero() {
-  const [atlas, run, scenario] = await Promise.all([
-    demoAtlas(),
-    sampleRun(),
-    scenarioDemo(),
-  ]);
-  const findings = atlas.pieces.filter((p) => p.sys === "vulns");
+  const [atlas, scenario] = await Promise.all([demoAtlas(), scenarioDemo()]);
   const full = contractGraph(createAtlasModel(atlas));
   const shown = new Set(full.nodes.filter((n) => n.y < 900).map((n) => n.id));
   const contract = {
@@ -138,16 +118,6 @@ export async function Hero() {
       (w) => shown.has(w.from.node) && shown.has(w.to.node),
     ),
   };
-  const tests = run.stats.find((s) => s.label === "forge tests traced")?.value;
-  const chips: { icon: React.ReactNode; label: string; value: string }[] = [
-    { icon: glyph(ICON_PATH.fn), label: "Tests", value: tests ?? "—" },
-    {
-      icon: <span className="size-1.5 rounded-full bg-red" />,
-      label: "Findings",
-      value: String(findings.length),
-    },
-  ];
-
   return (
     <HeroExit>
       <Nav />
@@ -165,16 +135,18 @@ export async function Hero() {
             <p className="mt-1 text-[clamp(16px,1.5vw,20px)] text-dim leading-tight">
               Contract graphs and scenario tests
             </p>
+            {/* where Luora is being built: the Colosseum hackathon, its mark in the chip */}
             <div className="mt-5 flex flex-wrap items-center gap-2">
-              {chips.map((c) => (
-                <span
-                  key={c.label}
-                  className="inline-flex h-7 items-center gap-1.5 rounded-[6px] border border-white/[.08] bg-[#131315] px-2.5 font-mono text-[11.5px] text-muted"
-                >
-                  {c.icon}
-                  {c.label}: <span className="text-fg">{c.value}</span>
-                </span>
-              ))}
+              <span className="inline-flex h-7 items-center gap-2 rounded-[6px] border border-white/[.08] bg-[#131315] pr-2.5 pl-1.5 font-mono text-[11.5px] text-muted">
+                <Image
+                  src="/logos/colloseum.jpg"
+                  alt=""
+                  width={18}
+                  height={18}
+                  className="size-[18px] rounded-[4px]"
+                />
+                Built in <span className="text-fg">Colosseum</span>
+              </span>
             </div>
           </div>
           <p
