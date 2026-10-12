@@ -1,6 +1,12 @@
 "use client";
 
-import { type CSSProperties, useEffect, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import type { AiQuestion, AtlasData, Piece } from "@/features/atlas/types";
 import { aiAnswer, CHECKLIST } from "@/features/atlas/utils/ai";
 import {
@@ -179,6 +185,9 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
   const track = useRef<HTMLElement>(null);
   /** the primary pill, pressed by the section's pin (AskDemo askPin) */
   const pill = useRef<HTMLButtonElement>(null);
+  /** the asked question and the answer card, eased out when the pin resets the box */
+  const said = useRef<HTMLParagraphElement>(null);
+  const ans = useRef<HTMLDivElement>(null);
   /** an answer is open: the row stops turning on its own, so it stays to be read */
   const opened = useRef(false);
   useEffect(() => {
@@ -333,14 +342,56 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
   /** the pill drawn as the primary action: the asked question, else the default one */
   const lit = q ?? "risks";
   // the section's pin: scrolling down presses "What to check" (the pill dips, then the question
-  // types in), scrolling back up resets the box to its placeholder
+  // types in), scrolling back up eases the answer out (it fades as the card folds shut, the
+  // question lifts away) before the box returns to its placeholder
   useEffect(() => {
     const sec = root.current?.closest("section");
     if (!sec) return;
     let t = 0;
+    let out: Animation[] = [];
+    const close = () => {
+      const card = ans.current;
+      if (!card) return setQ(null);
+      const ease = { duration: 420, easing: "cubic-bezier(.4,0,.2,1)" };
+      out = [
+        card.animate(
+          [
+            { height: `${card.offsetHeight}px`, opacity: 1 },
+            {
+              height: "0px",
+              opacity: 0,
+              paddingTop: "0px",
+              paddingBottom: "0px",
+            },
+          ],
+          { ...ease, fill: "forwards" },
+        ),
+        ...(said.current
+          ? [
+              said.current.animate(
+                [
+                  { opacity: 1, transform: "none" },
+                  { opacity: 0, transform: "translateY(-8px)" },
+                ],
+                { ...ease, duration: 300, fill: "forwards" },
+              ),
+            ]
+          : []),
+      ];
+      t = window.setTimeout(() => {
+        out = [];
+        setQ(null);
+      }, ease.duration);
+    };
     const follow = (on: boolean) => {
       clearTimeout(t);
-      if (!on) return setQ(null);
+      if (!on) return close();
+      // scrolled back down mid-close: the answer simply stays
+      if (out.length) {
+        for (const a of out) a.cancel();
+        out = [];
+        return;
+      }
       pill.current?.animate(
         [
           { transform: "scale(1)" },
@@ -359,6 +410,26 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
       sec.removeEventListener("lp-ask", on);
     };
   }, []);
+
+  // the answer card opens the way it closes: it unfolds to its height as it fades in, while its
+  // blocks rise inside it (lp-ask-in), so the box grows instead of jumping
+  const shown = q && `${at}:${q}`;
+  useLayoutEffect(() => {
+    const card = ans.current;
+    if (
+      !shown ||
+      !card ||
+      matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+    card.animate(
+      [
+        { height: "0px", opacity: 0, paddingTop: "0px", paddingBottom: "0px" },
+        { height: `${card.offsetHeight}px`, opacity: 1 },
+      ],
+      { duration: 480, easing: "cubic-bezier(.2,.7,.2,1)" },
+    );
+  }, [shown]);
 
   /** ask, and bring the whole section on screen so the answer never sits under the fold */
   const ask = (x: AiQuestion) => {
@@ -462,6 +533,7 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
             {text ? (
               <p
                 key={`${at}:${q}`}
+                ref={said}
                 aria-live="polite"
                 className="text-[clamp(17px,min(2.4vw,2.9svh),28px)] text-fg leading-[1.25] tracking-[-0.02em]"
               >
@@ -537,6 +609,7 @@ export function AskCarousel({ atlas }: { atlas: AtlasData }) {
         {q && (
           <div
             key={`a:${at}:${q}`}
+            ref={ans}
             className={`lp-scroll grid min-h-0 content-start gap-x-6 gap-y-2 overflow-y-auto rounded-inner border border-border bg-inner-grad p-2.5 text-[12px] text-body leading-normal md:text-[clamp(12px,1.55svh,13.5px)] md:p-[clamp(10px,1.6svh,16px)] md:leading-[1.55] ${split > 0 ? "md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]" : ""}`}
           >
             {[
