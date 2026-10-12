@@ -14,6 +14,7 @@ import { LogoText, SOLIDITY } from "@/components/ui";
 import { ICON_PATH } from "@/features/atlas/utils/icons";
 import { contractGraph } from "@/features/atlas/utils/lab-graph";
 import { createAtlasModel } from "@/features/atlas/utils/model";
+import { GitHubMark } from "./GitHubMark";
 import { HeroExit } from "./Haze";
 import { HeroLab } from "./HeroLab";
 import { ProductTabs } from "./ProductTabs";
@@ -36,7 +37,7 @@ export function Nav() {
     { label: "Product", href: "#product", on: true },
     { label: "How it works", href: "#how-it-works" },
     { label: "Docs", href: DOCS },
-    { label: "GitHub", href: GITHUB },
+    { label: "GitHub", href: GITHUB, mark: true },
   ];
   return (
     <nav className="lh-up relative z-20 mx-auto flex h-[76px] max-w-[1240px] items-center justify-between px-4 md:px-6">
@@ -49,12 +50,13 @@ export function Nav() {
             <a
               href={i.href}
               aria-current={i.on ? "page" : undefined}
-              className={`flex items-center rounded-full px-3.5 py-1.5 text-[13px] transition-colors ${
+              className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] transition-colors ${
                 i.on
                   ? "bg-white/[.1] text-fg shadow-[inset_0_1px_0_rgba(255,255,255,.1)]"
                   : "text-muted hover:text-fg"
               }`}
             >
+              {i.mark && <GitHubMark className="size-3.5" />}
               {i.label}
             </a>
           </li>
