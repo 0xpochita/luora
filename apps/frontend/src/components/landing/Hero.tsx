@@ -274,7 +274,7 @@ export async function Hero() {
               className="hidden h-5 w-px bg-white/[.12] sm:block"
             />
             <p className="flex items-center gap-3">
-              Works with
+              Built with
               <span className="flex items-center gap-2">
                 {TOOLS.map(([name, href, mark]) => (
                   <a
