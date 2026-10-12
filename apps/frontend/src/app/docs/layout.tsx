@@ -1,3 +1,4 @@
+import { DocsSearch } from "@/components/docs/DocsSearch";
 import { DocsSidebar } from "@/components/docs/DocsSidebar";
 import { Footer } from "@/components/landing/Closing";
 import { Nav } from "@/components/landing/Hero";
@@ -16,6 +17,7 @@ export default function DocsLayout({ children }: LayoutProps<"/docs">) {
         <main className="min-w-0 flex-1">{children}</main>
       </div>
       <Footer />
+      <DocsSearch />
     </div>
   );
 }
