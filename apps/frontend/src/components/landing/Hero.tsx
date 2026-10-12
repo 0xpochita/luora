@@ -148,22 +148,22 @@ export async function Hero() {
             {/* where Luora is being built (the Colosseum hackathon, its mark in the chip), and the
                 chains whose testnets it forks (luora-export.mjs --forks), their marks in a row */}
             <div className="mt-5 flex flex-col items-start gap-3">
-              <span className="inline-flex h-7 items-center gap-2 rounded-[6px] border border-white/[.08] bg-[#131315] pr-2.5 pl-1.5 font-mono text-[11.5px] text-muted">
+              <span className="inline-flex h-9 items-center gap-2.5 rounded-[8px] border border-white/[.08] bg-[#131315] pr-3.5 pl-1.5 font-mono text-[13.5px] text-muted">
                 <Image
                   src="/logos/colloseum.jpg"
                   alt=""
-                  width={18}
-                  height={18}
-                  className="size-[18px] rounded-[4px]"
+                  width={24}
+                  height={24}
+                  className="size-6 rounded-[5px]"
                 />
                 Built in <span className="text-fg">Colosseum</span>
               </span>
-              <p className="flex items-center gap-2.5 font-mono text-[11.5px] text-dim">
+              <p className="flex items-center gap-3 font-mono text-[13px] text-dim">
                 Powered by
-                <span className="flex items-center gap-1.5">
+                <span className="flex items-center gap-2">
                   {CHAINS.map(([family, name]) => (
                     <span key={family} title={name}>
-                      <ChainLogo family={family} className="size-[18px]" />
+                      <ChainLogo family={family} className="size-6" />
                     </span>
                   ))}
                 </span>
