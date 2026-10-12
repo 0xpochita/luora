@@ -13,7 +13,12 @@ export async function generateMetadata({
   params,
 }: PageProps<"/explore/[protocol]">) {
   const p = loadProtocol((await params).protocol);
-  return { title: p ? `${p.name} ${p.version}` : "Explore" };
+  if (!p) return { title: "Explore" };
+  return {
+    title: `${p.name} ${p.version}`,
+    description: p.purpose,
+    alternates: { canonical: `/explore/${p.id}` },
+  };
 }
 
 async function Content({ params }: PageProps<"/explore/[protocol]">) {

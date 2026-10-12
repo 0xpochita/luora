@@ -4,7 +4,12 @@ import { LUORA_DATA_EXPLICIT } from "@/config/env.server";
 import { loadAtlas } from "@/features/atlas/services/load-atlas";
 import { loadTrace } from "@/features/trace/services/load-trace";
 
-export const metadata = { title: "Trace" };
+export const metadata = {
+  title: "Trace",
+  description:
+    "Decoded Foundry traces: every call, event and cheatcode of a forge test, each frame on the source line and storage it touched, with a call graph per test.",
+  alternates: { canonical: "/trace" },
+};
 
 async function TraceData() {
   const [source, atlas] = await Promise.all([loadTrace(), loadAtlas()]);
