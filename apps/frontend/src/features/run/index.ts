@@ -3,6 +3,7 @@ export {
   type RunPane,
   RunProvider,
   useRun,
+  useRunIfAny,
   useShownSource,
 } from "./hooks/useRun";
 export {

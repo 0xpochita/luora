@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { TraceSkeleton, TraceWorkspace } from "@/components/(main)";
+import { RunSkeleton, TraceWorkspace } from "@/components/(main)";
+import { LUORA_DATA_EXPLICIT } from "@/config/env.server";
 import { loadAtlas } from "@/features/atlas/services/load-atlas";
 import { loadTrace } from "@/features/trace/services/load-trace";
 
@@ -12,7 +13,9 @@ async function TraceData() {
 
 export default function TracePage() {
   return (
-    <Suspense fallback={<TraceSkeleton />}>
+    <Suspense
+      fallback={<RunSkeleton view="trace" local={LUORA_DATA_EXPLICIT} />}
+    >
       <TraceData />
     </Suspense>
   );

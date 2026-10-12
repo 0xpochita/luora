@@ -1,4 +1,7 @@
+"use client";
+
 import type React from "react";
+import { useRunIfAny } from "@/features/run";
 
 /*
  * Suspense / loading fallbacks, one per page, shaped like the page that replaces them (same
@@ -34,6 +37,128 @@ function NodeCard({ rows, w = "w-[300px]" }: { rows: number; w?: string }) {
           {keys(rows, "r").map((k) => (
             <Bone key={k} className="mt-4 ml-auto h-2.5 w-28" />
           ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** one line of copy: the bone centred in the box the real line takes (`box` = its line height) */
+function Line({ box, w }: { box: string; w: string }) {
+  return (
+    <div className={`flex items-center ${box}`}>
+      <Bone className={`h-2.5 ${w}`} />
+    </div>
+  );
+}
+
+/** a Start step (RunDialog Step): number chip, title, its command rows or the drop zone, the note */
+function StepBones({
+  title,
+  copy = [],
+  drop = false,
+  note,
+  noteBox = "h-[18.75px]",
+}: {
+  title: string;
+  /** lines per command row (a long command wraps) */
+  copy?: number[];
+  drop?: boolean;
+  /** widths of the note's lines */
+  note: string[];
+  /** a note with inline code sets its lines a touch taller */
+  noteBox?: string;
+}) {
+  return (
+    <li className="flex gap-3 rounded-inner border border-border bg-inner-grad p-3">
+      {/* on the card's light top edge bg-raised vanishes: these bones take bg-hover */}
+      <span className="size-6 flex-none rounded-chip bg-hover" />
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <div className="pt-0.5">
+          <Line box="h-[21px]" w={`${title} bg-hover!`} />
+        </div>
+        {copy.map((n, i) => (
+          <div
+            // biome-ignore lint/suspicious/noArrayIndexKey: fixed rows
+            key={i}
+            className="flex items-center gap-1.5 rounded-tile bg-inset py-1 pr-1 pl-3"
+          >
+            <div className="min-w-0 flex-1 py-1">
+              {keys(n, "l").map((k, j) => (
+                <Line
+                  key={k}
+                  box="h-[19.5px]"
+                  w={j === n - 1 ? "w-[46%]" : "w-[78%]"}
+                />
+              ))}
+            </div>
+            <span className="flex h-8 items-center px-2">
+              <Bone className="h-2.5 w-8" />
+            </span>
+          </div>
+        ))}
+        {drop && (
+          <div className="flex flex-col items-center gap-1 rounded-tile border border-border-strong border-dashed bg-inset px-4 py-5">
+            <Line box="h-[21px]" w="w-60 max-w-[70%]" />
+            <Line box="h-[18.75px]" w="w-80 max-w-[90%]" />
+          </div>
+        )}
+        <div>
+          {note.map((w, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: fixed lines
+            <Line key={i} box={noteBox} w={`${w} bg-hover!`} />
+          ))}
+        </div>
+      </div>
+    </li>
+  );
+}
+
+/**
+ * Trace and Atlas with nothing loaded: the Start page (StartHere), block for block: the pill, the
+ * title and its three lines, the sample button with its note, the For Human / For Agent switch and
+ * the four steps.
+ */
+export function StartSkeleton() {
+  return (
+    <div className="flex min-h-0 flex-1 animate-pulse overflow-hidden px-3 pb-3">
+      <div className="m-auto w-[min(720px,100%)] py-8">
+        <Bone className="mb-3 h-7 w-[101px] border border-border" />
+        <Line box="h-[clamp(30px,3.75vw,40px)]" w="h-6! w-[300px]" />
+        <div className="mt-2 max-w-[560px]">
+          <Line box="h-[22.75px]" w="w-full" />
+          <Line box="h-[22.75px]" w="w-[96%]" />
+          <Line box="h-[22.75px]" w="w-[34%]" />
+        </div>
+        <div className="mt-5 flex items-center gap-x-4">
+          <Bone className="h-8 w-[178px] flex-none rounded-tile" />
+          <div className="min-w-0 flex-1">
+            <Line box="h-[18.75px]" w="w-full" />
+            <Line box="h-[18.75px]" w="w-[8%]" />
+          </div>
+        </div>
+        <div className="mt-8 flex gap-1.5">
+          <Bone className="h-7 w-[112px] rounded-tile" />
+          <Bone className="h-7 w-[104px] rounded-tile" />
+        </div>
+        <ol className="mt-3 flex flex-col gap-2">
+          <StepBones title="w-28" copy={[1]} note={["w-[40%]"]} />
+          <StepBones title="w-72" copy={[1, 3]} note={["w-full", "w-[22%]"]} />
+          <StepBones
+            title="w-24"
+            copy={[1]}
+            note={["w-full", "w-[94%]", "w-[44%]"]}
+            noteBox="h-[19.5px]"
+          />
+          <StepBones
+            title="w-16"
+            drop
+            note={["w-full", "w-[30%]"]}
+            noteBox="h-[19.5px]"
+          />
+        </ol>
+        <div className="mt-4">
+          <Line box="h-[18.75px]" w="w-[72%]" />
         </div>
       </div>
     </div>
@@ -195,4 +320,21 @@ export function ProtocolSkeleton() {
       </div>
     </div>
   );
+}
+
+/**
+ * The Trace or Atlas fallback, shaped like what will replace it: the Start page while nothing is
+ * loaded (no LUORA_DATA_PATH run on the server, no dropped file, the sample not chosen), else the
+ * workspace. `local` comes from the server: it points at a run.
+ */
+export function RunSkeleton({
+  view,
+  local,
+}: {
+  view: "trace" | "atlas";
+  local: boolean;
+}) {
+  const ctx = useRunIfAny();
+  if (!local && !ctx?.run && !ctx?.sample) return <StartSkeleton />;
+  return view === "trace" ? <TraceSkeleton /> : <AtlasSkeleton />;
 }

@@ -106,6 +106,12 @@ export function useRun() {
 }
 
 /**
+ * The same state, or null without a RunProvider above: for a Suspense fallback, which Next also
+ * renders on its own to check that navigating to the page is instant.
+ */
+export const useRunIfAny = () => useContext(RunContext);
+
+/**
  * The source a workspace should show: the dropped run (via `fromFile`, null when the file lacks
  * that view's data) or else the server's. Reports the shown origin to the app header; `key`
  * changes per dropped file so the workspace remounts with fresh selection state.

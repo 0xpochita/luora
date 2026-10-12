@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { AtlasSkeleton, AtlasWorkspace } from "@/components/(main)";
+import { AtlasWorkspace, RunSkeleton } from "@/components/(main)";
+import { LUORA_DATA_EXPLICIT } from "@/config/env.server";
 import { loadAtlas } from "@/features/atlas/services/load-atlas";
 
 export const metadata = { title: "Contract Atlas" };
@@ -11,7 +12,9 @@ async function AtlasContent() {
 
 export default function AtlasPage() {
   return (
-    <Suspense fallback={<AtlasSkeleton />}>
+    <Suspense
+      fallback={<RunSkeleton view="atlas" local={LUORA_DATA_EXPLICIT} />}
+    >
       <AtlasContent />
     </Suspense>
   );
