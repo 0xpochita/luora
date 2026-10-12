@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import type { AiConfig } from "../types";
-import { NO_AI } from "../utils/provider";
+import { CLAUDE_HERE, NO_AI } from "../utils/provider";
 
 const KEY = "luora.ai";
 const EVENT = "luora-ai";
@@ -22,6 +22,8 @@ function read(): AiConfig {
     } catch {
       parsed = NO_AI;
     }
+    // "Your Claude" saved on a local Luora means nothing on the hosted one
+    if (!CLAUDE_HERE && parsed.kind === "claude") parsed = NO_AI;
   }
   return parsed;
 }

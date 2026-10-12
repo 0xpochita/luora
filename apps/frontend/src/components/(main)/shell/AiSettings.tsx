@@ -13,6 +13,7 @@ import {
   type AiConfig,
   type AiKind,
   aiReady,
+  CLAUDE_HERE,
   claudeModels,
   configFor,
   modelLabel,
@@ -222,11 +223,17 @@ export function AiSettings() {
             onChange={(m) => pick(m === "key" ? "anthropic" : m)}
             options={[
               { value: "none", label: "None" },
-              {
-                value: "claude",
-                label: "Your Claude",
-                title: "Your own Claude Code and Claude plan, on this laptop",
-              },
+              // only a local Luora can run your Claude Code (CLAUDE_HERE)
+              ...(CLAUDE_HERE
+                ? [
+                    {
+                      value: "claude" as const,
+                      label: "Your Claude",
+                      title:
+                        "Your own Claude Code and Claude plan, on this laptop",
+                    },
+                  ]
+                : []),
               { value: "local", label: "Local model" },
               { value: "key", label: "Own API key" },
             ]}

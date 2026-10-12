@@ -6,6 +6,7 @@ import {
   askPrompt,
   chatRequest,
   configFor,
+  isHostedUrl,
   NO_AI,
   SYSTEM_PROMPT,
   textOf,
@@ -131,5 +132,13 @@ assert.throws(
   /overloaded/,
 );
 assert.throws(() => textOf('{"error":"model not found"}'), /model not found/);
+
+// "Your Claude" only on a local Luora: NEXT_PUBLIC_URL empty or local = here, a domain = hosted
+assert.equal(isHostedUrl(undefined), false);
+assert.equal(isHostedUrl(""), false);
+assert.equal(isHostedUrl("http://localhost:3000"), false);
+assert.equal(isHostedUrl("http://127.0.0.1:3020"), false);
+assert.equal(isHostedUrl("https://www.luorasec.xyz"), true);
+assert.equal(isHostedUrl("https://luorasec.xyz/"), true);
 
 console.log("provider ok");

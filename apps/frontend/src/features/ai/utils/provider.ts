@@ -65,6 +65,23 @@ export const modelLabel = (c: AiConfig) =>
       "Default"
     : c.model;
 
+/** Is `url` a public deploy rather than this laptop? Empty = a local Luora. */
+export function isHostedUrl(url: string | undefined): boolean {
+  if (!url) return false;
+  try {
+    return !/^(localhost|127\.0\.0\.1|\[::1\])$/.test(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * "Your Claude" runs the Claude Code on the machine serving Luora, so only a local Luora offers it;
+ * a deploy with NEXT_PUBLIC_URL set (https://www.luorasec.xyz) hides it (app/api/claude answers
+ * 404 there anyway).
+ */
+export const CLAUDE_HERE = !isHostedUrl(process.env.NEXT_PUBLIC_URL);
+
 export const NO_AI: AiConfig = {
   kind: "none",
   baseUrl: "",

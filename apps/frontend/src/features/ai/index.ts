@@ -5,6 +5,7 @@ export {
   aiReady,
   askPrompt,
   type ChatMessage,
+  CLAUDE_HERE,
   CLAUDE_MODELS,
   claudeModels,
   configFor,
