@@ -20,6 +20,7 @@ import { HeroLab } from "./HeroLab";
 import { ProductTabs } from "./ProductTabs";
 import { ScatterGrow } from "./ScatterGrow";
 import { demoAtlas, scenarioDemo, traceFrames } from "./stats";
+import { XMark } from "./XMark";
 import "@/components/(main)/shell/header.css";
 import "./hero.css";
 
@@ -65,23 +66,39 @@ export function Nav({ active = "product" }: { active?: "product" | "docs" }) {
           </li>
         ))}
       </ul>
-      {/* the app header's Connect AI capsule (header.css .hdr-pill.lit): the Luora starburst where
-          it has its sparkle, a caret pointing on */}
-      <Link href="/trace" className="group hdr-pill lit">
-        <svg
-          aria-hidden="true"
-          viewBox="-40 -40 80 80"
-          className="size-[15px] flex-none transition-transform duration-500 group-hover:rotate-[20deg] group-hover:scale-110 motion-reduce:transition-none"
-          stroke="currentColor"
-          strokeWidth="6"
-          strokeLinecap="round"
-        >
-          <path d="M0-9V-34M0 9V34M-9 0H-34M9 0H34" />
-          <path d="M8-8L21-21M-8 8L-21 21M-8-8L-21-21M8 8L21 21" />
-        </svg>
-        Launch app
-        <PhIcon d={PH.caretRight} className="size-3 text-dim" />
-      </Link>
+      <div className="flex items-center gap-2">
+        {/* on the docs, where to follow the project sits by the call to action (onorca.dev/docs:
+            the social marks left of Download) */}
+        {active === "docs" && (
+          <a
+            href="https://x.com/luorasec"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Luora on X"
+            title="Follow @luorasec on X"
+            className="grid size-9 place-items-center rounded-full border border-white/[.08] text-muted transition-colors hover:border-white/[.16] hover:text-fg"
+          >
+            <XMark className="size-3.5" />
+          </a>
+        )}
+        {/* the app header's Connect AI capsule (header.css .hdr-pill.lit): the Luora starburst
+            where it has its sparkle, a caret pointing on */}
+        <Link href="/trace" className="group hdr-pill lit">
+          <svg
+            aria-hidden="true"
+            viewBox="-40 -40 80 80"
+            className="size-[15px] flex-none transition-transform duration-500 group-hover:rotate-[20deg] group-hover:scale-110 motion-reduce:transition-none"
+            stroke="currentColor"
+            strokeWidth="6"
+            strokeLinecap="round"
+          >
+            <path d="M0-9V-34M0 9V34M-9 0H-34M9 0H34" />
+            <path d="M8-8L21-21M-8 8L-21 21M-8-8L-21-21M8 8L21 21" />
+          </svg>
+          Launch app
+          <PhIcon d={PH.caretRight} className="size-3 text-dim" />
+        </Link>
+      </div>
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-4 bottom-0 h-px bg-gradient-to-r from-transparent via-white/[.08] to-transparent md:inset-x-6"

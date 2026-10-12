@@ -4,11 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { GitHubMark } from "@/components/landing/GitHubMark";
+import { XMark } from "@/components/landing/XMark";
 import { GROUPS, hrefOf } from "@/features/docs/pages";
-
-/** X's mark (simple-icons, CC0), monochrome */
-const X_MARK =
-  "M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z";
 
 /** where to follow the project, at the foot of the page list */
 function Follow() {
@@ -22,14 +19,7 @@ function Follow() {
         rel="noopener noreferrer"
         className={link}
       >
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 24 24"
-          className="size-3.5 flex-none"
-          fill="currentColor"
-        >
-          <path d={X_MARK} />
-        </svg>
+        <XMark className="size-3.5 flex-none" />
         Follow @luorasec on X
       </a>
       <a
