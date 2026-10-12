@@ -31,4 +31,4 @@ export const bridgeFetch = (
 
 /** a fetch that never got an answer: the bridge is off, or the browser kept the page from it */
 export const BRIDGE_UNREACHABLE =
-  "Can't reach the bridge on this computer. Is node luora-bridge.mjs still running in your Foundry project? If the browser asked to let this site reach your computer or local network, allow it, then retry.";
+  "Can't reach the bridge on this computer. Check that node luora-bridge.mjs is still running in your Foundry project. Chrome, Brave and Edge need your permission to reach this computer: allow it when they ask, or turn it back on in the site settings (the icon left of the address). Safari blocks it: use Chrome, Brave, Edge or Firefox. Then press Retry.";
